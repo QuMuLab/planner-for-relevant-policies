@@ -1,0 +1,3 @@
+#! /bin/bash
+./solver.py --algorithm preprocess --translate  "$@"
+./solver.py --algorithm preprocess --preprocess "$@"

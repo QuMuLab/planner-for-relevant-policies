@@ -1,0 +1,20 @@
+benchmark.py:
+  Run a program with memory and runtime bounds and log file support.
+  Can be used as a module or as a standalone script.
+
+repository.py:
+  Module for querying the planning task database (list domain, list problems
+  in domain, suggest file names for log files, etc.).
+
+solver.py:
+  Run the three-phase causal graph planner. Phases can be executed separately
+  or in sequence. Solve one task, all tasks in one domain, or all tasks in the
+  database.
+  Can be used as a module or as a standalone script.
+
+solve-first.py:
+  Sample script which shows how solver.py can be used as a module.
+  Solve the first task of each domain in the task database.
+
+run-all-planners.py:
+  Script for running the other planners on all tasks in the database.
