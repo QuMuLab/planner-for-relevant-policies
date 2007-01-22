@@ -23,7 +23,7 @@ class Solver:
         self.time -= int(secs)
         return (sig == 0, secs)
     def translate(self, verbose=True):
-        cmd = os.path.join(DOWNWARD_PATH, "translate", "translate.py")
+        cmd = os.path.join(DOWNWARD_DIR, "translate", "translate.py")
         cmd = " ".join((cmd, self.problem.domain_file(), self.problem.problem_file()))
         if False:
             ## This is a weird HACK to silence problems when bytecode already exists.
