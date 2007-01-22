@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-BIN_PATH = "/home/helmert/planning/downward"
+from paths import DOWNWARD_DIR
 
 import getopt
 import os
@@ -23,30 +23,30 @@ class Solver:
         self.time -= int(secs)
         return (sig == 0, secs)
     def translate(self, verbose=True):
-        cmd = os.path.join(BIN_PATH, "translate", "translate.py")
+        cmd = os.path.join(DOWNWARD_PATH, "translate", "translate.py")
         cmd = " ".join((cmd, self.problem.domain_file(), self.problem.problem_file()))
         if False:
             ## This is a weird HACK to silence problems when bytecode already exists.
             ## This might be related to a recently fixed bug in the translator, where
             ## Atom instances with identical hash value would falsely be considered equal.
             ## If so, this should no longer be needed, so it is deactivated for the time being.
-            translator_path = os.path.join(BIN_PATH, "translate")
+            translator_path = os.path.join(DOWNWARD_DIR, "translate")
             os.system("rm -f %s/*.pyc %s/pddl/*.pyc" % (translator_path, translator_path))
         ok, secs = self._run_cmd(cmd, verbose, self.result_files.translate_log())
         if ok:
             os.system("mv output.sas %s" % self.result_files.translate_out())
         return ok, secs
     def preprocess(self, verbose=True):
-        cmd = os.path.join(BIN_PATH, "preprocess", "preprocess")
+        cmd = os.path.join(DOWNWARD_DIR, "preprocess", "preprocess")
         cmd = "%s < %s" % (cmd, self.result_files.translate_out())
         ok, secs = self._run_cmd(cmd, verbose, self.result_files.preprocess_log())
         if ok:
             os.system("mv output %s" % self.result_files.preprocess_out())
         return ok, secs
     def search(self, verbose=True):
-        cmd = os.path.join(BIN_PATH, "search", "search-%s" % self.algorithm)
+        cmd = os.path.join(DOWNWARD_DIR, "search", "search-%s" % self.algorithm)
         old_dir = os.curdir
-        os.chdir(os.path.join(BIN_PATH, "search"))
+        os.chdir(os.path.join(DOWNWARD_DIR, "search"))
         cmd = "%s < %s" % (cmd, self.result_files.preprocess_out())
         os.chdir(old_dir)
         ok, secs = self._run_cmd(cmd, verbose, self.result_files.search_log())

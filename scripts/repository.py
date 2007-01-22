@@ -1,11 +1,10 @@
 import os.path
 
-BENCHMARK_PATH = "/home/helmert/planning/benchmarks"
-RESULT_PATH = "/home/helmert/planning/results"
+from paths import BENCHMARKS_DIR, RESULTS_DIR
 
 class Repository(object):
     def __init__(self):
-        domains = os.listdir(BENCHMARK_PATH)
+        domains = os.listdir(BENCHMARKS_DIR)
         domains.sort()
         self.domains = [Domain(domain) for domain in domains]
     def __iter__(self):
@@ -14,7 +13,7 @@ class Repository(object):
 class Domain(object):
     def __init__(self, domain):
         self.domain = domain
-        self.directory = os.path.join(BENCHMARK_PATH, domain)
+        self.directory = os.path.join(BENCHMARKS_DIR, domain)
         problems = os.listdir(self.directory)
         problems = [p for p in problems if "domain" not in p
                     and not p.startswith(".")]
@@ -32,18 +31,18 @@ class Problem(object):
     def __str__(self):
         return "%s-%s" % (self.domain, self.problem)
     def problem_file(self):
-        return os.path.join(BENCHMARK_PATH, self.domain, self.problem)
+        return os.path.join(BENCHMARKS_DIR, self.domain, self.problem)
     def domain_file(self):
-        result = os.path.join(BENCHMARK_PATH, self.domain, "domain.pddl")
+        result = os.path.join(BENCHMARKS_DIR, self.domain, "domain.pddl")
         if os.path.exists(result):
             return result
-        return os.path.join(BENCHMARK_PATH, self.domain,
+        return os.path.join(BENCHMARKS_DIR, self.domain,
                             self.problem[:4] + "domain.pddl")
 
 class ResultFiles(object):
     def __init__(self, algorithm, problem):
         base, _ = os.path.splitext(os.path.basename(problem.problem))
-        self.base_name = os.path.join(RESULT_PATH, algorithm, problem.domain, base)
+        self.base_name = os.path.join(RESULTS_DIR, algorithm, problem.domain, base)
     def global_log(self):
         return self.base_name + ".log"
     def translate_log(self):
