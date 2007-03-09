@@ -26,15 +26,19 @@ class Solver:
         cmd = os.path.join(DOWNWARD_DIR, "translate", "translate.py")
         cmd = " ".join((cmd, self.problem.domain_file(), self.problem.problem_file()))
         if False:
-            ## This is a weird HACK to silence problems when bytecode already exists.
-            ## This might be related to a recently fixed bug in the translator, where
-            ## Atom instances with identical hash value would falsely be considered equal.
-            ## If so, this should no longer be needed, so it is deactivated for the time being.
+            ## This is a weird HACK to silence problems when bytecode
+            ## already exists. This might be related to a recently
+            ## fixed bug in the translator, where Atom instances with
+            ## identical hash value would falsely be considered equal.
+            ## If so, this should no longer be needed, so it is
+            ## deactivated for the time being.
             translator_path = os.path.join(DOWNWARD_DIR, "translate")
-            os.system("rm -f %s/*.pyc %s/pddl/*.pyc" % (translator_path, translator_path))
+            os.system("rm -f %s/*.pyc %s/pddl/*.pyc" % (
+                translator_path, translator_path))
         ok, secs = self._run_cmd(cmd, verbose, self.result_files.translate_log())
         if ok:
             os.system("mv output.sas %s" % self.result_files.translate_out())
+            os.system("mv test.groups %s" % self.result_files.translate_group())
         return ok, secs
     def preprocess(self, verbose=True):
         cmd = os.path.join(DOWNWARD_DIR, "preprocess", "preprocess")

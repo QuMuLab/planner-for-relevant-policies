@@ -53,6 +53,8 @@ class ResultFiles(object):
         return self.base_name + ".slog"
     def translate_out(self):
         return self.base_name + ".sas"
+    def translate_group(self):
+        return self.base_name + ".groups"
     def preprocess_out(self):
         return self.base_name + ".pre"
     def search_out(self):
