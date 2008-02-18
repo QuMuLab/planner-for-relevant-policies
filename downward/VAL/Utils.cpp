@@ -29,12 +29,12 @@ namespace VAL {
   
 void replaceSubStrings(string & s,string s1,string s2)
 {
-	unsigned int pos = s.find(s1);
-	unsigned int subPos = pos;
-	unsigned int size = s.size();
+	size_t pos = s.find(s1);
+	size_t subPos = pos;
+	size_t size = s.size();
 	
 	
- 	for(unsigned int count = 1;count < size ; ++count)
+ 	for(size_t count = 1;count < size ; ++count)
  	{
 		if(subPos != string::npos)
 			s.replace(pos,s1.size(),s2);
