@@ -126,7 +126,7 @@
   :parameters (?f1 - floor ?f2 - floor)
   :precondition (and (lift-at ?f1) (above ?f2 ?f1)
                      (forall (?p - passenger)
-			     (imply (going_down ?p)
+			     (imply (going_up ?p)
 				      (not (boarded ?p)))))
   :effect (and (lift-at ?f2) (not (lift-at ?f1))))
 )
