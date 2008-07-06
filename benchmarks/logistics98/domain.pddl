@@ -63,7 +63,7 @@
     ?loc-to
     ?city)
   :precondition
-   (and (TRUCK ?truck) ;(LOCATION ?loc-from) (LOCATION ?loc-to) (CITY ?city)
+   (and (TRUCK ?truck) (LOCATION ?loc-from) (LOCATION ?loc-to) (CITY ?city)
    (at ?truck ?loc-from)
    (in-city ?loc-from ?city)
    (in-city ?loc-to ?city))
