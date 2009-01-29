@@ -15,7 +15,7 @@ MYCODEDIR := .
 
 # makemake variables
 
-DEPENDFLAGS := -g -Wall -Werror
+DEPENDFLAGS := -g -Wall
 
 # C preprocessor (C, C++, FORTRAN)
 

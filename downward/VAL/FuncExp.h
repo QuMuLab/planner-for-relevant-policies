@@ -19,6 +19,7 @@
   http://planning.cis.strath.ac.uk
  ----------------------------------------------------------------------------*/
 #include <iostream>
+#include <cstdlib>
 #include "ptree.h"
 #include "Environment.h"
 #include "Utils.h"
@@ -114,7 +115,7 @@ public:
 				else
 				{
 					cout << "Error: could not find parameter "<<dynamic_cast<const var_symbol*>(*i)->getName()<<"\n";
-					exit(0);
+					std::exit(0);
 				};
 			}
 			else
