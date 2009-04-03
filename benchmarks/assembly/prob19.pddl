@@ -75,7 +75,7 @@
           (part-of hoozawhatsie-29 plug-31)
           (part-of contraption-30 plug-31)
           (transient-part sprocket-32 device-13)
-          (part-of device device-13)
+          ;; (part-of device device-13) ;; BUG: device not defined -- Malte
           (part-of valve-10 device-13)
           (part-of socket-11 device-13)
           (part-of foobar-12 device-13)
@@ -96,7 +96,7 @@
           (part-of doodad connector)
           (part-of sprocket-32 connector)
           (part-of gimcrack doodad)
-          (part-of socket doodad)
+          ;; (part-of socket doodad) ;; BUG: socket not defined -- Malte
           (transient-part plug foobar)
           (part-of hack foobar)
           (part-of doodad-27 foobar)
@@ -120,14 +120,14 @@
           (assemble-order sprocket-32 valve-10 device-13)
           (assemble-order sprocket-32 socket-11 device-13)
           (remove-order valve-10 sprocket-32 device-13)
-          (assemble-order device doodad device-13)
+          ;; (assemble-order device doodad device-13) ;; BUG: device not defined -- Malte
           (assemble-order foobar-12 valve-10 device-13)
           (assemble-order kludge tube-2 hoozawhatsie)
           (assemble-order plug hack wire)
           (assemble-order sprocket-32 valve-10 connector)
           (assemble-order sprocket-32 socket-11 connector)
           (remove-order doodad sprocket-32 connector)
-          (assemble-order socket thingumbob doodad)
+          ;; (assemble-order socket thingumbob doodad) ;; BUG: socket not defined -- Malte
           (assemble-order plug hack foobar)
           (remove-order hack plug foobar)
           (assemble-order doodad-27 hoozawhatsie-29 foobar)

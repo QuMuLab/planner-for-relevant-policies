@@ -131,7 +131,7 @@
           (part-of widget wire)
           (part-of foobar-28 socket)
           (transient-part device socket)
-          (part-of coil device)
+          ;; (part-of coil device) ;; BUG: coil not defined -- Malte
           (part-of frob device)
           (part-of bracket fastener)
           (part-of whatsis fastener)
@@ -185,8 +185,8 @@
           (assemble-order widget valve wire)
           (assemble-order foobar-28 bracket-25 socket)
           (assemble-order device foobar-28 socket)
-          (remove-order contraption device socket)
-          (assemble-order coil plug device)
+          ;; (remove-order contraption device socket) ;; BUG: contraption not defined -- Malte
+          ;; (assemble-order coil plug device) ;; BUG: coil not defined -- Malte
           (assemble-order hoozawhatsie foobar bracket)
           (assemble-order foobar gimcrack bracket)
           (assemble-order foobar gimcrack bracket)

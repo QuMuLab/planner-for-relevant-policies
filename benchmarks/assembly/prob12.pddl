@@ -57,7 +57,7 @@
           (part-of device hack)
           (part-of unit hack)
           (part-of valve hack)
-          (part-of hoozawhatsie foobar-10)
+          ;; (part-of hoozawhatsie foobar-10) ;; BUG: hoozawhatsie not defined -- Malte
           (part-of contraption-32 foobar-10)
           (part-of bracket-9 foobar-10)
           (part-of socket-11 whatsis-14)
@@ -90,7 +90,7 @@
           (part-of sprocket valve)
           (part-of frob valve)
           (part-of contraption valve)
-          (assemble-order hoozawhatsie frob foobar-10)
+          ;; (assemble-order hoozawhatsie frob foobar-10) ;; BUG: hoozawhatsie not defined -- Malte
           (assemble-order widget-12 socket-11 whatsis-14)
           (assemble-order coil-13 widget-12 whatsis-14)
           (assemble-order connector-6 mount-16 thingumbob-7)

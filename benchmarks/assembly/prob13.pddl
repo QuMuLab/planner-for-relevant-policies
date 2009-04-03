@@ -107,6 +107,6 @@
           (assemble-order coil-8 hoozawhatsie-2 widget)
           (assemble-order coil-8 gimcrack-3 widget)
           (assemble-order socket hoozawhatsie-2 mount)
-          (remove-order tube socket mount)
+          ;; (remove-order tube socket mount) ;; BUG: tube not defined -- Malte
           (assemble-order hoozawhatsie-2 gimcrack-3 mount))
    (:goal (complete frob)))

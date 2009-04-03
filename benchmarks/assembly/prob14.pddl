@@ -66,7 +66,7 @@
           (part-of widget-3 socket-1)
           (transient-part mount-4 socket-1)
           (part-of mount-4 widget)
-          (part-of foobar widget)
+          ;; (part-of foobar widget) ;; BUG: foobar not defined -- Malte
           (part-of whatsis sprocket)
           (transient-part doodad sprocket)
           (part-of hoozawhatsie sprocket)
@@ -97,7 +97,7 @@
           (assemble-order mount-4 sprocket-7 socket-1)
           (remove-order sprocket-7 mount-4 socket-1)
           (assemble-order mount-4 sprocket-7 widget)
-          (assemble-order foobar bracket-31 widget)
+          ;; (assemble-order foobar bracket-31 widget) ;; BUG: foobar not defined -- Malte
           (assemble-order whatsis doodad sprocket)
           (assemble-order whatsis hoozawhatsie sprocket)
           (assemble-order doodad hoozawhatsie sprocket)
@@ -106,7 +106,7 @@
           (assemble-order hack kludge hoozawhatsie)
           (assemble-order socket doodad valve)
           (assemble-order doodad hoozawhatsie valve)
-          (remove-order mount doodad valve)
+          ;; (remove-order mount doodad valve) ;; BUG: mount not defined -- Malte
           (assemble-order bracket-31 coil-29 valve)
           (assemble-order plug connector contraption))
    (:goal (complete frob)))

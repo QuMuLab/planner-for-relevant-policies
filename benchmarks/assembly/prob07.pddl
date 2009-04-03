@@ -84,7 +84,7 @@
           (assemble-order socket doodad thingumbob)
           (assemble-order gimcrack tube thingumbob)
           (assemble-order hack connector-5 contraption)
-          (remove-order sprocket hack contraption)
+          ;; (remove-order sprocket hack contraption) ;; BUG: sprocket not defined -- Malte
           (assemble-order connector-5 mount-7 contraption)
           (assemble-order bracket device fastener)
           (assemble-order bracket device fastener)
