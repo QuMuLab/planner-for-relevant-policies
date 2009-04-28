@@ -28,6 +28,7 @@
 
   (:action reset-counter
            :parameters ()
+           :precondition (and)
            :effect (counter-at-zero))
 
 
