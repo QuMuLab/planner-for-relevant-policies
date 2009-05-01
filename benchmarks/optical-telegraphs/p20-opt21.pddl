@@ -1880,7 +1880,7 @@
  
  
   (reads up_station-40 up-20- up-__-pidp1__21_-Rstart)
- 1
+ 
   (writes up_station-40 station-control-19- station-control-_-pid_21_-Wcontrol)
  
  
