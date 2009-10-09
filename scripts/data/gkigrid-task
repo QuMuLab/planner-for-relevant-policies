@@ -1,0 +1,3 @@
+if [[ $SGE_TASK_ID == %(task_num)d ]]; then
+    run-task %(result_dir)s %(realconfig)s %(preprocessed_input)s %(planner_executable)s %(timeout)d %(memory_kb)d
+fi

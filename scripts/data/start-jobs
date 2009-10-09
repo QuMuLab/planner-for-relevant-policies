@@ -1,0 +1,12 @@
+#!/bin/sh
+
+cd jobs
+for JOBDIR in *; do
+    cd $JOBDIR
+    for PBS in *.pbs; do
+	echo starting $JOBDIR/$PBS...
+	qsub -d . $PBS
+    done
+    cd ..
+done
+cd ..
