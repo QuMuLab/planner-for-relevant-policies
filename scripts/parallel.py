@@ -1,5 +1,6 @@
 from optparse import OptionValueError
 import os
+from os.path import join as joinpath
 import shutil
 import socket
 import sys
@@ -27,7 +28,10 @@ def run_jobs(num_processes, jobs, run_job_func):
     tools.log("Using %d processes for %d jobs." % (
         num_processes, len(jobs)))
 
-    queue = Queue.Queue() 
+    queue = Queue.Queue()
+
+    errors = []
+    critical_errors = []
 
     class WorkerThread(threading.Thread):
         def __init__(self, thread_id):
@@ -38,6 +42,7 @@ def run_jobs(num_processes, jobs, run_job_func):
             tools.log("#%d: %s" % (self.thread_id, msg))
 
         def run(self):
+            thread_had_critical_error = False
             try:
                 tmpdir = get_tempdir_name(self.thread_id)
                 try:
@@ -49,27 +54,67 @@ def run_jobs(num_processes, jobs, run_job_func):
                         job = queue.get_nowait()
                     except Queue.Empty:
                         break
-                    pid = os.fork()
-                    if not pid:
-                        # We need to fork because all threads share the same
-                        # working directory.
-                        os.chdir(tmpdir)
-                        run_job_func(job, self.log)
-                        raise SystemExit
-                    os.waitpid(pid, 0)
+                    if not critical_errors:
+                        pid = os.fork()
+                        if not pid:
+                            # We need to fork because all threads share the same
+                            # working directory.
+                            os.chdir(tmpdir)
+                            error = run_job_func(job, self.log)
+                            if error:
+                                open("errmsg", "w").write(error)
+                            raise SystemExit
+                        os.waitpid(pid, 0)
+
+                        if os.listdir(tmpdir) == ["errmsg"]:
+                            error = open(joinpath(tmpdir, "errmsg")).read()
+                            self.log(error)
+                            errors.append(error)
+                            tools.delete_files(["errmsg"], tmpdir)
+                        if os.listdir(tmpdir):
+                            msg = "temp dir %s not empty" % tmpdir
+                            critical_errors.append(msg)
+                            thread_had_critical_error = True
                     queue.task_done()
-                shutil.rmtree(tmpdir, True)
-                self.log("ran out of work")
+                if not thread_had_critical_error:
+                    shutil.rmtree(tmpdir, True)
+                    self.log("ran out of work")
             except KeyboardInterrupt:
                 pass
 
     for job in jobs:
-        queue.put(job) 
+        queue.put(job)
+    threads = []
     for thread_id in range(num_processes):
-        WorkerThread(thread_id).start()
+        thread = WorkerThread(thread_id)
+        thread.start()
+        threads.append(thread)
     try:
         queue.join()
     except KeyboardInterrupt, e:
         tools.log("Interrupted!")
         raise SystemExit(1)
 
+    # Let threads finish after queue is done, so that their final
+    # output is shown before our final output.
+    for thread in threads:
+        thread.join()
+
+    # Policy: critical errors are errors *of this script*. They are
+    # sent to stderr and cause immediate termination. Currently
+    # running jobs may finish, but no new jobs are started.
+    #
+    # "Regular" errors are failures of the invoked program that
+    # indicate bugs (e.g. translator failures) of those programs. Such
+    # errors are printed to stdout and do not cause early termination
+    # of this script.
+    if critical_errors:
+        tools.log("There were critical errors. See details on stderr.")
+        for msg in critical_errors:
+            tools.log("critical error: %s" % msg, stream=sys.stderr)
+        raise SystemExit(1)
+
+    if errors:
+        tools.log("There were errors.")
+        for msg in errors:
+            tools.log("error: %s" % msg)

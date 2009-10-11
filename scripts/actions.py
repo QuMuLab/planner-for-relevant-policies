@@ -4,7 +4,7 @@ import benchmark
 from paths import DOWNWARD_DIR
 import paths
 from tools import (copy_files, move_files, move_optional_files,
-                   make_dir, make_dirs, make_executable)
+                   delete_files, make_dir, make_dirs, make_executable)
 import planner_configurations
 
 
@@ -37,9 +37,14 @@ def do_translate(problem, generate_relaxed_problem=False):
         stderr="translate.err",
         )
     outdir = translate_dir(problem)
-    move_files(TRANSLATE_OUTPUTS, outdir)
     move_files(["translate.log", "status.log"], outdir)
-    move_optional_files(["translate.err"], outdir)
+    if move_optional_files(["translate.err"], outdir):
+        # There was an error.
+        return False
+    else:
+        move_files(TRANSLATE_OUTPUTS, outdir)
+        return True
+    
 
 def do_preprocess(problem):
     copy_files(TRANSLATE_OUTPUTS, ".", src_dir=translate_dir(problem))
@@ -52,9 +57,14 @@ def do_preprocess(problem):
         stderr="preprocess.err",
         )
     outdir = preprocess_dir(problem)
-    move_files(PREPROCESS_OUTPUTS, outdir)
     move_files(["preprocess.log", "status.log"], outdir)
-    move_optional_files(["preprocess.err"], outdir)
+    delete_files(TRANSLATE_OUTPUTS)
+    if move_optional_files(["preprocess.err"], outdir):
+        # There was an error.
+        return False
+    else:
+        move_files(PREPROCESS_OUTPUTS, outdir)
+        return True
 
 def do_search(problem, configname, timeout, memory):
     copy_files(TRANSLATE_OUTPUTS, ".", src_dir=translate_dir(problem))

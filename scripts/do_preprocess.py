@@ -28,8 +28,15 @@ if __name__ == "__main__":
 
     def run_problem(problem, log_func):
         log_func("Translating %s..." % problem)
-        actions.do_translate(problem, generate_relaxed_problem=options.relax)
+        success = actions.do_translate(
+            problem, generate_relaxed_problem=options.relax)
+        if not success:
+            return "Translating %s failed, skipping preprocess." % problem
+            
         log_func("Preprocessing %s..." % problem)
-        actions.do_preprocess(problem)
+        success = actions.do_preprocess(problem)
+        if not success:
+            return "Preprocessing %s failed." % problem
+        return None
 
     parallel.run_jobs(options.jobs, options.suite, run_problem)

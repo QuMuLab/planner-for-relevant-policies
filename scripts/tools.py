@@ -70,7 +70,14 @@ def move_files(filenames, dest_dir, src_dir="."):
         shutil.move(joinpath(src_dir, filename), dest_dir)
 
 
+def delete_files(filenames, dir="."):
+    for filename in filenames:
+        os.remove(joinpath(dir, filename))
+
+
 def move_optional_files(filenames, dest_dir, src_dir="."):
+    # Returns the files that were actually moved.
+    moved = []
     make_dirs(dest_dir)
     for filename in filenames:
         try:
@@ -79,6 +86,9 @@ def move_optional_files(filenames, dest_dir, src_dir="."):
             # Swallow "File not found".
             if e.errno != errno.ENOENT:
                 raise
+        else:
+            moved.append(filename)
+    return moved
 
 
 def make_executable(filename):
@@ -89,11 +99,11 @@ def make_executable(filename):
     os.chmod(filename, mode | exec_mode)
 
 
-def log(msg):
+def log(msg, stream=sys.stdout):
     timestamp = datetime.datetime.now().replace(microsecond=0)
     try:
-        print "[%s] %s" % (timestamp, msg)
-        sys.stdout.flush()
+        print >> stream, "[%s] %s" % (timestamp, msg)
+        stream.flush()
     except IOError, e:
         # Swallow "Broken pipe" which may appear on Ctrl-C when
         # redirecting stdout.
