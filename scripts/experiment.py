@@ -84,7 +84,8 @@ def main():
         
     def run_problem((problem, config), log_func):
         log_func("Solving %s with %s..." % (problem, config))
-        actions.do_search(problem, config, EXPERIMENT["timeout"], EXPERIMENT["memory"])
+        err_msg = actions.do_search(problem, config, EXPERIMENT["timeout"], EXPERIMENT["memory"])
+        return err_msg
    
     tools.log("Solving %d problems in %d configurations." % (
         len(EXPERIMENT["suite_tasks"]), len(EXPERIMENT["configurations"])))

@@ -6,6 +6,7 @@ import paths
 from tools import (copy_files, move_files, move_optional_files,
                    delete_files, make_dir, make_dirs, make_executable)
 import planner_configurations
+import os.path
 
 
 TRANSLATE_OUTPUTS = ["output.sas", "test.groups", "all.groups"]
@@ -67,6 +68,16 @@ def do_preprocess(problem):
         return True
 
 def do_search(problem, configname, timeout, memory):
+    # TODO: Currently, do_search returns an error msg on error and
+    #       None on no error, while do_translate/do_preprocess return
+    #       True/False for success/no success. This should be unified.
+    #       Maybe throw exceptions if something goes wrong? Also,
+    #       maybe we should allow for warnings in addition to errors.
+    #       The "skipped -- dir exists" stuff should maybe just be a
+    #       warning.
+    outdir = search_dir(problem, configname)
+    if os.path.exists(outdir):
+        return "skipped [%s] %s -- dir exists" % (configname, problem)
     copy_files(TRANSLATE_OUTPUTS, ".", src_dir=translate_dir(problem))
     copy_files(PREPROCESS_OUTPUTS, ".", src_dir=preprocess_dir(problem))
     success = benchmark.run(
@@ -78,13 +89,13 @@ def do_search(problem, configname, timeout, memory):
         stdout="search.log",
         stderr="search.err",
         )
-    outdir = search_dir(problem, configname)
     if success:
         move_files(["sas_plan"], outdir)
     move_files(["search.log", "status.log"], outdir)
     move_optional_files(["search.err"], outdir)
     delete_files(PREPROCESS_OUTPUTS)
     delete_files(TRANSLATE_OUTPUTS)
+    return None
 
 
 def prepare_workdir(workdir):
