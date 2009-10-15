@@ -83,6 +83,8 @@ def do_search(problem, configname, timeout, memory):
         move_files(["sas_plan"], outdir)
     move_files(["search.log", "status.log"], outdir)
     move_optional_files(["search.err"], outdir)
+    delete_files(PREPROCESS_OUTPUTS)
+    delete_files(TRANSLATE_OUTPUTS)
 
 
 def prepare_workdir(workdir):
