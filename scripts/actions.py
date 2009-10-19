@@ -162,6 +162,7 @@ def prepare_gkigrid_job_search(jobfile, problems, configs, timeout, memory):
                 "planner_executable": planner_executable(),
                 "realconfig": realconfig,
                 "preprocessed_input": joinpath(preprocess_dir(problem), "output"),
+                "mutex_file": joinpath(translate_dir(problem), "all.groups"),
                 }
             task = task_template % task_params
             jobfile_parts.append(task)

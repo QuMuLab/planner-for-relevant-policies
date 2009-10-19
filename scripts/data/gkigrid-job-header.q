@@ -18,9 +18,10 @@
 function run-task-wrapped {
     REALCONFIG=$1
     PREPROCESSED_INPUT=$2
-    PLANNER_EXECUTABLE=$3
-    TIMEOUT=$4
-    MEMORY_KB=$5
+    MUTEX_FILE=$3
+    PLANNER_EXECUTABLE=$4
+    TIMEOUT=$5
+    MEMORY_KB=$6
     pwd
     date
     hostname
@@ -34,6 +35,7 @@ function run-task-wrapped {
     cat /proc/meminfo
     echo
     echo Starting planner...
+    cp $MUTEX_FILE all.groups
     (
 	ulimit -c 0
 	ulimit -t $TIMEOUT
@@ -43,6 +45,7 @@ function run-task-wrapped {
     echo exit code: $?
     times
     date
+    rm -f all.groups
     echo Done.
 }
 
