@@ -9,13 +9,14 @@ import group_keys
 
 
 class SasTask(object):
-    def __init__(self, name, variables, initial_state, goals, operators, axioms):
+    def __init__(self, name, variables, initial_state, goals, operators, axioms, metric):
         self.name = name
         self.variables = variables
         self.initial_state = initial_state
         self.goals = goals
         self.operators = operators
         self.axioms = axioms
+        self.metric = metric
 
     def dump(self):
         print "Task %s" % self.name
@@ -72,12 +73,13 @@ class Proposition(object):
 
 
 class Operator(object):
-    def __init__(self, name, precond, effects):
+    def __init__(self, name, precond, effects, cost):
         # Note that we compile away "prevail conditions" and
         # "preconditions" into a single set of "preconditions".
         self.name = name
         self.precond = precond
         self.effects = effects
+        self.cost = cost
 
     def dump(self):
         print self.name
@@ -124,6 +126,7 @@ def read(filename, key_filename):
 
 def parse(name, lines, key):
     iter = LookaheadIterator(lines)
+    metric = parse_metric(iter)
     variables = parse_variables(iter, key)
     symtab = SymbolTable(variables)
     init = parse_initial_state(iter, len(variables), symtab)
@@ -133,7 +136,7 @@ def parse(name, lines, key):
     if iter.peek() is not None:
         raise ValueError(iter.next())
     assert_layering_rule(init, axioms)
-    return SasTask(name, variables, init, goals, operators, axioms)
+    return SasTask(name, variables, init, goals, operators, axioms, metric)
 
 
 # generic helper functions for parsing
@@ -162,6 +165,12 @@ def assert_vars_unique(propositions):
     
 
 # functions that do the legwork of parsing
+def parse_metric(iter):
+    match(iter, "begin_metric")
+    metric = match_int(iter)
+    match(iter, "end_metric")
+    return metric
+
 def parse_variables(iter, key):
     match(iter, "begin_variables")
     data = match_counted_tuples(iter, str, int, int)
@@ -223,9 +232,10 @@ def parse_operator(iter, symtab):
         effect_prop = symtab[var_no, post_no]
         assert not effect_prop.var.is_axiom
         effects.append((effconds, effect_prop))
+    cost = match_int(iter)
     match(iter, "end_operator")
     assert_vars_unique(precond)
-    return Operator(name, precond, effects)
+    return Operator(name, precond, effects, cost)
 
 def parse_axioms(iter, symtab):
     axiom_count = match_int(iter)
