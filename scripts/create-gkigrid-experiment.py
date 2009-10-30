@@ -8,7 +8,7 @@ import tools
 
 
 TIMEOUT = 1800
-MEMORY = 1024 + 512 ## TODO: 2048 in final paper?
+MEMORY = 2048
 
 CONFIGURATIONS = [
     "oaX", # A* with merge-and-shrink; domain-dependent parameters
