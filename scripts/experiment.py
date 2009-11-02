@@ -7,7 +7,8 @@ import parallel
 import suites
 import tools
 
-EXPERIMENT = {"timeout": 1800, "memory": 2048, "suite": None, "configurations": None}
+EXPERIMENT = {"timeout": 1800, "memory": 2048, "suite": None, "configurations": None,
+              "debug": False}
 # defaults; updated with experiment specification and command line parameters
 
 HELP='''Run certain CONFIGURATIONs of the search component on the
@@ -45,7 +46,11 @@ def parse_options():
     parser.add_option(
         "-m", "--memory", action="store", type=int, dest="memory",
         help="memory limit per task in MB (default is 2048)")
-   
+    parser.add_option(
+        "-d", "--debug", action="store_true", dest="debug",
+        help="quick test mode: run search executable compiled with debug information, " + \
+        "translate and preprocess if necessary, always conduct fresh search, " + \
+        "print output to screen")
     options, args = parser.parse_args()
     assert len(args) == 0
     return options
@@ -84,7 +89,8 @@ def main():
         
     def run_problem((problem, config), log_func):
         log_func("Solving %s with %s..." % (problem, config))
-        err_msg = actions.do_search(problem, config, EXPERIMENT["timeout"], EXPERIMENT["memory"])
+        err_msg = actions.do_search(problem, config, EXPERIMENT["timeout"], EXPERIMENT["memory"],
+                                    EXPERIMENT["debug"])
         return err_msg
    
     tools.log("Solving %d problems in %d configurations." % (

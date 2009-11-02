@@ -25,6 +25,8 @@ def search_dir(prob, config):
 def planner_executable():
     return joinpath(DOWNWARD_DIR, "search", "release-search")
 
+def planner_debug_executable():
+    return joinpath(DOWNWARD_DIR, "search", "search")
 
 def do_translate(problem, generate_relaxed_problem=False):
     if generate_relaxed_problem:
@@ -67,7 +69,7 @@ def do_preprocess(problem):
         move_files(PREPROCESS_OUTPUTS, outdir)
         return True
 
-def do_search(problem, configname, timeout, memory):
+def do_search(problem, configname, timeout, memory, debug=False):
     # TODO: Currently, do_search returns an error msg on error and
     #       None on no error, while do_translate/do_preprocess return
     #       True/False for success/no success. This should be unified.
@@ -75,24 +77,48 @@ def do_search(problem, configname, timeout, memory):
     #       maybe we should allow for warnings in addition to errors.
     #       The "skipped -- dir exists" stuff should maybe just be a
     #       warning.
-    outdir = search_dir(problem, configname)
-    if os.path.exists(outdir):
-        return "skipped [%s] %s -- dir exists" % (configname, problem)
+    if debug and not os.path.exists(translate_dir(problem)):
+        # Do not abort if translation does not exist. Don't store search output.
+        # (Instead, translate if necessary and always search.)
+        print "Translating and Preprocessing..."
+        success = do_translate(problem)
+        if not success:
+            return "Translating %s failed." % problem
+        success = do_preprocess(problem)
+        if not success:
+            return "Preprocessing %s failed." % problem
     copy_files(TRANSLATE_OUTPUTS, ".", src_dir=translate_dir(problem))
     copy_files(PREPROCESS_OUTPUTS, ".", src_dir=preprocess_dir(problem))
-    success = benchmark.run(
-        cmd=[planner_executable()]+planner_configurations.get_config(configname),
-        timeout=timeout,
-        memory=memory,
-        status="status.log",
-        stdin="output",
-        stdout="search.log",
-        stderr="search.err",
-        )
-    if success:
-        move_files(["sas_plan"], outdir)
-    move_files(["search.log", "status.log"], outdir)
-    move_optional_files(["search.err"], outdir)
+    if debug: # Write planner output to screen instead of file.
+        planner = planner_debug_executable()
+        success = benchmark.run(
+            cmd=[planner]+planner_configurations.get_config(configname),
+            timeout=timeout,
+            memory=memory,
+            status="status.log",
+            stdin="output",
+            )
+        if success:
+            delete_files(["sas_plan"])
+            delete_files(["status.log"])
+    else:
+        outdir = search_dir(problem, configname)
+        if os.path.exists(outdir):
+            return "skipped [%s] %s -- dir exists" % (configname, problem)
+        planner = planner_executable()
+        success = benchmark.run(
+            cmd=[planner]+planner_configurations.get_config(configname),
+            timeout=timeout,
+            memory=memory,
+            status="status.log",
+            stdin="output",
+            stdout="search.log",
+            stderr="search.err",
+            )
+        if success:
+            move_files(["sas_plan"], outdir)
+            move_files(["search.log", "status.log"], outdir)
+            move_optional_files(["search.err"], outdir)
     delete_files(PREPROCESS_OUTPUTS)
     delete_files(TRANSLATE_OUTPUTS)
     return None
