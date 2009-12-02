@@ -49,6 +49,7 @@ class Problem(object):
     def domain_file(self):
         domain_basenames = ["domain.pddl",
                             self.problem[:4] + "domain.pddl",
+                            self.problem[:3] + "-domain.pddl",
                             "domain_" + self.problem]
         domain_dir = os.path.join(BENCHMARKS_DIR, self.domain)
         return tools.find_file(domain_basenames, domain_dir)
