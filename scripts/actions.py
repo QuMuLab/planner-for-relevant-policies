@@ -77,6 +77,14 @@ def do_search(problem, configname, timeout, memory, debug=False):
     #       maybe we should allow for warnings in addition to errors.
     #       The "skipped -- dir exists" stuff should maybe just be a
     #       warning.
+    outdir = search_dir(problem, configname)
+    if not debug:
+        if os.path.exists(outdir):
+            return "skipped [%s] %s -- dir exists" % (configname, problem)
+        elif not os.path.exists(translate_dir(problem)):
+            return "Translated files for %s not available." % problem
+        elif not os.path.exists(preprocess_dir(problem)):
+            return "Preprocessed files for %s not available." % problem
     if debug and not os.path.exists(translate_dir(problem)):
         # Do not abort if translation does not exist. Don't store search output.
         # (Instead, translate if necessary and always search.)
@@ -102,9 +110,6 @@ def do_search(problem, configname, timeout, memory, debug=False):
             delete_files(["sas_plan"])
             delete_files(["status.log"])
     else:
-        outdir = search_dir(problem, configname)
-        if os.path.exists(outdir):
-            return "skipped [%s] %s -- dir exists" % (configname, problem)
         planner = planner_executable()
         success = benchmark.run(
             cmd=[planner]+planner_configurations.get_config(configname),
@@ -117,8 +122,8 @@ def do_search(problem, configname, timeout, memory, debug=False):
             )
         if success:
             move_files(["sas_plan"], outdir)
-            move_files(["search.log", "status.log"], outdir)
-            move_optional_files(["search.err"], outdir)
+        move_files(["search.log", "status.log"], outdir)
+        move_optional_files(["search.err"], outdir)
     delete_files(PREPROCESS_OUTPUTS)
     delete_files(TRANSLATE_OUTPUTS)
     return None
