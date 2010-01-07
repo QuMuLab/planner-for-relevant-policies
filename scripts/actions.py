@@ -22,17 +22,25 @@ def search_dir(prob, config):
     return joinpath(paths.RESULTS_DIR, "search", "version-%s" % config,
                     prob.domain, prob.problem)
 
+def translator_executable(relaxed=False):
+    basedir = joinpath(DOWNWARD_DIR, "translate")
+    if relaxed:
+        return joinpath(basedir, "translate-relaxed.py")
+    else:
+        return joinpath(basedir, "translate.py")
+    
+def preprocessor_executable():
+    return joinpath(DOWNWARD_DIR, "preprocess", "preprocess")
+    
 def planner_executable():
     return joinpath(DOWNWARD_DIR, "search", "release-search")
 
 def planner_debug_executable():
     return joinpath(DOWNWARD_DIR, "search", "search")
 
+
 def do_translate(problem, generate_relaxed_problem=False):
-    if generate_relaxed_problem:
-        executable = joinpath(DOWNWARD_DIR, "translate", "translate-relaxed.py")
-    else:
-        executable = joinpath(DOWNWARD_DIR, "translate", "translate.py")
+    executable = translator_executable(relaxed=generate_relaxed_problem)
     benchmark.run(
         cmd=[executable, problem.domain_file(), problem.problem_file()],
         status="status.log",
@@ -51,7 +59,7 @@ def do_translate(problem, generate_relaxed_problem=False):
 
 def do_preprocess(problem):
     copy_files(TRANSLATE_OUTPUTS, ".", src_dir=translate_dir(problem))
-    executable = joinpath(DOWNWARD_DIR, "preprocess", "preprocess")
+    executable = preprocessor_executable()
     benchmark.run(
         cmd=[executable],
         status="status.log",
@@ -68,6 +76,7 @@ def do_preprocess(problem):
     else:
         move_files(PREPROCESS_OUTPUTS, outdir)
         return True
+
 
 def do_search(problem, configname, timeout, memory, debug=False):
     # TODO: Currently, do_search returns an error msg on error and
@@ -198,6 +207,48 @@ def prepare_gkigrid_job_search(jobfile, problems, configs, timeout, memory):
             task = task_template % task_params
             jobfile_parts.append(task)
             task_num += 1
+
+    open(jobfile, "w").write("".join(jobfile_parts))
+    make_executable(jobfile)
+
+
+def prepare_gkigrid_job_preprocess(jobfile, problems, timeout):
+    num_tasks = len(problems)
+    jobfile_base = splitext(jobfile)[0]
+
+    driver_params = {
+        "logfile": jobfile_base + ".log",
+        "errfile": jobfile_base + ".err",
+        "driver_timeout": 2 * timeout + 30,
+        "num_tasks": num_tasks,
+        }
+
+    header_template = open("data/gkigrid-preprocess-job-header.q").read()
+    header = (header_template % driver_params).rstrip("\n") + "\n"
+
+    task_template = open("data/gkigrid-preprocess-task").read()
+    task_template = task_template.rstrip("\n") + "\n"
+
+    jobfile_parts = [header]
+
+    task_num = 1
+    for problem in problems:
+        trans_result_dir = translate_dir(problem)
+        pre_result_dir = preprocess_dir(problem)
+        task_params = {
+            "task_num": task_num,
+            "pddl_domain": problem.domain_file(),
+            "pddl_problem": problem.problem_file(),
+            "translator_executable": translator_executable(),
+            "translator_timeout": timeout,
+            "translate_dir": translate_dir(problem),
+            "preprocessor_executable": preprocessor_executable(),
+            "preprocessor_timeout": timeout,
+            "preprocess_dir": preprocess_dir(problem),
+            }
+        task = task_template % task_params
+        jobfile_parts.append(task)
+        task_num += 1
 
     open(jobfile, "w").write("".join(jobfile_parts))
     make_executable(jobfile)
