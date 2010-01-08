@@ -55,7 +55,7 @@ def compare_pair(dirname1, dirname2, results):
     commonly_solved_times = []
     differences = []
     ratios = []
-    ROUND_UP_TO = 0.1
+    ROUND_UP_TO = 1.0
     for task, result in sorted(results.iteritems()):
         time1 = result.get(dirname1)
         time2 = result.get(dirname2)
