@@ -25,13 +25,13 @@ TRANSLATE_URL=svn+ssh://downward/branches/translate-andrew/downward/translate
 
 ## SUITE_1 is run with LM-cut and with merge-and-shrink (using A*)
 ## SUITE_2 is run with FF and with h^cea (using greedy BFS and pref. ops)
-SUITE="gripper grid"
-SUITE_1="grid"
-SUITE_2="gripper grid"
+# SUITE="gripper grid"
+# SUITE_1="grid"
+# SUITE_2="gripper grid"
 
-# SUITE="ALL openstacks-strips pathways-noneg trucks-strips"
-# SUITE_1="LMCUT_DOMAINS"
-# SUITE_2="ALL"
+SUITE="ALL openstacks-strips pathways-noneg trucks-strips"
+SUITE_1="LMCUT_DOMAINS"
+SUITE_2="ALL"
 
 if [[ $# == 0 ]]; then
     ## If called without arguments, compare the following revisions:
