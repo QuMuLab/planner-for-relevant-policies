@@ -56,7 +56,7 @@ function test-revision {
     ln -s ../../issue7/downward/search .
     svn checkout $TRANSLATE_URL@$REV
     cd ..
-    svn checkout svn+ssh://downward/trunk/scripts
+    svn checkout svn+ssh://downward/trunk/scripts@$TRUNK_REV
     cd scripts
     cp ../../support/create-gkigrid-experiment-{1,2}.py .
     PRE_SCRIPT=r$REV-preprocess.q
