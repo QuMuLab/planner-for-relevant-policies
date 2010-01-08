@@ -43,9 +43,12 @@ already been done and proceed directly to the actual experiment.
 Analyzing the results
 =====================
 
-# ./quick-count-issue7
-=> Give coverage statistics for the search component.
+# ./time-comparison.py issue7-r*
+=> Give statistics on runtime of the translator version
 
 # ./quick-check-sasplus-issue7
 => Give statistics about where the translator introduced conditional
    effects or derived variables.
+
+# ./quick-count-issue7
+=> Give coverage statistics for the search component.

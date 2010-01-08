@@ -1,2 +1,10 @@
 #! /bin/bash
-./check-sasplus.py issue7-r*/results/preprocess/*/*/output
+
+for revdir in issue7-r*; do
+    REV=${revdir/issue7-r/}
+    LOG=SASPLUS.r$REV
+    echo generating $LOG...
+    ./check-sasplus.py $revdir/results/preprocess/*/*/output | \
+        sed -e "s|$revdir/results/preprocess/||" > $LOG
+done
+echo Analysis completed. Run diff or meld to compare.
