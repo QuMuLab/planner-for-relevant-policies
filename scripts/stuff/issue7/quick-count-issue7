@@ -1,0 +1,6 @@
+#! /bin/bash
+
+for x in issue7-r*/results/search/version-*; do
+    echo -n "$x "
+    ls $x/*/*/sas_plan | wc -l
+done

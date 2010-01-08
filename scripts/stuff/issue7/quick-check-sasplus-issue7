@@ -1,0 +1,2 @@
+#! /bin/bash
+./check-sasplus.py issue7-r*/results/preprocess/*/*/output
