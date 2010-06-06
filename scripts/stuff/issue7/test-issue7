@@ -22,6 +22,7 @@ which qsub > /dev/null || {
 }
 
 TRANSLATE_URL=svn+ssh://downward/branches/translate-andrew/downward/translate
+TRANSLATE_ALT_URL=svn+ssh://downward/trunk/downward/translate
 
 ## SUITE_1 is run with LM-cut and with merge-and-shrink (using A*)
 ## SUITE_2 is run with FF and with h^cea (using greedy BFS and pref. ops)
@@ -55,7 +56,7 @@ function test-revision {
     cd downward
     ln -s ../../issue7/downward/preprocess .
     ln -s ../../issue7/downward/search .
-    svn checkout $TRANSLATE_URL@$REV
+    svn checkout $TRANSLATE_URL@$REV || svn checkout $TRANSLATE_ALT_URL@$REV
     cd ..
     svn checkout svn+ssh://downward/trunk/scripts@$TRUNK_REV
     cd scripts
