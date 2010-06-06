@@ -35,7 +35,7 @@ that case, it's possible to do the setup on (e.g.) alfons, and then
 the actual experiment on (e.g.) habakuk.
 
 Just run "test-issue7" on alfons first. It will do the setup step and
-then abort because it notices that qsub is not available. The run
+then abort because it notices that qsub is not available. Then run
 "test-issue7" on habakuk. It will notice that the setup step has
 already been done and proceed directly to the actual experiment.
 
