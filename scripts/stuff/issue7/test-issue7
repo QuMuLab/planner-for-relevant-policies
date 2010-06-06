@@ -38,7 +38,8 @@ if [[ $# == 0 ]]; then
     ## 3827 -- old trunk (before Andrew's patch)
     ## 3829 -- Andrew's patch (with bugfix from msg185 in issue7)
     ## 3840 -- final revision in the branch
-    REVS="3827 3829 3840"
+    ## 4283 -- after disabling ADD_IMPLIED_PRECONDITIONS, see msg325 in issue7.
+    REVS="3827 3829 3840 4283"
 else
     REVS="$@"
 fi
