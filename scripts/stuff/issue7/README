@@ -52,3 +52,7 @@ Analyzing the results
 
 # ./quick-count-issue7
 => Give coverage statistics for the search component.
+
+# ./quick-count-bydomain-issue7
+=> Give coverage statistics for the search component on a domain-by-domain
+   basis.
