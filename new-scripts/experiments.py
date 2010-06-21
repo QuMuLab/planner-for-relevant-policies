@@ -9,8 +9,18 @@ from optparse import OptionParser, OptionValueError
 import logging
 import math
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)8s %(message)s',)
+                    
+
+class ExperimentType(object):
+    ARGO = 'argo'
+    LOCAL = 'local'
+    GKIGRID = 'gkigrid'
+    
+    @classmethod
+    def types(cls):
+        return filter(str.isupper, dir(cls))
 
 
 def divide_list(seq, size):
@@ -19,11 +29,12 @@ def divide_list(seq, size):
     [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9]]
     '''
     return [seq[i:i+size] for i  in range(0, len(seq), size)]
+    
 
 def overwrite_dir(dir):
     if os.path.exists(dir):
         shutil.rmtree(dir)
-    os.mkdir(dir)
+    os.makedirs(dir)
     
     
 
@@ -34,9 +45,18 @@ class Experiment(object):
         self.__dict__.update(options.__dict__)
         
         self.runs = []
-        
-        self.base_dir = os.path.join(self.exp_root_dir, self.exp_name)
         self.resources = []
+        self.env_vars = {}
+        
+        if self.exp_root_dir:
+            self.base_dir = os.path.join(self.exp_root_dir, self.exp_name)
+        else:
+            module_dir = os.path.dirname(__file__)
+            self.base_dir = os.path.join(module_dir, self.exp_name)
+        self.base_dir = os.path.abspath(self.base_dir)
+        logging.info('Base Dir: "%s"' % self.base_dir)
+        
+        
         
     def add_resource(self, resource_name, source, dest):
         '''
@@ -49,7 +69,10 @@ class Experiment(object):
         main directory of the experiment. The name "PLANNER" is an ID for
         this resource that can also be used to refer to it in shell scripts.
         '''
-        self.resources.append((resource_name, source, dest))
+        dest = self._get_abs_path(dest)
+        self.resources.append((source, dest))
+        if resource_name:
+            self.env_vars[resource_name] = dest
         
     def add_run(self, run=None):
         '''
@@ -68,7 +91,19 @@ class Experiment(object):
         
         self._set_run_dirs()
         self._build_main_script()
+        self._build_resources()
         self._build_runs()
+        
+        
+    def _get_abs_path(self, rel_path):
+        '''
+        Return absolute dir by applying rel_path to the experiment's base dir
+        
+        Example:
+        >>> _get_abs_path('mytest.q')
+        /home/user/mytestjob/mytest.q
+        '''
+        return os.path.join(self.base_dir, rel_path)
         
 
     def _set_run_dirs(self):
@@ -95,14 +130,15 @@ class Experiment(object):
             for run in shard:
                 current_run += 1
                 rel_dir = os.path.join(get_shard_dir(shard_number), get_run_number(current_run))
-                run.rel_dir = rel_dir
+                abs_dir = os.path.join(self.base_dir, rel_dir)
+                run.dir = abs_dir
         
         
     def _build_main_script(self):
         '''
         Generates the main script
         '''
-        if self.exp_type == 'gkigrid':
+        if self.type == 'gkigrid':
             num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
             job_params = {
                 "logfile": self.exp_name + ".log",
@@ -121,7 +157,7 @@ class Experiment(object):
                 script += 'if [[ $SGE_TASK_ID == %s ]]; then\n' % task_id
                 for run in run_group:
                     # Here we need the relative directory
-                    script += '  ./%s/invoke\n' % run.rel_dir
+                    script += '  ./%s/invoke\n' % run.dir
                 script += 'fi\n'
                             
             
@@ -131,6 +167,15 @@ class Experiment(object):
             
             with open(filename, 'w') as file:
                 file.write(script)
+                
+    def _build_resources(self):
+        for source, dest in self.resources:
+            logging.debug('Copying %s to %s' % (source, dest))
+            try:
+                shutil.copy2(source, dest)
+            except IOError, err:
+                raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
+                                (source, dest, err))
                 
                 
     def _build_runs(self):
@@ -153,11 +198,11 @@ class Run(object):
     def __init__(self, experiment):
         self.experiment = experiment
         
-        # Save the directory relative to the main directory
-        self.rel_dir = ''
+        self.dir = ''
         
         self.resources = []
-        self.env_vars = []
+        self.linked_resources = []
+        self.env_vars = {}
         self.new_files = []
         
         self.command = ''
@@ -166,20 +211,24 @@ class Run(object):
         
         self.add_resource('', 'data/gkigrid-invoke-template', 'invoke')
         
-    #def require_resource(self, resource_name):
-    #    '''
-    #    Example:
-    #    >>> run.require_resource("PLANNER")
-    #    
-    #    Make the planner resource available for this task.variable
-    #    In environments like the argo cluster, this implies
-    #    copying the planner into each task. For the gkigrid, we merely
-    #    need to set up the PLANNER environment variable.
-    #    '''
-    
-    # TODO: Discuss:
-    # The require_resource method should be redundant.
-    # We can use experiment.add_resource instead.
+        
+    def require_resource(self, resource_name):
+        '''
+        Some resources can be used by linking to the resource in the 
+        experiment directory without copying it into each run
+        
+        In the argo cluster however, requiring a resource implies copying it
+        into the task directory.
+        
+        Example:
+        >>> run.require_resource("PLANNER")
+        
+        Make the planner resource available for this run
+        In environments like the argo cluster, this implies
+        copying the planner into each task. For the gkigrid, we merely
+        need to set up the PLANNER environment variable.
+        '''
+        self.linked_resources.append(resource_name)
         
         
     def add_resource(self, resource_name, source, dest):
@@ -191,12 +240,12 @@ class Run(object):
         Copy "../benchmarks/gripper/domain.pddl" into the run
         directory under name "domain.pddl" and make it available as
         resource "DOMAIN" (usable as environment variable $DOMAIN).
-        '''
+        '''        
         self.resources.append((source, dest))
         if resource_name:
-            self.env_vars.append((resource_name, dest))
-        
-        
+            self.env_vars[resource_name] = dest
+            
+                    
     def set_command(self, command):
         '''
         Example:
@@ -250,10 +299,7 @@ class Run(object):
         After having made all the necessary adjustments with the methods above,
         this method can be used to write everything to the disk. 
         '''
-        assert self.rel_dir
-        
-        # Make the directory relative to the directory of this script
-        self.dir = os.path.join(self.experiment.base_dir, self.rel_dir)
+        assert self.dir
         
         overwrite_dir(self.dir)
         self._build_run_script()
@@ -264,12 +310,16 @@ class Run(object):
         if not self.command:
             raise SystemExit('You have to specify a command via run.set_command()')
             
+        self.experiment.env_vars.update(self.env_vars)
+        self.env_vars = self.experiment.env_vars.copy()
+            
         if self.env_vars:
             env_vars_text = ''
-            for var, filename in self.env_vars:
+            for var, filename in sorted(self.env_vars.items()):
+                filename = self._get_abs_path(filename)
                 env_vars_text += 'os.environ["%s"] = "%s"\n' % (var, filename)
         else:
-            env_vars_text = '"Here you would find the declaration of envirionment variables"'
+            env_vars_text = '"Here you would find the declaration of environment variables"'
             
         run_script = open('data/gkigrid-run-template.py').read()
         replacements = {'ENVIRONMENT_VARIABLES': env_vars_text,
@@ -287,23 +337,48 @@ class Run(object):
         
     def _build_resources(self):
         for name, content in self.new_files:
-            filename = os.path.join(self.dir, name)
+            filename = self._get_abs_path(name)
             with open(filename, 'w') as file:
-                logging.info('Writing file "%s"' % filename)
+                logging.debug('Writing file "%s"' % filename)
                 file.write(content)
                 if name == 'run':
                     # Make run script executable
                     os.chmod(filename, 0755)
                     
+        # build linked resources
+        # Determine if we should link (gkigrid) or copy (argo)
+        copy = self.experiment.type == ExperimentType.ARGO
+        if copy:
+            # Copy into run dir by adding the linked resource to normal 
+            # resources list
+            for resource_name in self.linked_resources:
+                source = self.experiment.env_vars.get(resource_name, None)
+                if not source:
+                    logging.error('If you require a resource you have to add it '
+                                    'to the experiment')
+                    sys.exit(1)
+                basename = os.path.basename(source)
+                dest = self._get_abs_path(basename)
+                self.resources.append((source, dest))
                 
         for source, dest in self.resources:
-            dest = os.path.join(self.dir, dest)
-            logging.info('Copying %s to %s' % (source, dest))
+            dest = self._get_abs_path(dest)
+            logging.debug('Copying %s to %s' % (source, dest))
             try:
                 shutil.copy2(source, dest)
             except IOError, err:
                 raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
+                                
+        
+    def _get_abs_path(self, rel_path):
+        '''
+        Example:
+        >>> _get_abs_path('invoke')
+        /home/user/mytestjob/runs-00001-00100/invoke
+        '''
+        return os.path.join(self.dir, rel_path)
+        
         
         
         
@@ -320,13 +395,22 @@ def parse_options():
             self.print_help()
             OptionParser.error(self, msg)
       
-    exp_types = ['gkigrid']#, 'local']
+    exp_types = ExperimentType.types()
 
     parser = ExpOptionParser("usage: %prog [options]")
     
+    #parser.add_option(
+    #    "--type", action="store", dest="exp_type", default="",
+    #    help="type of the experiment (allowed values: %s)" % exp_types)
     parser.add_option(
-        "--type", action="store", dest="exp_type", default="",
-        help="type of the experiment (allowed values: %s)" % exp_types)
+        "--local", action="store_true", dest="local",
+        help="make a local experiment (allowed values: %s)" % exp_types)
+    parser.add_option(
+        "--gkigrid", action="store_true", dest="gkigrid",
+        help="make a gkigrid experiment (allowed values: %s)" % exp_types)
+    parser.add_option(
+        "--argo", action="store_true", dest="argo",
+        help="make an argo experiment (allowed values: %s)" % exp_types)
     parser.add_option(
         "-n", "--name", action="store", dest="exp_name", default="",
         help="name of the experiment (e.g. <initials>-<descriptive name>)")
@@ -348,8 +432,8 @@ def parse_options():
         help="how many runs to put into one task (default is 1)")
     parser.add_option(
         "--exp-root-dir", action="store", dest="exp_root_dir",
-        default='../results',
-        help="directory where all experiments are located (default is '../results'). " \
+        default='',
+        help="directory where this experiment should be located (default is this folder). " \
                 "The new experiment will reside in <exp-root-dir>/<exp-name>")
     parser.add_option(
         "-d", "--debug", action="store_true", dest="debug",
@@ -361,10 +445,22 @@ def parse_options():
     
     if not options.exp_name:
         raise parser.error("You need to specify an experiment name")
+    
+    options.type = None
+    if options.local:
+        options.type = ExperimentType.LOCAL
+    elif options.gkigrid:
+        options.type = ExperimentType.GKIGRID
+    elif options.argo:
+        options.type = ExperimentType.ARGO
+    
+    if options.type is None:
+        options.type = ExperimentType.GKIGRID
+    
         
-    options.exp_type = options.exp_type.lower()
-    if options.exp_type not in exp_types:
-        parser.error('You need to specify one of %s as the experiment type' % exp_types)
+    #options.exp_type = options.exp_type.lower()
+    #if options.exp_type not in exp_types:
+    #    parser.error('You need to specify one of %s as the experiment type' % exp_types)
     
     assert len(args) == 0
     return options

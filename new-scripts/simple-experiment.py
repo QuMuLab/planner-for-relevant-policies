@@ -21,14 +21,12 @@ experiment.add_resource("PLANNER", "../downward/search/release-search",
 ## main directory of the experiment. The name "PLANNER" is an ID for
 ## this resource that can also be used to refer to it in shell scripts.
 
-for prob_no in xrange(1, 20 + 1):
+for prob_no in xrange(1, 5 + 1):
     for options in ["ou", "fF"]:
         prob_path = "gripper/prob%02d.pddl" % prob_no
         #run = experiments.Run()
         run = experiment.add_run()
-        #run.require_resource("PLANNER")
-        run.add_resource("PLANNER", "../downward/search/release-search",
-                        "release-search")
+        run.require_resource("PLANNER")
         # Make the planner resource available for this task.variable
         # In environments like the argo cluster, this implies
         # copying the planner into each task. For the gkigrid, we merely
@@ -44,7 +42,7 @@ for prob_no in xrange(1, 20 + 1):
         run.add_resource(
             "INFILE", "../results/preprocess/%s/output" % prob_path,
             "output")
-        run.set_command("./$PLANNER %s < $INFILE" % options)
+        run.set_command("$PLANNER %s < $INFILE" % options)
         ## A bash fragment that gives the code to be run when invoking
         ## this job.
         run.set_preprocess('ls -l')
