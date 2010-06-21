@@ -39,9 +39,25 @@ set_limit(resource.RLIMIT_CPU, timeout)
 set_limit(resource.RLIMIT_AS, memory)
 set_limit(resource.RLIMIT_CORE, 0)
 
+start_time = time.clock()
+term_attempted = False
 
 run = subprocess.Popen("""***RUN_COMMAND***""", shell=True, **redirects)
-run.wait()
+
+while True:
+    time.sleep(CHECK_INTERVAL)
+    
+    alive = run.poll() is None
+    if not alive:
+        break
+        
+    passed_time = time.clock() - start_time
+    if passed_time > timeout and not term_attempted:
+        run.terminate()
+        term_attempted = True
+    elif passed_time > timeout + KILL_DELAY and term_attempted:
+        run.kill()
+        break
 
 # Save the returncode in an environment variable
 os.environ['RETURNCODE'] = str(run.returncode)
