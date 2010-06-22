@@ -1,11 +1,20 @@
 #! /usr/bin/env python
+'''
+Todo:
+X Inherit options
+O optional/required outputs (warnings if more output)
+X Inherit from Experiment
+X Put invoke code into run
+O Write planner script
+X CL option for queue
+'''
 
 from __future__ import with_statement
 
 import os
 import sys
 import shutil
-from optparse import OptionParser, OptionValueError
+from optparse import OptionParser, OptionValueError, BadOptionError, Option
 import logging
 import math
 
@@ -37,10 +46,114 @@ def overwrite_dir(dir):
     os.makedirs(dir)
     
     
+    
+def parse_comma_list(option, opt, value, parser):
+      setattr(parser.values, option.dest, value.split(','))
+      
+      
+class ExtOption(Option):
+    '''
+    This extended option allows comma-separated commandline options
+    Strings that represent integers are automatically converted to ints
+    
+    Example:
+    python myprog.py -a foo,bar -b aha -a oho,3
+    '''
+
+    ACTIONS = Option.ACTIONS + ("extend",)
+    STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
+    TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
+    ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + ("extend",)
+    
+    def try_str_to_int(self, string):
+        try:
+            integer = int(string)
+            return integer
+        except ValueError:
+            return string
+
+    def convert_list(self, list):
+        return map(self.try_str_to_int, list)
+
+    def take_action(self, action, dest, opt, value, values, parser):
+        if action == "extend":
+            lvalue = value.split(",")
+            values.ensure_value(dest, []).extend(self.convert_list(lvalue))
+        else:
+            Option.take_action(
+                self, action, dest, opt, value, values, parser)
+      
+
+class ExpOptionParser(OptionParser):
+    def __init__(self, *args, **kwargs):
+        OptionParser.__init__(self, option_class=ExtOption, *args, **kwargs)
+      
+        exp_types = ExperimentType.types()
+        
+        #parser.add_option(
+        #    "--type", action="store", dest="exp_type", default="",
+        #    help="type of the experiment (allowed values: %s)" % exp_types)
+        self.add_option(
+            "--local", action="store_true", dest="local",
+            help="make a local experiment (allowed values: %s)" % exp_types)
+        self.add_option(
+            "--gkigrid", action="store_true", dest="gkigrid",
+            help="make a gkigrid experiment (allowed values: %s)" % exp_types)
+        self.add_option(
+            "--argo", action="store_true", dest="argo",
+            help="make an argo experiment (allowed values: %s)" % exp_types)
+        self.add_option(
+            "-n", "--name", action="store", dest="exp_name", default="",
+            help="name of the experiment (e.g. <initials>-<descriptive name>)")
+        self.add_option(
+            "-t", "--timeout", action="store", type=int, dest="timeout",
+            default=1800,
+            help="timeout per task in seconds (default is 1800)")
+        self.add_option(
+            "-m", "--memory", action="store", type=int, dest="memory",
+            default=2048,
+            help="memory limit per task in MB (default is 2048)")
+        self.add_option(
+            "--shard-size", action="store", type=int, dest="shard_size",
+            default=100,
+            help="how many tasks to group into one top-level directory (default is 100)")
+        self.add_option(
+            "--runs-per-task", action="store", type=int, dest="runs_per_task",
+            default=1,
+            help="how many runs to put into one task (default is 1)")
+        self.add_option(
+            "--exp-root-dir", action="store", dest="exp_root_dir",
+            default='',
+            help="directory where this experiment should be located (default is this folder). " \
+                    "The new experiment will reside in <exp-root-dir>/<exp-name>")
+        self.add_option(
+            "-d", "--debug", action="store_true", dest="debug",
+            help="quick test mode: run search executable compiled with debug information, " + \
+            "translate and preprocess if necessary, always conduct fresh search, " + \
+            "print output to screen")
+        
+    def error(self, msg):
+        '''Show the complete help AND the error message'''
+        self.print_help()
+        OptionParser.error(self, msg)
+        
+    def parse_options(self):
+        options, args = self.parse_args()
+        
+        if not options.exp_name:
+            raise self.error("You need to specify an experiment name")
+        
+        #assert len(args) == 0
+        return options
+        
+
+
+    
 
 class Experiment(object):
     
-    def __init__(self, options):
+    def __init__(self, parser=ExpOptionParser()):
+        options = parser.parse_options()
         # Give all the options to the experiment instance
         self.__dict__.update(options.__dict__)
         
@@ -74,7 +187,7 @@ class Experiment(object):
         if resource_name:
             self.env_vars[resource_name] = dest
         
-    def add_run(self, run=None):
+    def add_run(self):
         '''
         Factory for Runs
         Schedule this run to be part of the experiment.
@@ -138,35 +251,7 @@ class Experiment(object):
         '''
         Generates the main script
         '''
-        if self.type == 'gkigrid':
-            num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
-            job_params = {
-                "logfile": self.exp_name + ".log",
-                "errfile": self.exp_name + ".err",
-                "driver_timeout": self.timeout + 30,
-                "num_tasks": num_tasks,
-            }
-            script_template = open('data/gkigrid-job-header-template').read()
-            script = script_template % job_params
-            
-            script += '\n'
-            
-            run_groups = divide_list(self.runs, self.runs_per_task)
-            
-            for task_id, run_group in enumerate(run_groups, start=1):
-                script += 'if [[ $SGE_TASK_ID == %s ]]; then\n' % task_id
-                for run in run_group:
-                    # Here we need the relative directory
-                    script += '  ./%s/invoke\n' % run.dir
-                script += 'fi\n'
-                            
-            
-            name = self.exp_name
-            filename = name if name.endswith('.q') else name + '.q'
-            filename = os.path.join(self.base_dir, filename)
-            
-            with open(filename, 'w') as file:
-                file.write(script)
+        raise Error('Not Implemented')
                 
     def _build_resources(self):
         for source, dest in self.resources:
@@ -184,9 +269,88 @@ class Experiment(object):
         '''
         for run in self.runs:
             run.build()
+            
+        
+        
+class LocalExperiment(Experiment):
+    def __init__(self, parser=ExpOptionParser()):
+        def check_and_store(dummy1, dummy2, value, parser):
+            if value < 1:
+                raise OptionValueError("number of processes must be at least 1")
+            parser.values.processes = value
+        parser.add_option(
+            "-p", "--processes", type="int", dest="processes", default=1,
+            action="callback", callback=check_and_store,
+            help="number of parallel processes to use (default: 1)")
+        Experiment.__init__(self, parser=parser)
+        
+    def _build_main_script(self):
+        '''
+        Generates the main script
+        '''
+        commands = ['"cd %s; ./run"' % run.dir for run in self.runs]
+        replacements = {'COMMANDS': ',\n'.join(commands),
+                        'PROCESSES': str(self.processes),
+                        }
+        
+        script = open('data/local-job.py').read()
+        for orig, new in replacements.items():
+            script = script.replace('***'+orig+'***', new)
+        
+        filename = self._get_abs_path('run')
+        
+        with open(filename, 'w') as file:
+            file.write(script)
+            # Make run script executable
+            os.chmod(filename, 0755)
+        
+        
+        
+class ArgoExperiment(Experiment):
+    def __init__(self, parser=ExpOptionParser()):
+        Experiment.__init__(self, parser=parser)
 
 
-
+class GkiGridExperiment(Experiment):
+    def __init__(self, parser=ExpOptionParser()):
+        parser.add_option(
+            "-q", "--queue", type="string", dest="queue", default='athlon_core.q',
+            help="name of the queue to use for the experiment (default: athlon_core.q)")
+        Experiment.__init__(self, parser=parser)
+        
+    def _build_main_script(self):
+        '''
+        Generates the main script
+        '''
+        num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
+        job_params = {
+            "logfile": self.exp_name + ".log",
+            "errfile": self.exp_name + ".err",
+            "driver_timeout": self.timeout + 30,
+            "num_tasks": num_tasks,
+            "queue": self.queue,
+        }
+        script_template = open('data/gkigrid-job-header-template').read()
+        script = script_template % job_params
+        
+        script += '\n'
+        
+        run_groups = divide_list(self.runs, self.runs_per_task)
+        
+        for task_id, run_group in enumerate(run_groups, start=1):
+            script += 'if [[ $SGE_TASK_ID == %s ]]; then\n' % task_id
+            for run in run_group:
+                # Here we need the relative directory
+                script += '  ./%s/run\n' % run.dir
+            script += 'fi\n'
+                        
+        
+        name = self.exp_name
+        filename = name if name.endswith('.q') else name + '.q'
+        filename = self._get_abs_path(filename)
+        
+        with open(filename, 'w') as file:
+            file.write(script)
     
 
 
@@ -208,8 +372,6 @@ class Run(object):
         self.command = ''
         self.preprocess_command = ''
         self.postprocess_command = ''
-        
-        self.add_resource('', 'data/gkigrid-invoke-template', 'invoke')
         
         
     def require_resource(self, resource_name):
@@ -347,7 +509,7 @@ class Run(object):
                     
         # build linked resources
         # Determine if we should link (gkigrid) or copy (argo)
-        copy = self.experiment.type == ExperimentType.ARGO
+        copy = type(self.experiment) == ArgoExperiment
         if copy:
             # Copy into run dir by adding the linked resource to normal 
             # resources list
@@ -374,96 +536,14 @@ class Run(object):
     def _get_abs_path(self, rel_path):
         '''
         Example:
-        >>> _get_abs_path('invoke')
-        /home/user/mytestjob/runs-00001-00100/invoke
+        >>> _get_abs_path('run')
+        /home/user/mytestjob/runs-00001-00100/run
         '''
         return os.path.join(self.dir, rel_path)
         
         
         
-        
-
-def parse_options():
-    #TODO: Let other modules inherit from this Parser to add their own commandline arguments
     
-    def parse_comma_list(option, opt, value, parser):
-      setattr(parser.values, option.dest, value.split(','))
-      
-    class ExpOptionParser(OptionParser):
-        def error(self, msg):
-            '''Show the complete help AND the error message'''
-            self.print_help()
-            OptionParser.error(self, msg)
-      
-    exp_types = ExperimentType.types()
-
-    parser = ExpOptionParser("usage: %prog [options]")
-    
-    #parser.add_option(
-    #    "--type", action="store", dest="exp_type", default="",
-    #    help="type of the experiment (allowed values: %s)" % exp_types)
-    parser.add_option(
-        "--local", action="store_true", dest="local",
-        help="make a local experiment (allowed values: %s)" % exp_types)
-    parser.add_option(
-        "--gkigrid", action="store_true", dest="gkigrid",
-        help="make a gkigrid experiment (allowed values: %s)" % exp_types)
-    parser.add_option(
-        "--argo", action="store_true", dest="argo",
-        help="make an argo experiment (allowed values: %s)" % exp_types)
-    parser.add_option(
-        "-n", "--name", action="store", dest="exp_name", default="",
-        help="name of the experiment (e.g. <initials>-<descriptive name>)")
-    parser.add_option(
-        "-t", "--timeout", action="store", type=int, dest="timeout",
-        default=1800,
-        help="timeout per task in seconds (default is 1800)")
-    parser.add_option(
-        "-m", "--memory", action="store", type=int, dest="memory",
-        default=2048,
-        help="memory limit per task in MB (default is 2048)")
-    parser.add_option(
-        "--shard-size", action="store", type=int, dest="shard_size",
-        default=100,
-        help="how many tasks to group into one top-level directory (default is 100)")
-    parser.add_option(
-        "--runs-per-task", action="store", type=int, dest="runs_per_task",
-        default=1,
-        help="how many runs to put into one task (default is 1)")
-    parser.add_option(
-        "--exp-root-dir", action="store", dest="exp_root_dir",
-        default='',
-        help="directory where this experiment should be located (default is this folder). " \
-                "The new experiment will reside in <exp-root-dir>/<exp-name>")
-    parser.add_option(
-        "-d", "--debug", action="store_true", dest="debug",
-        help="quick test mode: run search executable compiled with debug information, " + \
-        "translate and preprocess if necessary, always conduct fresh search, " + \
-        "print output to screen")
-        
-    options, args = parser.parse_args()
-    
-    if not options.exp_name:
-        raise parser.error("You need to specify an experiment name")
-    
-    options.type = None
-    if options.local:
-        options.type = ExperimentType.LOCAL
-    elif options.gkigrid:
-        options.type = ExperimentType.GKIGRID
-    elif options.argo:
-        options.type = ExperimentType.ARGO
-    
-    if options.type is None:
-        options.type = ExperimentType.GKIGRID
-    
-        
-    #options.exp_type = options.exp_type.lower()
-    #if options.exp_type not in exp_types:
-    #    parser.error('You need to specify one of %s as the experiment type' % exp_types)
-    
-    assert len(args) == 0
-    return options
     
     
 ## Factory for experiments.
@@ -478,10 +558,31 @@ def parse_options():
 ##
 ## Maybe also parses some generic options that make sense for all
 ## kinds of experiments, e.g. timeout and memory limit.
-def build_experiment():
-    options = parse_options()
-    exp = Experiment(options)
+def build_experiment(parser=None):
+    exp = None
+    args = map(str.lower, sys.argv)
+    
+    if '--gkigrid' in args:
+        exp = GkiGridExperiment(parser)
+    elif '--argo' in args:
+        exp = ArgoExperiment(parser)
+    else:
+        #Default or if '--local' in args:
+        exp = LocalExperiment(parser)
+    assert exp
     return exp
+    
+    #if options.local:
+    #    exp = LocalExperiment()
+    #elif options.gkigrid:
+    #    exp = GkiGridExperiment()
+    #elif options.argo:
+    #    exp = ArgoExperiment()
+    #assert exp
+    #return exp
+    #options = parse_options()
+    #exp = Experiment(options)
+    #return exp
 
 
 if __name__ == "__main__":

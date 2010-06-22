@@ -1,6 +1,12 @@
 import experiments
 
-experiment = experiments.build_experiment()
+parser = experiments.ExpOptionParser()
+parser.add_option(
+    "-c", "--configs", action="extend", type="string",
+    dest="configurations",
+    help="comma-separated list of configurations")
+
+experiment = experiments.build_experiment(parser=parser)
 ## Factory for experiments.
 ##
 ## Parses cmd-line options to decide whether this is a gkigrid
@@ -21,7 +27,7 @@ experiment.add_resource("PLANNER", "../downward/search/release-search",
 ## main directory of the experiment. The name "PLANNER" is an ID for
 ## this resource that can also be used to refer to it in shell scripts.
 
-for prob_no in xrange(1, 5 + 1):
+for prob_no in xrange(1, 20 + 1):
     for options in ["ou", "fF"]:
         prob_path = "gripper/prob%02d.pddl" % prob_no
         #run = experiments.Run()
