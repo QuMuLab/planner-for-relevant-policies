@@ -6,6 +6,7 @@ O optional/required outputs (warnings if more output)
 X Inherit from Experiment
 X Put invoke code into run
 O Write planner script
+  O Suites
 X CL option for queue
 '''
 
@@ -21,82 +22,22 @@ import math
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)8s %(message)s',)
                     
-
-class ExperimentType(object):
-    ARGO = 'argo'
-    LOCAL = 'local'
-    GKIGRID = 'gkigrid'
-    
-    @classmethod
-    def types(cls):
-        return filter(str.isupper, dir(cls))
-
-
-def divide_list(seq, size):
-    '''
-    >>> divide_list(range(10), 4)
-    [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9]]
-    '''
-    return [seq[i:i+size] for i  in range(0, len(seq), size)]
-    
-
-def overwrite_dir(dir):
-    if os.path.exists(dir):
-        shutil.rmtree(dir)
-    os.makedirs(dir)
+import tools
       
-      
-class ExtOption(Option):
-    '''
-    This extended option allows comma-separated commandline options
-    Strings that represent integers are automatically converted to ints
-    
-    Example:
-    python myprog.py -a foo,bar -b aha -a oho,3
-    '''
-
-    ACTIONS = Option.ACTIONS + ("extend",)
-    STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
-    TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
-    ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + ("extend",)
-    
-    def try_str_to_int(self, string):
-        try:
-            integer = int(string)
-            return integer
-        except ValueError:
-            return string
-
-    def convert_list(self, list):
-        return map(self.try_str_to_int, list)
-
-    def take_action(self, action, dest, opt, value, values, parser):
-        if action == "extend":
-            lvalue = value.split(",")
-            values.ensure_value(dest, []).extend(self.convert_list(lvalue))
-        else:
-            Option.take_action(
-                self, action, dest, opt, value, values, parser)
       
 
 class ExpOptionParser(OptionParser):
     def __init__(self, *args, **kwargs):
-        OptionParser.__init__(self, option_class=ExtOption, *args, **kwargs)
+        OptionParser.__init__(self, option_class=tools.ExtOption, *args, **kwargs)
       
-        exp_types = ExperimentType.types()
-        exp_types = map(lambda type: '--'+type.lower(), exp_types)
-        exp_types_string = ', '.join(exp_types)
+        exp_types = ['local', 'gkigrid', 'argo']
+        exp_types_string = ', '.join(['--'+type for type in exp_types])
         types_help = '(default: --local, use one of [%s])' % exp_types_string
         
-        self.add_option(
-            "--local", action="store_true", dest="local",
-            help="make a local experiment %s" % types_help)
-        self.add_option(
-            "--gkigrid", action="store_true", dest="gkigrid",
-            help="make a gkigrid experiment %s" % types_help)
-        self.add_option(
-            "--argo", action="store_true", dest="argo",
-            help="make an argo experiment %s" % types_help)
+        for type in exp_types:
+            self.add_option(
+                "--"+type, action="store_true", dest=type,
+                help="create %s experiment %s" % (type, types_help))
         self.add_option(
             "-n", "--name", action="store", dest="exp_name", default="",
             help="name of the experiment (e.g. <initials>-<descriptive name>)")
@@ -196,7 +137,7 @@ class Experiment(object):
         '''
         Apply all the actions to the filesystem
         '''
-        overwrite_dir(self.base_dir)
+        tools.overwrite_dir(self.base_dir)
         
         self._set_run_dirs()
         self._build_main_script()
@@ -230,11 +171,11 @@ class Experiment(object):
            
         current_run = 0
         
-        shards = divide_list(self.runs, self.shard_size)
+        shards = tools.divide_list(self.runs, self.shard_size)
         
         for shard_number, shard in enumerate(shards, start=1):
             shard_dir = os.path.join(self.base_dir, get_shard_dir(shard_number))
-            overwrite_dir(shard_dir)
+            tools.overwrite_dir(shard_dir)
             
             for run in shard:
                 current_run += 1
@@ -247,7 +188,8 @@ class Experiment(object):
         '''
         Generates the main script
         '''
-        raise Error('Not Implemented')
+        raise Exception('Not Implemented')
+        
                 
     def _build_resources(self):
         for source, dest in self.resources:
@@ -333,7 +275,7 @@ class GkiGridExperiment(Experiment):
         
         script += '\n'
         
-        run_groups = divide_list(self.runs, self.runs_per_task)
+        run_groups = tools.divide_list(self.runs, self.runs_per_task)
         
         for task_id, run_group in enumerate(run_groups, start=1):
             script += 'if [[ $SGE_TASK_ID == %s ]]; then\n' % task_id
@@ -462,7 +404,7 @@ class Run(object):
         '''
         assert self.dir
         
-        overwrite_dir(self.dir)
+        tools.overwrite_dir(self.dir)
         self._build_run_script()
         self._build_resources()
              
@@ -542,7 +484,10 @@ class Run(object):
         
         
         
-    
+#EXPERIMENT_TYPES = {'local': LocalExperiment,
+#                    'gkigrid': GkiGridExperiment,
+#                    'argo': ArgoExperiment,
+#                    }
     
     
 ## Factory for experiments.
@@ -560,28 +505,22 @@ class Run(object):
 def build_experiment(parser=None):
     exp = None
     args = map(str.lower, sys.argv)
+    args = map(lambda arg: arg.strip('-'), args)
     
-    if '--gkigrid' in args:
-        exp = GkiGridExperiment(parser)
-    elif '--argo' in args:
-        exp = ArgoExperiment(parser)
-    else:
+    exp_types = [(name.lower(), cls) for name, cls in globals().items() if 'Experiment' in name]
+    
+    
+    for name, cls in exp_types:
+        for arg in args:
+            if name.startswith(arg):
+                exp = cls(parser)
+    if not exp:
         #Default or if '--local' in args:
         exp = LocalExperiment(parser)
+    print exp
+        
     assert exp
     return exp
-    
-    #if options.local:
-    #    exp = LocalExperiment()
-    #elif options.gkigrid:
-    #    exp = GkiGridExperiment()
-    #elif options.argo:
-    #    exp = ArgoExperiment()
-    #assert exp
-    #return exp
-    #options = parse_options()
-    #exp = Experiment(options)
-    #return exp
 
 
 if __name__ == "__main__":
