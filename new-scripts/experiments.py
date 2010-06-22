@@ -153,7 +153,8 @@ class ExpOptionParser(OptionParser):
 class Experiment(object):
     
     def __init__(self, parser=ExpOptionParser()):
-        options = parser.parse_options()
+        self.parser = parser
+        options = self.parser.parse_options()
         # Give all the options to the experiment instance
         self.__dict__.update(options.__dict__)
         

@@ -3,8 +3,12 @@ import experiments
 parser = experiments.ExpOptionParser()
 parser.add_option(
     "-c", "--configs", action="extend", type="string",
-    dest="configurations",
+    dest="configurations", default=[],
     help="comma-separated list of configurations")
+parser.add_option(
+    "-s", "--suite", action="extend", type="string", 
+    dest="suite", default=[],
+    help="comma-separated list of tasks, domains or suites")
 
 experiment = experiments.build_experiment(parser=parser)
 ## Factory for experiments.
@@ -28,6 +32,9 @@ experiment.add_resource("PLANNER", "../downward/search/release-search",
 ## this resource that can also be used to refer to it in shell scripts.
 
 for prob_no in xrange(1, 20 + 1):
+    configs = experiment.configurations
+    if not configs:
+        experiment.parser.error('You need to specify at least one configuration')
     for options in ["ou", "fF"]:
         prob_path = "gripper/prob%02d.pddl" % prob_no
         #run = experiments.Run()
