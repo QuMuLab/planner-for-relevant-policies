@@ -27,5 +27,4 @@ try:
 except KeyboardInterrupt:
     print 'Main script interrupted'
     pool.terminate()
-    print multiprocessing.active_children()
     #sys.exit(1)

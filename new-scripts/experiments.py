@@ -44,11 +44,6 @@ def overwrite_dir(dir):
     if os.path.exists(dir):
         shutil.rmtree(dir)
     os.makedirs(dir)
-    
-    
-    
-def parse_comma_list(option, opt, value, parser):
-      setattr(parser.values, option.dest, value.split(','))
       
       
 class ExtOption(Option):
@@ -89,19 +84,19 @@ class ExpOptionParser(OptionParser):
         OptionParser.__init__(self, option_class=ExtOption, *args, **kwargs)
       
         exp_types = ExperimentType.types()
+        exp_types = map(lambda type: '--'+type.lower(), exp_types)
+        exp_types_string = ', '.join(exp_types)
+        types_help = '(default: --local, use one of [%s])' % exp_types_string
         
-        #parser.add_option(
-        #    "--type", action="store", dest="exp_type", default="",
-        #    help="type of the experiment (allowed values: %s)" % exp_types)
         self.add_option(
             "--local", action="store_true", dest="local",
-            help="make a local experiment (allowed values: %s)" % exp_types)
+            help="make a local experiment %s" % types_help)
         self.add_option(
             "--gkigrid", action="store_true", dest="gkigrid",
-            help="make a gkigrid experiment (allowed values: %s)" % exp_types)
+            help="make a gkigrid experiment %s" % types_help)
         self.add_option(
             "--argo", action="store_true", dest="argo",
-            help="make an argo experiment (allowed values: %s)" % exp_types)
+            help="make an argo experiment %s" % types_help)
         self.add_option(
             "-n", "--name", action="store", dest="exp_name", default="",
             help="name of the experiment (e.g. <initials>-<descriptive name>)")
@@ -285,6 +280,7 @@ class LocalExperiment(Experiment):
             help="number of parallel processes to use (default: 1)")
         Experiment.__init__(self, parser=parser)
         
+        
     def _build_main_script(self):
         '''
         Generates the main script
@@ -310,6 +306,7 @@ class LocalExperiment(Experiment):
 class ArgoExperiment(Experiment):
     def __init__(self, parser=ExpOptionParser()):
         Experiment.__init__(self, parser=parser)
+        
 
 
 class GkiGridExperiment(Experiment):
@@ -341,8 +338,9 @@ class GkiGridExperiment(Experiment):
         for task_id, run_group in enumerate(run_groups, start=1):
             script += 'if [[ $SGE_TASK_ID == %s ]]; then\n' % task_id
             for run in run_group:
-                # Here we need the relative directory
-                script += '  ./%s/run\n' % run.dir
+                # Change into the run dir
+                script += '  cd %s\n' % run.dir
+                script += '  ./run\n'
             script += 'fi\n'
                         
         
