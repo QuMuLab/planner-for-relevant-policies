@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 '''
 Todo:
-X Inherit options
+X OptionParser class
 X optional/required outputs (warnings if more output)
-X Inherit from Experiment
+X Inherit experiment classes from Experiment
 X Put invoke code into run
 X Write planner script
   X Suites
