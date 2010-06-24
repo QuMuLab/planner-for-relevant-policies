@@ -8,6 +8,7 @@ import socket
 import sys
 import time
 import subprocess
+import glob
 
 ***ENVIRONMENT_VARIABLES***
 
@@ -66,6 +67,32 @@ except KeyboardInterrupt:
 
 # Save the returncode in an environment variable
 os.environ['RETURNCODE'] = str(run.returncode)
+
+
+optional_output = ***OPTIONAL_OUTPUT***
+required_output = ***REQUIRED_OUTPUT***
+resources = ***RESOURCES***
+run_files = ['run', 'run.log', 'run.err']
+
+# Check the output files
+if run.returncode == 0:
+    found_files = os.listdir('.')
+    
+    detected_optional_files = []
+    for file_glob in optional_output:
+        detected_optional_files.extend(glob.glob(file_glob))
+        
+    expected_files = resources + run_files + detected_optional_files + required_output
+    
+    for file in found_files:
+        if file not in expected_files:
+            # We have more files than expected
+            redirects['stderr'].write('ERROR: Unexpected file "%s"\n' % file)
+    for required_file in required_output:
+        if not required_file in found_files:
+            # We are missing a required file
+            redirects['stderr'].write('ERROR: Required file missing "%s"\n' % required_file)
+    
 
 
 postprocess_command = """***POSTPROCESS_COMMAND***"""

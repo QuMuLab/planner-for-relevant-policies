@@ -2,11 +2,12 @@
 '''
 Todo:
 X Inherit options
-O optional/required outputs (warnings if more output)
+X optional/required outputs (warnings if more output)
 X Inherit from Experiment
 X Put invoke code into run
-O Write planner script
-  O Suites
+X Write planner script
+  X Suites
+X LocalExperiment
 X CL option for queue
 '''
 
@@ -314,6 +315,9 @@ class Run(object):
         self.preprocess_command = ''
         self.postprocess_command = ''
         
+        self.optional_output = []
+        self.required_output = []
+        
         
     def require_resource(self, resource_name):
         '''
@@ -382,10 +386,10 @@ class Run(object):
         Specifies that all files names "plan.soln*" (using
         shell-style glob patterns) are part of the experiment output.
         '''
-        #TODO: Implement
+        self.optional_output.append(file_glob)
         
         
-    def declare_required_output(self, file_glob):
+    def declare_required_output(self, filename):
         '''
         There's a corresponding declare_required_output for output
         files that must be present at the end or we have an error. A
@@ -394,7 +398,7 @@ class Run(object):
         the declared outputs should be stored somewhere so that we
         can later verify that all went according to plan.
         '''
-        #TODO: Implement
+        self.required_output.append(filename)
         
         
     def build(self):
@@ -405,8 +409,13 @@ class Run(object):
         assert self.dir
         
         tools.overwrite_dir(self.dir)
+        # We need to build the linked resources before the run script.
+        # Only this way we have all resources in self.resources (linked ones too)
+        self._build_linked_resources()
         self._build_run_script()
         self._build_resources()
+        
+        
              
             
     def _build_run_script(self):
@@ -431,24 +440,21 @@ class Run(object):
                         'POSTPROCESS_COMMAND': self.postprocess_command,
                         'TIMEOUT': str(self.experiment.timeout),
                         'MEMORY': str(self.experiment.memory),
+                        'OPTIONAL_OUTPUT': str(self.optional_output),
+                        'REQUIRED_OUTPUT': str(self.required_output),
+                        'RESOURCES': str([filename for var, filename in self.resources])
                         }
         for orig, new in replacements.items():
             run_script = run_script.replace('***'+orig+'***', new)
         
         self.new_files.append(('run', run_script))
         
-        
-    def _build_resources(self):
-        for name, content in self.new_files:
-            filename = self._get_abs_path(name)
-            with open(filename, 'w') as file:
-                logging.debug('Writing file "%s"' % filename)
-                file.write(content)
-                if name == 'run':
-                    # Make run script executable
-                    os.chmod(filename, 0755)
-                    
-        # build linked resources
+    
+    def _build_linked_resources(self):
+        '''
+        If we are building an argo experiment, add all linked resources to
+        the resources list
+        '''
         # Determine if we should link (gkigrid) or copy (argo)
         copy = type(self.experiment) == ArgoExperiment
         if copy:
@@ -463,6 +469,19 @@ class Run(object):
                 basename = os.path.basename(source)
                 dest = self._get_abs_path(basename)
                 self.resources.append((source, dest))
+        
+        
+    def _build_resources(self):
+        for name, content in self.new_files:
+            filename = self._get_abs_path(name)
+            with open(filename, 'w') as file:
+                logging.debug('Writing file "%s"' % filename)
+                file.write(content)
+                if name == 'run':
+                    # Make run script executable
+                    os.chmod(filename, 0755)
+                    
+        
                 
         for source, dest in self.resources:
             dest = self._get_abs_path(dest)

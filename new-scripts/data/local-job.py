@@ -13,7 +13,6 @@ def run_cmd(command):
     except KeyboardInterrupt:
         print 'Call to run interrupted'
         run.terminate()
-        #sys.exit(1)
 
 commands = [\
 ***COMMANDS***
@@ -22,9 +21,9 @@ commands = [\
 pool = multiprocessing.Pool(processes=***PROCESSES***)
 res = pool.map_async(run_cmd, commands)
 pool.close()
+
 try:
     pool.join()
 except KeyboardInterrupt:
     print 'Main script interrupted'
     pool.terminate()
-    #sys.exit(1)

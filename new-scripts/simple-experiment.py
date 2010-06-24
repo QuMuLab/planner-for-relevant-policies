@@ -5,10 +5,6 @@ parser.add_option(
     "-c", "--configs", action="extend", type="string",
     dest="configurations", default=[],
     help="comma-separated list of configurations")
-parser.add_option(
-    "-s", "--suite", action="extend", type="string", 
-    dest="suite", default=[],
-    help="comma-separated list of tasks, domains or suites")
 
 experiment = experiments.build_experiment(parser=parser)
 ## Factory for experiments.
@@ -69,6 +65,8 @@ for prob_no in xrange(1, 20 + 1):
         ## whether the command succeeded or was aborted, e.g. via some
         ## environment variable.
         run.declare_optional_output("plan.soln*")
+        run.declare_optional_output("sas_plan")
+        run.declare_required_output("not-present.txt")
         ## Specifies that all files names "plan.soln*" (using
         ## shell-style glob patterns) are part of the experiment output.
         ## There's a corresponding declare_required_output for output
