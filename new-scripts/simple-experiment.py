@@ -75,8 +75,11 @@ for prob_no in xrange(1, 20 + 1):
         ## cluster. On the gkigrid, this wouldn't do anything, although
         ## the declared outputs should be stored somewhere so that we
         ## can later verify that all went according to plan.
-        #experiment.add_run(run)
-        ## Schedule this run to be part of the experiment.
+        domain = 'gripper'
+        problem = 'prob%02d.pddl' % prob_no
+        run.set_property('domain', domain)
+        run.set_property('problem', problem)
+        run.set_property('id', [options, domain, problem])
 
 
 

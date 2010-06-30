@@ -63,11 +63,6 @@ class ExpOptionParser(OptionParser):
             default='',
             help="directory where this experiment should be located (default is this folder). " \
                     "The new experiment will reside in <exp-root-dir>/<exp-name>")
-        self.add_option(
-            "-d", "--debug", action="store_true", dest="debug",
-            help="quick test mode: run search executable compiled with debug information, " + \
-            "translate and preprocess if necessary, always conduct fresh search, " + \
-            "print output to screen")
         
     def error(self, msg):
         '''Show the complete help AND the error message'''
@@ -80,7 +75,6 @@ class ExpOptionParser(OptionParser):
         if not options.exp_name:
             raise self.error("You need to specify an experiment name")
         
-        #assert len(args) == 0
         return options
         
 
@@ -233,7 +227,7 @@ class LocalExperiment(Experiment):
                         'PROCESSES': str(self.processes),
                         }
         
-        script = open('data/local-job.py').read()
+        script = open('data/local-job-template.py').read()
         for orig, new in replacements.items():
             script = script.replace('***'+orig+'***', new)
         
@@ -317,6 +311,12 @@ class Run(object):
         
         self.optional_output = []
         self.required_output = []
+        
+        self.properties = {}
+        
+        
+    def set_property(self, name, value):
+        self.properties[name] = value
         
         
     def require_resource(self, resource_name):
@@ -414,6 +414,7 @@ class Run(object):
         self._build_linked_resources()
         self._build_run_script()
         self._build_resources()
+        self._build_properties_file()
         
         
              
@@ -491,6 +492,12 @@ class Run(object):
             except IOError, err:
                 raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
+                                
+    def _build_properties_file(self):
+        from external.configobj import ConfigObj
+        config = ConfigObj(self.properties)
+        config.filename = self._get_abs_path('properties')
+        config.write()
                                 
         
     def _get_abs_path(self, rel_path):

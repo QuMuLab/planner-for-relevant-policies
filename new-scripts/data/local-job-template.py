@@ -7,9 +7,7 @@ import time
 
 def run_cmd(command):
     try:
-        run = subprocess.Popen(command, shell=True)
-        while run.poll() is None:
-            pass
+        run = subprocess.call(command, shell=True)
     except KeyboardInterrupt:
         print 'Call to run interrupted'
         run.terminate()
