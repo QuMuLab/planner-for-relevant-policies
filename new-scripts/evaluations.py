@@ -80,7 +80,7 @@ class Evaluation(object):
         
 class CopyEvaluation(Evaluation):
     '''
-    Simple evaluation that copies files from run dirs into a new tree under
+    Evaluation that copies files from run dirs into a new tree under
     <eval-dir> according to the value "id" in the run's properties file
     '''
     def __init__(self, *args, **kwargs):
@@ -122,7 +122,7 @@ class Pattern(object):
 
 class ParseEvaluation(CopyEvaluation):
     '''
-    Simple evaluation that parses various files and writes found results
+    Evaluation that parses various files and writes found results
     into the run's properties file
     '''
     def __init__(self, *args, **kwargs):
@@ -138,8 +138,10 @@ class ParseEvaluation(CopyEvaluation):
         to the properties dictionary under "name"
         
         properties[name] = re.compile(regex_string).search(file_content).group(group)
-        '''
         
+        If required is True and the pattern is not found in file, an error
+        message is printed
+        '''
         pattern = Pattern(name, regex_string, group, file, required)
         self.patterns[file].append(pattern)
         
