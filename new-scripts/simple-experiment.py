@@ -27,7 +27,7 @@ experiment.add_resource("PLANNER", "../downward/search/release-search",
 ## main directory of the experiment. The name "PLANNER" is an ID for
 ## this resource that can also be used to refer to it in shell scripts.
 
-for prob_no in xrange(1, 20 + 1):
+for prob_no in xrange(1, 1 + 1):
     configs = experiment.configurations
     if not configs:
         experiment.parser.error('You need to specify at least one configuration')

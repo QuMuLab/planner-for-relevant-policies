@@ -21,7 +21,7 @@ import logging
 import math
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)8s %(message)s',)
+                    format='%(levelname)-8s %(message)s',)
                     
 import tools
       

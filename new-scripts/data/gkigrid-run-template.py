@@ -9,6 +9,7 @@ import sys
 import time
 import subprocess
 import glob
+import datetime
 
 ***ENVIRONMENT_VARIABLES***
 
@@ -20,6 +21,11 @@ memory *= 1024 * 1024       # Memory in Bytes
 KILL_DELAY = 5               # how long we wait between SIGTERM and SIGKILL
 CHECK_INTERVAL = 5           # how often we query the process group status
 
+# make sure we're in the run directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+redirects = {'stdout': open('run.log', 'w'), 'stderr': open('run.err', 'w')}
+
 
 def set_limit(kind, amount):
     try:
@@ -28,7 +34,10 @@ def set_limit(kind, amount):
         print >> sys.stderr, "error: %s" % e
         
         
-redirects = {'stdout': open('run.log', 'w'), 'stderr': open('run.err', 'w')}
+def add_property(name, value):
+    file = redirects['stdout']
+    file.write('%s : %s\n' % (name, value))
+    file.flush()
 
 
 preprocess_command = """***PREPROCESS_COMMAND***"""
@@ -42,6 +51,8 @@ set_limit(resource.RLIMIT_CORE, 0)
 
 start_time = time.clock()
 term_attempted = False
+
+add_property('run start time', datetime.datetime.now())
 
 run = subprocess.Popen("""***RUN_COMMAND***""", shell=True, **redirects)
 
@@ -72,7 +83,7 @@ os.environ['RETURNCODE'] = str(run.returncode)
 optional_output = ***OPTIONAL_OUTPUT***
 required_output = ***REQUIRED_OUTPUT***
 resources = ***RESOURCES***
-run_files = ['run', 'run.log', 'run.err']
+run_files = ['run', 'run.log', 'run.err', 'properties']
 
 # Check the output files
 if run.returncode == 0:
