@@ -312,7 +312,7 @@ class Run(object):
         self.optional_output = []
         self.required_output = []
         
-        self.properties = {}
+        self.properties = tools.Properties()
         
         
     def set_property(self, name, value):
@@ -494,10 +494,8 @@ class Run(object):
                                 (source, dest, err))
                                 
     def _build_properties_file(self):
-        from external.configobj import ConfigObj
-        config = ConfigObj(self.properties)
-        config.filename = self._get_abs_path('properties')
-        config.write()
+        self.properties.filename = self._get_abs_path('properties')
+        self.properties.write()
                                 
         
     def _get_abs_path(self, rel_path):
