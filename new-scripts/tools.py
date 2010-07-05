@@ -5,6 +5,8 @@ import re
 from optparse import OptionParser, OptionValueError, BadOptionError, Option
 from shutil import *
 
+from external.configobj import ConfigObj
+
 def divide_list(seq, size):
     '''
     >>> divide_list(range(10), 4)
@@ -75,6 +77,13 @@ class ExtOption(Option):
         else:
             Option.take_action(
                 self, action, dest, opt, value, values, parser)
+                
+                
+class Properties(ConfigObj):
+    def __init__(self, *args, **kwargs):
+        kwargs['unrepr'] = True
+        ConfigObj.__init__(self, *args, **kwargs)
+        
                 
                 
 def updatetree(src, dst, symlinks=False, ignore=None):
