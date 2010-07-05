@@ -9,6 +9,7 @@ import os
 import sys
 import shutil
 import re
+import ast
 from optparse import OptionParser
 from glob import glob
 from collections import defaultdict
@@ -18,7 +19,20 @@ logging.basicConfig(level=logging.INFO,
                     format='%(levelname)-8s %(message)s',)
                     
 import tools
-from external.configobj import ConfigObj
+
+
+def convert_to_correct_type(val):
+    '''
+    Safely evaluate an expression node or a string containing a Python expression. 
+    The string or node provided may only consist of the following Python literal 
+    structures: strings, numbers, tuples, lists, dicts, booleans, and None.
+    '''
+    try:
+        print val, type(val)
+        val = ast.literal_eval(val)
+    except (ValueError, SyntaxError):
+        pass
+    return val
       
       
 
@@ -95,7 +109,7 @@ class CopyEvaluation(Evaluation):
         run_dirs = self._get_run_dirs()
         for run_dir in run_dirs:
             prop_file = os.path.join(run_dir, 'properties')
-            props = ConfigObj(prop_file)
+            props = tools.Properties(prop_file)
             id = props.get('id')
             dest = os.path.join(self.eval_dir, *id)
             copy_dict[run_dir] = dest
@@ -169,7 +183,7 @@ class ParseEvaluation(CopyEvaluation):
         
         for run_dir in self.dirs:
             prop_file = os.path.join(run_dir, 'properties')
-            props = ConfigObj(prop_file)
+            props = tools.Properties(prop_file)
             for file, patterns in self.patterns.items():
                 file = os.path.join(run_dir, file)
                 new_props = self._parse_file(file, patterns)
@@ -194,13 +208,15 @@ class ParseEvaluation(CopyEvaluation):
             match = pattern.regex.search(content)
             if match:
                 try:
-                    found_props[pattern.name] = match.group(pattern.group)
+                    value = match.group(pattern.group)
+                    value = convert_to_correct_type(value)
+                    found_props[pattern.name] = value
                 except IndexError:
                     msg = 'Group "%s" not found for pattern "%s" in file "%s"'
                     msg %= (pattern.group, pattern, file)
                     logging.error(msg)
             elif pattern.required:
-                    logging.error('Pattern "%s" not present in file "%s"' % (pattern, file))
+                logging.error('Pattern "%s" not present in file "%s"' % (pattern, file))
         return found_props
         
         
@@ -253,6 +269,10 @@ def build_evaluator(parser=EvalOptionParser()):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        print 'Testing'
+        sys.argv.extend('-s test'.split())
+        
     eval = build_evaluator()
     eval.evaluate()
     
