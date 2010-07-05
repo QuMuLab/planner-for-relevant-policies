@@ -64,6 +64,11 @@ for config in exp.configurations:
         run.declare_optional_output("output")
         run.declare_optional_output("output.sas")
         run.declare_optional_output("sas_plan")
+        
+        run.set_property('config', config)
+        run.set_property('domain', problem.domain)
+        run.set_property('problem', problem.problem)
+        run.set_property('id', [config, problem.domain, problem.problem])
 
 if __name__ == '__main__':
     exp.build()

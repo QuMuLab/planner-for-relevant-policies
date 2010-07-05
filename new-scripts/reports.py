@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 '''
-Module that permits evaluating experiments conducted with experiments.py
+Module that permits generating reports by reading properties files
 '''
 
 from __future__ import with_statement
@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO,
                     
 import tools
 from external.configobj import ConfigObj
+from external.datasets import DataSet
       
       
 
@@ -42,7 +43,7 @@ class ReportOptionParser(OptionParser):
         options, args = self.parse_args()
         
         if not options.eval_dir:
-            raise self.error('You need to specify an experiment directory')
+            raise self.error('You need to specify an evaluation directory')
         options.eval_dir = os.path.normpath(os.path.abspath(options.eval_dir))
         logging.info('Eval dir:  "%s"' % options.eval_dir)
         if not os.path.isdir(options.eval_dir):
@@ -69,26 +70,29 @@ class Report(object):
         # Give all the options to the report instance
         self.__dict__.update(options.__dict__)
         
+        self.data = self._get_data()
+        
     def build(self):
         raise Exception('Not Implemented')
         
-    def _get_prop_files(self):
-        prop_files = []
+    def _get_data(self):
+        data = DataSet()
         for base, dir, files in os.walk(self.eval_dir):
             for file in files:
-                print file
-        return prop_files
+                if file == 'properties':
+                    file = os.path.join(base, file)
+                    props = ConfigObj(file)
+                    data.append(**props)
+        return data
     
-    
-        
-#def build_report(parser=ReportOptionParser()):
-#    report = Report(parser)
-#    return report
 
 
 if __name__ == "__main__":
     report = Report()
-    report._get_prop_files()
-    report.build()
+    dataset = report.data
+    for _, group in report.data.groups('config', 'domain'):
+        group.dump()
+    print 
+    #report.build()
     
 
