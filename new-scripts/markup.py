@@ -65,7 +65,7 @@ class Document(object):
     def add_text(self, text):
         self.text += text + '\n'
         
-    def add_table(self, table_dict, title=''):
+    def add_table_old(self, table_dict, title=''):
         '''
         || Title | text |
         |  cell  | text |
@@ -79,6 +79,26 @@ class Document(object):
             text += '| **%s** ' % row
             for col in cols:
                 text += '| %s ' % table_dict.get((row, col))
+            text += '|\n'
+        self.add_text(text)
+        
+    def add_table(self, table, title=''):
+        '''
+        {'zenotravel': {'yY': 17, 'fF': 21}, 'gripper': {'yY': 72, 'fF': 118}}
+        ->
+        || Title | text |
+        |  cell  | text |
+        '''
+        text = '|| %s | ' % title
+        
+        rows = table.rows
+        cols = table.cols
+        
+        text += ' | '.join(cols) + ' |\n'
+        for row in rows:
+            text += '| **%s** ' % row
+            for col in cols:
+                text += '| %s ' % table.get(row).get(col)
             text += '|\n'
         self.add_text(text)
 

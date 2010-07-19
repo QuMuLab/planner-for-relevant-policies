@@ -3,7 +3,7 @@
 Module that permits generating reports by reading properties files
 '''
 
-from __future__ import with_statement
+from __future__ import with_statement, division
 
 import os
 import sys
@@ -14,6 +14,7 @@ from glob import glob
 from collections import defaultdict
 import logging
 import datetime
+import collections
 
 logging.basicConfig(level=logging.INFO,
                     format='%(levelname)-8s %(message)s',)
@@ -174,6 +175,35 @@ class AbsolutePlanningReportOptionParser(ReportOptionParser):
         print 'ARGUMENTS:', args
         
         return args
+        
+
+class Table(collections.defaultdict):
+    def __init__(self):
+        collections.defaultdict.__init__(self, dict)
+        
+    def add_cell(self, row, col, value):
+        self[row][col] = value
+        
+    @property    
+    def rows(self):
+        return sorted(self.keys())
+        
+    @property
+    def cols(self):
+        cols = []
+        for dict in self.values():
+            for key in dict.keys():
+                if key not in cols:
+                    cols.append(key)
+        return sorted(cols)
+        
+    def get_relative(self):
+        '''
+        Find the max in each row and write the relative value into each cell
+        '''
+        
+        
+
 
 
 class AbsolutePlanningReport(Report):
@@ -213,17 +243,122 @@ class AbsolutePlanningReport(Report):
         parts = [self.configs, self.suite, ['by-'+self.resolution], [self.focus]]
         return '_'.join(['-'.join(vars) for vars in parts])
         
-        
-    def build(self):
-        if not self.focus:
-            self.parser.error('You have to set the focus attribute')
-        
+    
+    def get_table(self):
         group_dict = self._get_group_dict()
         
-        table = {}
+        table = Table()
         
         if self.resolution == 'suite':
             for (config,), group in group_dict.items():
+                table.add_cell('-'.join(self.suite), config, sum(group[self.focus]))
+        elif self.resolution == 'domain':
+            for (config, domain), group in group_dict.items():
+                table.add_cell(domain, config, sum(group[self.focus]))
+        elif self.resolution == 'problem':
+            for (config, domain, problem), group in group_dict.items():
+                table.add_cell(domain + ':' + problem, config, sum(group[self.focus]))
+            
+        print 'TABLE'
+        print table
+        return table
+        
+        
+    def build(self):        
+        #group_dict = self._get_group_dict()
+        
+        #table = {}
+        
+        #if self.resolution == 'suite':
+        #    for (config,), group in group_dict.items():
+        #        table[('-'.join(self.suite), config)] = sum(group[self.focus])
+        #elif self.resolution == 'domain':
+        #    for (config, domain), group in group_dict.items():
+        #        table[(domain, config)] = sum(group[self.focus])
+        #elif self.resolution == 'problem':
+        #    for (config, domain, problem), group in group_dict.items():
+        #        table[(domain + ':' + problem, config)] = sum(group[self.focus])
+            
+        #print 'TABLE'
+        #print table
+        table = self.get_table()
+        
+        doc = Document(title=self.name)
+        doc.add_table(table, title=self.focus)
+        print 'TEXT:'
+        print doc.text
+        self.output = doc.render(self.output_format)
+        print 'OUTPUT', self.output
+        return self.output
+        
+        
+    def write(self):
+        if not self.output:
+            self.output = self.build()
+        
+        output_file = os.path.join(self.report_dir, 
+            self.name + '.' + self.output_format)
+        with open(output_file, 'w') as file:
+            logging.info('Writing output to "%s"' % output_file)
+            file.write(self.output)
+            
+            
+class RelativePlanningReport(Report):
+    '''
+    '''
+    def __init__(self, *args, **kwargs):
+        Report.__init__(self, AbsolutePlanningReportOptionParser(), *args, **kwargs)
+        
+        self.output = ''
+        
+        self.problems = planning_suites.build_suite(self.suite)
+        
+        def filter_by_problem(run):
+            for problem in self.problems:
+                if problem.domain == run['domain'] and problem.problem == run['problem']:
+                    return True
+            return False
+            
+        def filter_by_config(run):
+            for config in self.configs:
+                if config == run['config']:
+                    return True
+            return False
+        
+        self.add_filter(filter_by_problem, filter_by_config)
+        
+        if self.resolution == 'suite':
+            self.set_grouping('config')
+        elif self.resolution == 'domain':
+            self.set_grouping('config', 'domain')
+        elif self.resolution == 'problem':
+            self.set_grouping('config', 'domain', 'problem')
+            
+            
+    @property
+    def name(self):
+        parts = [self.configs, self.suite, ['by-'+self.resolution], [self.focus]]
+        return '_'.join(['-'.join(vars) for vars in parts])
+        
+    
+    def get_table(self):
+        orig = Report()
+        
+        orig
+        
+        
+    def build(self):        
+        table = self.get_table()
+        
+        #max_value = max(group_dict.values())
+        #print 'MAX', max_value
+        max_value = max([sum(group[self.focus]) for group in group_dict.values()])
+        print 'MAXI', max_value
+        
+        if self.resolution == 'suite':
+            
+            for (config,), group in group_dict.items():
+                
                 table[('-'.join(self.suite), config)] = sum(group[self.focus])
         elif self.resolution == 'domain':
             for (config, domain), group in group_dict.items():
@@ -258,7 +393,7 @@ class AbsolutePlanningReport(Report):
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        sys.argv.extend('test-eval expanded -s MINITEST -c yY'.split())
+        sys.argv.extend('test-eval expanded -s MINITEST -c yY fF'.split())
     
     report = AbsolutePlanningReport()
     #report.add_filter(domain='gripper')
