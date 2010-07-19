@@ -20,6 +20,7 @@ logging.basicConfig(level=logging.INFO,
                     
 import tools
 import planning_suites
+from markup import Document
 from external.configobj import ConfigObj
 from external.datasets import DataSet
 from external import txt2tags
@@ -37,21 +38,30 @@ class ReportOptionParser(argparse.ArgumentParser):
             return string
         
       
-        self.add_argument('eval_dir', help='path to evaluation directory', type=directory)
+        self.add_argument('source', help='path to evaluation directory', type=directory)
         
         self.add_argument('-d', '--dest', dest='report_dir',
                         help='path to report directory',
-                        default='report_%s' % datetime.datetime.now().isoformat())
+                        #default='report_%s' % datetime.datetime.now().isoformat(),
+                        default='reports'
+                        )
                         
         self.add_argument('--format', dest='output_format', default='tex',
                             help='format of the output file',
                             choices=sorted(txt2tags.TARGETS))
+                            
+        self.add_argument('focus', 
+                            help='the analyzed attribute (e.g. "expanded")')
                         
     def parse_args(self):
         args = argparse.ArgumentParser.parse_args(self)
+        args.eval_dir = args.source
         
         args.eval_dir = os.path.normpath(os.path.abspath(args.eval_dir))
         logging.info('Eval dir: "%s"' % args.eval_dir)
+        
+        if not os.path.exists(args.report_dir):
+            os.makedirs(args.report_dir)
         
         #if not args.report_dir:
         #    parent_dir = os.path.dirname(args.eval_dir)
@@ -59,55 +69,7 @@ class ReportOptionParser(argparse.ArgumentParser):
         #    args.report_dir = os.path.join(parent_dir, dir_name + '-report')
         #    logging.info('Report dir: "%s"' % args.report_dir)
         
-        print type(args)
-        print dir(args)
-        
         return args
-      
-
-class bReportOptionParser(OptionParser):
-    def __init__(self, *args, **kwargs):
-        OptionParser.__init__(self, option_class=tools.ExtOption, *args, **kwargs)
-        
-        self.add_option(
-            "-s", "--source", action="store", dest="eval_dir", default="",
-            help="path to evaluation directory")
-        self.add_option(
-            "-d", "--dest", action="store", dest="report_dir", default="",
-            help="path to report directory (default: <eval_dir>-report)")
-        self.add_option(
-            "-f", "--format", action="store", dest="output_format", default="tex",
-            help="format of the output file. Must be one of %s (default: tex)"
-                    % sorted(txt2tags.TARGETS))
-            
-        self.add_option(
-            "-r", "--run-filter", action="extend", dest="run_filter", default=[],
-            help="")
-        
-    def error(self, msg):
-        '''Show the complete help AND the error message'''
-        self.print_help()
-        OptionParser.error(self, msg)
-        
-    def parse_options(self):
-        options, args = self.parse_args()
-        
-        if not options.eval_dir:
-            raise self.error('You need to specify an evaluation directory')
-        options.eval_dir = os.path.normpath(os.path.abspath(options.eval_dir))
-        logging.info('Eval dir:  "%s"' % options.eval_dir)
-        if not os.path.isdir(options.eval_dir):
-            raise self.error('"%s" is no directory' % options.eval_dir)
-        
-        if not options.report_dir:
-            parent_dir = os.path.dirname(options.eval_dir)
-            dir_name = os.path.basename(options.eval_dir)
-            options.report_dir = os.path.join(parent_dir, dir_name + '-report')
-            logging.info('Report dir: "%s"' % options.report_dir)
-            
-        options.run_filter = []
-        
-        return options
         
     
 
@@ -119,6 +81,7 @@ class Report(object):
     def __init__(self, parser=ReportOptionParser()):
         self.parser = parser
         args = self.parser.parse_args()
+        
         # Give all the options to the report instance
         self.__dict__.update(args.__dict__)
         
@@ -129,8 +92,7 @@ class Report(object):
         
         self.grouping = []
         self.order = []
-        
-        self.focus = None
+
         
     def set_focus(self, attribute):
         '''
@@ -157,7 +119,6 @@ class Report(object):
         self.order = order
         
     def _get_group_dict(self):
-        #raise Exception('Not Implemented')
         data = DataSet(self.data)
         data.dump()
         
@@ -171,12 +132,10 @@ class Report(object):
             data = data.filtered(*self.filter_funcs, **self.filter_pairs)
             print 'FILTERED'
             data.dump()
-        #if self.grouping:
+        
         group_dict = data.group_dict(*self.grouping)
         print 'GROUPED'
         print group_dict
-        #else:
-            #group_dict = {(), data)
                 
         return group_dict
         
@@ -195,21 +154,26 @@ class Report(object):
     def _get_table():
         pass
         
-        
 
 class AbsolutePlanningReportOptionParser(ReportOptionParser):
     def __init__(self, *args, **kwargs):
         ReportOptionParser.__init__(self, *args, **kwargs)
         
-        self.add_argument(
-            '-c', '--configs', nargs='+', required=True, help="planner configurations")
+        self.add_argument('-c', '--configs', nargs='+', required=True, 
+                            help="planner configurations")
             
-        self.add_argument(
-            '-s', '--suite', nargs='+', required=True, help='tasks, domains or suites')
+        self.add_argument('-s', '--suite', nargs='+', required=True, 
+                            help='tasks, domains or suites')
             
-        self.add_argument(
-            '-r', '--resolution', choices=['suite', 'domain', 'problem'],
-            default='domain')
+        self.add_argument('-r', '--resolution', default='domain',
+                            choices=['suite', 'domain', 'problem'])
+                            
+                            
+    def parse_args(self):
+        args = ReportOptionParser.parse_args(self)
+        print 'ARGUMENTS:', args
+        
+        return args
 
 
 class AbsolutePlanningReport(Report):
@@ -218,18 +182,12 @@ class AbsolutePlanningReport(Report):
     def __init__(self, *args, **kwargs):
         Report.__init__(self, AbsolutePlanningReportOptionParser(), *args, **kwargs)
         
-        #if not self.configs:
-        #    self.parser.error('You have to specify at least one configuration')
-            
-        #if not self.suite:
-        #    self.parser.error('You have to specify a suite')
-        self.suite = planning_suites.build_suite(self.suite)
+        self.output = ''
         
-        # One of [suite, domain, problem]
-        #self.resolution = 'domain'
+        self.problems = planning_suites.build_suite(self.suite)
         
         def filter_by_problem(run):
-            for problem in self.suite:
+            for problem in self.problems:
                 if problem.domain == run['domain'] and problem.problem == run['problem']:
                     return True
             return False
@@ -248,57 +206,65 @@ class AbsolutePlanningReport(Report):
             self.set_grouping('config', 'domain')
         elif self.resolution == 'problem':
             self.set_grouping('config', 'domain', 'problem')
+            
+            
+    @property
+    def name(self):
+        parts = [self.configs, self.suite, ['by-'+self.resolution], [self.focus]]
+        return '_'.join(['-'.join(vars) for vars in parts])
         
         
     def build(self):
         if not self.focus:
             self.parser.error('You have to set the focus attribute')
         
-        group_dict = self._get_group_dict()#data = Report.build(self)
-        
-        #vertical_groups = ['domain', 'problem']
-        #horizontal_groups = ['config']
-        
-        #dict = self.data.group_dict('config', 'domain', 'problem')
-        
-        print 'DICT', group_dict
+        group_dict = self._get_group_dict()
         
         table = {}
         
-        for (config, domain), group in group_dict.items():
-            print 'Config', config, 'Domain', domain, group[self.focus], sum(group[self.focus])
-            table[(domain, config)] = sum(group[self.focus])
+        if self.resolution == 'suite':
+            for (config,), group in group_dict.items():
+                table[('-'.join(self.suite), config)] = sum(group[self.focus])
+        elif self.resolution == 'domain':
+            for (config, domain), group in group_dict.items():
+                table[(domain, config)] = sum(group[self.focus])
+        elif self.resolution == 'problem':
+            for (config, domain, problem), group in group_dict.items():
+                table[(domain + ':' + problem, config)] = sum(group[self.focus])
             
+        print 'TABLE'
         print table
         
-        from markup import Document
-        doc = Document()
+        doc = Document(title=self.name)
         doc.add_table(table, title=self.focus)
+        print 'TEXT:'
         print doc.text
-        output = doc.render(self.output_format)
-        print 'OUTPUT', output
+        self.output = doc.render(self.output_format)
+        print 'OUTPUT', self.output
+        return self.output
+        
+        
+    def write(self):
+        if not self.output:
+            self.output = self.build()
+        
+        output_file = os.path.join(self.report_dir, 
+            self.name + '.' + self.output_format)
+        with open(output_file, 'w') as file:
+            logging.info('Writing output to "%s"' % output_file)
+            file.write(self.output)
         
 
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        sys.argv.extend('test-eval -s MINITEST -c yY'.split())
-    p = AbsolutePlanningReportOptionParser()
-    #print p.parse_args().__dict__
-    #sys.exit()
+        sys.argv.extend('test-eval expanded -s MINITEST -c yY'.split())
+    
     report = AbsolutePlanningReport()
     #report.add_filter(domain='gripper')
     #report.add_filter(lambda item: item['expanded'] == '21')
     #report.set_grouping('config', 'domain', 'problem')
-    report.set_focus('expanded')
     data = report.data
-    #print 'ITEMS', data.items
-    #for _, group in data.groups('config', 'domain'):
-    #    group.dump()
-    #print
-    #for item in data.filtered(config='yY'):
-    #    print item
-    
-    report.build()
+    report.write()
     
 

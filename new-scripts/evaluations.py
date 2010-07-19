@@ -236,13 +236,13 @@ class ParseEvaluation(CopyEvaluation):
         
 def build_evaluator(parser=EvalOptionParser()):
     eval = ParseEvaluation(parser)
-    eval.add_key_value_pattern('run start time')
-    eval.add_pattern('initial h value', r'Initial state h value: (\d+)', required=False)
-    eval.add_pattern('plan length', r'Plan length: (\d+)')
+    eval.add_key_value_pattern('run_start_time')
+    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', required=False)
+    eval.add_pattern('plan_length', r'Plan length: (\d+)')
     eval.add_pattern('expanded', r'Expanded (\d+)')
     eval.add_pattern('generated', r'Generated (\d+)')
-    eval.add_pattern('search time', r'Search time: (.+)s')
-    eval.add_pattern('total time', r'Total time: (.+)s')
+    eval.add_pattern('search_time', r'Search time: (.+)s')
+    eval.add_pattern('total_time', r'Total time: (.+)s')
     
     def completely_explored(content, old_props):
         new_props = {}

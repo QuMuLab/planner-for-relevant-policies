@@ -52,7 +52,7 @@ set_limit(resource.RLIMIT_CORE, 0)
 start_time = time.clock()
 term_attempted = False
 
-add_property('run start time', datetime.datetime.now())
+add_property('run_start_time', datetime.datetime.now())
 
 run = subprocess.Popen("""***RUN_COMMAND***""", shell=True, **redirects)
 

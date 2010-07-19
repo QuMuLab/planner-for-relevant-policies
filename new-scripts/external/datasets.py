@@ -17,6 +17,8 @@ def uniq(seq):
 
 
 def normalize_tuple(atuple):
+    ##
+    return atuple
     if len(atuple) == 1:
         return atuple[0]
     else:

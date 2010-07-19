@@ -9,6 +9,16 @@ X Write planner script
   X Suites
 X LocalExperiment
 X CL option for queue
+
+X Try argparse in reports.py
+O Convert code to use argparse
+X Integrate txt2tags
+X Use datasets
+X Write AbsolutePlannerReport
+X Write table to txt2tags function 
+X Group by domain, problem, suite
+O Comparation function
+O Relative reports
 '''
 
 from __future__ import with_statement

@@ -28,7 +28,7 @@ def _get_config(target):
         # Allow line breaks, r'\\\\' are 2 \ for regexes
         config['postproc'].append([r'\\\\', '<br />'])
         
-    elif target == 'tex':
+    elif target == 'texo':
         config['encoding'] = 'utf8'
         config['preproc'].append(['€', 'Euro'])
         
@@ -74,7 +74,7 @@ class Document(object):
         
         rows = sorted(set([row for (row, col) in table_dict.keys()]))
         cols = sorted(set([col for (row, col) in table_dict.keys()]))
-        text += ' | '.join(cols) + '|\n'
+        text += ' | '.join(cols) + ' |\n'
         for row in rows:
             text += '| **%s** ' % row
             for col in cols:
@@ -84,6 +84,10 @@ class Document(object):
 
     def render(self, target, options=None):
         #res = '\n'.join([self.title, self.author, self.date]) + '\n\n'
+        
+        # Bug in txt2tags: Titles are not escaped
+        if target == 'tex':
+            self.title = self.title.replace('_', r'\_')
         
         # Here is the marked body text, it must be a list.
         txt = self.text.split('\n')
