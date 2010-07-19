@@ -19,7 +19,7 @@ memory *= 1024 * 1024       # Memory in Bytes
 
 
 KILL_DELAY = 5               # how long we wait between SIGTERM and SIGKILL
-CHECK_INTERVAL = 5           # how often we query the process group status
+CHECK_INTERVAL = 1           # how often we query the process group status
 
 # make sure we're in the run directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))

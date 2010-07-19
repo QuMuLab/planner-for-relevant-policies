@@ -283,7 +283,9 @@ def suite_experiment1_unsolved_hcea():
 
 
 def suite_minitest():
-    return ["gripper:prob01.pddl", "zenotravel:pfile1"]
+    return ["gripper:prob01.pddl", "gripper:prob02.pddl", 
+            "gripper:prob03.pddl", "zenotravel:pfile1",
+            "zenotravel:pfile2", "zenotravel:pfile3", ]
 
 
 def suite_lmcut_domains():

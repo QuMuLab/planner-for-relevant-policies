@@ -28,7 +28,6 @@ def convert_to_correct_type(val):
     structures: strings, numbers, tuples, lists, dicts, booleans, and None.
     '''
     try:
-        print val, type(val)
         val = ast.literal_eval(val)
     except (ValueError, SyntaxError):
         pass

@@ -548,5 +548,5 @@ def build_experiment(parser=None):
 
 
 if __name__ == "__main__":
-    exp = build_experiment()
+    exp = build_experiment(ExpOptionParser())
     exp.build()
