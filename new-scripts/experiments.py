@@ -17,8 +17,9 @@ X Use datasets
 X Write AbsolutePlannerReport
 X Write table to txt2tags function 
 X Group by domain, problem, suite
-O Comparation function
-O Relative reports
+O Comparative reports
+X Relative reports
+O Detailed reports
 '''
 
 from __future__ import with_statement

@@ -247,23 +247,32 @@ def build_evaluator(parser=EvalOptionParser()):
     def completely_explored(content, old_props):
         new_props = {}
         if 'Completely explored state space -- no solution!' in content:
-            new_props['completely explored'] = True
+            new_props['completely_explored'] = True
         return new_props
     
     def get_status(content, old_props):
         new_props = {}
         if 'does not support' in content:
             new_props['status'] = 'unsupported'
-        elif 'plan length' in old_props:
+        elif 'plan_length' in old_props:
             new_props['status'] = 'ok'
-        elif 'completely explored' in old_props:
+        elif 'completely_explored' in old_props:
             new_props['status'] = 'failure'
         else:
             new_props['status'] = 'not ok'
         return new_props
         
+    def solved(content, old_props):
+        new_props = {}
+        if 'plan_length' in old_props:
+            new_props['solved'] = 1
+        else:
+            new_props['solved'] = 0
+        return new_props
+        
     eval.add_function(completely_explored)
     eval.add_function(get_status)
+    eval.add_function(solved)
     return eval
 
 
