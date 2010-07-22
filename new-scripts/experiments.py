@@ -17,9 +17,18 @@ X Use datasets
 X Write AbsolutePlannerReport
 X Write table to txt2tags function 
 X Group by domain, problem, suite
-O Comparative reports
+X Comparative reports
 X Relative reports
 O Detailed reports
+
+O Let user define wanted type for regexes
+O Use double-quotes for multiline strings
+
+O Vergleiche Ausgabe (v.a. expansions) des Translators, Prep., Search (Verwende athlon, opteron (mit core), schnell: amd, ausprobieren: xeon)
+O lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domänen, cea (yY), ff (fF), oa10000 (M&S), (c)
+  suites: ALL, lm-cut-domains
+O #Operatoren, #Variablen, #Unterschiedliche Werte (Summe aller Werte)
+O Schreibe queue in properties file
 '''
 
 from __future__ import with_statement

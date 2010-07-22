@@ -59,7 +59,7 @@ def build_planning_exp():
             
             run.set_preprocess('%s; %s' % (translate_cmd, preprocess_cmd))
             
-            run.set_command("$PLANNER %s < output" % config)
+            run.set_command("$PLANNER --search 'lazy(single(%s))' < output" % config)
             
             run.declare_optional_output("*.groups")
             run.declare_optional_output("output")
@@ -76,7 +76,7 @@ def build_planning_exp():
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print 'Testing'
-        sys.argv.extend('-n test -c yY,fF -s MINITEST -t 1'.split())
+        sys.argv.extend('-n test -c cea,ff -s MINITEST -t 1'.split())
     exp = build_planning_exp()
     exp.build()
 
