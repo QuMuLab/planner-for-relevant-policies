@@ -76,7 +76,7 @@ def build_planning_exp():
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print 'Testing'
-        sys.argv.extend('-n test -c yY,fF -s MINITEST'.split())
+        sys.argv.extend('-n test -c yY,fF -s MINITEST -t 1'.split())
     exp = build_planning_exp()
     exp.build()
 

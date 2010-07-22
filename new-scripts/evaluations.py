@@ -259,7 +259,7 @@ def build_evaluator(parser=EvalOptionParser()):
         elif 'completely_explored' in old_props:
             new_props['status'] = 'failure'
         else:
-            new_props['status'] = 'not ok'
+            new_props['status'] = 'not_ok'
         return new_props
         
     def solved(content, old_props):
