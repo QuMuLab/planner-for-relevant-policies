@@ -174,8 +174,8 @@ class PlanningReportOptionParser(ReportOptionParser):
         self.add_argument('-c', '--configs', nargs='+', required=False, 
                             default=[], help="planner configurations")
             
-        self.add_argument('-s', '--suite', nargs='+', required=True, 
-                            help='tasks, domains or suites')
+        self.add_argument('-s', '--suite', nargs='+', required=False, 
+                            default=[], help='tasks, domains or suites')
             
         self.add_argument('-r', '--resolution', default='domain',
                             choices=['suite', 'domain', 'problem'])
@@ -284,6 +284,12 @@ class PlanningReport(Report):
         self.problems = planning_suites.build_suite(self.suite)
         
         def filter_by_problem(run):
+            """
+            If suite is set, only process problems from the suite, 
+            otherwise process all problems
+            """
+            if not self.problems:
+                return True
             for problem in self.problems:
                 if problem.domain == run['domain'] and problem.problem == run['problem']:
                     return True
@@ -323,8 +329,8 @@ class PlanningReport(Report):
         #print 'TEXT:'
         #print doc.text
         self.output = doc.render(self.output_format)
-        print 'OUTPUT:'
-        print self.output
+        #print 'OUTPUT:'
+        #print self.output
         return self.output
         
         
@@ -490,8 +496,8 @@ class ComparativePlanningReport(PlanningReport):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        sys.argv.extend('test-eval expanded -s MINITEST -c yY fF --resolution domain'.split())
+    #if len(sys.argv) == 1:
+    #    sys.argv.extend('test-eval expanded -s MINITEST -c yY fF --resolution domain'.split())
         
     for report in [AbsolutePlanningReport()]:#, RelativePlanningReport(), ComparativePlanningReport()]:
         #report.add_filter(domain='gripper')
