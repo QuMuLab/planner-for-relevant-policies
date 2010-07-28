@@ -21,7 +21,7 @@ def build_planning_exp():
     exp.add_resource("PLANNER", os.path.join(issue7_dir, 'trunk-r3842', 'downward/search/release-search'),
                     "release-search")
                     
-               
+            
     problems = planning_suites.build_suite(exp.suite)
     
     translator_revs = [3827, 3829, 3840, 4283]
