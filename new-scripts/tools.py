@@ -7,6 +7,7 @@ from shutil import *
 
 from external.configobj import ConfigObj
 
+
 def divide_list(seq, size):
     '''
     >>> divide_list(range(10), 4)
@@ -25,6 +26,7 @@ def overwrite_dir(dir):
                 sys.exit('Aborted')
         shutil.rmtree(dir)
     os.makedirs(dir)
+    
     
 def natural_sort(alist):
     """Sort alist alphabetically, but special-case numbers to get
@@ -51,6 +53,21 @@ def find_file(basenames, dir="."):
         if os.path.exists(path):
             return path
     raise IOError("none found in %r: %r" % (dir, basenames))
+    
+    
+def convert_to_correct_type(val):
+    '''
+    Safely evaluate an expression node or a string containing a Python expression. 
+    The string or node provided may only consist of the following Python literal 
+    structures: strings, numbers, tuples, lists, dicts, booleans, and None.
+    '''
+    import ast
+    try:
+        val = ast.literal_eval(val)
+    except (ValueError, SyntaxError):
+        pass
+    return val
+    
 
 class ExtOption(Option):
     '''

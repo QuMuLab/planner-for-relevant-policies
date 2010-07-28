@@ -9,7 +9,6 @@ import os
 import sys
 import shutil
 import re
-import ast
 from optparse import OptionParser
 from glob import glob
 from collections import defaultdict
@@ -19,21 +18,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(levelname)-8s %(message)s',)
                     
 import tools
-from external import argparse
-
-
-def convert_to_correct_type(val):
-    '''
-    Safely evaluate an expression node or a string containing a Python expression. 
-    The string or node provided may only consist of the following Python literal 
-    structures: strings, numbers, tuples, lists, dicts, booleans, and None.
-    '''
-    try:
-        val = ast.literal_eval(val)
-    except (ValueError, SyntaxError):
-        pass
-    return val
-      
+from external import argparse      
       
 
 class EvalOptionParser(argparse.ArgumentParser):
@@ -55,8 +40,8 @@ class EvalOptionParser(argparse.ArgumentParser):
                 help='path to evaluation directory (default: <exp_dirs>-eval)')
             
     
-    def parse_args(self):
-        args = argparse.ArgumentParser.parse_args(self)
+    def parse_args(self, *args, **kwargs):
+        args = argparse.ArgumentParser.parse_args(self, *args, **kwargs)
         
         args.exp_dirs = map(lambda dir: os.path.normpath(os.path.abspath(dir)), args.exp_dirs)
         logging.info('Exp dirs: "%s"' % args.exp_dirs)
@@ -75,12 +60,10 @@ class Evaluation(object):
     '''
     Base class for all evaluations
     '''
-    
     def __init__(self, parser=EvalOptionParser()):
         self.parser = parser
-        args = self.parser.parse_args()
         # Give all the options to the experiment instance
-        self.__dict__.update(args.__dict__)
+        self.parser.parse_args(namespace=self)
         
     def evaluate(self):
         raise Exception('Not Implemented')
@@ -306,12 +289,9 @@ def build_evaluator(parser=EvalOptionParser()):
         ['var0 7 -1', 'var1 4 -1', 'var2 4 -1', 'var3 3 -1']
         """
         var_descriptions = match.group(1).splitlines()
-        #print 'VARS', var_descriptions
         total_domain_size = 0
         for var in var_descriptions:
-            var_name, domain_size, init_value = var.split()
-            #assert len(parts) == 3
-            #domain_size = parts[1]
+            var_name, domain_size, axiom_layer = var.split()
             total_domain_size += int(domain_size)
         return total_domain_size
         
@@ -320,6 +300,34 @@ def build_evaluator(parser=EvalOptionParser()):
         
     def preprocessor_total_values(content, old_props):
         return {'preprocessor_total_values': get_total_values(content)}
+        
+        
+    def get_derived_vars(content):
+        """
+        Count those variables that have an axiom_layer >= 0
+        """
+        regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M|re.S)
+        match = regex.search(content)
+        if not match:
+            logging.error('Number of derived vars could not be found')
+            return {}
+        """
+        var_descriptions looks like
+        ['var0 7 -1', 'var1 4 -1', 'var2 4 -1', 'var3 3 -1']
+        """
+        var_descriptions = match.group(1).splitlines()
+        derived_vars = 0
+        for var in var_descriptions:
+            var_name, domain_size, axiom_layer = var.split()
+            if int(axiom_layer) >= 0:
+                derived_vars += 1
+        return derived_vars
+        
+    def translator_derived_vars(content, old_props):
+        return {'translator_derived_vars': get_derived_vars(content)}
+        
+    def preprocessor_derived_vars(content, old_props):
+        return {'preprocessor_derived_vars': get_derived_vars(content)}
         
         
     def get_axioms(content):
@@ -358,7 +366,6 @@ def build_evaluator(parser=EvalOptionParser()):
         ['6', '1 16', '2 16', '3 8', '4 8', '5 8', '6 8', '4', ...]
         """
         cg = match.group(1).splitlines()
-        print cg
         arcs = 0
         for line in cg:
             parts = line.split()
@@ -379,6 +386,9 @@ def build_evaluator(parser=EvalOptionParser()):
     
     eval.add_function(translator_axioms, file='output.sas')
     eval.add_function(preprocessor_axioms, file='output')
+    
+    eval.add_function(translator_derived_vars, file='output.sas')
+    eval.add_function(preprocessor_derived_vars, file='output')
     
     eval.add_function(cg_arcs, file='output')
     

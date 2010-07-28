@@ -31,6 +31,8 @@ X #Operatoren, #Variablen, #Unterschiedliche Werte (Summe aller Werte) in proper
 X Anzahl Axiome in properties
 X Anzahl Kanten im Causal Graph
 X Schreibe queue in properties file
+X Derived Vars in properties
+O Write high-level documentation
 '''
 
 from __future__ import with_statement
@@ -76,10 +78,6 @@ class ExpOptionParser(OptionParser):
             "--shard-size", action="store", type=int, dest="shard_size",
             default=100,
             help="how many tasks to group into one top-level directory (default is 100)")
-        self.add_option(
-            "--runs-per-task", action="store", type=int, dest="runs_per_task",
-            default=1,
-            help="how many runs to put into one task (default is 1)")
         self.add_option(
             "--exp-root-dir", action="store", dest="exp_root_dir",
             default='',
@@ -273,6 +271,10 @@ class GkiGridExperiment(Experiment):
         parser.add_option(
             "-q", "--queue", type="string", dest="queue", default='athlon_core.q',
             help="name of the queue to use for the experiment (default: athlon_core.q)")
+        parser.add_option(
+            "--runs-per-task", action="store", type=int, dest="runs_per_task",
+            default=1,
+            help="how many runs to put into one task (default is 1)")
         Experiment.__init__(self, parser=parser)
         
     def _build_main_script(self):
@@ -444,9 +446,7 @@ class Run(object):
         self._build_run_script()
         self._build_resources()
         self._build_properties_file()
-        
-        
-             
+    
             
     def _build_run_script(self):
         if not self.command:
@@ -510,8 +510,6 @@ class Run(object):
                 if name == 'run':
                     # Make run script executable
                     os.chmod(filename, 0755)
-                    
-        
                 
         for source, dest in self.resources:
             dest = self._get_abs_path(dest)
@@ -521,6 +519,7 @@ class Run(object):
             except IOError, err:
                 raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
+                                
                                 
     def _build_properties_file(self):
         self.properties.filename = self._get_abs_path('properties')
