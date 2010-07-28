@@ -12,21 +12,19 @@ import experiments
 import planning_suites
 
 
-class PlanningExpOptionParser(experiments.ExpOptionParser):
+class PlanningExpArgParser(experiments.ExpArgParser):
     def __init__(self, *args, **kwargs):
-        experiments.ExpOptionParser.__init__(self, *args, **kwargs)
+        experiments.ExpArgParser.__init__(self, *args, **kwargs)
         
-        self.add_option(
-            "-c", "--configs", action="extend", type="string",
-            dest="configurations", default=[],
-            help="comma-separated list of configurations")
-        self.add_option(
-            "-s", "--suite", action="extend", type="string", 
-            dest="suite", default=[],
-            help="comma-separated list of tasks, domains or suites")
+        self.add_argument(
+            "-c", "--configs", dest="configurations", default=[], nargs='+',
+            help="planner configurations")
+        self.add_argument(
+            "-s", "--suite", default=[], nargs='+',
+            help="tasks, domains or suites")
 
 def build_planning_exp():
-    exp = experiments.build_experiment(parser=PlanningExpOptionParser())
+    exp = experiments.build_experiment(parser=PlanningExpArgParser())
 
     if not exp.configurations:
         exp.parser.error('You need to specify at least one configuration')
@@ -76,7 +74,7 @@ def build_planning_exp():
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print 'Testing'
-        sys.argv.extend('-n test -c cea,ff -s MINITEST -t 1'.split())
+        sys.argv.extend('test -c cea,ff -s MINITEST --timeout 1'.split())
     exp = build_planning_exp()
     exp.build()
 

@@ -51,63 +51,33 @@ import tools
       
       
 
-class ExpOptionParser(OptionParser):
+class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        OptionParser.__init__(self, option_class=tools.ExtOption, *args, **kwargs)
+        tools.ArgParser.__init__(self, *args, **kwargs)
       
-        exp_types = ['local', 'gkigrid', 'argo']
-        exp_types_string = ', '.join(['--'+type for type in exp_types])
-        types_help = '(default: --local, use one of [%s])' % exp_types_string
-        
-        for type in exp_types:
-            self.add_option(
-                "--"+type, action="store_true", dest=type,
-                help="create %s experiment %s" % (type, types_help))
-        self.add_option(
-            "-n", "--name", action="store", dest="exp_name", default="",
-            help="name of the experiment (e.g. <initials>-<descriptive name>)")
-        self.add_option(
-            "-t", "--timeout", action="store", type=int, dest="timeout",
-            default=1800,
-            help="timeout per task in seconds (default is 1800)")
-        self.add_option(
-            "-m", "--memory", action="store", type=int, dest="memory",
-            default=2048,
-            help="memory limit per task in MB (default is 2048)")
-        self.add_option(
-            "--shard-size", action="store", type=int, dest="shard_size",
-            default=100,
-            help="how many tasks to group into one top-level directory (default is 100)")
-        self.add_option(
-            "--exp-root-dir", action="store", dest="exp_root_dir",
-            default='',
+        self.add_argument('exp_name', 
+                    help="name of the experiment (e.g. <initials>-<descriptive name>)")
+        self.add_argument(
+            "--timeout", type=int, default=1800,
+            help="timeout per task in seconds")
+        self.add_argument(
+            "-m", "--memory", type=int, default=2048,
+            help="memory limit per task in MB")
+        self.add_argument(
+            "--shard-size", type=int, default=100,
+            help="how many tasks to group into one top-level directory")
+        self.add_argument(
+            "--exp-root-dir", 
             help="directory where this experiment should be located (default is this folder). " \
                     "The new experiment will reside in <exp-root-dir>/<exp-name>")
         
-    def error(self, msg):
-        '''Show the complete help AND the error message'''
-        self.print_help()
-        OptionParser.error(self, msg)
-        
-    def parse_options(self):
-        options, args = self.parse_args()
-        
-        if not options.exp_name:
-            raise self.error("You need to specify an experiment name")
-        
-        return options
-        
-
-
     
 
 class Experiment(object):
     
-    def __init__(self, parser=ExpOptionParser()):
-        self.parser = parser
-        options = self.parser.parse_options()
+    def __init__(self, parser=ExpArgParser()):
         # Give all the options to the experiment instance
-        self.__dict__.update(options.__dict__)
+        parser.parse_args(namespace=self)
         
         self.runs = []
         self.resources = []
@@ -120,7 +90,6 @@ class Experiment(object):
             self.base_dir = os.path.join(module_dir, self.exp_name)
         self.base_dir = os.path.abspath(self.base_dir)
         logging.info('Base Dir: "%s"' % self.base_dir)
-        
         
         
     def add_resource(self, resource_name, source, dest):
@@ -226,14 +195,11 @@ class Experiment(object):
         
         
 class LocalExperiment(Experiment):
-    def __init__(self, parser=ExpOptionParser()):
-        def check_and_store(dummy1, dummy2, value, parser):
-            if value < 1:
-                raise OptionValueError("number of processes must be at least 1")
-            parser.values.processes = value
-        parser.add_option(
-            "-p", "--processes", type="int", dest="processes", default=1,
-            action="callback", callback=check_and_store,
+    def __init__(self, parser=ExpArgParser()):
+        import multiprocessing
+        cores = multiprocessing.cpu_count()
+        parser.add_argument(
+            '-p', '--processes', type=int, default=1, choices=xrange(1, cores+1),
             help="number of parallel processes to use (default: 1)")
         Experiment.__init__(self, parser=parser)
         
@@ -261,21 +227,21 @@ class LocalExperiment(Experiment):
         
         
 class ArgoExperiment(Experiment):
-    def __init__(self, parser=ExpOptionParser()):
+    def __init__(self, parser=ExpArgParser()):
         Experiment.__init__(self, parser=parser)
         
 
 
 class GkiGridExperiment(Experiment):
-    def __init__(self, parser=ExpOptionParser()):
-        parser.add_option(
-            "-q", "--queue", type="string", dest="queue", default='athlon_core.q',
+    def __init__(self, parser=ExpArgParser()):
+        parser.add_argument(
+            "-q", "--queue", default='athlon_core.q',
             help="name of the queue to use for the experiment (default: athlon_core.q)")
-        parser.add_option(
-            "--runs-per-task", action="store", type=int, dest="runs_per_task",
-            default=1,
+        parser.add_argument(
+            "--runs-per-task", type=int, default=1,
             help="how many runs to put into one task (default is 1)")
         Experiment.__init__(self, parser=parser)
+        
         
     def _build_main_script(self):
         '''
@@ -304,7 +270,6 @@ class GkiGridExperiment(Experiment):
                 script += '  ./run\n'
             script += 'fi\n'
                         
-        
         name = self.exp_name
         filename = name if name.endswith('.q') else name + '.q'
         filename = self._get_abs_path(filename)
@@ -534,12 +499,6 @@ class Run(object):
         '''
         return os.path.join(self.dir, rel_path)
         
-        
-        
-#EXPERIMENT_TYPES = {'local': LocalExperiment,
-#                    'gkigrid': GkiGridExperiment,
-#                    'argo': ArgoExperiment,
-#                    }
     
     
 ## Factory for experiments.
@@ -554,27 +513,37 @@ class Run(object):
 ##
 ## Maybe also parses some generic options that make sense for all
 ## kinds of experiments, e.g. timeout and memory limit.
-def build_experiment(parser=None):
-    exp = None
-    args = map(str.lower, sys.argv)
-    args = map(lambda arg: arg.strip('-'), args)
+def build_experiment(parser=ExpArgParser()):
+    # Create a parser only for parsing the experiment type
+    exp_type_parser = tools.ArgParser()
+    exp_type_parser.epilog = 'Note: The help output depends on the selected experiment type'
+    exp_type_parser.add_argument('-t', '--exp_type', choices=['local', 'gkigrid', 'argo'],
+                        default='local', help='Select an experiment type')
+    #exp_types = ['local', 'gkigrid', 'argo']
+    #for type in exp_types:
+    #    parser.add_argument('--'+type, dest='exp_type', action='store_const', const=type, 
+    #                    default='local', help='Create  a %s experiment' % type)
+    known_args, remaining_args = exp_type_parser.parse_known_args()
     
-    exp_types = [(name.lower(), cls) for name, cls in globals().items() if 'Experiment' in name]
+    # delete the handled arguments
+    sys.argv = [sys.argv[0]] + remaining_args
     
+    type = known_args.exp_type
+    print type
     
-    for name, cls in exp_types:
-        for arg in args:
-            if name.startswith(arg):
-                exp = cls(parser)
-    if not exp:
-        #Default or if '--local' in args:
+    # Now that we have parsed for the first time, we can add the help
+    # This way all options are shown once help is printed
+    parser.set_help_active()
+    
+    if type == 'local':
         exp = LocalExperiment(parser)
-    print exp
-        
-    assert exp
+    elif type == 'gkigrid':
+        exp = GkiGridExperiment(parser)
+    elif type == 'argo':
+        exp = ArgoExperiment(parser)
     return exp
 
 
 if __name__ == "__main__":
-    exp = build_experiment(ExpOptionParser())
+    exp = build_experiment()
     exp.build()
