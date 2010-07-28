@@ -9,7 +9,6 @@ import os
 import sys
 import shutil
 import re
-from optparse import OptionParser
 from glob import glob
 from collections import defaultdict
 from itertools import combinations
@@ -172,8 +171,8 @@ class PlanningReportOptionParser(ReportOptionParser):
     def __init__(self, *args, **kwargs):
         ReportOptionParser.__init__(self, *args, **kwargs)
         
-        self.add_argument('-c', '--configs', nargs='+', required=True, 
-                            help="planner configurations")
+        self.add_argument('-c', '--configs', nargs='+', required=False, 
+                            default=[], help="planner configurations")
             
         self.add_argument('-s', '--suite', nargs='+', required=True, 
                             help='tasks, domains or suites')
@@ -236,7 +235,7 @@ class Table(collections.defaultdict):
         ==>
         returns ((fF, yY), (0, 0, 3)) [wins, draws, losses]
         '''
-        assert len(self.cols) == 2
+        assert len(self.cols) == 2, 'For comparative reports please specify 2 configs'
         
         sums = [0, 0, 0]
         
@@ -291,6 +290,11 @@ class PlanningReport(Report):
             return False
             
         def filter_by_config(run):
+            """
+            If configs is set, only process those configs, otherwise process all configs
+            """
+            if not self.configs:
+                return True
             for config in self.configs:
                 if config == run['config']:
                     return True
@@ -489,7 +493,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         sys.argv.extend('test-eval expanded -s MINITEST -c yY fF --resolution domain'.split())
         
-    for report in [AbsolutePlanningReport(), RelativePlanningReport(), ComparativePlanningReport()]:
+    for report in [AbsolutePlanningReport()]:#, RelativePlanningReport(), ComparativePlanningReport()]:
         #report.add_filter(domain='gripper')
         #report.add_filter(lambda item: item['expanded'] == '21')
         #report.set_grouping('config', 'domain', 'problem')
