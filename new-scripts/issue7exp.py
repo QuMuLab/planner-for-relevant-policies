@@ -66,6 +66,6 @@ def build_planning_exp():
     return exp
 
 if __name__ == '__main__':
-    sys.argv += '-n issue7exp -c yY -s TEST'.split()
+    #sys.argv += '-n issue7exp -c yY -s TEST'.split()
     exp = build_planning_exp()
     exp.build()

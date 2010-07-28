@@ -48,22 +48,22 @@ class EvalOptionParser(argparse.ArgumentParser):
             return string
         
       
-        self.add_argument('exp_dir', 
+        self.add_argument('exp_dirs', nargs='+',
                 help='path to experiment directory', type=directory)
         
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
-                help='path to evaluation directory (default: <exp_dir>-eval)')
+                help='path to evaluation directory (default: <exp_dirs>-eval)')
             
     
     def parse_args(self):
         args = argparse.ArgumentParser.parse_args(self)
         
-        args.exp_dir = os.path.normpath(os.path.abspath(args.exp_dir))
-        logging.info('Exp dir: "%s"' % args.exp_dir)
+        args.exp_dirs = map(lambda dir: os.path.normpath(os.path.abspath(dir)), args.exp_dirs)
+        logging.info('Exp dirs: "%s"' % args.exp_dirs)
         
         if not args.eval_dir:
-            parent_dir = os.path.dirname(args.exp_dir)
-            dir_name = os.path.basename(args.exp_dir)
+            parent_dir = os.path.dirname(args.exp_dirs[0])
+            dir_name = os.path.basename(args.exp_dirs[0])
             args.eval_dir = os.path.join(parent_dir, dir_name + '-eval')
             logging.info('Eval dir: "%s"' % args.eval_dir)
         
@@ -86,7 +86,9 @@ class Evaluation(object):
         raise Exception('Not Implemented')
         
     def _get_run_dirs(self):
-        run_dirs = glob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
+        run_dirs = []
+        for dir in self.exp_dirs:
+            run_dirs.extend(glob(os.path.join(dir, 'runs-*-*', '*')))
         return run_dirs
         
         
@@ -260,8 +262,11 @@ def build_evaluator(parser=EvalOptionParser()):
     eval.add_pattern('search_time', r'Search time: (.+)s', type=float)
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float)
     
-    eval.add_pattern('variables', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
-    eval.add_pattern('operators', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
+    eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
+    eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
+    
+    eval.add_pattern('preprocessor_vars', r'begin_variables\n(\d+)', file='output', type=int, flags='M')
+    eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output', type=int, flags='M')
     
     def completely_explored(content, old_props):
         new_props = {}
@@ -289,8 +294,8 @@ def build_evaluator(parser=EvalOptionParser()):
             new_props['solved'] = 0
         return new_props
         
-    def total_values(content, old_props):
-        new_props = {}
+        
+    def get_total_values(content):
         vars_regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M|re.S)
         match = vars_regex.search(content)
         if not match:
@@ -308,22 +313,82 @@ def build_evaluator(parser=EvalOptionParser()):
             #assert len(parts) == 3
             #domain_size = parts[1]
             total_domain_size += int(domain_size)
-        new_props['total_values'] = total_domain_size
-        return new_props
+        return total_domain_size
+        
+    def translator_total_values(content, old_props):
+        return {'translator_total_values': get_total_values(content)}
+        
+    def preprocessor_total_values(content, old_props):
+        return {'preprocessor_total_values': get_total_values(content)}
+        
+        
+    def get_axioms(content):
+        """
+        If |axioms| > 0:  ...end_operator\nAXIOMS\nbegin_rule...
+        If |axioms| == 0: ...end_operator\n0
+        """
+        regex = re.compile(r'end_operator\n(\d+)\nbegin_rule', re.M|re.S)
+        match = regex.search(content)
+        if not match:
+            # make sure we have a valid file here
+            regex = re.compile(r'end_operator\n(\d+)', re.M|re.S)
+            match = regex.search(content)
+            assert match.group(1) == '0'
+        axioms = int(match.group(1))
+        return axioms
+        
+    def translator_axioms(content, old_props):
+        return {'translator_axioms': get_axioms(content)}
+        
+    def preprocessor_axioms(content, old_props):
+        return {'preprocessor_axioms': get_axioms(content)}
+        
+        
+    def cg_arcs(content, old_props):
+        """
+        Sums up the number of outgoing arcs for each vertex
+        """
+        regex = re.compile(r'begin_CG\n(.+)end_CG', re.M|re.S)
+        match = regex.search(content)
+        if not match:
+            logging.error('Number of arcs could not be determined')
+            return {}
+        """
+        cg looks like
+        ['6', '1 16', '2 16', '3 8', '4 8', '5 8', '6 8', '4', ...]
+        """
+        cg = match.group(1).splitlines()
+        print cg
+        arcs = 0
+        for line in cg:
+            parts = line.split()
+            parts = map(lambda part: part.strip(), parts)
+            parts = filter(lambda part: len(part) > 0, parts)
+            if len(parts) == 1:
+                # We have a line containing the number of arcs for one node
+                arcs += int(parts[0])
+        return {'cg_arcs': arcs}
+        
         
     eval.add_function(completely_explored)
     eval.add_function(get_status)
     eval.add_function(solved)
     
-    eval.add_function(total_values, file='output.sas')
+    eval.add_function(translator_total_values, file='output.sas')
+    eval.add_function(preprocessor_total_values, file='output')
+    
+    eval.add_function(translator_axioms, file='output.sas')
+    eval.add_function(preprocessor_axioms, file='output')
+    
+    eval.add_function(cg_arcs, file='output')
     
     return eval
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        print 'Testing'
-        sys.argv.extend('-s test'.split())
+    #if len(sys.argv) == 1:
+    #    print 'Testing'
+    #    sys.argv.extend('-s test'.split())
         
     eval = build_evaluator()
     eval.evaluate()
