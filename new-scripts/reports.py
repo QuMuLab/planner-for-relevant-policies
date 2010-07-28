@@ -30,24 +30,15 @@ from external import argparse
 
 
 
-class ReportOptionParser(argparse.ArgumentParser):
+class ReportArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        argparse.ArgumentParser.__init__(self, *args, 
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
+        tools.ArgParser.__init__(self, *args, **kwargs)        
       
-        def directory(string):
-            if not os.path.isdir(string):
-                msg = "%r is not an evaluation directory" % string
-                raise argparse.ArgumentTypeError(msg)
-            return string
+        self.add_argument('source', help='path to evaluation directory', 
+                            type=self.directory)
         
-      
-        self.add_argument('source', help='path to evaluation directory', type=directory)
-        
-        self.add_argument('-d', '--dest', dest='report_dir',
-                        help='path to report directory',
-                        default='reports'
-                        )
+        self.add_argument('-d', '--dest', dest='report_dir', default='reports',
+                            help='path to report directory')
                         
         self.add_argument('--format', dest='output_format', default='tex',
                             help='format of the output file',
@@ -63,8 +54,8 @@ class ReportOptionParser(argparse.ArgumentParser):
                         help='do not write anything to the filesystem')
                         
                         
-    def parse_args(self):
-        args = argparse.ArgumentParser.parse_args(self)
+    def parse_args(self, *args, **kwargs):
+        args = argparse.ArgumentParser.parse_args(self, *args, **kwargs)
         args.eval_dir = args.source
         
         args.eval_dir = os.path.normpath(os.path.abspath(args.eval_dir))
@@ -91,12 +82,9 @@ class Report(object):
     Base class for all reports
     '''
     
-    def __init__(self, parser=ReportOptionParser()):
-        self.parser = parser
-        args = self.parser.parse_args()
-        
+    def __init__(self, parser=ReportArgParser()):
         # Give all the options to the report instance
-        self.__dict__.update(args.__dict__)
+        parser.parse_args(namespace=self)
         
         self.data = self._get_data()
         
@@ -164,21 +152,6 @@ class Report(object):
                     props = tools.Properties(file)
                     data.append(**props)
         return data
-    
-        
-
-class PlanningReportOptionParser(ReportOptionParser):
-    def __init__(self, *args, **kwargs):
-        ReportOptionParser.__init__(self, *args, **kwargs)
-        
-        self.add_argument('-c', '--configs', nargs='*', required=False, 
-                            default=[], help="planner configurations")
-            
-        self.add_argument('-s', '--suite', nargs='*', required=False, 
-                            default=[], help='tasks, domains or suites')
-            
-        self.add_argument('-r', '--resolution', default='domain',
-                            choices=['suite', 'domain', 'problem'])
                             
         
 
@@ -275,8 +248,16 @@ class Table(collections.defaultdict):
 class PlanningReport(Report):
     '''
     '''
-    def __init__(self, *args, **kwargs):
-        Report.__init__(self, PlanningReportOptionParser(), *args, **kwargs)
+    def __init__(self, parser=ReportArgParser()):
+        parser.add_argument('-c', '--configs', nargs='*',
+                            default=[], help="planner configurations")
+            
+        parser.add_argument('-s', '--suite', nargs='*',
+                            default=[], help='tasks, domains or suites')
+            
+        parser.add_argument('-r', '--resolution', default='domain',
+                            choices=['suite', 'domain', 'problem'])
+        Report.__init__(self, parser)
         
         self.output = ''
         self.compared_attribute = 'config'

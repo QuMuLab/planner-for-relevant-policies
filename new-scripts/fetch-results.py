@@ -17,23 +17,15 @@ logging.basicConfig(level=logging.INFO,
                     format='%(levelname)-8s %(message)s',)
                     
 import tools
-from external import argparse      
+from external import argparse
       
 
-class EvalOptionParser(argparse.ArgumentParser):
+class EvalOptionParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        argparse.ArgumentParser.__init__(self, *args, 
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
-                
-        def directory(string):
-            if not os.path.isdir(string):
-                msg = "%r is not an evaluation directory" % string
-                raise argparse.ArgumentTypeError(msg)
-            return string
-        
+        tools.ArgParser.__init__(self, *args, **kwargs)
       
         self.add_argument('exp_dirs', nargs='+',
-                help='path to experiment directory', type=directory)
+                help='path to experiment directory', type=self.directory)
         
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
                 help='path to evaluation directory (default: <exp_dirs>-eval)')

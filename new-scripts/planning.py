@@ -10,26 +10,17 @@ import sys
 
 import experiments
 import planning_suites
-
-
-class PlanningExpArgParser(experiments.ExpArgParser):
-    def __init__(self, *args, **kwargs):
-        experiments.ExpArgParser.__init__(self, *args, **kwargs)
         
-        self.add_argument(
-            "-c", "--configs", dest="configurations", default=[], nargs='+',
-            help="planner configurations")
-        self.add_argument(
-            "-s", "--suite", default=[], nargs='+',
-            help="tasks, domains or suites")
+        
 
 def build_planning_exp():
-    exp = experiments.build_experiment(parser=PlanningExpArgParser())
-
-    if not exp.configurations:
-        exp.parser.error('You need to specify at least one configuration')
-    if not exp.suite:
-        exp.parser.error('You need to specify at least one suite')
+    parser=experiments.ExpArgParser()
+    parser.add_argument("-c", "--configs", default=[], 
+                        nargs='+', help="planner configurations")
+    parser.add_argument("-s", "--suite", default=[], nargs='+',
+                        help="tasks, domains or suites")
+    
+    exp = experiments.build_experiment(parser)
 
     exp.add_resource("PLANNER", "../downward/search/release-search",
                     "release-search")
@@ -37,7 +28,7 @@ def build_planning_exp():
                
     problems = planning_suites.build_suite(exp.suite)
 
-    for config in exp.configurations:
+    for config in exp.configs:
         for problem in problems:
             run = exp.add_run()
             run.require_resource("PLANNER")
@@ -70,6 +61,7 @@ def build_planning_exp():
             run.set_property('id', [config, problem.domain, problem.problem])
             
     return exp
+
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:

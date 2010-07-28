@@ -40,7 +40,6 @@ from __future__ import with_statement
 import os
 import sys
 import shutil
-from optparse import OptionParser, OptionValueError, BadOptionError, Option
 import logging
 import math
 
@@ -515,8 +514,7 @@ class Run(object):
 ## kinds of experiments, e.g. timeout and memory limit.
 def build_experiment(parser=ExpArgParser()):
     # Create a parser only for parsing the experiment type
-    exp_type_parser = tools.ArgParser()
-    exp_type_parser.epilog = 'Note: The help output depends on the selected experiment type'
+    exp_type_parser = tools.ArgParser(add_help=False)
     exp_type_parser.add_argument('-t', '--exp_type', choices=['local', 'gkigrid', 'argo'],
                         default='local', help='Select an experiment type')
     #exp_types = ['local', 'gkigrid', 'argo']
@@ -533,7 +531,8 @@ def build_experiment(parser=ExpArgParser()):
     
     # Now that we have parsed for the first time, we can add the help
     # This way all options are shown once help is printed
-    parser.set_help_active()
+    #parser.set_help_active()
+    parser.epilog = 'Note: The help output depends on the selected experiment type'
     
     if type == 'local':
         exp = LocalExperiment(parser)

@@ -161,7 +161,7 @@ def updatetree(src, dst, symlinks=False, ignore=None):
         
 class ArgParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
-        argparse.ArgumentParser.__init__(self, *args, add_help=False,
+        argparse.ArgumentParser.__init__(self, *args, #add_help=True,
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
                 
     def set_help_active(self):
