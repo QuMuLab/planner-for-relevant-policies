@@ -9,7 +9,6 @@ import os
 import sys
 import shutil
 import re
-from optparse import OptionParser
 from glob import glob
 from collections import defaultdict
 import logging
@@ -41,6 +40,7 @@ class EvalOptionParser(argparse.ArgumentParser):
             
     
     def parse_args(self, *args, **kwargs):
+        # args is the populated namespace, i.e. the evaluation instance
         args = argparse.ArgumentParser.parse_args(self, *args, **kwargs)
         
         args.exp_dirs = map(lambda dir: os.path.normpath(os.path.abspath(dir)), args.exp_dirs)
@@ -153,9 +153,6 @@ class ParseEvaluation(CopyEvaluation):
         If required is True and the pattern is not found in file, an error
         message is printed
         '''
-        #defaults = {'group': 1, 'file': 'run.log', 'required': True,
-        #            'type': str, 'flags': ''}
-        #defaults.update(kwargs)
         pattern = Pattern(name, regex_string, group, file, required, type, flags)
         self.patterns[pattern.file].append(pattern)
         

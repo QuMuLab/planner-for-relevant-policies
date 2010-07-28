@@ -171,10 +171,10 @@ class PlanningReportOptionParser(ReportOptionParser):
     def __init__(self, *args, **kwargs):
         ReportOptionParser.__init__(self, *args, **kwargs)
         
-        self.add_argument('-c', '--configs', nargs='+', required=False, 
+        self.add_argument('-c', '--configs', nargs='*', required=False, 
                             default=[], help="planner configurations")
             
-        self.add_argument('-s', '--suite', nargs='+', required=False, 
+        self.add_argument('-s', '--suite', nargs='*', required=False, 
                             default=[], help='tasks, domains or suites')
             
         self.add_argument('-r', '--resolution', default='domain',
@@ -321,13 +321,11 @@ class PlanningReport(Report):
         
     def build(self):
         table = self.get_table()
-        print 'TABLE'
         print table
         
         doc = Document(title=self.name)
         doc.add_text(str(table))
-        #print 'TEXT:'
-        #print doc.text
+        
         self.output = doc.render(self.output_format)
         #print 'OUTPUT:'
         #print self.output
@@ -379,22 +377,33 @@ class AbsolutePlanningReport(PlanningReport):
         
         func = self.group_func
         
-        table = Table()
+        table = Table(self.focus)
         
-        def missing(val):
+        def existing(val):
             return not type(val) == datasets.MissingType
+            
+        def show_missing_attribute_msg():
+            msg = 'No data has the attribute "%s". ' % self.focus
+            msg += 'Are you sure you typed it in correctly?'
+            logging.error(msg)
         
         if self.resolution == 'suite':
             for (config,), group in group_dict.items():
-                values = filter(missing, group[self.focus])
+                values = filter(existing, group[self.focus])
+                if not values:
+                    show_missing_attribute_msg()
                 table.add_cell('-'.join(self.suite), config, func(values))
         elif self.resolution == 'domain':
             for (config, domain), group in group_dict.items():
-                values = filter(missing, group[self.focus])
+                values = filter(existing, group[self.focus])
+                if not values:
+                    show_missing_attribute_msg()
                 table.add_cell(domain, config, func(values))
         elif self.resolution == 'problem':
             for (config, domain, problem), group in group_dict.items():
-                values = filter(missing, group[self.focus])
+                values = filter(existing, group[self.focus])
+                if not values:
+                    show_missing_attribute_msg()
                 table.add_cell(domain + ':' + problem, config, func(values))
             
         return table
@@ -462,7 +471,7 @@ class ComparativePlanningReport(PlanningReport):
         
         func = self.group_func
         
-        table = Table()
+        table = Table(self.focus)
         
         if self.resolution == 'suite':
             for _, group in group_dict.items():

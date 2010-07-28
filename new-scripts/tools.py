@@ -5,6 +5,7 @@ import re
 from optparse import OptionParser, OptionValueError, BadOptionError, Option
 from shutil import *
 
+from external import argparse
 from external.configobj import ConfigObj
 
 
@@ -156,4 +157,20 @@ def updatetree(src, dst, symlinks=False, ignore=None):
         errors.extend((src, dst, str(why)))
     if errors:
         raise Error(errors)
-
+        
+        
+class ArgParser(argparse.ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        argparse.ArgumentParser.__init__(self, *args, add_help=False,
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
+                
+    def set_help_active(self):
+        self.add_argument(
+                '-h', '--help', action='help', default=argparse.SUPPRESS,
+                help=('show this help message and exit'))
+      
+    def directory(self, string):
+        if not os.path.isdir(string):
+            msg = "%r is not an evaluation directory" % string
+            raise argparse.ArgumentTypeError(msg)
+        return string
