@@ -17,6 +17,12 @@ def divide_list(seq, size):
 
 def overwrite_dir(dir):
     if os.path.exists(dir):
+        if not os.path.exists(os.path.join(dir, 'run')):
+            msg = 'The experiment directory "%s" ' % dir
+            msg += 'is not empty, do you want to overwrite it? (Y/N): '
+            answer = raw_input(msg).upper().strip()
+            if not answer == 'Y':
+                sys.exit('Aborted')
         shutil.rmtree(dir)
     os.makedirs(dir)
     
