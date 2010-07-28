@@ -21,14 +21,14 @@ X Comparative reports
 X Relative reports
 O Detailed reports
 
-O Let user define wanted type for regexes
+X Let user define wanted type for regexes
 O Use double-quotes for multiline strings
 
 O Vergleiche Ausgabe (v.a. expansions) des Translators, Prep., Search (Verwende athlon, opteron (mit core), schnell: amd, ausprobieren: xeon)
-O lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domänen, cea (yY), ff (fF), oa10000 (M&S), (c)
+O lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domains, cea (yY), ff (fF), oa10000 (M&S), (c)
   suites: ALL, lm-cut-domains
-O #Operatoren, #Variablen, #Unterschiedliche Werte (Summe aller Werte)
-O Schreibe queue in properties file
+O #Operatoren, #Variablen, #Unterschiedliche Werte (Summe aller Werte) in properties file
+X Schreibe queue in properties file
 '''
 
 from __future__ import with_statement
@@ -334,8 +334,15 @@ class Run(object):
         
         self.properties = tools.Properties()
         
+        if hasattr(experiment, 'queue'):
+            self.set_property('queue', experiment.queue)
+        
         
     def set_property(self, name, value):
+        # id parts can only be strings
+        if name == 'id':
+            assert type(value) == list
+            value = map(str, value)
         self.properties[name] = value
         
         
