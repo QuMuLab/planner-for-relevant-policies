@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(levelname)-8s %(message)s',)
                     
 import tools
+from external import argparse
 
 
 def convert_to_correct_type(val):
@@ -35,39 +36,38 @@ def convert_to_correct_type(val):
       
       
 
-class EvalOptionParser(OptionParser):
+class EvalOptionParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
-        OptionParser.__init__(self, option_class=tools.ExtOption, *args, **kwargs)
+        argparse.ArgumentParser.__init__(self, *args, 
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
+                
+        def directory(string):
+            if not os.path.isdir(string):
+                msg = "%r is not an evaluation directory" % string
+                raise argparse.ArgumentTypeError(msg)
+            return string
         
-        self.add_option(
-            "-s", "--source", action="store", dest="exp_dir", default="",
-            help="path to experiment directory")
-        self.add_option(
-            "-d", "--dest", action="store", dest="eval_dir", default="",
-            help="path to evaluation directory (default: <exp_dir>-eval)")
+      
+        self.add_argument('exp_dir', 
+                help='path to experiment directory', type=directory)
         
-    def error(self, msg):
-        '''Show the complete help AND the error message'''
-        self.print_help()
-        OptionParser.error(self, msg)
+        self.add_argument('-d', '--dest', dest='eval_dir', default='',
+                help='path to evaluation directory (default: <exp_dir>-eval)')
+            
+    
+    def parse_args(self):
+        args = argparse.ArgumentParser.parse_args(self)
         
-    def parse_options(self):
-        options, args = self.parse_args()
+        args.exp_dir = os.path.normpath(os.path.abspath(args.exp_dir))
+        logging.info('Exp dir: "%s"' % args.exp_dir)
         
-        if not options.exp_dir:
-            raise self.error('You need to specify an experiment directory')
-        options.exp_dir = os.path.normpath(os.path.abspath(options.exp_dir))
-        logging.info('Exp dir:  "%s"' % options.exp_dir)
-        if not os.path.isdir(options.exp_dir):
-            raise self.error('"%s" is no directory' % options.exp_dir)
+        if not args.eval_dir:
+            parent_dir = os.path.dirname(args.exp_dir)
+            dir_name = os.path.basename(args.exp_dir)
+            args.eval_dir = os.path.join(parent_dir, dir_name + '-eval')
+            logging.info('Eval dir: "%s"' % args.eval_dir)
         
-        if not options.eval_dir:
-            parent_dir = os.path.dirname(options.exp_dir)
-            dir_name = os.path.basename(options.exp_dir)
-            options.eval_dir = os.path.join(parent_dir, dir_name + '-eval')
-            logging.info('Eval dir: "%s"' % options.eval_dir)
-        
-        return options
+        return args
         
     
 
@@ -78,9 +78,9 @@ class Evaluation(object):
     
     def __init__(self, parser=EvalOptionParser()):
         self.parser = parser
-        options = self.parser.parse_options()
+        args = self.parser.parse_args()
         # Give all the options to the experiment instance
-        self.__dict__.update(options.__dict__)
+        self.__dict__.update(args.__dict__)
         
     def evaluate(self):
         raise Exception('Not Implemented')
@@ -121,12 +121,24 @@ class CopyEvaluation(Evaluation):
         
     
 class Pattern(object):
-    def __init__(self, name, regex_string, group, file, required):
+    def __init__(self, name, regex_string, group, file, required, type, flags):
         self.name = name
-        self.regex = re.compile(regex_string)
         self.group = group
         self.file = file
         self.required = required
+        self.type = type
+        
+        flag = 0
+        
+        for char in flags:
+            if   char == 'M': flag |= re.M
+            elif char == 'L': flag |= re.L
+            elif char == 'S': flag |= re.S
+            elif char == 'I': flag |= re.I
+            elif char == 'U': flag |= re.U
+            elif char == 'X': flag |= re.X
+        
+        self.regex = re.compile(regex_string, flag)
         
     def __str__(self):
         return self.regex.pattern
@@ -145,7 +157,8 @@ class ParseEvaluation(CopyEvaluation):
         self.functions = defaultdict(list)
         
         
-    def add_pattern(self, name, regex_string, group=1, file='run.log', required=True):
+    def add_pattern(self, name, regex_string, group=1, file='run.log', required=True,
+                        type=str, flags=''):
         '''
         During evaluate() look for pattern in file and add what is found in group
         to the properties dictionary under "name"
@@ -155,8 +168,11 @@ class ParseEvaluation(CopyEvaluation):
         If required is True and the pattern is not found in file, an error
         message is printed
         '''
-        pattern = Pattern(name, regex_string, group, file, required)
-        self.patterns[file].append(pattern)
+        #defaults = {'group': 1, 'file': 'run.log', 'required': True,
+        #            'type': str, 'flags': ''}
+        #defaults.update(kwargs)
+        pattern = Pattern(name, regex_string, group, file, required, type, flags)
+        self.patterns[pattern.file].append(pattern)
         
     def add_key_value_pattern(self, name, file='run.log'):
         '''
@@ -208,7 +224,7 @@ class ParseEvaluation(CopyEvaluation):
             if match:
                 try:
                     value = match.group(pattern.group)
-                    value = convert_to_correct_type(value)
+                    value = pattern.type(value)
                     found_props[pattern.name] = value
                 except IndexError:
                     msg = 'Group "%s" not found for pattern "%s" in file "%s"'
@@ -237,12 +253,15 @@ class ParseEvaluation(CopyEvaluation):
 def build_evaluator(parser=EvalOptionParser()):
     eval = ParseEvaluation(parser)
     eval.add_key_value_pattern('run_start_time')
-    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', required=False)
-    eval.add_pattern('plan_length', r'Plan length: (\d+)')
-    eval.add_pattern('expanded', r'Expanded (\d+)')
-    eval.add_pattern('generated', r'Generated (\d+)')
-    eval.add_pattern('search_time', r'Search time: (.+)s')
-    eval.add_pattern('total_time', r'Total time: (.+)s')
+    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
+    eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int)
+    eval.add_pattern('expanded', r'Expanded (\d+)', type=int)
+    eval.add_pattern('generated', r'Generated (\d+)', type=int)
+    eval.add_pattern('search_time', r'Search time: (.+)s', type=float)
+    eval.add_pattern('total_time', r'Total time: (.+)s', type=float)
+    
+    eval.add_pattern('variables', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
+    eval.add_pattern('operators', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
     
     def completely_explored(content, old_props):
         new_props = {}
@@ -270,9 +289,34 @@ def build_evaluator(parser=EvalOptionParser()):
             new_props['solved'] = 0
         return new_props
         
+    def total_values(content, old_props):
+        new_props = {}
+        vars_regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M|re.S)
+        match = vars_regex.search(content)
+        if not match:
+            logging.error('Total number of values could not be found')
+            return {}
+        """
+        var_descriptions looks like
+        ['var0 7 -1', 'var1 4 -1', 'var2 4 -1', 'var3 3 -1']
+        """
+        var_descriptions = match.group(1).splitlines()
+        #print 'VARS', var_descriptions
+        total_domain_size = 0
+        for var in var_descriptions:
+            var_name, domain_size, init_value = var.split()
+            #assert len(parts) == 3
+            #domain_size = parts[1]
+            total_domain_size += int(domain_size)
+        new_props['total_values'] = total_domain_size
+        return new_props
+        
     eval.add_function(completely_explored)
     eval.add_function(get_status)
     eval.add_function(solved)
+    
+    eval.add_function(total_values, file='output.sas')
+    
     return eval
 
 
