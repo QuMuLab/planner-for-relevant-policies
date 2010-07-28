@@ -286,6 +286,10 @@ def suite_minitest():
     return ["gripper:prob01.pddl", "gripper:prob02.pddl", 
             "gripper:prob03.pddl", "zenotravel:pfile1",
             "zenotravel:pfile2", "zenotravel:pfile3", ]
+            
+def suite_issue7test():
+    return ["gripper:prob01.pddl", "trucks-strips:p01.pddl",
+            "trucks:p01.pddl", "psr-middle:p01-s17-n2-l2-f30.pddl"]
 
 
 def suite_lmcut_domains():
