@@ -30,7 +30,7 @@ def build_planning_exp():
     for translator_rev in translator_revs:
         translator = os.path.join(issue7_dir, 'translate-r%d' % translator_rev, 'translate.py')
         assert os.path.exists(translator)
-        for config in exp.configurations:
+        for config in exp.configs:
             for problem in problems:
                 run = exp.add_run()
                 run.require_resource("PLANNER")
