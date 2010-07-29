@@ -11,12 +11,13 @@ issue7_dir = 'issue7'
 
 
 def build_planning_exp():
-    exp = experiments.build_experiment(parser=planning.PlanningExpOptionParser())
-
-    if not exp.configurations:
-        exp.parser.error('You need to specify at least one configuration')
-    if not exp.suite:
-        exp.parser.error('You need to specify at least one suite')
+    parser=experiments.ExpArgParser()
+    parser.add_argument("-c", "--configs", default=[], 
+                        nargs='+', help="planner configurations")
+    parser.add_argument("-s", "--suite", default=[], nargs='+',
+                        help="tasks, domains or suites")
+    
+    exp = experiments.build_experiment(parser)
 
     exp.add_resource("PLANNER", os.path.join(issue7_dir, 'trunk-r3842', 'downward/search/release-search'),
                     "release-search")
