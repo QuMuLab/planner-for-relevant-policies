@@ -1,12 +1,44 @@
 import os
 import sys
 #sys.path.insert(0, '../')
+import subprocess
 
 import planning
 import experiments
 import planning_suites
 
 issue7_dir = 'issue7'
+
+PLANNER_REV = 3842
+PLANNER_URL = 'svn+ssh://downward/trunk'
+
+TRANSLATOR_REVS = [3827, 3829, 3840, 4283]
+
+TRANSLATE_URL = 'svn+ssh://downward/branches/translate-andrew/downward/translate'
+TRANSLATE_ALT_URL = 'svn+ssh://downward/trunk/downward/translate'
+
+def setup():
+    cwd = os.getcwd()
+    if not os.path.exists(issue7_dir):
+        os.mkdir(issue7_dir)
+    os.chdir(issue7_dir)
+    
+    planner_rev_path = 'trunk-r%d' % PLANNER_REV
+    if not os.path.exists(planner_rev_path):
+        cmd = ('svn co %s@%d %s' % (PLANNER_URL, PLANNER_REV, planner_rev_path)).split()
+        ret = subprocess.call(cmd)
+        
+    for rev in TRANSLATOR_REVS:
+        translate_path = 'translate-r%d' % rev
+        if not os.path.exists(translate_path):
+            cmd = ('svn co %s@%d %s' % (TRANSLATE_URL, rev, translate_path)).split()
+            ret = subprocess.call(cmd)
+            if not ret == 0:
+                cmd = ('svn co %s@%d %s' % (TRANSLATE_ALT_URL, rev, translate_path)).split()
+                ret = subprocess.call(cmd)
+                
+    os.chdir(cwd)
+
 
 
 
@@ -25,9 +57,9 @@ def build_planning_exp():
             
     problems = planning_suites.build_suite(exp.suite)
     
-    translator_revs = [3827, 3829, 3840, 4283]
     
-    for translator_rev in translator_revs:
+    
+    for translator_rev in TRANSLATOR_REVS:
         translator = os.path.join(issue7_dir, 'translate-r%d' % translator_rev, 'translate.py')
         assert os.path.exists(translator)
         for config in exp.configs:
@@ -68,5 +100,6 @@ def build_planning_exp():
 
 if __name__ == '__main__':
     #sys.argv += '-n issue7exp -c yY -s TEST'.split()
+    setup()
     exp = build_planning_exp()
     exp.build()
