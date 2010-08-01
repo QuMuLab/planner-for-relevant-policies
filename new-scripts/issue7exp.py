@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 import os
 import sys
 #sys.path.insert(0, '../')
@@ -27,6 +28,13 @@ def setup():
     if not os.path.exists(planner_rev_path):
         cmd = ('svn co %s@%d %s' % (PLANNER_URL, PLANNER_REV, planner_rev_path)).split()
         ret = subprocess.call(cmd)
+    
+    # Needs compiling
+    planner = os.path.join(planner_rev_path, 'downward', 'search', 'release-search')
+    if os.path.exists(planner_rev_path) and not os.path.exists(planner):
+        os.chdir(os.path.join(planner_rev_path, 'downward'))
+        subprocess.call(['./build_all'])
+        os.chdir('../../')
         
     for rev in TRANSLATOR_REVS:
         translate_path = 'translate-r%d' % rev
