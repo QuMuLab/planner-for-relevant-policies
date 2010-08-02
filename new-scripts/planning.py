@@ -1,9 +1,9 @@
-'''
+"""
 Module that permits the generation of planning experiments
 
 Use either by invoking the module directly or using the build_planning_exp() 
 function from another another module for further customization
-'''
+"""
 
 import os
 import sys
@@ -15,15 +15,15 @@ import planning_suites
 
 def build_planning_exp():
     parser=experiments.ExpArgParser()
-    parser.add_argument("-c", "--configs", default=[], 
-                        nargs='+', help="planner configurations")
-    parser.add_argument("-s", "--suite", default=[], nargs='+',
-                        help="tasks, domains or suites")
+    parser.add_argument('-c', '--configs', default=[], 
+                        nargs='+', help='planner configurations')
+    parser.add_argument('-s', '--suite', default=[], nargs='+',
+                        help='tasks, domains or suites')
     
     exp = experiments.build_experiment(parser)
 
-    exp.add_resource("PLANNER", "../downward/search/release-search",
-                    "release-search")
+    exp.add_resource('PLANNER', '../downward/search/release-search',
+                    'release-search')
                     
                
     problems = planning_suites.build_suite(exp.suite)
@@ -31,12 +31,12 @@ def build_planning_exp():
     for config in exp.configs:
         for problem in problems:
             run = exp.add_run()
-            run.require_resource("PLANNER")
+            run.require_resource('PLANNER')
             
             domain_file = problem.domain_file()
             problem_file = problem.problem_file()
-            run.add_resource("DOMAIN", domain_file, "domain.pddl")
-            run.add_resource("PROBLEM", problem_file, "problem.pddl")
+            run.add_resource('DOMAIN', domain_file, 'domain.pddl')
+            run.add_resource('PROBLEM', problem_file, 'problem.pddl')
             
             translator_path = '../downward/translate/translate.py'
             translator_path = os.path.abspath(translator_path)
@@ -50,10 +50,10 @@ def build_planning_exp():
             
             run.set_command("$PLANNER --search 'lazy(single(%s))' < output" % config)
             
-            run.declare_optional_output("*.groups")
-            run.declare_optional_output("output")
-            run.declare_optional_output("output.sas")
-            run.declare_optional_output("sas_plan")
+            run.declare_optional_output('*.groups')
+            run.declare_optional_output('output')
+            run.declare_optional_output('output.sas')
+            run.declare_optional_output('sas_plan')
             
             run.set_property('config', config)
             run.set_property('domain', problem.domain)

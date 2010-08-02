@@ -1,7 +1,7 @@
 #! /usr/bin/env python
-'''
+"""
 Module that permits generating reports by reading properties files
-'''
+"""
 
 from __future__ import with_statement, division
 
@@ -31,9 +31,17 @@ from external import argparse
 
 
 
+# Create a parser only for parsing the report type
+report_type_parser = tools.ArgParser(add_help=False)
+report_type_parser.add_argument('--report', choices=['abs', 'rel', 'cmp'],
+                                default='abs', help='Select a report type')
+
+
 class ReportArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, **kwargs)        
+        tools.ArgParser.__init__(self, *args, parents=[report_type_parser], **kwargs)
+        
+        self.epilog = 'Note: The help output depends on the selected report type'
       
         self.add_argument('source', help='path to evaluation directory', 
                             type=self.directory)
@@ -82,9 +90,9 @@ class ReportArgParser(tools.ArgParser):
     
 
 class Report(object):
-    '''
+    """
     Base class for all reports
-    '''
+    """
     
     def __init__(self, parser=ReportArgParser()):
         # Give all the options to the report instance
@@ -100,9 +108,9 @@ class Report(object):
 
         
     def set_focus(self, attribute):
-        '''
+        """
         Define which attribute the report should be about
-        '''
+        """
         self.focus = attribute
         
         
@@ -112,13 +120,13 @@ class Report(object):
         
         
     def set_grouping(self, *grouping):
-        '''
+        """
         Set by which attributes the runs should be separated into groups
         
         grouping = None/[]: Use only one big group (default)
         grouping = 'domain': group by domain
         grouping = ['domain', 'problem']: Use one group for each problem
-        '''
+        """
         self.grouping = grouping
         
         
@@ -201,10 +209,10 @@ class Table(collections.defaultdict):
         
         
     def get_relative(self):
-        '''
+        """
         Find the max in each row and write the relative value into each cell.
         Returns a new table
-        '''
+        """
         rel_table = Table()
         for row in self.rows:
             max_in_row = max(self[row].values())
@@ -215,14 +223,14 @@ class Table(collections.defaultdict):
         
         
     def get_comparison(self, comparator=cmp):
-        '''
+        """
         || expanded                      | fF               | yY               |
         | **prob01.pddl**                | 21               | 16               |
         | **prob02.pddl**                | 38               | 24               |
         | **prob03.pddl**                | 59               | 32               |
         ==>
         returns ((fF, yY), (0, 0, 3)) [wins, draws, losses]
-        '''
+        """
         assert len(self.cols) == 2, 'For comparative reports please specify 2 configs'
         
         sums = [0, 0, 0]
@@ -238,13 +246,13 @@ class Table(collections.defaultdict):
         
         
     def __str__(self):
-        '''
+        """
         {'zenotravel': {'yY': 17, 'fF': 21}, 'gripper': {'yY': 72, 'fF': 118}}
         ->
         || expanded        | fF               | yY               |
         | **gripper     ** | 118              | 72               |
         | **zenotravel  ** | 21               | 17               |
-        '''
+        """
         text = '|| %-29s | ' % self.title
         
         rows = self.rows
@@ -261,8 +269,8 @@ class Table(collections.defaultdict):
         
         
 class PlanningReport(Report):
-    '''
-    '''
+    """
+    """
     def __init__(self, parser=ReportArgParser()):
         parser.add_argument('-c', '--configs', nargs='*',
                             default=[], help="planner configurations")
@@ -345,13 +353,13 @@ class PlanningReport(Report):
 
 
 class AbsolutePlanningReport(PlanningReport):
-    '''
+    """
     Write an absolute report about the focus attribute, e.g.
     
     || expanded        | fF               | yY               |
     | **gripper     ** | 118              | 72               |
     | **zenotravel  ** | 21               | 17               |
-    '''
+    """
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
         
@@ -407,13 +415,13 @@ class AbsolutePlanningReport(PlanningReport):
         
         
 class RelativePlanningReport(AbsolutePlanningReport):
-    '''
+    """
     Write a relative report about the focus attribute, e.g.
     
     || expanded        | fF               | yY               |
     | **gripper     ** | 1.0              | 0.6102           |
     | **zenotravel  ** | 1.0              | 0.8095           |
-    '''
+    """
     def __init__(self, *args, **kwargs):
         AbsolutePlanningReport.__init__(self, *args, **kwargs)
         
@@ -436,14 +444,14 @@ class RelativePlanningReport(AbsolutePlanningReport):
             
             
 class ComparativePlanningReport(PlanningReport):
-    '''
+    """
     Write a comparative report about the focus attribute, e.g.
     
     ||                               | fF/yY            |
     | **grid**                       | 0 - 1 - 0        |
     | **gripper**                    | 0 - 0 - 3        |
     | **zenotravel**                 | 0 - 1 - 1        |
-    '''
+    """
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
         
@@ -503,11 +511,20 @@ class ComparativePlanningReport(PlanningReport):
 if __name__ == "__main__":
     #if len(sys.argv) == 1:
     #    sys.argv.extend('test-eval expanded -s MINITEST -c yY fF --resolution domain'.split())
+    known_args, remaining_args = report_type_parser.parse_known_args()
+    report_type = known_args.report
+    logging.info('Report type: %s' % report_type)
+    
+    if report_type == 'abs':
+        report = AbsolutePlanningReport()
+    elif report_type == 'rel':
+        report = RelativePlanningReport()
+    elif report_type == 'cmp':
+        report = ComparativePlanningReport()
         
-    for report in [AbsolutePlanningReport()]:#, RelativePlanningReport(), ComparativePlanningReport()]:
-        #report.add_filter(domain='gripper')
-        #report.add_filter(lambda item: item['expanded'] == '21')
-        #report.set_grouping('config', 'domain', 'problem')
-        report.write()
+    #report.add_filter(domain='gripper')
+    #report.add_filter(lambda item: item['expanded'] == '21')
+    #report.set_grouping('config', 'domain', 'problem')
+    report.write()
     
 

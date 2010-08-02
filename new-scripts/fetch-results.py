@@ -1,7 +1,7 @@
 #! /usr/bin/env python
-'''
+"""
 Module that permits evaluating experiments conducted with experiments.py
-'''
+"""
 
 from __future__ import with_statement
 
@@ -49,9 +49,9 @@ class EvalOptionParser(tools.ArgParser):
     
 
 class Evaluation(object):
-    '''
+    """
     Base class for all evaluations
-    '''
+    """
     def __init__(self, parser=EvalOptionParser()):
         self.parser = parser
         # Give all the options to the experiment instance
@@ -71,10 +71,10 @@ class Evaluation(object):
         
         
 class CopyEvaluation(Evaluation):
-    '''
+    """
     Evaluation that copies files from run dirs into a new tree under
     <eval-dir> according to the value "id" in the run's properties file
-    '''
+    """
     def __init__(self, *args, **kwargs):
         Evaluation.__init__(self, *args, **kwargs)
         
@@ -128,10 +128,10 @@ class Pattern(object):
         
 
 class ParseEvaluation(Evaluation):
-    '''
+    """
     Evaluation that parses various files and writes found results
     into the run's properties file
-    '''
+    """
     def __init__(self, *args, **kwargs):
         Evaluation.__init__(self, *args, **kwargs)
         
@@ -141,7 +141,7 @@ class ParseEvaluation(Evaluation):
         
     def add_pattern(self, name, regex_string, group=1, file='run.log', required=True,
                         type=str, flags=''):
-        '''
+        """
         During evaluate() look for pattern in file and add what is found in group
         to the properties dictionary under "name"
         
@@ -149,26 +149,26 @@ class ParseEvaluation(Evaluation):
         
         If required is True and the pattern is not found in file, an error
         message is printed
-        '''
+        """
         pattern = Pattern(name, regex_string, group, file, required, type, flags)
         self.patterns[pattern.file].append(pattern)
         
     def add_key_value_pattern(self, name, file='run.log'):
-        '''
+        """
         Convenience method that adds a pattern for lines containing only a
         key:value pair
-        '''
+        """
         regex_string = r'\s*%s\s*[:=]\s*(.+)' % name
         self.add_pattern(name, regex_string, 1, file)
         
         
     def add_function(self, function, file='run.log'):
-        '''
+        """
         After all the patterns have been evaluated and the found values have
         been inserted into the properties files, call function(file_content, props)
         for each added function.
         The function is supposed to return a dictionary with new properties.
-        '''
+        """
         self.functions[file].append(function)
         
         
@@ -411,7 +411,7 @@ def build_evaluator(parser=EvalOptionParser()):
     return eval
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     #if len(sys.argv) == 1:
     #    print 'Testing'
     #    sys.argv.extend('-s test'.split())

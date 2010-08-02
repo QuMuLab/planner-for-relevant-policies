@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-'''
+"""
 Todo:
 X OptionParser class
 X optional/required outputs (warnings if more output)
@@ -22,7 +22,7 @@ X Relative reports
 O Detailed reports
 
 X Let user define wanted type for regexes
-O Use double-quotes for multiline strings
+X Use double-quotes for multiline strings
 
 O Vergleiche Ausgabe (v.a. expansions) des Translators, Prep., Search (Verwende athlon, opteron (mit core), schnell: amd, ausprobieren: xeon)
 O lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domains, cea (yY), ff (fF), oa10000 (M&S)
@@ -33,7 +33,7 @@ X Anzahl Kanten im Causal Graph
 X Schreibe queue in properties file
 X Derived Vars in properties
 O Write high-level documentation
-'''
+"""
 
 from __future__ import with_statement
 
@@ -49,26 +49,32 @@ logging.basicConfig(level=logging.INFO,
 import tools
       
       
+      
+# Create a parser only for parsing the experiment type
+exp_type_parser = tools.ArgParser(add_help=False)
+exp_type_parser.add_argument('-e', '--exp_type', choices=['local', 'gkigrid', 'argo'],
+                                default='local', help='Select an experiment type')
+      
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, **kwargs)
+        tools.ArgParser.__init__(self, *args, parents=[exp_type_parser], **kwargs)
       
         self.add_argument('exp_name', 
-                    help="name of the experiment (e.g. <initials>-<descriptive name>)")
+                    help='name of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
-            "--timeout", type=int, default=1800,
-            help="timeout per task in seconds")
+            '-t', '--timeout', type=int, default=1800,
+            help='timeout per task in seconds')
         self.add_argument(
-            "-m", "--memory", type=int, default=2048,
-            help="memory limit per task in MB")
+            '-m', '--memory', type=int, default=2048,
+            help='memory limit per task in MB')
         self.add_argument(
-            "--shard-size", type=int, default=100,
-            help="how many tasks to group into one top-level directory")
+            '--shard-size', type=int, default=100,
+            help='how many tasks to group into one top-level directory')
         self.add_argument(
-            "--exp-root-dir", 
-            help="directory where this experiment should be located (default is this folder). " \
-                    "The new experiment will reside in <exp-root-dir>/<exp-name>")
+            '--exp-root-dir', 
+            help='directory where this experiment should be located (default is this folder). ' \
+                    'The new experiment will reside in <exp-root-dir>/<exp-name>')
         
     
 
@@ -92,34 +98,34 @@ class Experiment(object):
         
         
     def add_resource(self, resource_name, source, dest):
-        '''
+        """
         Example:
-        >>> experiment.add_resource("PLANNER", "../downward/search/release-search",
-                                    "release-search")
+        >>> experiment.add_resource('PLANNER', '../downward/search/release-search',
+                                    'release-search')
                                     
         Includes a "global" file, i.e., one needed for all runs, into the
         experiment archive. In case of GkiGridExperiment, copies it to the
         main directory of the experiment. The name "PLANNER" is an ID for
         this resource that can also be used to refer to it in shell scripts.
-        '''
+        """
         dest = self._get_abs_path(dest)
         self.resources.append((source, dest))
         if resource_name:
             self.env_vars[resource_name] = dest
         
     def add_run(self):
-        '''
+        """
         Factory for Runs
         Schedule this run to be part of the experiment.
-        '''
+        """
         run = Run(self)
         self.runs.append(run)
         return run
         
     def build(self):
-        '''
+        """
         Apply all the actions to the filesystem
-        '''
+        """
         tools.overwrite_dir(self.base_dir)
         
         self._set_run_dirs()
@@ -129,21 +135,21 @@ class Experiment(object):
         
         
     def _get_abs_path(self, rel_path):
-        '''
+        """
         Return absolute dir by applying rel_path to the experiment's base dir
         
         Example:
         >>> _get_abs_path('mytest.q')
         /home/user/mytestjob/mytest.q
-        '''
+        """
         return os.path.join(self.base_dir, rel_path)
         
 
     def _set_run_dirs(self):
-        '''
+        """
         Sets the relative run directories as instance 
         variables for all runs
-        '''
+        """
         def get_run_number(number):
             return str(number).zfill(5)
         
@@ -168,9 +174,9 @@ class Experiment(object):
         
         
     def _build_main_script(self):
-        '''
+        """
         Generates the main script
-        '''
+        """
         raise Exception('Not Implemented')
         
                 
@@ -185,9 +191,9 @@ class Experiment(object):
                 
                 
     def _build_runs(self):
-        '''
+        """
         Uses the relative directory information and writes all runs to disc
-        '''
+        """
         for run in self.runs:
             run.build()
             
@@ -199,14 +205,14 @@ class LocalExperiment(Experiment):
         cores = multiprocessing.cpu_count()
         parser.add_argument(
             '-p', '--processes', type=int, default=1, choices=xrange(1, cores+1),
-            help="number of parallel processes to use (default: 1)")
+            help='number of parallel processes to use (default: 1)')
         Experiment.__init__(self, parser=parser)
         
         
     def _build_main_script(self):
-        '''
+        """
         Generates the main script
-        '''
+        """
         commands = ['"cd %s; ./run"' % run.dir for run in self.runs]
         replacements = {'COMMANDS': ',\n'.join(commands),
                         'PROCESSES': str(self.processes),
@@ -234,25 +240,25 @@ class ArgoExperiment(Experiment):
 class GkiGridExperiment(Experiment):
     def __init__(self, parser=ExpArgParser()):
         parser.add_argument(
-            "-q", "--queue", default='athlon_core.q',
-            help="name of the queue to use for the experiment (default: athlon_core.q)")
+            '-q', '--queue', default='athlon_core.q',
+            help='name of the queue to use for the experiment (default: athlon_core.q)')
         parser.add_argument(
-            "--runs-per-task", type=int, default=1,
-            help="how many runs to put into one task (default is 1)")
+            '--runs-per-task', type=int, default=1,
+            help='how many runs to put into one task (default is 1)')
         Experiment.__init__(self, parser=parser)
         
         
     def _build_main_script(self):
-        '''
+        """
         Generates the main script
-        '''
+        """
         num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
         job_params = {
-            "logfile": self.exp_name + ".log",
-            "errfile": self.exp_name + ".err",
-            "driver_timeout": self.timeout + 30,
-            "num_tasks": num_tasks,
-            "queue": self.queue,
+            'logfile': self.exp_name + '.log',
+            'errfile': self.exp_name + '.err',
+            'driver_timeout': self.timeout + 30,
+            'num_tasks': num_tasks,
+            'queue': self.queue,
         }
         script_template = open('data/gkigrid-job-header-template').read()
         script = script_template % job_params
@@ -279,9 +285,9 @@ class GkiGridExperiment(Experiment):
 
 
 class Run(object):
-    '''
+    """
     A Task can consist of one or multiple Runs
-    '''
+    """
     
     def __init__(self, experiment):
         self.experiment = experiment
@@ -315,7 +321,7 @@ class Run(object):
         
         
     def require_resource(self, resource_name):
-        '''
+        """
         Some resources can be used by linking to the resource in the 
         experiment directory without copying it into each run
         
@@ -323,35 +329,35 @@ class Run(object):
         into the task directory.
         
         Example:
-        >>> run.require_resource("PLANNER")
+        >>> run.require_resource('PLANNER')
         
         Make the planner resource available for this run
         In environments like the argo cluster, this implies
         copying the planner into each task. For the gkigrid, we merely
         need to set up the PLANNER environment variable.
-        '''
+        """
         self.linked_resources.append(resource_name)
         
         
     def add_resource(self, resource_name, source, dest):
-        '''
+        """
         Example:
-        >>> run.add_resource("DOMAIN", "../benchmarks/gripper/domain.pddl",
-                                "domain.pddl")
+        >>> run.add_resource('DOMAIN', '../benchmarks/gripper/domain.pddl',
+                                'domain.pddl')
                                 
         Copy "../benchmarks/gripper/domain.pddl" into the run
         directory under name "domain.pddl" and make it available as
         resource "DOMAIN" (usable as environment variable $DOMAIN).
-        '''        
+        """        
         self.resources.append((source, dest))
         if resource_name:
             self.env_vars[resource_name] = dest
             
                     
     def set_command(self, command):
-        '''
+        """
         Example:
-        run.set_command("$PLANNER %s <$INFILE" % options)
+        run.set_command('$PLANNER %s <$INFILE' % options)
         
         A bash fragment that gives the code to be run when invoking
         this job.
@@ -363,7 +369,7 @@ class Run(object):
         postprocessing code should have some way of finding out
         whether the command succeeded or was aborted, e.g. via some
         environment variable.
-        '''
+        """
         self.command = command
         
     def set_preprocess(self, preprocess_command):
@@ -374,33 +380,33 @@ class Run(object):
         
         
     def declare_optional_output(self, file_glob):
-        '''
+        """
         Example:
-        run.declare_optional_output("plan.soln*")
+        run.declare_optional_output('plan.soln*')
         
         Specifies that all files names "plan.soln*" (using
         shell-style glob patterns) are part of the experiment output.
-        '''
+        """
         self.optional_output.append(file_glob)
         
         
     def declare_required_output(self, filename):
-        '''
+        """
         There's a corresponding declare_required_output for output
         files that must be present at the end or we have an error. A
         specification like this is e.g. necessary for the Argo
         cluster. On the gkigrid, this wouldn't do anything, although
         the declared outputs should be stored somewhere so that we
         can later verify that all went according to plan.
-        '''
+        """
         self.required_output.append(filename)
         
         
     def build(self):
-        '''
+        """
         After having made all the necessary adjustments with the methods above,
         this method can be used to write everything to the disk. 
-        '''
+        """
         assert self.dir
         
         tools.overwrite_dir(self.dir)
@@ -445,10 +451,10 @@ class Run(object):
         
     
     def _build_linked_resources(self):
-        '''
+        """
         If we are building an argo experiment, add all linked resources to
         the resources list
-        '''
+        """
         # Determine if we should link (gkigrid) or copy (argo)
         copy = type(self.experiment) == ArgoExperiment
         if copy:
@@ -491,11 +497,11 @@ class Run(object):
                                 
         
     def _get_abs_path(self, rel_path):
-        '''
+        """
         Example:
         >>> _get_abs_path('run')
         /home/user/mytestjob/runs-00001-00100/run
-        '''
+        """
         return os.path.join(self.dir, rel_path)
         
     
@@ -513,25 +519,11 @@ class Run(object):
 ## Maybe also parses some generic options that make sense for all
 ## kinds of experiments, e.g. timeout and memory limit.
 def build_experiment(parser=ExpArgParser()):
-    # Create a parser only for parsing the experiment type
-    exp_type_parser = tools.ArgParser(add_help=False)
-    exp_type_parser.add_argument('-t', '--exp_type', choices=['local', 'gkigrid', 'argo'],
-                        default='local', help='Select an experiment type')
-    #exp_types = ['local', 'gkigrid', 'argo']
-    #for type in exp_types:
-    #    parser.add_argument('--'+type, dest='exp_type', action='store_const', const=type, 
-    #                    default='local', help='Create  a %s experiment' % type)
     known_args, remaining_args = exp_type_parser.parse_known_args()
     
-    # delete the handled arguments
-    sys.argv = [sys.argv[0]] + remaining_args
-    
     type = known_args.exp_type
-    print type
+    logging.info('Experiment type: %s' % type)
     
-    # Now that we have parsed for the first time, we can add the help
-    # This way all options are shown once help is printed
-    #parser.set_help_active()
     parser.epilog = 'Note: The help output depends on the selected experiment type'
     
     if type == 'local':
@@ -543,6 +535,6 @@ def build_experiment(parser=ExpArgParser()):
     return exp
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     exp = build_experiment()
     exp.build()
