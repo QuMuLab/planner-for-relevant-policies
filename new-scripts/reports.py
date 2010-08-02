@@ -145,12 +145,14 @@ class Report(object):
         
     def _get_data(self):
         data = DataSet()
+        logging.info('Started collecting data')
         for base, dir, files in os.walk(self.eval_dir):
             for file in files:
                 if file == 'properties':
                     file = os.path.join(base, file)
                     props = tools.Properties(file)
                     data.append(**props)
+        logging.info('Finished collecting data')
         return data
                             
         

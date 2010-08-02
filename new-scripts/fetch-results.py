@@ -184,6 +184,7 @@ class ParseEvaluation(Evaluation):
             
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
+            props['run_dir'] = run_dir
             
             for file, patterns in self.patterns.items():
                 file = os.path.join(run_dir, file)
@@ -246,13 +247,13 @@ class ParseEvaluation(Evaluation):
         
 def build_evaluator(parser=EvalOptionParser()):
     eval = ParseEvaluation(parser)
-    eval.add_key_value_pattern('run_start_time')
-    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
-    eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int)
-    eval.add_pattern('expanded', r'Expanded (\d+)', type=int)
-    eval.add_pattern('generated', r'Generated (\d+)', type=int)
-    eval.add_pattern('search_time', r'Search time: (.+)s', type=float)
-    eval.add_pattern('total_time', r'Total time: (.+)s', type=float)
+    #eval.add_key_value_pattern('run_start_time')
+    #eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
+    eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
+    eval.add_pattern('expanded', r'Expanded (\d+)', type=int, required=False)
+    #eval.add_pattern('generated', r'Generated (\d+)', type=int)
+    eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False)
+    #eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     
     eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
     eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
