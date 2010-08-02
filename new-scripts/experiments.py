@@ -11,7 +11,7 @@ X LocalExperiment
 X CL option for queue
 
 X Try argparse in reports.py
-O Convert code to use argparse
+X Convert code to use argparse
 X Integrate txt2tags
 X Use datasets
 X Write AbsolutePlannerReport
@@ -27,6 +27,9 @@ X Use double-quotes for multiline strings
 O Vergleiche Ausgabe (v.a. expansions) des Translators, Prep., Search (Verwende athlon, opteron (mit core), schnell: amd, ausprobieren: xeon)
 O lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domains, cea (yY), ff (fF), oa10000 (M&S)
   suites: ALL, lm-cut-domains
+  configs: 
+    - ou, ob, oa10000 (LMCUT)
+    - yY, fF (ALL)
 X #Operatoren, #Variablen, #Unterschiedliche Werte (Summe aller Werte) in properties file
 X Anzahl Axiome in properties
 X Anzahl Kanten im Causal Graph

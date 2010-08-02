@@ -223,7 +223,7 @@ class Table(collections.defaultdict):
         Find the max in each row and write the relative value into each cell.
         Returns a new table
         """
-        rel_table = Table()
+        rel_table = Table(self.title)
         for row in self.rows:
             max_in_row = max(self[row].values())
             for col, cell in self[row].items():
@@ -325,7 +325,10 @@ class PlanningReport(Report):
             
     @property
     def name(self):
-        parts = [self.configs, self.suite, [self.resolution], [self.focus]]
+        eval_dir = os.path.basename(self.eval_dir)
+        configs = self.configs or ['*']
+        suite = self.suite or ['*']
+        parts = [[eval_dir], configs, suite, [self.resolution], [self.focus]]
         return '_'.join(['-'.join(vars) for vars in parts])
         
     
