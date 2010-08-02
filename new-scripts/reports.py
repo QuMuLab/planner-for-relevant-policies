@@ -65,6 +65,10 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--reload', default=False, action='store_true',
                         help='rescan the directory and reload the properties files')
                         
+        self.add_argument('-a', '--attributes', dest='show_attributes',
+                        default=False, action='store_true',
+                        help='show a list of available attributes and exit')
+                        
                         
     def parse_args(self, *args, **kwargs):
         args = argparse.ArgumentParser.parse_args(self, *args, **kwargs)
@@ -99,6 +103,12 @@ class Report(object):
         parser.parse_args(namespace=self)
         
         self.data = self._get_data()
+        
+        if self.show_attributes:
+            print
+            print 'Available attributes:'
+            print self.data.get_attributes()
+            sys.exit()
         
         self.filter_funcs = []
         self.filter_pairs = {}

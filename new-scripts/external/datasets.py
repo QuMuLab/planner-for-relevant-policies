@@ -162,6 +162,15 @@ class DataSet(Bunch):
         for item in self.items:
             key_to_page[item.key(*attrs)].append(item)
         return pages
+        
+    def get_attributes(self):
+        """
+        """
+        attrs = set([])
+        for item in self.items:
+            attrs |= set(item.keys())
+        return sorted(list(attrs))
+    
 
 
 def testme():
