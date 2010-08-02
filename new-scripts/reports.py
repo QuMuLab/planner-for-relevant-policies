@@ -16,6 +16,7 @@ import logging
 import datetime
 import collections
 import operator
+import cPickle
 
 logging.basicConfig(level=logging.INFO, format='%(relativeCreated)-s %(levelname)-8s %(message)s',)
                     
@@ -52,6 +53,9 @@ class ReportArgParser(tools.ArgParser):
                         
         self.add_argument('--dry', default=False, action='store_true',
                         help='do not write anything to the filesystem')
+                        
+        self.add_argument('--reload', default=False, action='store_true',
+                        help='rescan the directory and reload the properties files')
                         
                         
     def parse_args(self, *args, **kwargs):
@@ -144,15 +148,24 @@ class Report(object):
         
         
     def _get_data(self):
-        data = DataSet()
-        logging.info('Started collecting data')
-        for base, dir, files in os.walk(self.eval_dir):
-            for file in files:
-                if file == 'properties':
-                    file = os.path.join(base, file)
-                    props = tools.Properties(file)
-                    data.append(**props)
-        logging.info('Finished collecting data')
+        dump_path = os.path.join(self.eval_dir, 'data_dump')
+        
+        dump_exists = os.path.exists(dump_path)
+        if self.reload or not dump_exists:
+            data = DataSet()
+            logging.info('Started collecting data')
+            for base, dir, files in os.walk(self.eval_dir):
+                for file in files:
+                    if file == 'properties':
+                        file = os.path.join(base, file)
+                        props = tools.Properties(file)
+                        data.append(**props)
+            # Pickle data for faster future use
+            cPickle.dump(data, open(dump_path, 'w'))
+            logging.info('Wrote data dump')
+            logging.info('Finished collecting data')
+        else:
+            data = cPickle.load(open(dump_path))
         return data
                             
         
@@ -319,14 +332,14 @@ class PlanningReport(Report):
         if not self.output:
             self.output = self.build()
             
-        if self.dry:
-            return
+        if not self.dry:
+            output_file = os.path.join(self.report_dir, 
+                self.name + '.' + self.output_format)
+            with open(output_file, 'w') as file:
+                logging.info('Writing output to "%s"' % output_file)
+                file.write(self.output)
         
-        output_file = os.path.join(self.report_dir, 
-            self.name + '.' + self.output_format)
-        with open(output_file, 'w') as file:
-            logging.info('Writing output to "%s"' % output_file)
-            file.write(self.output)
+        logging.info('Finished writing report')
         
 
 
