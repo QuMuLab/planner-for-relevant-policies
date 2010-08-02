@@ -17,7 +17,7 @@ import datetime
 import collections
 import operator
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)-8s %(message)s',)
+logging.basicConfig(level=logging.INFO, format='%(relativeCreated)-s %(levelname)-8s %(message)s',)
                     
 import tools
 import planning_suites
