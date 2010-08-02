@@ -57,6 +57,8 @@ class Evaluation(object):
         # Give all the options to the experiment instance
         self.parser.parse_args(namespace=self)
         
+        self.run_dirs = self._get_run_dirs()
+        
     def evaluate(self):
         raise Exception('Not Implemented')
         
@@ -125,13 +127,13 @@ class Pattern(object):
         
         
 
-class ParseEvaluation(CopyEvaluation):
+class ParseEvaluation(Evaluation):
     '''
     Evaluation that parses various files and writes found results
     into the run's properties file
     '''
     def __init__(self, *args, **kwargs):
-        CopyEvaluation.__init__(self, *args, **kwargs)
+        Evaluation.__init__(self, *args, **kwargs)
         
         self.patterns = defaultdict(list)
         self.functions = defaultdict(list)
@@ -171,14 +173,18 @@ class ParseEvaluation(CopyEvaluation):
         
         
     def evaluate(self):
-        CopyEvaluation.evaluate(self)
+        #CopyEvaluation.evaluate(self)
         
-        total_dirs = len(self.dirs)
+        total_dirs = len(self.run_dirs)
         
-        for index, run_dir in enumerate(self.dirs, 1):
-            logging.info('Done Parsing: %d/%d' % (index, total_dirs))
+        for index, run_dir in enumerate(self.run_dirs, 1):
+            
+            copy_files = {}
+            
+            
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
+            
             for file, patterns in self.patterns.items():
                 file = os.path.join(run_dir, file)
                 new_props = self._parse_file(file, patterns)
@@ -187,7 +193,15 @@ class ParseEvaluation(CopyEvaluation):
                 file = os.path.join(run_dir, file)
                 new_props = self._apply_functions(file, functions, props)
                 props.update(new_props)
+            
+            # Write new properties file
+            id = props.get('id')
+            dest_dir = os.path.join(self.eval_dir, *id)
+            tools.makedirs(dest_dir)
+            props.filename = os.path.join(dest_dir, 'properties')
             props.write()
+            
+            logging.info('Done Parsing: %6d/%d' % (index, total_dirs))
             
             
     def _parse_file(self, file, patterns):

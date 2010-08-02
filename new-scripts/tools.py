@@ -16,6 +16,14 @@ def divide_list(seq, size):
     '''
     return [seq[i:i+size] for i  in range(0, len(seq), size)]
     
+    
+def makedirs(dir):
+    '''
+    mkdir variant that does not complain when the dir already exists
+    '''
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    
 
 def overwrite_dir(dir):
     if os.path.exists(dir):
