@@ -91,8 +91,11 @@ class CopyEvaluation(Evaluation):
             copy_dict[run_dir] = dest
             
         self.dirs = copy_dict.values()
+        
+        total_dirs = len(copy_dict.items())
             
-        for source, dest in copy_dict.items():
+        for index, (source, dest) in enumerate(copy_dict.items(), 1):
+            logging.info('Done copying: %d/%d' % (index, total_dirs))
             tools.updatetree(source, dest)
         
         
@@ -170,7 +173,10 @@ class ParseEvaluation(CopyEvaluation):
     def evaluate(self):
         CopyEvaluation.evaluate(self)
         
-        for run_dir in self.dirs:
+        total_dirs = len(self.dirs)
+        
+        for index, run_dir in enumerate(self.dirs, 1):
+            logging.info('Done Parsing: %d/%d' % (index, total_dirs))
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
             for file, patterns in self.patterns.items():
@@ -330,7 +336,13 @@ def build_evaluator(parser=EvalOptionParser()):
             # make sure we have a valid file here
             regex = re.compile(r'end_operator\n(\d+)', re.M|re.S)
             match = regex.search(content)
-            assert match.group(1) == '0'
+            
+            if match is None:
+                # Some mystery problems don't have any operators
+                assert 'begin_rule' not in content, content
+                return 0
+            else:
+                assert match.group(1) == '0'
         axioms = int(match.group(1))
         return axioms
         
