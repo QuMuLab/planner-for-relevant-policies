@@ -59,6 +59,10 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--group-func', default='sum',
                         help='the function used to cumulate the values of a group')
                         
+        self.add_argument('--hide-sum', dest='hide_sum_row',
+                        default=False, action='store_true',
+                        help='do not add a row that sums up each column')
+                        
         self.add_argument('--dry', default=False, action='store_true',
                         help='do not write anything to the filesystem')
                         
@@ -143,8 +147,9 @@ class Report(object):
     def set_order(self, *order):
         self.order = order
         
-        
-    def _get_group_dict(self):
+       
+    @property
+    def group_dict(self):
         data = DataSet(self.data)
         
         if not self.order:
@@ -189,10 +194,11 @@ class Report(object):
         
 
 class Table(collections.defaultdict):
-    def __init__(self, title=''):
+    def __init__(self, title='', sum=True):
         collections.defaultdict.__init__(self, dict)
         
         self.title = title
+        self.sum = sum
         
         
     def add_cell(self, row, col, value):
@@ -201,7 +207,11 @@ class Table(collections.defaultdict):
         
     @property    
     def rows(self):
-        return sorted(self.keys())
+        rows = self.keys()
+        # Let the sum row be the last one
+        key = lambda row: 'zzz' if row.upper() == 'SUM' else row.lower()
+        rows = sorted(rows, key=key)
+        return rows
         
         
     @property
@@ -216,6 +226,21 @@ class Table(collections.defaultdict):
         
     def get_cells_in_row(self, row):
         return self[row].values()
+        
+        
+    def get_sum_row(self):
+        """
+        Unused
+        """
+        sums = defaultdict(int)
+        for row in self.rows:
+            for col, value in self[row].items():
+                sums[col] += value
+        text += '| %-30s ' % '**Sum**'
+        for col, sum in sorted(sums.items()):
+            text += '| %-16s ' % ('**'+str(sum)+'**')
+        text += '|\n'
+        return text
         
         
     def get_relative(self):
@@ -375,13 +400,6 @@ class AbsolutePlanningReport(PlanningReport):
     """
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
-        
-        if self.resolution == 'suite':
-            self.set_grouping('config')
-        elif self.resolution == 'domain':
-            self.set_grouping('config', 'domain')
-        elif self.resolution == 'problem':
-            self.set_grouping('config', 'domain', 'problem')
             
             
     @property
@@ -390,8 +408,6 @@ class AbsolutePlanningReport(PlanningReport):
         
     
     def get_table(self):
-        group_dict = self._get_group_dict()
-        
         func = self.group_func
         
         table = Table(self.focus)
@@ -404,24 +420,30 @@ class AbsolutePlanningReport(PlanningReport):
             msg += 'Are you sure you typed it in correctly?'
             logging.error(msg)
         
-        if self.resolution == 'suite':
-            for (config,), group in group_dict.items():
-                values = filter(existing, group[self.focus])
-                if not values:
-                    show_missing_attribute_msg()
-                table.add_cell('-'.join(self.suite), config, func(values))
-        elif self.resolution == 'domain':
-            for (config, domain), group in group_dict.items():
+        
+        if self.resolution == 'domain':
+            self.set_grouping('config', 'domain')
+            for (config, domain), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
                 if not values:
                     show_missing_attribute_msg()
                 table.add_cell(domain, config, func(values))
         elif self.resolution == 'problem':
-            for (config, domain, problem), group in group_dict.items():
+            self.set_grouping('config', 'domain', 'problem')
+            for (config, domain, problem), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
                 if not values:
                     show_missing_attribute_msg()
                 table.add_cell(domain + ':' + problem, config, func(values))
+        
+        if self.resolution == 'suite' or not self.hide_sum_row:
+            self.set_grouping('config')
+            row_name = '-'.join(self.suite) if self.resolution == 'suite' else 'SUM'
+            for (config,), group in self.group_dict.items():
+                values = filter(existing, group[self.focus])
+                if not values:
+                    show_missing_attribute_msg()
+                table.add_cell(row_name, config, func(values))
             
         return table
         
@@ -445,8 +467,6 @@ class RelativePlanningReport(AbsolutePlanningReport):
                 
     
     def get_table(self):
-        group_dict = self._get_group_dict()
-        
         func = self.group_func
         
         absolute_table = AbsolutePlanningReport.get_table(self)
@@ -469,13 +489,6 @@ class ComparativePlanningReport(PlanningReport):
         PlanningReport.__init__(self, *args, **kwargs)
         
         self.compared_attribute = 'config'
-        
-        if self.resolution == 'suite':
-            self.set_grouping()
-        elif self.resolution == 'domain':
-            self.set_grouping('domain')
-        elif self.resolution == 'problem':
-            self.set_grouping('domain', 'problem')
             
     
     @property
@@ -484,26 +497,16 @@ class ComparativePlanningReport(PlanningReport):
         
     
     def get_table(self):
-        group_dict = self._get_group_dict()
+        
         
         func = self.group_func
         
         table = Table(self.focus)
         
-        if self.resolution == 'suite':
-            for _, group in group_dict.items():
-                values = Table()
-                config_prob_to_group = group.group_dict('config', 'domain', 'problem')
-                for (config, domain, problem), subgroup in config_prob_to_group.items():
-                    vals = subgroup[self.focus]
-                    assert len(vals) == 1
-                    val = vals[0]
-                    values.add_cell(domain + ':' + problem, config, val)
-                (config1, config2), sums = values.get_comparison()
-                table.add_cell('-'.join(self.suite), config1 + '/' + config2, 
-                                        '%d - %d - %d' % tuple(sums))
-        elif self.resolution == 'domain':
-            for (domain,), group in group_dict.items():
+        
+        if self.resolution == 'domain':
+            self.set_grouping('domain')
+            for (domain,), group in self.group_dict.items():
                 values = Table()
                 config_prob_to_group = group.group_dict('config', 'problem')
                 for (config, problem), subgroup in config_prob_to_group.items():
@@ -516,6 +519,22 @@ class ComparativePlanningReport(PlanningReport):
                                         '%d - %d - %d' % tuple(sums))
         elif self.resolution == 'problem':
             logging.error('Comparative reports only make sense for domains and suites')
+            sys.exit(1)
+            
+        if self.resolution == 'suite' or not self.hide_sum_row:
+            row_name = '-'.join(self.suite) if self.resolution == 'suite' else 'SUM'
+            self.set_grouping()
+            for _, group in self.group_dict.items():
+                values = Table()
+                config_prob_to_group = group.group_dict('config', 'domain', 'problem')
+                for (config, domain, problem), subgroup in config_prob_to_group.items():
+                    vals = subgroup[self.focus]
+                    assert len(vals) == 1
+                    val = vals[0]
+                    values.add_cell(domain + ':' + problem, config, val)
+                (config1, config2), sums = values.get_comparison()
+                table.add_cell(row_name, config1 + '/' + config2, 
+                                        '%d - %d - %d' % tuple(sums))
             
         return table
       
