@@ -32,7 +32,8 @@ from external import argparse
 
 
 # Create a parser only for parsing the report type
-report_type_parser = tools.ArgParser(add_help=False)
+report_type_parser = tools.ArgParser(add_help=True)
+report_type_parser.epilog = 'Note: The help output depends on the selected report type'
 report_type_parser.add_argument('--report', choices=['abs', 'rel', 'cmp'],
                                 default='abs', help='Select a report type')
 report_type_parser.add_argument('-f', '--focus', nargs='+', required=True,
@@ -41,9 +42,9 @@ report_type_parser.add_argument('-f', '--focus', nargs='+', required=True,
 
 class ReportArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, parents=[report_type_parser], **kwargs)
+        tools.ArgParser.__init__(self, *args, parents=[report_type_parser], add_help=False, **kwargs)
         
-        self.epilog = 'Note: The help output depends on the selected report type'
+        
       
         self.add_argument('source', help='path to evaluation directory', 
                             type=self.directory)
