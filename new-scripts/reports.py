@@ -18,7 +18,7 @@ import collections
 import operator
 import cPickle
 
-logging.basicConfig(level=logging.INFO, format='%(relativeCreated)-s %(levelname)-8s %(message)s',)
+logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
                     
 import tools
 import planning_suites
@@ -477,7 +477,11 @@ class AbsolutePlanningReport(PlanningReport):
         
         if self.resolution == 'suite' or not self.hide_sum_row:
             self.set_grouping('config')
-            row_name = '-'.join(self.suite) if self.resolution == 'suite' else 'SUM'
+            
+            if self.resolution == 'suite':
+                row_name = '-'.join(self.suite) if self.suite else 'Suite'
+            else:
+                row_name = 'SUM'
             for (config,), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
                 if not values:
@@ -555,7 +559,10 @@ class ComparativePlanningReport(PlanningReport):
             sys.exit(1)
             
         if self.resolution == 'suite' or not self.hide_sum_row:
-            row_name = '-'.join(self.suite) if self.resolution == 'suite' else 'SUM'
+            if self.resolution == 'suite':
+                row_name = '-'.join(self.suite) if self.suite else 'Suite'
+            else:
+                row_name = 'SUM'
             self.set_grouping()
             for _, group in self.group_dict.items():
                 values = Table()
@@ -574,8 +581,6 @@ class ComparativePlanningReport(PlanningReport):
 
 
 if __name__ == "__main__":
-    #if len(sys.argv) == 1:
-    #    sys.argv.extend('test-eval expanded -s MINITEST -c yY fF --resolution domain'.split())
     known_args, remaining_args = report_type_parser.parse_known_args()
     report_type = known_args.report
     logging.info('Report type: %s' % report_type)
@@ -594,6 +599,8 @@ if __name__ == "__main__":
         foci = report.data.get_attributes()
         
     for focus in foci:
+        if focus == 'translator':
+            continue
         report.focus = focus
         try:
             report_text += '+ %s +\n' % focus + str(report.get_table()) + '\n'
