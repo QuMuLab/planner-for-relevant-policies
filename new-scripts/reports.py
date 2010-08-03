@@ -382,11 +382,16 @@ class PlanningReport(Report):
             
     @property
     def name(self):
+        name = ''
         eval_dir = os.path.basename(self.eval_dir)
-        configs = self.configs or ['*']
-        suite = self.suite or ['*']
-        parts = [[eval_dir], configs, suite, [self.resolution], [self.focus]]
-        return '_'.join(['-'.join(vars) for vars in parts])
+        name += eval_dir.replace('-', '')
+        if self.configs:
+            name += '-' + '+'.join(self.configs)
+        if self.suite:
+            name += '-' + '+'.join(self.suite)
+        name += '-' + self.resolution[0]
+        name += '-' + self.type
+        return name
         
     
     def get_table(self):
@@ -412,8 +417,9 @@ class PlanningReport(Report):
             
         if not self.dry:
             ext = 'html' if self.output_format == 'xhtml' else self.output_format
+            date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
             output_file = os.path.join(self.report_dir, 
-                self.name + '.' + ext)
+                self.name + '_' + date + '.' + ext)
             with open(output_file, 'w') as file:
                 logging.info('Writing output to "%s"' % output_file)
                 file.write(self.output)
@@ -436,8 +442,8 @@ class AbsolutePlanningReport(PlanningReport):
             
             
     @property
-    def name(self):
-        return PlanningReport.name.fget(self) + '_abs'
+    def type(self):
+        return 'abs'
         
     
     def get_table(self):
@@ -494,8 +500,8 @@ class RelativePlanningReport(AbsolutePlanningReport):
         
     
     @property
-    def name(self):
-        return PlanningReport.name.fget(self) + '_rel'
+    def type(self):
+        return 'rel'
                 
     
     def get_table(self):
@@ -522,8 +528,8 @@ class ComparativePlanningReport(PlanningReport):
             
     
     @property
-    def name(self):
-        return PlanningReport.name.fget(self) + '_cmp'
+    def type(self):
+        return 'cmp'
         
     
     def get_table(self):        
@@ -589,11 +595,11 @@ if __name__ == "__main__":
     for focus in foci:
         report.focus = focus
         try:
-            report_text += '= %s =\n' % focus + str(report.get_table()) + '\n'
+            report_text += '+ %s +\n' % focus + str(report.get_table()) + '\n'
         except TypeError:
             pass
         
-    doc = Document(title='Big report')
+    doc = Document(title=report.name)
     doc.add_text(report_text)
     
     print doc
