@@ -37,9 +37,9 @@ X Schreibe queue in properties file
 X Derived Vars in properties
 O Write high-level documentation
 
-O Report multiple attributes at once
-O Colors for txt2tags
-O Grey out rows that have equal numbers
+X Report multiple attributes at once
+X Colors for txt2tags
+X Grey out rows that have equal numbers
 """
 
 from __future__ import with_statement

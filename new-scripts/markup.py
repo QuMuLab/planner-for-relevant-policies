@@ -39,6 +39,10 @@ def _get_config(target):
         config['style'] = []
         config['style'].append('color')
         
+        # Do not clear the title page
+        config['postproc'].append([r'\\clearpage', r''])
+        
+        
         config['postproc'].append([r'usepackage{color}', r'usepackage[usenames,dvipsnames]{color}'])
 
         config['encoding'] = 'utf8'
@@ -88,6 +92,10 @@ class Document(object):
 
     def render(self, target, options=None):
         #res = '\n'.join([self.title, self.author, self.date]) + '\n\n'
+        
+        # We always want xhtml
+        if target == 'html':
+            target = 'xhtml'
         
         # Bug in txt2tags: Titles are not escaped
         if target == 'tex':
