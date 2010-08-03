@@ -35,7 +35,7 @@ from external import argparse
 report_type_parser = tools.ArgParser(add_help=False)
 report_type_parser.add_argument('--report', choices=['abs', 'rel', 'cmp'],
                                 default='abs', help='Select a report type')
-report_type_parser.add_argument('-f', '--focus', nargs='+',
+report_type_parser.add_argument('-f', '--focus', nargs='+', required=True,
                             help='the analyzed attribute (e.g. "expanded")')
 
 
@@ -192,11 +192,12 @@ class Report(object):
         
 
 class Table(collections.defaultdict):
-    def __init__(self, title='', sum=True):
+    def __init__(self, title='', sum=True, hide_boring=True):
         collections.defaultdict.__init__(self, dict)
         
         self.title = title
         self.sum = sum
+        self.hide_boring = hide_boring
         
         
     def add_cell(self, row, col, value):
@@ -278,6 +279,39 @@ class Table(collections.defaultdict):
         return (self.cols, sums)
         
         
+    def get_row_plain(self, row):
+        text = ''
+        text += '| %-30s ' % ('**'+row+'**')
+        for col in self.cols:
+            text += '| %-16s ' % self.get(row).get(col)
+        text += '|\n'
+        return text
+        
+    
+    def get_row_hide_boring(self, row):
+        values = self[row].values()
+        only_one_value = len(set(values)) == 1
+        #if len(set(values)) > 1:
+            # There are at least two different values in the row
+        #    return self.get_row_plain(row)
+            
+        lowest_value = min(values)
+            
+        text = ''
+        text += '| %-30s ' % ('**'+row+'**')
+        for col in self.cols:
+            value = self.get(row).get(col)
+            if only_one_value:
+                value_text = '{{%s|color:Gray}}' % value
+            elif value == lowest_value:
+                value_text = '**%s**' % value
+            else:
+                value_text = str(value)
+            text += '| %-16s ' % value_text
+        text += '|\n'
+        return text
+    
+        
     def __str__(self):
         """
         {'zenotravel': {'yY': 17, 'fF': 21}, 'gripper': {'yY': 72, 'fF': 118}}
@@ -293,10 +327,10 @@ class Table(collections.defaultdict):
         
         text += ' | '.join(map(lambda col: '%-16s' % col, cols)) + ' |\n'
         for row in rows:
-            text += '| %-30s ' % ('**'+row+'**')
-            for col in cols:
-                text += '| %-16s ' % self.get(row).get(col)
-            text += '|\n'
+            if self.hide_boring:
+                text += self.get_row_hide_boring(row)
+            else:
+                text += self.get_row_plain(row)
         return text
         
         
@@ -377,8 +411,9 @@ class PlanningReport(Report):
             self.output = self.build()
             
         if not self.dry:
+            ext = 'html' if self.output_format == 'xhtml' else self.output_format
             output_file = os.path.join(self.report_dir, 
-                self.name + '.' + self.output_format)
+                self.name + '.' + ext)
             with open(output_file, 'w') as file:
                 logging.info('Writing output to "%s"' % output_file)
                 file.write(self.output)
@@ -554,7 +589,7 @@ if __name__ == "__main__":
     for focus in foci:
         report.focus = focus
         try:
-            report_text += '= %s =\n' % focus + str(report.get_table()) + '\n\n\n'
+            report_text += '= %s =\n' % focus + str(report.get_table()) + '\n'
         except TypeError:
             pass
         

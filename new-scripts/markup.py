@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
+import datetime
+import logging
 
 from external import txt2tags
 
@@ -26,11 +28,19 @@ def _get_config(target):
         config['css-sugar'] = 1
         
         # Allow line breaks, r'\\\\' are 2 \ for regexes
-        config['postproc'].append([r'\\\\', '<br />'])
+        config['postproc'].append([r'\\\\', r'<br />'])
         
-        #config['postproc'].append([r'<td>', '<td align="right">'])
+        #config['postproc'].append([r'<td>', r'<td align="right">'])
         
-    elif target == 'texo':
+        # {{Roter Text|color:red}} -> <span style="color:red">Roter Text</span>
+        config['postproc'].append([r'\{\{(.*?)\|color:(.+?)\}\}', r'<span style="color:\2">\1</span>'])
+        
+    elif target == 'tex':
+        config['style'] = []
+        config['style'].append('color')
+        
+        config['postproc'].append([r'usepackage{color}', r'usepackage[usenames,dvipsnames]{color}'])
+
         config['encoding'] = 'utf8'
         config['preproc'].append(['€', 'Euro'])
         
@@ -47,6 +57,9 @@ def _get_config(target):
         # Allow line breaks, r'\\\\' are 2 \ for regexes
         config['postproc'].append([r'\$\\backslash\$\$\\backslash\$', r'\\\\'])
         
+        # {{Roter Text|color:red}} -> \textcolor{red}{Roter Text}
+        config['postproc'].append([r'\\{\\{(.*?)\$\|\$color:(.+?)\\}\\}', r'\\textcolor{\2}{\1}'])
+        
     elif target == 'txt':
         # Allow line breaks, r'\\\\' are 2 \ for regexes
         config['postproc'].append([r'\\\\', '\n'])
@@ -57,7 +70,7 @@ def _get_config(target):
     
 class Document(object):
     #TODO: Allow pre-/postprocessing
-    def __init__(self, title='', author='', date=''):
+    def __init__(self, title='', author='', date='%%date(%Y-%m-%d)'):
         self.title = title
         self.author = author
         self.date = date
@@ -117,4 +130,9 @@ class Document(object):
         
         return result
 
-
+if __name__ == '__main__':
+    doc = Document('MyTitle', 'Max Mustermann')
+    doc.add_text('{{Roter Text|color:red}}')
+    print doc
+    print
+    print doc.render('tex')
