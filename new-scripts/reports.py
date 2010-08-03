@@ -35,6 +35,8 @@ from external import argparse
 report_type_parser = tools.ArgParser(add_help=False)
 report_type_parser.add_argument('--report', choices=['abs', 'rel', 'cmp'],
                                 default='abs', help='Select a report type')
+report_type_parser.add_argument('-f', '--focus', nargs='+',
+                            help='the analyzed attribute (e.g. "expanded")')
 
 
 class ReportArgParser(tools.ArgParser):
@@ -52,9 +54,6 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--format', dest='output_format', default='tex',
                             help='format of the output file',
                             choices=sorted(txt2tags.TARGETS))
-                            
-        self.add_argument('focus', 
-                            help='the analyzed attribute (e.g. "expanded")')
                             
         self.add_argument('--group-func', default='sum',
                         help='the function used to cumulate the values of a group')
@@ -101,7 +100,6 @@ class Report(object):
     """
     Base class for all reports
     """
-    
     def __init__(self, parser=ReportArgParser()):
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
@@ -315,10 +313,10 @@ class PlanningReport(Report):
             
         parser.add_argument('-r', '--resolution', default='domain',
                             choices=['suite', 'domain', 'problem'])
+        
         Report.__init__(self, parser)
         
         self.output = ''
-        self.compared_attribute = 'config'
         
         self.problems = planning_suites.build_suite(self.suite)
         
@@ -409,7 +407,6 @@ class AbsolutePlanningReport(PlanningReport):
     
     def get_table(self):
         func = self.group_func
-        
         table = Table(self.focus)
         
         def existing(val):
@@ -487,8 +484,6 @@ class ComparativePlanningReport(PlanningReport):
     """
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
-        
-        self.compared_attribute = 'config'
             
     
     @property
@@ -496,13 +491,9 @@ class ComparativePlanningReport(PlanningReport):
         return PlanningReport.name.fget(self) + '_cmp'
         
     
-    def get_table(self):
-        
-        
+    def get_table(self):        
         func = self.group_func
-        
         table = Table(self.focus)
-        
         
         if self.resolution == 'domain':
             self.set_grouping('domain')
@@ -547,6 +538,9 @@ if __name__ == "__main__":
     report_type = known_args.report
     logging.info('Report type: %s' % report_type)
     
+    foci = known_args.focus
+    report_text = ''
+    
     if report_type == 'abs':
         report = AbsolutePlanningReport()
     elif report_type == 'rel':
@@ -554,9 +548,29 @@ if __name__ == "__main__":
     elif report_type == 'cmp':
         report = ComparativePlanningReport()
         
+    if 'all' in foci:
+        foci = report.data.get_attributes()
+        
+    for focus in foci:
+        report.focus = focus
+        try:
+            report_text += '= %s =\n' % focus + str(report.get_table()) + '\n\n\n'
+        except TypeError:
+            pass
+        
+    doc = Document(title='Big report')
+    doc.add_text(report_text)
+    
+    print doc
+        
+    report.output = doc.render(report.output_format, {'toc': 1})
+    print report.output
+    report.write()
+        
     #report.add_filter(domain='gripper')
     #report.add_filter(lambda item: item['expanded'] == '21')
     #report.set_grouping('config', 'domain', 'problem')
-    report.write()
+    #report.write()
+    #print report_text
     
 

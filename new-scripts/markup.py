@@ -28,6 +28,8 @@ def _get_config(target):
         # Allow line breaks, r'\\\\' are 2 \ for regexes
         config['postproc'].append([r'\\\\', '<br />'])
         
+        #config['postproc'].append([r'<td>', '<td align="right">'])
+        
     elif target == 'texo':
         config['encoding'] = 'utf8'
         config['preproc'].append(['€', 'Euro'])
@@ -65,6 +67,10 @@ class Document(object):
         
     def add_text(self, text):
         self.text += text + '\n'
+        
+        
+    def __str__(self):
+        return self.text
 
 
     def render(self, target, options=None):
