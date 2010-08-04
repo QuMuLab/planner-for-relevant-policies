@@ -33,7 +33,7 @@ from external import argparse
 
 # Create a parser only for parsing the report type
 report_type_parser = tools.ArgParser(add_help=True)
-report_type_parser.epilog = 'Note: The help output depends on the selected report type'
+report_type_parser.epilog = 'Note: The help output depends on the selected report class'
 report_type_parser.add_argument('--report', choices=['abs', 'rel', 'cmp'],
                                 default='abs', help='Select a report type')
 report_type_parser.add_argument('-f', '--focus', nargs='+', required=True,

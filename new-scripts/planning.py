@@ -14,7 +14,7 @@ import planning_suites
         
 
 def build_planning_exp():
-    parser=experiments.ExpArgParser()
+    parser = experiments.ExpArgParser()
     parser.add_argument('-c', '--configs', default=[], 
                         nargs='+', help='planner configurations')
     parser.add_argument('-s', '--suite', default=[], nargs='+',

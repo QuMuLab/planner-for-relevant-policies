@@ -251,7 +251,7 @@ def build_evaluator(parser=EvalOptionParser()):
     eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
     eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
     eval.add_pattern('expanded', r'Expanded (\d+)', type=int, required=False)
-    eval.add_pattern('generated', r'Generated (\d+)', type=int)
+    eval.add_pattern('generated', r'Generated (\d+) state', type=int)
     eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False)
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     
@@ -260,6 +260,7 @@ def build_evaluator(parser=EvalOptionParser()):
     
     eval.add_pattern('preprocessor_vars', r'begin_variables\n(\d+)', file='output', type=int, flags='M')
     eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output', type=int, flags='M')
+    
     
     def completely_explored(content, old_props):
         new_props = {}
@@ -288,7 +289,7 @@ def build_evaluator(parser=EvalOptionParser()):
         return new_props
         
         
-    def get_total_values(content):
+    def get_facts(content):
         vars_regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M|re.S)
         match = vars_regex.search(content)
         if not match:
@@ -305,11 +306,11 @@ def build_evaluator(parser=EvalOptionParser()):
             total_domain_size += int(domain_size)
         return total_domain_size
         
-    def translator_total_values(content, old_props):
-        return {'translator_total_values': get_total_values(content)}
+    def translator_facts(content, old_props):
+        return {'translator_facts': get_facts(content)}
         
-    def preprocessor_total_values(content, old_props):
-        return {'preprocessor_total_values': get_total_values(content)}
+    def preprocessor_facts(content, old_props):
+        return {'preprocessor_facts': get_facts(content)}
         
         
     def get_derived_vars(content):
@@ -397,8 +398,8 @@ def build_evaluator(parser=EvalOptionParser()):
     eval.add_function(get_status)
     eval.add_function(solved)
     
-    eval.add_function(translator_total_values, file='output.sas')
-    eval.add_function(preprocessor_total_values, file='output')
+    eval.add_function(translator_facts, file='output.sas')
+    eval.add_function(preprocessor_facts, file='output')
     
     eval.add_function(translator_axioms, file='output.sas')
     eval.add_function(preprocessor_axioms, file='output')
