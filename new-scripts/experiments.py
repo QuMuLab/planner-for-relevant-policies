@@ -42,6 +42,9 @@ X Colors for txt2tags
 X Grey out rows that have equal numbers
 
 X Add priority option for gkigrid experiments
+
+O Unify evaluations
+O Add copy-all parameter
 """
 
 from __future__ import with_statement
@@ -88,7 +91,6 @@ class ExpArgParser(tools.ArgParser):
     
 
 class Experiment(object):
-    
     def __init__(self, parser=ExpArgParser()):
         # Give all the options to the experiment instance
         parser.parse_args(namespace=self)
