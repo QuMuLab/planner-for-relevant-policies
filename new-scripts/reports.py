@@ -15,7 +15,6 @@ from itertools import combinations
 import logging
 import datetime
 import collections
-import operator
 import cPickle
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
@@ -36,8 +35,6 @@ from external import argparse
 class ReportArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, add_help=True, **kwargs)
-        
-        
       
         self.add_argument('source', help='path to evaluation directory', 
                             type=self.directory)
@@ -397,45 +394,4 @@ class Table(collections.defaultdict):
 
 
 if __name__ == "__main__":
-    known_args, remaining_args = report_type_parser.parse_known_args()
-    report_type = known_args.report
-    logging.info('Report type: %s' % report_type)
-    
-    foci = known_args.focus
-    report_text = ''
-    
-    if report_type == 'abs':
-        report = AbsolutePlanningReport()
-    elif report_type == 'rel':
-        report = RelativePlanningReport()
-    elif report_type == 'cmp':
-        report = ComparativePlanningReport()
-        
-    if 'all' in foci:
-        foci = report.data.get_attributes()
-        
-    for focus in foci:
-        if focus == 'translator':
-            continue
-        report.focus = focus
-        try:
-            report_text += '+ %s +\n' % focus + str(report.get_table()) + '\n'
-        except TypeError:
-            pass
-        
-    doc = Document(title=report.name)
-    doc.add_text(report_text)
-    
-    print doc
-        
-    report.output = doc.render(report.output_format, {'toc': 1})
-    print report.output
-    report.write()
-        
-    #report.add_filter(domain='gripper')
-    #report.add_filter(lambda item: item['expanded'] == '21')
-    #report.set_grouping('config', 'domain', 'problem')
-    #report.write()
-    #print report_text
-    
-
+    logging.error('Please import this module from another script')
