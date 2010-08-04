@@ -14,3 +14,5 @@
 #$ -q %(queue)s
 ### Number of tasks
 #$ -t 1-%(num_tasks)d
+### Priority ([-1023,1024], default: 0)
+#$ -p %(priority)d

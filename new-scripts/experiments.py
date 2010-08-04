@@ -40,6 +40,8 @@ O Write high-level documentation
 X Report multiple attributes at once
 X Colors for txt2tags
 X Grey out rows that have equal numbers
+
+X Add priority option for gkigrid experiments
 """
 
 from __future__ import with_statement
@@ -245,13 +247,17 @@ class ArgoExperiment(Experiment):
 
 
 class GkiGridExperiment(Experiment):
-    def __init__(self, parser=ExpArgParser()):
+    def __init__(self, parser=ExpArgParser()):        
         parser.add_argument(
             '-q', '--queue', default='athlon_core.q',
-            help='name of the queue to use for the experiment (default: athlon_core.q)')
+            help='name of the queue to use for the experiment')
         parser.add_argument(
             '--runs-per-task', type=int, default=1,
-            help='how many runs to put into one task (default is 1)')
+            help='how many runs to put into one task')
+        parser.add_argument(
+            '-p', '--priority', type=int, default=0, choices=xrange(-1023, 1024+1),
+            metavar='NUM', help='priority of the job [-1023, 1024]')
+            
         Experiment.__init__(self, parser=parser)
         
         
@@ -266,6 +272,7 @@ class GkiGridExperiment(Experiment):
             'driver_timeout': self.timeout + 30,
             'num_tasks': num_tasks,
             'queue': self.queue,
+            'priority': self.priority,
         }
         script_template = open('data/gkigrid-job-header-template').read()
         script = script_template % job_params
