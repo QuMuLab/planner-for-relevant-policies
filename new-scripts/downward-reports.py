@@ -69,17 +69,14 @@ class PlanningReport(Report):
         self.add_filter(filter_by_problem, filter_by_config)
             
             
-    @property
     def name(self):
-        name = ''
-        eval_dir = os.path.basename(self.eval_dir)
-        name += eval_dir.replace('-', '')
+        name = Report.name(self)
         if self.configs:
             name += '-' + '+'.join(self.configs)
         if self.suite:
             name += '-' + '+'.join(self.suite)
         name += '-' + self.resolution[0]
-        name += '-' + self.type
+        name += '-' + self.report
         return name
         
 
@@ -97,11 +94,6 @@ class AbsolutePlanningReport(PlanningReport):
         PlanningReport.__init__(self, *args, **kwargs)
             
             
-    @property
-    def type(self):
-        return 'abs'
-        
-    
     def _get_table(self):
         func = self.group_func
         table = Table(self.focus)
@@ -159,11 +151,6 @@ class RelativePlanningReport(AbsolutePlanningReport):
         AbsolutePlanningReport.__init__(self, *args, **kwargs)
         
     
-    @property
-    def type(self):
-        return 'rel'
-                
-    
     def _get_table(self):
         func = self.group_func
         
@@ -185,11 +172,6 @@ class ComparativePlanningReport(PlanningReport):
     """
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
-            
-    
-    @property
-    def type(self):
-        return 'cmp'
         
     
     def _get_table(self):        

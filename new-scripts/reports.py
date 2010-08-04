@@ -184,11 +184,12 @@ class Report(object):
         return data
         
         
-    @property
     def name(self):
         name = ''
         eval_dir = os.path.basename(self.eval_dir)
         name += eval_dir.replace('-', '')
+        if len(self.foci) == 1:
+            name += '-' + self.foci[0]
         return name
         
     
@@ -208,7 +209,7 @@ class Report(object):
         
         
     def build(self):
-        doc = Document(title=self.name)
+        doc = Document(title=self.name())
         doc.add_text(str(self))
         
         self.output = doc.render(self.output_format, {'toc': 1})
@@ -221,9 +222,8 @@ class Report(object):
             
         if not self.dry:
             ext = 'html' if self.output_format == 'xhtml' else self.output_format
-            date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-            output_file = os.path.join(self.report_dir, 
-                self.name + '_' + date + '.' + ext)
+            #date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+            output_file = os.path.join(self.report_dir, self.name() + '.' + ext)
             with open(output_file, 'w') as file:
                 logging.info('Writing output to "%s"' % output_file)
                 file.write(self.output)
@@ -237,10 +237,6 @@ class Report(object):
             res += '+ %s +' % self.focus
             res += str(table)
         return res    
-    
-        
-        
-        
 
                             
         
@@ -387,11 +383,7 @@ class Table(collections.defaultdict):
                 text += self.get_row_plain(row)
         return text
         
-        
-        
-
-      
-
+    
 
 if __name__ == "__main__":
     logging.error('Please import this module from another script')
