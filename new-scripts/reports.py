@@ -21,7 +21,6 @@ import cPickle
 logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
                     
 import tools
-import planning_suites
 from markup import Document
 from external.configobj import ConfigObj
 from external.datasets import DataSet
@@ -31,18 +30,12 @@ from external import argparse
 
 
 
-# Create a parser only for parsing the report type
-report_type_parser = tools.ArgParser(add_help=True)
-report_type_parser.epilog = 'Note: The help output depends on the selected report class'
-report_type_parser.add_argument('--report', choices=['abs', 'rel', 'cmp'],
-                                default='abs', help='Select a report type')
-report_type_parser.add_argument('-f', '--focus', nargs='+', required=True,
-                            help='the analyzed attribute (e.g. "expanded")')
+
 
 
 class ReportArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, parents=[report_type_parser], add_help=False, **kwargs)
+        tools.ArgParser.__init__(self, *args, add_help=True, **kwargs)
         
         
       
@@ -73,6 +66,9 @@ class ReportArgParser(tools.ArgParser):
                         default=False, action='store_true',
                         help='show a list of available attributes and exit')
                         
+        self.add_argument('-f', '--foci', nargs='*', metavar='ATTR', default='all',
+                            help='the analyzed attributes (e.g. "expanded")')
+                        
                         
     def parse_args(self, *args, **kwargs):
         args = argparse.ArgumentParser.parse_args(self, *args, **kwargs)
@@ -102,10 +98,17 @@ class Report(object):
     Base class for all reports
     """
     def __init__(self, parser=ReportArgParser()):
+        #Define which attribute the report should be about
+        #self.focus = None
+        
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
         
         self.data = self._get_data()
+        
+        print 'FOCI', self.foci
+        if not self.foci or self.foci == 'all':
+            self.foci = self.data.get_attributes()
         
         if self.show_attributes:
             print
@@ -118,13 +121,6 @@ class Report(object):
         
         self.grouping = []
         self.order = []
-
-        
-    def set_focus(self, attribute):
-        """
-        Define which attribute the report should be about
-        """
-        self.focus = attribute
         
         
     def add_filter(self, *filter_funcs, **filter_pairs):
@@ -189,6 +185,66 @@ class Report(object):
         else:
             data = cPickle.load(open(dump_path))
         return data
+        
+        
+    @property
+    def name(self):
+        name = ''
+        eval_dir = os.path.basename(self.eval_dir)
+        name += eval_dir.replace('-', '')
+        return name
+        
+    
+    def _get_table(self):
+        raise Error('Not implemented')
+        
+    
+    def _get_tables(self):
+        tables = []
+        for focus in self.foci:
+            self.focus = focus
+            try:
+                tables.append(self._get_table())
+            except TypeError:
+                logging.info('Omitting attribute "%s"' % focus)
+        return tables
+        
+        
+    def build(self):
+        doc = Document(title=self.name)
+        doc.add_text(str(self))
+        
+        self.output = doc.render(self.output_format, {'toc': 1})
+        return self.output
+        
+        
+    def write(self):
+        if not self.output:
+            self.output = self.build()
+            
+        if not self.dry:
+            ext = 'html' if self.output_format == 'xhtml' else self.output_format
+            date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+            output_file = os.path.join(self.report_dir, 
+                self.name + '_' + date + '.' + ext)
+            with open(output_file, 'w') as file:
+                logging.info('Writing output to "%s"' % output_file)
+                file.write(self.output)
+        
+        logging.info('Finished writing report')
+        
+        
+    def __str__(self):
+        res = ''
+        for table in self._get_tables():
+            res += '+ %s +' % self.focus
+            res += str(table)
+        return res    
+    
+        
+        
+        
+
                             
         
 
@@ -336,247 +392,7 @@ class Table(collections.defaultdict):
         
         
         
-class PlanningReport(Report):
-    """
-    """
-    def __init__(self, parser=ReportArgParser()):
-        parser.add_argument('-c', '--configs', nargs='*',
-                            default=[], help="planner configurations")
-            
-        parser.add_argument('-s', '--suite', nargs='*',
-                            default=[], help='tasks, domains or suites')
-            
-        parser.add_argument('-r', '--resolution', default='domain',
-                            choices=['suite', 'domain', 'problem'])
-        
-        Report.__init__(self, parser)
-        
-        self.output = ''
-        
-        self.problems = planning_suites.build_suite(self.suite)
-        
-        def filter_by_problem(run):
-            """
-            If suite is set, only process problems from the suite, 
-            otherwise process all problems
-            """
-            if not self.problems:
-                return True
-            for problem in self.problems:
-                if problem.domain == run['domain'] and problem.problem == run['problem']:
-                    return True
-            return False
-            
-        def filter_by_config(run):
-            """
-            If configs is set, only process those configs, otherwise process all configs
-            """
-            if not self.configs:
-                return True
-            for config in self.configs:
-                if config == run['config']:
-                    return True
-            return False
-        
-        self.add_filter(filter_by_problem, filter_by_config)
-            
-            
-    @property
-    def name(self):
-        name = ''
-        eval_dir = os.path.basename(self.eval_dir)
-        name += eval_dir.replace('-', '')
-        if self.configs:
-            name += '-' + '+'.join(self.configs)
-        if self.suite:
-            name += '-' + '+'.join(self.suite)
-        name += '-' + self.resolution[0]
-        name += '-' + self.type
-        return name
-        
-    
-    def get_table(self):
-        raise Error('Not implemented')
-        
-        
-    def build(self):
-        table = self.get_table()
-        print table
-        
-        doc = Document(title=self.name)
-        doc.add_text(str(table))
-        
-        self.output = doc.render(self.output_format)
-        #print 'OUTPUT:'
-        #print self.output
-        return self.output
-        
-        
-    def write(self):
-        if not self.output:
-            self.output = self.build()
-            
-        if not self.dry:
-            ext = 'html' if self.output_format == 'xhtml' else self.output_format
-            date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-            output_file = os.path.join(self.report_dir, 
-                self.name + '_' + date + '.' + ext)
-            with open(output_file, 'w') as file:
-                logging.info('Writing output to "%s"' % output_file)
-                file.write(self.output)
-        
-        logging.info('Finished writing report')
-        
 
-
-
-class AbsolutePlanningReport(PlanningReport):
-    """
-    Write an absolute report about the focus attribute, e.g.
-    
-    || expanded        | fF               | yY               |
-    | **gripper     ** | 118              | 72               |
-    | **zenotravel  ** | 21               | 17               |
-    """
-    def __init__(self, *args, **kwargs):
-        PlanningReport.__init__(self, *args, **kwargs)
-            
-            
-    @property
-    def type(self):
-        return 'abs'
-        
-    
-    def get_table(self):
-        func = self.group_func
-        table = Table(self.focus)
-        
-        def existing(val):
-            return not type(val) == datasets.MissingType
-            
-        def show_missing_attribute_msg():
-            msg = 'No data has the attribute "%s". ' % self.focus
-            msg += 'Are you sure you typed it in correctly?'
-            logging.error(msg)
-        
-        
-        if self.resolution == 'domain':
-            self.set_grouping('config', 'domain')
-            for (config, domain), group in self.group_dict.items():
-                values = filter(existing, group[self.focus])
-                if not values:
-                    show_missing_attribute_msg()
-                table.add_cell(domain, config, func(values))
-        elif self.resolution == 'problem':
-            self.set_grouping('config', 'domain', 'problem')
-            for (config, domain, problem), group in self.group_dict.items():
-                values = filter(existing, group[self.focus])
-                if not values:
-                    show_missing_attribute_msg()
-                table.add_cell(domain + ':' + problem, config, func(values))
-        
-        if self.resolution == 'suite' or not self.hide_sum_row:
-            self.set_grouping('config')
-            
-            if self.resolution == 'suite':
-                row_name = '-'.join(self.suite) if self.suite else 'Suite'
-            else:
-                row_name = 'SUM'
-            for (config,), group in self.group_dict.items():
-                values = filter(existing, group[self.focus])
-                if not values:
-                    show_missing_attribute_msg()
-                table.add_cell(row_name, config, func(values))
-            
-        return table
-        
-        
-        
-class RelativePlanningReport(AbsolutePlanningReport):
-    """
-    Write a relative report about the focus attribute, e.g.
-    
-    || expanded        | fF               | yY               |
-    | **gripper     ** | 1.0              | 0.6102           |
-    | **zenotravel  ** | 1.0              | 0.8095           |
-    """
-    def __init__(self, *args, **kwargs):
-        AbsolutePlanningReport.__init__(self, *args, **kwargs)
-        
-    
-    @property
-    def type(self):
-        return 'rel'
-                
-    
-    def get_table(self):
-        func = self.group_func
-        
-        absolute_table = AbsolutePlanningReport.get_table(self)
-        table = absolute_table.get_relative()
-        
-        return table
-            
-            
-            
-class ComparativePlanningReport(PlanningReport):
-    """
-    Write a comparative report about the focus attribute, e.g.
-    
-    ||                               | fF/yY            |
-    | **grid**                       | 0 - 1 - 0        |
-    | **gripper**                    | 0 - 0 - 3        |
-    | **zenotravel**                 | 0 - 1 - 1        |
-    """
-    def __init__(self, *args, **kwargs):
-        PlanningReport.__init__(self, *args, **kwargs)
-            
-    
-    @property
-    def type(self):
-        return 'cmp'
-        
-    
-    def get_table(self):        
-        func = self.group_func
-        table = Table(self.focus)
-        
-        if self.resolution == 'domain':
-            self.set_grouping('domain')
-            for (domain,), group in self.group_dict.items():
-                values = Table()
-                config_prob_to_group = group.group_dict('config', 'problem')
-                for (config, problem), subgroup in config_prob_to_group.items():
-                    vals = subgroup[self.focus]
-                    assert len(vals) == 1
-                    val = vals[0]
-                    values.add_cell(problem, config, val)
-                (config1, config2), sums = values.get_comparison()
-                table.add_cell(domain, config1 + '/' + config2, 
-                                        '%d - %d - %d' % tuple(sums))
-        elif self.resolution == 'problem':
-            logging.error('Comparative reports only make sense for domains and suites')
-            sys.exit(1)
-            
-        if self.resolution == 'suite' or not self.hide_sum_row:
-            if self.resolution == 'suite':
-                row_name = '-'.join(self.suite) if self.suite else 'Suite'
-            else:
-                row_name = 'SUM'
-            self.set_grouping()
-            for _, group in self.group_dict.items():
-                values = Table()
-                config_prob_to_group = group.group_dict('config', 'domain', 'problem')
-                for (config, domain, problem), subgroup in config_prob_to_group.items():
-                    vals = subgroup[self.focus]
-                    assert len(vals) == 1
-                    val = vals[0]
-                    values.add_cell(domain + ':' + problem, config, val)
-                (config1, config2), sums = values.get_comparison()
-                table.add_cell(row_name, config1 + '/' + config2, 
-                                        '%d - %d - %d' % tuple(sums))
-            
-        return table
       
 
 
