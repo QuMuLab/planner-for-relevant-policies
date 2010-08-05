@@ -11,11 +11,11 @@ import logging
 import re
 import math
 
-from resultfetcher import Evaluation, EvalOptionParser
+from resultfetcher import Fetcher, FetchOptionParser
 
 
-def build_evaluator(parser=EvalOptionParser()):
-    eval = Evaluation(parser)
+def build_evaluator(parser=FetchOptionParser()):
+    eval = Fetcher(parser)
     #eval.add_key_value_pattern('run_start_time')
     eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
     eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
@@ -62,7 +62,7 @@ def build_evaluator(parser=EvalOptionParser()):
         vars_regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M|re.S)
         match = vars_regex.search(content)
         if not match:
-            logging.error('Total number of values could not be found')
+            logging.error('Number of facts could not be found')
             return {}
         """
         var_descriptions looks like

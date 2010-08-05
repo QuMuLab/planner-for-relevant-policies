@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(m
 import tools
       
 
-class EvalOptionParser(tools.ArgParser):
+class FetchOptionParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, **kwargs)
       
@@ -34,7 +34,7 @@ class EvalOptionParser(tools.ArgParser):
             
     
     def parse_args(self, *args, **kwargs):
-        # args is the populated namespace, i.e. the evaluation instance
+        # args is the populated namespace, i.e. the Fetcher instance
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
         
         args.exp_dirs = map(lambda dir: os.path.normpath(os.path.abspath(dir)), args.exp_dirs)
@@ -50,7 +50,7 @@ class EvalOptionParser(tools.ArgParser):
         
         
     
-class Pattern(object):
+class _Pattern(object):
     def __init__(self, name, regex_string, group, file, required, type, flags):
         self.name = name
         self.group = group
@@ -74,8 +74,72 @@ class Pattern(object):
         return self.regex.pattern
         
         
+        
+class _FileParser(object):
+    def __init__(self):
+        self.filename = None
+        self.content = None
+        
+        self.patterns = []
+        self.functions = []
+        
+    def load_file(self, filename):
+        self.filename = filename
+       
+        try:
+            with open(filename) as file:
+                self.content = file.read()
+        except IOError, err:
+            logging.error('File "%s" could not be read (%s)' % (filename, err))
+            self.content = ''
+        
+    def add_pattern(self, pattern):
+        self.patterns.append(pattern)
+        
+    def add_function(self, function):
+        self.functions.append(function)
+        
+    def parse(self):
+        assert self.filename
+        props = {}
+        for pattern in self.patterns:
+            props.update(self._search_patterns())
+        for function in self.functions:
+            props.update(self._apply_functions(props))
+        return props
+    
+    
+    def _search_patterns(self):
+        found_props = {}
+        
+        for pattern in self.patterns:
+            match = pattern.regex.search(self.content)
+            if match:
+                try:
+                    value = match.group(pattern.group)
+                    value = pattern.type(value)
+                    found_props[pattern.name] = value
+                except IndexError:
+                    msg = 'Group "%s" not found for pattern "%s" in file "%s"'
+                    msg %= (pattern.group, pattern, self.filename)
+                    logging.error(msg)
+            elif pattern.required:
+                logging.error('_Pattern "%s" not present in file "%s"' % (pattern, self.filename))
+        return found_props
+        
+        
+    def _apply_functions(self, old_props):
+        new_props = {}
+        
+        for function in self.functions:
+            new_props.update(function(self.content, old_props))
+        return new_props
+    
+        
+    
+        
 
-class Evaluation(object):
+class Fetcher(object):
     """
     If copy-all is True, copies files from run dirs into a new tree under
     <eval-dir> according to the value "id" in the run's properties file
@@ -83,22 +147,20 @@ class Evaluation(object):
     Parses various files and writes found results
     into the run's properties file
     """
-    def __init__(self, parser=EvalOptionParser(), *args, **kwargs):
-        self.parser = parser
+    def __init__(self, parser=FetchOptionParser(), *args, **kwargs):
         # Give all the options to the experiment instance
-        self.parser.parse_args(namespace=self)
+        parser.parse_args(namespace=self)
         
         self.run_dirs = self._get_run_dirs()
         
-        self.patterns = defaultdict(list)
-        self.functions = defaultdict(list)
+        self.file_parsers = defaultdict(_FileParser)
     
         
     def _get_run_dirs(self):
         run_dirs = []
         for dir in self.exp_dirs:
             run_dirs.extend(glob(os.path.join(dir, 'runs-*-*', '*')))
-        return run_dirs        
+        return run_dirs
         
         
     def add_pattern(self, name, regex_string, group=1, file='run.log', required=True,
@@ -112,8 +174,8 @@ class Evaluation(object):
         If required is True and the pattern is not found in file, an error
         message is printed
         """
-        pattern = Pattern(name, regex_string, group, file, required, type, flags)
-        self.patterns[pattern.file].append(pattern)
+        pattern = _Pattern(name, regex_string, group, file, required, type, flags)
+        self.file_parsers[file].add_pattern(pattern)
         
     def add_key_value_pattern(self, name, file='run.log'):
         """
@@ -131,8 +193,7 @@ class Evaluation(object):
         for each added function.
         The function is supposed to return a dictionary with new properties.
         """
-        self.functions[file].append(function)
-        
+        self.file_parsers[file].add_function(function)
         
     def evaluate(self):
         total_dirs = len(self.run_dirs)
@@ -149,14 +210,10 @@ class Evaluation(object):
             
             props['run_dir'] = run_dir
             
-            for file, patterns in self.patterns.items():
-                file = os.path.join(run_dir, file)
-                new_props = self._parse_file(file, patterns)
-                props.update(new_props)
-            for file, functions in self.functions.items():
-                file = os.path.join(run_dir, file)
-                new_props = self._apply_functions(file, functions, props)
-                props.update(new_props)
+            for filename, file_parser in self.file_parsers.items():
+                filename = os.path.join(run_dir, filename)
+                file_parser.load_file(filename)
+                props.update(file_parser.parse())
             
             # Write new properties file
             props.filename = os.path.join(dest_dir, 'properties')
@@ -164,44 +221,7 @@ class Evaluation(object):
             
             logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
             
-            
-    def _parse_file(self, file, patterns):
-        found_props = {}
-        
-        if not os.path.exists(file):
-            logging.error('File "%s" does not exist' % file)
-            return found_props
-        
-        content = open(file).read()
-        
-        for pattern in patterns:
-            match = pattern.regex.search(content)
-            if match:
-                try:
-                    value = match.group(pattern.group)
-                    value = pattern.type(value)
-                    found_props[pattern.name] = value
-                except IndexError:
-                    msg = 'Group "%s" not found for pattern "%s" in file "%s"'
-                    msg %= (pattern.group, pattern, file)
-                    logging.error(msg)
-            elif pattern.required:
-                logging.error('Pattern "%s" not present in file "%s"' % (pattern, file))
-        return found_props
-        
-        
-    def _apply_functions(self, file, functions, old_props):
-        new_props = {}
-        
-        if not os.path.exists(file):
-            logging.error('File "%s" does not exist' % file)
-            return {}
-        
-        content = open(file).read()
-        
-        for function in functions:
-            new_props.update(function(content, old_props))
-        return new_props
+    
         
         
 if __name__ == "__main__":
