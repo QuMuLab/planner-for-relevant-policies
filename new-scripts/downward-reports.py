@@ -29,12 +29,12 @@ class PlanningReport(Report):
     """
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
-        parser.add_argument('-c', '--configs', nargs='*',
-                            default=[], help="planner configurations")
-        parser.add_argument('-s', '--suite', nargs='*',
-                            default=[], help='tasks, domains or suites')
+        parser.add_argument('-c', '--configs', nargs='*', default=[], 
+            help='planner configurations (if none specified, use all found configs)')
+        parser.add_argument('-s', '--suite', nargs='*', default=[], 
+            help='tasks, domains or suites (if none specified, use whole suite)')
         parser.add_argument('--res', default='domain', dest='resolution',
-                            choices=['suite', 'domain', 'problem'])
+            help='resolution of the report', choices=['suite', 'domain', 'problem'])
         
         Report.__init__(self, parser)
         

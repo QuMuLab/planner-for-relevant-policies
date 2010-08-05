@@ -36,7 +36,7 @@ class ReportArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, add_help=True, **kwargs)
       
-        self.add_argument('source', help='path to evaluation directory', 
+        self.add_argument('source', help='path to results directory', 
                             type=self.directory)
         
         self.add_argument('-d', '--dest', dest='report_dir', default='reports',

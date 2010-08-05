@@ -14,7 +14,7 @@ import math
 from resultfetcher import Fetcher, FetchOptionParser
 
 
-def build_evaluator(parser=FetchOptionParser()):
+def build_fetcher(parser=FetchOptionParser()):
     eval = Fetcher(parser)
     #eval.add_key_value_pattern('run_start_time')
     eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
@@ -212,9 +212,5 @@ def build_evaluator(parser=FetchOptionParser()):
 
 
 if __name__ == '__main__':
-    #if len(sys.argv) == 1:
-    #    print 'Testing'
-    #    sys.argv.extend('-s test'.split())
-        
-    eval = build_evaluator()
-    eval.evaluate()
+    fetcher = build_fetcher()
+    fetcher.fetch()
