@@ -120,8 +120,7 @@ class Experiment(object):
         """
         dest = self._get_abs_path(dest)
         self.resources.append((source, dest))
-        if resource_name:
-            self.env_vars[resource_name] = dest
+        self.env_vars[resource_name] = dest
         
     def add_run(self):
         """
@@ -329,6 +328,13 @@ class Run(object):
         
         
     def set_property(self, name, value):
+        """
+        Add a key-value property to a run. These can be used later for 
+        evaluation
+        
+        Example:
+        >>> run.set_property('domain', 'gripper')
+        """
         # id parts can only be strings
         if name == 'id':
             assert type(value) == list
@@ -366,14 +372,13 @@ class Run(object):
         resource "DOMAIN" (usable as environment variable $DOMAIN).
         """        
         self.resources.append((source, dest))
-        if resource_name:
-            self.env_vars[resource_name] = dest
+        self.env_vars[resource_name] = dest
             
                     
     def set_command(self, command):
         """
         Example:
-        run.set_command('$PLANNER %s <$INFILE' % options)
+        >>> run.set_command('$PLANNER %s <$INFILE' % options)
         
         A bash fragment that gives the code to be run when invoking
         this job.
@@ -388,17 +393,29 @@ class Run(object):
         """
         self.command = command
         
-    def set_preprocess(self, preprocess_command):
-        self.preprocess_command = preprocess_command
+    def set_preprocess(self, command):
+        """
+        Execute a command prior tu running the main command
         
-    def set_postprocess(self, postprocess_command):
-        self.postprocess_command = postprocess_command
+        Example:
+        >>> run.set_preprocess('ls -la')
+        """
+        self.preprocess_command = command
+        
+    def set_postprocess(self, command):
+        """
+        Execute a command directly after the main command exited
+        
+        Example:
+        >>> run.set_postprocess('echo Finished')
+        """
+        self.postprocess_command = command
         
         
     def declare_optional_output(self, file_glob):
         """
         Example:
-        run.declare_optional_output('plan.soln*')
+        >>> run.declare_optional_output('plan.soln*')
         
         Specifies that all files names "plan.soln*" (using
         shell-style glob patterns) are part of the experiment output.
@@ -408,9 +425,8 @@ class Run(object):
         
     def declare_required_output(self, filename):
         """
-        There's a corresponding declare_required_output for output
-        files that must be present at the end or we have an error. A
-        specification like this is e.g. necessary for the Argo
+        Declare output files that must be present at the end or we have an 
+        error. A specification like this is e.g. necessary for the Argo
         cluster. On the gkigrid, this wouldn't do anything, although
         the declared outputs should be stored somewhere so that we
         can later verify that all went according to plan.
@@ -525,15 +541,7 @@ class Run(object):
 ## Factory for experiments.
 ##
 ## Parses cmd-line options to decide whether this is a gkigrid
-## experiment, a local experiment or whatever, and what the name
-## of the experiment (the *.q file etc.) should be.
-##
-## Also parses options to override the default values for sharding
-## (how many tasks to group into one top-level directory) and
-## grouping (how many runs to put into one task).
-##
-## Maybe also parses some generic options that make sense for all
-## kinds of experiments, e.g. timeout and memory limit.
+## experiment, a local experiment or whatever.
 def build_experiment(parser=ExpArgParser()):
     known_args, remaining_args = exp_type_parser.parse_known_args()
     
