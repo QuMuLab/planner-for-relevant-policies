@@ -5,6 +5,12 @@ Module that permits copying and parsing experiment files
 If called as the main script, it will only copy the files and do no parsing
 By default only the properties files are copied, with the "-c" parameter all 
 files will be copied.
+
+Some timings (issue7-ou-lmcut):
+Copy-props No-regexes No-functions 42s
+Copy-all   No-regexes No-functions 17min
+Copy-props Regexes    Functions    67min
+Copy-props Regexes    No-Functions 7min
 """
 
 from __future__ import with_statement
@@ -95,7 +101,7 @@ class _FileParser(object):
         self.filename = filename
        
         try:
-            with open(filename) as file:
+            with open(filename, 'rb') as file:
                 self.content = file.read()
         except IOError, err:
             logging.error('File "%s" could not be read (%s)' % (filename, err))
