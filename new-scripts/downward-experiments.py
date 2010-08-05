@@ -23,8 +23,8 @@ def build_planning_exp():
     
     exp = experiments.build_experiment(parser)
 
-    exp.add_resource('PLANNER', '../downward/search/release-search',
-                    'release-search')
+    exp.add_resource('PLANNER', '../downward/search/downward',
+                    'downward')
                     
                
     problems = planning_suites.build_suite(exp.suite)
