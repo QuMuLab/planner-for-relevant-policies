@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.INFO,
                     format='%(levelname)-8s %(message)s',)
                     
 import tools
-from external import argparse
       
 
 class EvalOptionParser(tools.ArgParser):
@@ -29,11 +28,15 @@ class EvalOptionParser(tools.ArgParser):
         
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
                 help='path to evaluation directory (default: <exp_dirs>-eval)')
+                
+        self.add_argument('-c', '--copy-all', default=False, action='store_true', 
+                help='copy all files from run dirs to new directory tree, '
+                    'not only the properties files')
             
     
     def parse_args(self, *args, **kwargs):
         # args is the populated namespace, i.e. the evaluation instance
-        args = argparse.ArgumentParser.parse_args(self, *args, **kwargs)
+        args = tools.ArgParser.parse_args(self, *args, **kwargs)
         
         args.exp_dirs = map(lambda dir: os.path.normpath(os.path.abspath(dir)), args.exp_dirs)
         logging.info('Exp dirs: "%s"' % args.exp_dirs)
@@ -45,60 +48,6 @@ class EvalOptionParser(tools.ArgParser):
             logging.info('Eval dir: "%s"' % args.eval_dir)
         
         return args
-        
-    
-
-class Evaluation(object):
-    """
-    Base class for all evaluations
-    """
-    def __init__(self, parser=EvalOptionParser()):
-        self.parser = parser
-        # Give all the options to the experiment instance
-        self.parser.parse_args(namespace=self)
-        
-        self.run_dirs = self._get_run_dirs()
-        
-    def evaluate(self):
-        raise Exception('Not Implemented')
-        
-    def _get_run_dirs(self):
-        run_dirs = []
-        for dir in self.exp_dirs:
-            run_dirs.extend(glob(os.path.join(dir, 'runs-*-*', '*')))
-        return run_dirs
-        
-        
-        
-class CopyEvaluation(Evaluation):
-    """
-    Evaluation that copies files from run dirs into a new tree under
-    <eval-dir> according to the value "id" in the run's properties file
-    """
-    def __init__(self, *args, **kwargs):
-        Evaluation.__init__(self, *args, **kwargs)
-        
-        # Save the newly created run dirs for further evaluation
-        self.dirs = []
-        
-    def evaluate(self):
-        copy_dict = {}
-        
-        run_dirs = self._get_run_dirs()
-        for run_dir in run_dirs:
-            prop_file = os.path.join(run_dir, 'properties')
-            props = tools.Properties(prop_file)
-            id = props.get('id')
-            dest = os.path.join(self.eval_dir, *id)
-            copy_dict[run_dir] = dest
-            
-        self.dirs = copy_dict.values()
-        
-        total_dirs = len(copy_dict.items())
-            
-        for index, (source, dest) in enumerate(copy_dict.items(), 1):
-            logging.info('Done copying: %d/%d' % (index, total_dirs))
-            tools.updatetree(source, dest)
         
         
     
@@ -127,16 +76,30 @@ class Pattern(object):
         
         
 
-class ParseEvaluation(Evaluation):
+class Evaluation(object):
     """
-    Evaluation that parses various files and writes found results
+    If copy-all is True, copies files from run dirs into a new tree under
+    <eval-dir> according to the value "id" in the run's properties file
+    
+    Parses various files and writes found results
     into the run's properties file
     """
-    def __init__(self, *args, **kwargs):
-        Evaluation.__init__(self, *args, **kwargs)
+    def __init__(self, parser=EvalOptionParser(), *args, **kwargs):
+        self.parser = parser
+        # Give all the options to the experiment instance
+        self.parser.parse_args(namespace=self)
+        
+        self.run_dirs = self._get_run_dirs()
         
         self.patterns = defaultdict(list)
         self.functions = defaultdict(list)
+    
+        
+    def _get_run_dirs(self):
+        run_dirs = []
+        for dir in self.exp_dirs:
+            run_dirs.extend(glob(os.path.join(dir, 'runs-*-*', '*')))
+        return run_dirs        
         
         
     def add_pattern(self, name, regex_string, group=1, file='run.log', required=True,
@@ -173,17 +136,17 @@ class ParseEvaluation(Evaluation):
         
         
     def evaluate(self):
-        #CopyEvaluation.evaluate(self)
-        
         total_dirs = len(self.run_dirs)
         
         for index, run_dir in enumerate(self.run_dirs, 1):
-            
-            copy_files = {}
-            
-            
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
+            
+            id = props.get('id')
+            dest_dir = os.path.join(self.eval_dir, *id)
+            if self.copy_all:
+                tools.fast_updatetree(run_dir, dest_dir)
+            
             props['run_dir'] = run_dir
             
             for file, patterns in self.patterns.items():
@@ -196,13 +159,13 @@ class ParseEvaluation(Evaluation):
                 props.update(new_props)
             
             # Write new properties file
-            id = props.get('id')
-            dest_dir = os.path.join(self.eval_dir, *id)
-            tools.makedirs(dest_dir)
+            #id = props.get('id')
+            #dest_dir = os.path.join(self.eval_dir, *id)
+            #tools.makedirs(dest_dir)
             props.filename = os.path.join(dest_dir, 'properties')
             props.write()
             
-            logging.info('Done Parsing: %6d/%d' % (index, total_dirs))
+            logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
             
             
     def _parse_file(self, file, patterns):
@@ -246,7 +209,7 @@ class ParseEvaluation(Evaluation):
         
         
 def build_evaluator(parser=EvalOptionParser()):
-    eval = ParseEvaluation(parser)
+    eval = Evaluation(parser)
     #eval.add_key_value_pattern('run_start_time')
     eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
     eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
