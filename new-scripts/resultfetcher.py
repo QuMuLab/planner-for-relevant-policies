@@ -13,8 +13,7 @@ from glob import glob
 from collections import defaultdict
 import logging
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(levelname)-8s %(message)s',)
+logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
                     
 import tools
       

@@ -20,7 +20,7 @@ def build_evaluator(parser=EvalOptionParser()):
     eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
     eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
     eval.add_pattern('expanded', r'Expanded (\d+)', type=int, required=False)
-    eval.add_pattern('generated', r'Generated (\d+) state', type=int)
+    eval.add_pattern('generated', r'Generated (\d+) state', type=int, required=False)
     eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False)
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     

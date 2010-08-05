@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """
 Module that permits the generation of planning experiments
 
@@ -64,9 +65,6 @@ def build_planning_exp():
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print 'Testing'
-        sys.argv.extend('test -c cea,ff -s MINITEST --timeout 1'.split())
     exp = build_planning_exp()
     exp.build()
 
