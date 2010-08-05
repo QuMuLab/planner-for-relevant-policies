@@ -196,17 +196,6 @@ class Report(object):
     def _get_table(self):
         raise Error('Not implemented')
         
-    
-    def _get_tables(self):
-        tables = []
-        for focus in self.foci:
-            self.focus = focus
-            try:
-                tables.append(self._get_table())
-            except TypeError:
-                logging.info('Omitting attribute "%s"' % focus)
-        return tables
-        
         
     def build(self):
         doc = Document(title=self.name())
@@ -233,9 +222,12 @@ class Report(object):
         
     def __str__(self):
         res = ''
-        for table in self._get_tables():
-            res += '+ %s +' % self.focus
-            res += str(table)
+        for focus in self.foci:
+            self.focus = focus
+            try:
+                res += '+ %s +\n%s\n' % (self.focus, self._get_table())
+            except TypeError:
+                logging.info('Omitting attribute "%s"' % focus)
         return res    
 
                             

@@ -9,6 +9,7 @@ import sys
 import os
 import logging
 import re
+import math
 
 from resultfetcher import Evaluation, EvalOptionParser
 
@@ -160,7 +161,35 @@ def build_evaluator(parser=EvalOptionParser()):
                 # We have a line containing the number of arcs for one node
                 arcs += int(parts[0])
         return {'cg_arcs': arcs}
+
+
+    def scores(content, old_props):
+        """
+        Some reported results are measured via scores from the
+        range 0-1, where best possible performance in a task is
+        counted as 1, while failure to solve a task and worst 
+        performance are counted as 0
+        """
+        def log_score(value, min_bound, max_bound, min_score):
+            if value is None:
+                return 0
+            if value < min_bound:
+                value = min_bound
+            if value > max_bound:
+                value = max_bound
+            raw_score = math.log(value) - math.log(max_bound)
+            best_raw_score = math.log(min_bound) - math.log(max_bound)
+            score = min_score + (1 - min_score) * (raw_score / best_raw_score)
+            return round(score, 4)
         
+        return {'score_expansions': log_score(old_props.get('expanded'), 
+                        min_bound=100, max_bound=1000000, min_score=0.0),
+                'score_total_time': log_score(old_props.get('total_time'), 
+                        min_bound=1.0, max_bound=1800.0, min_score=0.0),
+                'score_search_time': log_score(old_props.get('search_time'), 
+                        min_bound=1.0, max_bound=1800.0, min_score=0.0),
+                }
+                    
         
     eval.add_function(completely_explored)
     eval.add_function(get_status)
@@ -176,6 +205,8 @@ def build_evaluator(parser=EvalOptionParser()):
     eval.add_function(preprocessor_derived_vars, file='output')
     
     eval.add_function(cg_arcs, file='output')
+    
+    eval.add_function(scores)
     
     return eval
 

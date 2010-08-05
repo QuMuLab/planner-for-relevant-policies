@@ -174,7 +174,7 @@ class ComparativePlanningReport(PlanningReport):
         PlanningReport.__init__(self, *args, **kwargs)
         
     
-    def _get_table(self):        
+    def _get_table(self):
         func = self.group_func
         table = Table(self.focus)
         
