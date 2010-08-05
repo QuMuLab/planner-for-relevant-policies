@@ -207,6 +207,7 @@ class Evaluation(object):
         return new_props
         
         
-        
+if __name__ == "__main__":
+    logging.error('Please import this module from another script')
 
     

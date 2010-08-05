@@ -43,8 +43,8 @@ X Grey out rows that have equal numbers
 
 X Add priority option for gkigrid experiments
 
-O Unify evaluations
-O Add copy-all parameter
+X Unify evaluations
+X Add copy-all parameter
 """
 
 from __future__ import with_statement

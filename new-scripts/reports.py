@@ -59,11 +59,11 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--reload', default=False, action='store_true',
                         help='rescan the directory and reload the properties files')
                         
-        self.add_argument('-a', '--attributes', dest='show_attributes',
-                        default=False, action='store_true',
+        self.add_argument('--show_attributes', default=False, action='store_true',
                         help='show a list of available attributes and exit')
                         
-        self.add_argument('-f', '--foci', nargs='*', metavar='ATTR', default='all',
+        self.add_argument('-a', '--attributes', dest='foci', nargs='*', 
+                            metavar='ATTR', default='all',
                             help='the analyzed attributes (e.g. "expanded")')
                         
                         
