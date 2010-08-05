@@ -209,20 +209,20 @@ def build_fetcher(parser=FetchOptionParser()):
                 }
                     
         
-    eval.add_function(completely_explored)
-    eval.add_function(get_status)
+    #eval.add_function(completely_explored)
+    #eval.add_function(get_status)
     eval.add_function(solved)
     
-    eval.add_function(translator_facts, file='output.sas')
-    eval.add_function(preprocessor_facts, file='output')
+#    eval.add_function(translator_facts, file='output.sas')
+#    eval.add_function(preprocessor_facts, file='output')
     
     #eval.add_function(translator_axioms, file='output.sas')
     #eval.add_function(preprocessor_axioms, file='output')
     
-    eval.add_function(translator_derived_vars, file='output.sas')
-    eval.add_function(preprocessor_derived_vars, file='output')
+#    eval.add_function(translator_derived_vars, file='output.sas')
+#    eval.add_function(preprocessor_derived_vars, file='output')
     
-    eval.add_function(cg_arcs, file='output')
+#    eval.add_function(cg_arcs, file='output')
     
     eval.add_function(scores)
     
