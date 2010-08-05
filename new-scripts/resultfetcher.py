@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 """
 Module that permits copying and parsing experiment files
+
+If called as the main script, it will only copy the files and do no parsing
+By default only the properties files are copied, with the "-c" parameter all 
+files will be copied.
 """
 
 from __future__ import with_statement
@@ -26,7 +30,7 @@ class FetchOptionParser(tools.ArgParser):
                 help='path to experiment directory', type=self.directory)
         
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
-                help='path to evaluation directory (default: <exp_dirs>-eval)')
+                help='path to evaluation directory (default: <exp_dir>-eval)')
                 
         self.add_argument('-c', '--copy-all', default=False, action='store_true', 
                 help='copy all files from run dirs to new directory tree, '
@@ -76,6 +80,10 @@ class _Pattern(object):
         
         
 class _FileParser(object):
+    """
+    Private class that parses a given file according to the added patterns
+    and functions
+    """
     def __init__(self):
         self.filename = None
         self.content = None
@@ -195,7 +203,7 @@ class Fetcher(object):
         """
         self.file_parsers[file].add_function(function)
         
-    def evaluate(self):
+    def fetch(self):
         total_dirs = len(self.run_dirs)
         
         for index, run_dir in enumerate(self.run_dirs, 1):
@@ -225,6 +233,10 @@ class Fetcher(object):
         
         
 if __name__ == "__main__":
-    logging.error('Please import this module from another script')
+    logging.info('Import this module if you want to parse the output files')
+    logging.info('Started copying files')
+    fetcher = Fetcher()
+    fetcher.fetch()
+    logging.info('Finished copying files')
 
     
