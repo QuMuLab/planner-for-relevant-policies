@@ -24,11 +24,29 @@ def build_fetcher(parser=FetchOptionParser()):
     eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False)
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     
-    eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
-    eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
+    #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
+    #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
     
-    eval.add_pattern('preprocessor_vars', r'begin_variables\n(\d+)', file='output', type=int, flags='M')
-    eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output', type=int, flags='M')
+    #eval.add_pattern('preprocessor_vars', r'begin_variables\n(\d+)', file='output', type=int, flags='M')
+    #eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output', type=int, flags='M')
+    
+    
+    # Experimental
+    # Preprocessor output:
+    # 19 variables of 19 necessary
+    # 2384 of 2384 operators necessary.
+    # 0 of 0 axiom rules necessary
+    
+    #eval.add_pattern('rules_exp', r'Generated (\d+) rules', type=int)
+    
+    eval.add_pattern('preprocessor_vars_exp', r'(\d+) variables of \d+ necessary', type=int)
+    eval.add_pattern('translator_vars_exp', r'\d+ variables of (\d+) necessary', type=int)
+    
+    eval.add_pattern('preprocessor_ops_exp', r'(\d+) of \d+ operators necessary', type=int)
+    eval.add_pattern('translator_ops_exp', r'\d+ of (\d+) operators necessary', type=int)
+    
+    eval.add_pattern('preprocessor_axioms_exp', r'(\d+) of \d+ axiom rules necessary', type=int)
+    eval.add_pattern('translator_axioms_exp', r'\d+ of (\d+) axiom rules necessary', type=int)
     
     
     def completely_explored(content, old_props):
@@ -198,8 +216,8 @@ def build_fetcher(parser=FetchOptionParser()):
     eval.add_function(translator_facts, file='output.sas')
     eval.add_function(preprocessor_facts, file='output')
     
-    eval.add_function(translator_axioms, file='output.sas')
-    eval.add_function(preprocessor_axioms, file='output')
+    #eval.add_function(translator_axioms, file='output.sas')
+    #eval.add_function(preprocessor_axioms, file='output')
     
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
