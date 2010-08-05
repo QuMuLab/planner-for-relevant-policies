@@ -143,6 +143,7 @@ class Evaluation(object):
             
             id = props.get('id')
             dest_dir = os.path.join(self.eval_dir, *id)
+            tools.makedirs(dest_dir)
             if self.copy_all:
                 tools.fast_updatetree(run_dir, dest_dir)
             
@@ -158,9 +159,6 @@ class Evaluation(object):
                 props.update(new_props)
             
             # Write new properties file
-            #id = props.get('id')
-            #dest_dir = os.path.join(self.eval_dir, *id)
-            #tools.makedirs(dest_dir)
             props.filename = os.path.join(dest_dir, 'properties')
             props.write()
             
