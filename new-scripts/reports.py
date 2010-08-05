@@ -103,7 +103,6 @@ class Report(object):
         
         self.data = self._get_data()
         
-        print 'FOCI', self.foci
         if not self.foci or self.foci == 'all':
             self.foci = self.data.get_attributes()
         
@@ -226,15 +225,15 @@ class Report(object):
             self.focus = focus
             try:
                 res += '+ %s +\n%s\n' % (self.focus, self._get_table())
-            except TypeError:
-                logging.info('Omitting attribute "%s"' % focus)
+            except TypeError, err:
+                logging.info('Omitting attribute "%s" (%s)' % (focus, err))
         return res    
 
                             
         
 
 class Table(collections.defaultdict):
-    def __init__(self, title='', sum=True, hide_boring=True):
+    def __init__(self, title='', sum=True, hide_boring=True, highlight=True):
         collections.defaultdict.__init__(self, dict)
         
         self.title = title
@@ -320,17 +319,8 @@ class Table(collections.defaultdict):
                     
         return (self.cols, sums)
         
-        
-    def get_row_plain(self, row):
-        text = ''
-        text += '| %-30s ' % ('**'+row+'**')
-        for col in self.cols:
-            text += '| %-16s ' % self.get(row).get(col)
-        text += '|\n'
-        return text
-        
     
-    def get_row_hide_boring(self, row):
+    def get_row(self, row):
         values = self[row].values()
         only_one_value = len(set(values)) == 1
         #if len(set(values)) > 1:
@@ -343,9 +333,9 @@ class Table(collections.defaultdict):
         text += '| %-30s ' % ('**'+row+'**')
         for col in self.cols:
             value = self.get(row).get(col)
-            if only_one_value:
+            if only_one_value and self.highlight:
                 value_text = '{{%s|color:Gray}}' % value
-            elif value == lowest_value:
+            elif value == lowest_value and self.highlight:
                 value_text = '**%s**' % value
             else:
                 value_text = str(value)
@@ -369,10 +359,7 @@ class Table(collections.defaultdict):
         
         text += ' | '.join(map(lambda col: '%-16s' % col, cols)) + ' |\n'
         for row in rows:
-            if self.hide_boring:
-                text += self.get_row_hide_boring(row)
-            else:
-                text += self.get_row_plain(row)
+            text += self.get_row(row)
         return text
         
     
