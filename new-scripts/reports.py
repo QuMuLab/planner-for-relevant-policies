@@ -239,6 +239,7 @@ class Table(collections.defaultdict):
         self.title = title
         self.sum = sum
         self.hide_boring = hide_boring
+        self.highlight = highlight
         
         
     def add_cell(self, row, col, value):

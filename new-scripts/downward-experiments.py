@@ -49,7 +49,7 @@ def build_planning_exp():
             
             run.set_preprocess('%s; %s' % (translate_cmd, preprocess_cmd))
             
-            run.set_command("$PLANNER --search 'lazy(single(%s))' < output" % config)
+            run.set_command("$PLANNER --search 'astar(%s())' < output" % config)
             
             run.declare_optional_output('*.groups')
             run.declare_optional_output('output')
