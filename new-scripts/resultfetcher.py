@@ -7,10 +7,11 @@ By default only the properties files are copied, with the "-c" parameter all
 files will be copied.
 
 Some timings (issue7-ou-lmcut):
-Copy-props No-regexes No-functions 42s
-Copy-all   No-regexes No-functions 17min
-Copy-props Regexes    Functions    67min
-Copy-props Regexes    No-Functions 7min
+Copy-props No-regexes   No-functions   42s
+Copy-all   No-regexes   No-functions   17min
+Copy-props Regexes      Functions      67min
+Copy-props Regexes      No-Functions   7min
+Copy-props More-Regexes Less-Functions 9min
 """
 
 from __future__ import with_statement

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-Simple script to demonstrate the use of experiments.py
+Simple script to demonstrate the use of experiments.py for planning experiments
 """
 import os
 

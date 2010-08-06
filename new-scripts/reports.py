@@ -233,13 +233,14 @@ class Report(object):
         
 
 class Table(collections.defaultdict):
-    def __init__(self, title='', sum=True, hide_boring=True, highlight=True):
+    def __init__(self, title='', hide_boring=True, highlight=True, 
+                    min_wins=True):
         collections.defaultdict.__init__(self, dict)
         
         self.title = title
-        self.sum = sum
         self.hide_boring = hide_boring
         self.highlight = highlight
+        self.min_wins = min_wins
         
         
     def add_cell(self, row, col, value):
@@ -328,15 +329,21 @@ class Table(collections.defaultdict):
             # There are at least two different values in the row
         #    return self.get_row_plain(row)
             
-        lowest_value = min(values)
+        min_value = min(values)
+        max_value = max(values)
+        
+        min_wins = self.min_wins
+        max_wins = not min_wins
             
         text = ''
         text += '| %-30s ' % ('**'+row+'**')
         for col in self.cols:
             value = self.get(row).get(col)
-            if only_one_value and self.highlight:
+            is_min = (value == min_value)
+            is_max = (value == max_value)
+            if self.highlight and only_one_value:
                 value_text = '{{%s|color:Gray}}' % value
-            elif value == lowest_value and self.highlight:
+            elif self.highlight and (min_wins and is_min or max_wins and is_max):
                 value_text = '**%s**' % value
             else:
                 value_text = str(value)

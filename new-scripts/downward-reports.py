@@ -79,6 +79,18 @@ class PlanningReport(Report):
         name += '-' + self.report
         return name
         
+        
+    def _get_table(self):
+        '''
+        Returns an empty table. Used and filled by subclasses.
+        '''
+        max_attributes = ['solved', 'score']
+        min_wins = True
+        for attr in max_attributes:
+            if attr in self.focus:
+                min_wins = False
+        table = Table(self.focus, min_wins=min_wins)
+        return table
 
 
 
@@ -96,7 +108,7 @@ class AbsolutePlanningReport(PlanningReport):
             
     def _get_table(self):
         func = self.group_func
-        table = Table(self.focus)
+        table = PlanningReport._get_table(self)
         
         def existing(val):
             return not type(val) == datasets.MissingType
@@ -151,9 +163,7 @@ class RelativePlanningReport(AbsolutePlanningReport):
         AbsolutePlanningReport.__init__(self, *args, **kwargs)
         
     
-    def _get_table(self):
-        func = self.group_func
-        
+    def _get_table(self):        
         absolute_table = AbsolutePlanningReport._get_table(self)
         table = absolute_table.get_relative()
         
@@ -175,8 +185,7 @@ class ComparativePlanningReport(PlanningReport):
         
     
     def _get_table(self):
-        func = self.group_func
-        table = Table(self.focus)
+        table = PlanningReport._get_table(self)
         
         if self.resolution == 'domain':
             self.set_grouping('domain')
