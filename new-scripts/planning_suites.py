@@ -7,6 +7,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BENCHMARKS_DIR = os.path.join(ROOT_DIR, "benchmarks")
 RESULTS_DIR = os.path.join(ROOT_DIR, "results")
 
+
 class Repository(object):
     def __init__(self):
         domains = [d for d in os.listdir(BENCHMARKS_DIR)
@@ -15,6 +16,7 @@ class Repository(object):
         self.domains = [Domain(domain) for domain in domains]
     def __iter__(self):
         return iter(self.domains)
+        
 
 class Domain(object):
     def __init__(self, domain):
@@ -35,6 +37,7 @@ class Domain(object):
         return cmp(self.domain, other.domain)
     def __iter__(self):
         return iter(self.problems)
+        
 
 class Problem(object):
     def __init__(self, domain, problem):
@@ -57,40 +60,6 @@ class Problem(object):
                             "domain_" + self.problem]
         domain_dir = os.path.join(BENCHMARKS_DIR, self.domain)
         return tools.find_file(domain_basenames, domain_dir)
-
-class ResultFiles(object):
-    def __init__(self, algorithm, args, problem):
-        base, _ = os.path.splitext(os.path.basename(problem.problem))
-        version = "version-" + args
-        self.alg_dir = os.path.join(RESULTS_DIR, algorithm, version)
-        self.domain_dir = os.path.join(RESULTS_DIR, algorithm, version, 
-                                        problem.domain)
-        self.base_name = os.path.join(RESULTS_DIR, algorithm, version, 
-                                        problem.domain, base)
-    def algorithm_directory(self):
-        return self.alg_dir
-    def domain_directory(self):
-        return self.domain_dir
-    def global_log(self):
-        return self.base_name + ".log"
-    def translate_log(self):
-        return self.base_name + ".tlog"
-    def preprocess_log(self):
-        return self.base_name + ".plog"
-    def search_log(self):
-        return self.base_name + ".slog"
-    def translate_out(self):
-        return self.base_name + ".sas"
-    def translate_group(self):
-        return self.base_name + ".groups"
-    def translate_group2(self):
-        return self.base_name + ".groups2"
-    def preprocess_out(self):
-        return self.base_name + ".pre"
-    def search_out(self):
-        return self.base_name + ".out"
-    def solution(self):
-        return self.base_name + ".soln"
 
 
 def generate_problems(description):

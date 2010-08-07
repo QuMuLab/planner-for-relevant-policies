@@ -74,6 +74,12 @@ class ReportArgParser(tools.ArgParser):
         args.eval_dir = os.path.normpath(os.path.abspath(args.eval_dir))
         logging.info('Eval dir: "%s"' % args.eval_dir)
         
+        if not args.eval_dir.endswith('eval'):
+            answer = raw_input('The source directory does not end with eval. '
+                        'Are you sure you this is an evaluation directory? (Y/N): ')
+            if not answer.upper() == 'Y':
+                sys.exit()
+        
         if not os.path.exists(args.report_dir):
             os.makedirs(args.report_dir)
             
