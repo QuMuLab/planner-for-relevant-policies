@@ -63,7 +63,31 @@ class Problem(object):
 
 
 def generate_problems(description):
-    if isinstance(description, Problem):
+    if description.endswith('FIRST'):
+        # Allow writing SUITE_NAME_FIRST
+        # This will work for all suites that only list domains and will
+        # return the first problem of each domain
+        description += '1'
+        
+    number_expr = re.compile(r'.*FIRST([-]?\d+)')
+    number_result = number_expr.search(description)
+        
+    if number_result:
+        # Allow writing SUITE_NAME_FIRSTn
+        # This will work for all suites that only list domains and will
+        # return the first n problems of each domain
+        number = int(number_result.group(1))
+        assert number >= 1, number
+        suite_name, first_text = description.rsplit('_', 1)
+        suite_funcname = "suite_%s" % suite_name.lower()
+        suite_func = globals().get(suite_funcname)
+        if not suite_func:
+            raise SystemExit("unknown suite: %s" % suite_funcname)
+        for domain_name in suite_func():
+            domain = repository.Domain(domain_name)
+            for problem in domain.problems[:number]:
+                yield problem
+    elif isinstance(description, Problem):
         yield description
     elif isinstance(description, Domain):
         for problem in description:
@@ -256,11 +280,11 @@ def suite_minitest():
             "gripper:prob03.pddl", "zenotravel:pfile1",
             "zenotravel:pfile2", "zenotravel:pfile3", ]
             
-def suite_issue7test():
+def suite_tinytest():
     return ["gripper:prob01.pddl", "trucks-strips:p01.pddl",
             "trucks:p01.pddl", "psr-middle:p01-s17-n2-l2-f30.pddl"]
             
-def suite_issue7all():
+def suite_everything():
     return suite_all() + ['openstacks-strips', 'pathways-noneg', 'trucks-strips']
 
 
