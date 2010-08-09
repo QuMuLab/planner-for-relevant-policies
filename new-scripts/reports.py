@@ -35,7 +35,7 @@ def avg(values):
     >>> print avg([20, 30, 70])
     40.0
     """
-    return sum(values, 0.0) / len(values)
+    return round(sum(values, 0.0) / len(values), 4)
 
 
 class ReportArgParser(tools.ArgParser):
@@ -287,10 +287,10 @@ class Table(collections.defaultdict):
         Unused
         """
         sums = defaultdict(int)
-        for row in self.rows:
+        for row in [row for row in self.rows if not row == 'SUM']:
             for col, value in self[row].items():
                 sums[col] += value
-        text += '| %-30s ' % '**Sum**'
+        text = '| %-30s ' % '**NORMALIZED SUM**'
         for col, sum in sorted(sums.items()):
             text += '| %-16s ' % ('**'+str(sum)+'**')
         text += '|\n'
@@ -380,6 +380,7 @@ class Table(collections.defaultdict):
         text += ' | '.join(map(lambda col: '%-16s' % col, cols)) + ' |\n'
         for row in rows:
             text += self.get_row(row)
+        text += self.get_sum_row()
         return text
         
     
