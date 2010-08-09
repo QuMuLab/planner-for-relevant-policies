@@ -245,12 +245,10 @@ class Report(object):
         
 
 class Table(collections.defaultdict):
-    def __init__(self, title='', hide_boring=True, highlight=True, 
-                    min_wins=True):
+    def __init__(self, title='', highlight=True, min_wins=True):
         collections.defaultdict.__init__(self, dict)
         
         self.title = title
-        self.hide_boring = hide_boring
         self.highlight = highlight
         self.min_wins = min_wins
         
@@ -280,24 +278,6 @@ class Table(collections.defaultdict):
         
     def get_cells_in_row(self, row):
         return self[row].values()
-        
-        
-    def get_normalized_avg(self):
-        """
-        Unused
-        """
-        values = defaultdict(list)
-        normal_rows = [row for row in self.rows if not row == 'SUM']
-        for row in normal_rows:
-            for col, value in self[row].items():
-                values[col].append(value)
-        averages = [avg(val) for col, val in sorted(values.items())]
-        text = self.get_row('NORMALIZED AVG', averages)
-        #text = '| %-30s ' % '**NORMALIZED AVG**'
-        #for col, col_values in sorted(values.items()):
-        #    text += '| %-16s ' % ('**'+str(avg(col_values))+'**')
-        #text += '|\n'
-        return text
         
         
     def get_relative(self):
@@ -347,9 +327,6 @@ class Table(collections.defaultdict):
                 values.append(self.get(row).get(col))
             
         only_one_value = len(set(values)) == 1
-        #if len(set(values)) > 1:
-            # There are at least two different values in the row
-        #    return self.get_row_plain(row)
             
         min_value = min(values)
         max_value = max(values)
@@ -389,7 +366,6 @@ class Table(collections.defaultdict):
         text += ' | '.join(map(lambda col: '%-16s' % col, cols)) + ' |\n'
         for row in rows:
             text += self.get_row(row)
-        text += self.get_normalized_avg()
         return text
         
     

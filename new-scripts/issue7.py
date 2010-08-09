@@ -98,7 +98,7 @@ def build_planning_exp():
                 
                 ext_config = str(translator_rev) + '-' + config
                 
-                run.set_property('translator', translator_rev)
+                run.set_property('translator', str(translator_rev))
                 run.set_property('config', ext_config)
                 run.set_property('domain', problem.domain)
                 run.set_property('problem', problem.problem)

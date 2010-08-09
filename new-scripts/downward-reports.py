@@ -9,6 +9,7 @@ import sys
 import os
 import logging
 import datetime
+from collections import defaultdict
 
 import tools
 import downward_suites
@@ -23,7 +24,36 @@ report_type_parser = tools.ArgParser(add_help=False)
 report_type_parser.epilog = 'Note: The help output may depend on the already selected options'
 report_type_parser.add_argument('-r', '--report', choices=['abs', 'rel', 'cmp'],
                                 default='abs', help='Select a report type')
-
+                                
+                                
+                                
+class PlanningTable(Table):
+    def __init__(self, *args, **kwargs):
+        Table.__init__(self, *args, **kwargs)
+        
+        self.focus = self.title
+        
+        
+    def get_normalized_avg_row(self):
+        """
+        When summarising score results from multiple domains we show 
+        normalised averages such that each domain is weighed equally.
+        """
+        values = defaultdict(list)
+        normal_rows = [row for row in self.rows if not row == 'SUM']
+        for row in normal_rows:
+            for col, value in self[row].items():
+                values[col].append(value)
+        averages = [reports.avg(val) for col, val in sorted(values.items())]
+        text = self.get_row('NORMALIZED AVG', averages)
+        return text
+        
+    
+    def __str__(self):
+        text = Table.__str__(self)
+        if 'score' in self.focus:
+            text += self.get_normalized_avg_row()
+        return text
 
 
 class PlanningReport(Report):
@@ -97,7 +127,7 @@ class PlanningReport(Report):
         for attr in max_attributes:
             if attr in self.focus:
                 min_wins = False
-        table = Table(self.focus, min_wins=min_wins)
+        table = PlanningTable(self.focus, min_wins=min_wins)
         return table
 
 
