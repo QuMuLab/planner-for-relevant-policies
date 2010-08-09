@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 import os
 import sys
-#sys.path.insert(0, '../')
 import subprocess
 
 import experiments
@@ -23,10 +22,17 @@ def setup():
         os.mkdir(main_dir)
     os.chdir(main_dir)
     
-    #planner_rev_path = 'trunk-r%d' % PLANNER_REV
-    #if not os.path.exists(planner_rev_path):
-    #    cmd = ('svn co %s@%d %s' % (PLANNER_URL, PLANNER_REV, planner_rev_path)).split()
-    #    ret = subprocess.call(cmd)
+    planner_rev_path = 'trunk-r%d' % PLANNER_REV
+    if not os.path.exists(planner_rev_path):
+        cmd = ('svn co %s@%d %s' % (PLANNER_URL, PLANNER_REV, planner_rev_path)).split()
+        ret = subprocess.call(cmd)
+        
+    # Needs compiling
+    preprocessor = os.path.join(planner_rev_path, 'downward', 'preprocess', 'preprocess')
+    if os.path.exists(planner_rev_path) and not os.path.exists(preprocessor):
+        os.chdir(os.path.join(planner_rev_path, 'downward', 'preprocess'))
+        subprocess.call(['make'])
+        os.chdir('../../')
     
     # Needs compiling
     #planner = os.path.join(planner_rev_path, 'downward', 'search', 'release-search')
@@ -80,21 +86,21 @@ def build_planning_exp():
             translator_path = os.path.abspath(translator)
             translate_cmd = '%s %s %s' % (translator_path, domain_file, problem_file)
             
-            #preprocessor_path = os.path.join(main_dir, 'trunk-r3842', 'downward/preprocess/preprocess')
-            #preprocessor_path = os.path.abspath(preprocessor_path)
-            #preprocess_cmd = '%s < %s' % (preprocessor_path, 'output.sas')
+            preprocessor_path = os.path.join(main_dir, 'trunk-r3842', 'downward/preprocess/preprocess')
+            preprocessor_path = os.path.abspath(preprocessor_path)
+            preprocess_cmd = '%s < %s' % (preprocessor_path, 'output.sas')
             
             #run.set_preprocess('%s; %s' % (translate_cmd, preprocess_cmd))
             
             #run.set_command("$PLANNER %s < output" % config)
-            run.set_command(translate_cmd)
+            run.set_command('%s; %s' % (translate_cmd, preprocess_cmd))
             
             run.declare_optional_output("*.groups")
-            #run.declare_optional_output("output")
+            run.declare_optional_output("output")
             run.declare_optional_output("output.sas")
             #run.declare_optional_output("sas_plan")
             
-            ext_config = str(translator_rev) + '-' + config
+            ext_config = str(translator_rev) #+ '-' + config
             
             run.set_property('translator', str(translator_rev))
             run.set_property('config', ext_config)
@@ -105,7 +111,6 @@ def build_planning_exp():
     return exp
 
 if __name__ == '__main__':
-    #sys.argv += '-n issue7exp -c yY -s TEST'.split()
     setup()
     exp = build_planning_exp()
     exp.build()
