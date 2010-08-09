@@ -13,7 +13,7 @@ import logging
 from collections import defaultdict
 
 import experiments
-import planning_suites
+import downward_suites
 
 
 def get_configs(configs_strings):
@@ -90,7 +90,7 @@ exp = experiments.build_experiment(parser=parser)
 # this resource that can also be used to refer to it in shell scripts.
 exp.add_resource("PLANNER", "../downward/search/downward", "downward")
 
-problems = planning_suites.build_suite(exp.suite)
+problems = downward_suites.build_suite(exp.suite)
 
 for problem in problems:
     for config_name, config_string in get_configs(exp.configs):

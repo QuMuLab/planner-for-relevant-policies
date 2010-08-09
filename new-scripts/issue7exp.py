@@ -6,7 +6,7 @@ import subprocess
 
 import planning
 import experiments
-import planning_suites
+import downward_suites
 
 issue7_dir = 'issue7'
 
@@ -63,7 +63,7 @@ def build_planning_exp():
                     "release-search")
                     
             
-    problems = planning_suites.build_suite(exp.suite)
+    problems = downward_suites.build_suite(exp.suite)
     
     
     

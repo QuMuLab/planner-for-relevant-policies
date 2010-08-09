@@ -11,7 +11,7 @@ import logging
 import datetime
 
 import tools
-import planning_suites
+import downward_suites
 from external import datasets
 from markup import Document
 from reports import Report, ReportArgParser, Table
@@ -41,7 +41,7 @@ class PlanningReport(Report):
         self.focus = None
         self.output = ''
         
-        self.problems = planning_suites.build_suite(self.suite)
+        self.problems = downward_suites.build_suite(self.suite)
         
         def filter_by_problem(run):
             """
