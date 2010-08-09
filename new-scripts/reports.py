@@ -282,17 +282,18 @@ class Table(collections.defaultdict):
         return self[row].values()
         
         
-    def get_sum_row(self):
+    def get_normalized_avg(self):
         """
         Unused
         """
-        sums = defaultdict(int)
-        for row in [row for row in self.rows if not row == 'SUM']:
+        values = defaultdict(list)
+        normal_rows = [row for row in self.rows if not row == 'SUM']
+        for row in normal_rows:
             for col, value in self[row].items():
-                sums[col] += value
-        text = '| %-30s ' % '**NORMALIZED SUM**'
-        for col, sum in sorted(sums.items()):
-            text += '| %-16s ' % ('**'+str(sum)+'**')
+                values[col].append(value)
+        text = '| %-30s ' % '**NORMALIZED AVG**'
+        for col, col_values in sorted(values.items()):
+            text += '| %-16s ' % ('**'+str(avg(col_values))+'**')
         text += '|\n'
         return text
         
@@ -380,7 +381,7 @@ class Table(collections.defaultdict):
         text += ' | '.join(map(lambda col: '%-16s' % col, cols)) + ' |\n'
         for row in rows:
             text += self.get_row(row)
-        text += self.get_sum_row()
+        text += self.get_normalized_avg()
         return text
         
     
