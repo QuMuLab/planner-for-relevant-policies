@@ -467,7 +467,7 @@ class Run(object):
             
         run_script = open('data/run-template.py').read()
         replacements = {'ENVIRONMENT_VARIABLES': env_vars_text,
-                        'RUN_COMMAND' :self.command,
+                        'RUN_COMMAND' : self.command,
                         'PREPROCESS_COMMAND': self.preprocess_command,
                         'POSTPROCESS_COMMAND': self.postprocess_command,
                         'TIMEOUT': str(self.experiment.timeout),

@@ -4,7 +4,6 @@ import sys
 #sys.path.insert(0, '../')
 import subprocess
 
-#import planning
 import experiments
 import downward_suites
 

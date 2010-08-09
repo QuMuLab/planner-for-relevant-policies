@@ -4,7 +4,7 @@ import sys
 import subprocess
 
 import experiments
-import downward_suites
+import downward_configs as configs
 
 main_dir = 'issue102'
 
@@ -12,10 +12,12 @@ PLANNER_URL = 'svn+ssh://downward/trunk/downward/search'
 
 optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
 
-configs =   [   ('ou', '--search "astar(lmcut())"'),
-                ('lama', lama),
-                ('blind', '--search "astar(blind())"'),
-                ('oa50000', '--search "astar(mas())"'),
+configs =   [   ('ou', configs.ou),
+                ('lama', configs.lama),
+                ('blind', configs.blind),
+                ('oa50000', configs.oa50000),
+                ('yY', configs.yY),
+                ('fF', configs.fF)
             ]
 
 def setup():
