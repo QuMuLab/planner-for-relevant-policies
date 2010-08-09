@@ -263,7 +263,7 @@ class Table(collections.defaultdict):
     def rows(self):
         rows = self.keys()
         # Let the sum row be the last one
-        key = lambda row: 'zzz' if row.upper() == 'SUM' else row.lower()
+        key = lambda row: 'zzz' if row.upper() in ['SUM', 'AVG'] else row.lower()
         rows = sorted(rows, key=key)
         return rows
         

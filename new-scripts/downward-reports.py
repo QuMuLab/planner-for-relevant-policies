@@ -148,7 +148,7 @@ class AbsolutePlanningReport(PlanningReport):
             if self.resolution == 'suite':
                 row_name = '-'.join(self.suite) if self.suite else 'Suite'
             else:
-                row_name = 'SUM'
+                row_name = func.__name__.upper()
             for (config,), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
                 if not values:
