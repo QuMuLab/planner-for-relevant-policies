@@ -55,7 +55,7 @@ def build_planning_exp():
     parser.add_argument("-c", "--configs", default=[], required=True,
                         nargs='+', help="planner configurations")
     parser.add_argument("-s", "--suite", default=[], required=True,
-						nargs='+', help="tasks, domains or suites")
+                        nargs='+', help="tasks, domains or suites")
     
     exp = experiments.build_experiment(parser)
 

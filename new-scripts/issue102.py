@@ -57,8 +57,7 @@ def build_planning_exp():
         planner_name = 'downward-' + opt
         planner = os.path.join(main_dir, planner_name)
         planner_var = 'PLANNER_' + opt
-        exp.add_resource(planner_var, 
-                    planner, planner_name)
+        exp.add_resource(planner_var, planner, planner_name)
         
         for config_name, config in configs:
             for problem in problems:
