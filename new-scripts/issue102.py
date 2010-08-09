@@ -12,7 +12,11 @@ PLANNER_URL = 'svn+ssh://downward/trunk/downward/search'
 
 optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
 
-configs = [('ou', '--search "astar(lmcut())"')]
+configs =   [   ('ou', '--search "astar(lmcut())"'),
+                ('lama', lama),
+                ('blind', '--search "astar(blind())"'),
+                ('oa50000', '--search "astar(mas())"'),
+            ]
 
 def setup():
     cwd = os.getcwd()
