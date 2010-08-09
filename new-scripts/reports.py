@@ -291,10 +291,12 @@ class Table(collections.defaultdict):
         for row in normal_rows:
             for col, value in self[row].items():
                 values[col].append(value)
-        text = '| %-30s ' % '**NORMALIZED AVG**'
-        for col, col_values in sorted(values.items()):
-            text += '| %-16s ' % ('**'+str(avg(col_values))+'**')
-        text += '|\n'
+        averages = [avg(val) for col, val in sorted(values.items())]
+        text = self.get_row('NORMALIZED AVG', averages)
+        #text = '| %-30s ' % '**NORMALIZED AVG**'
+        #for col, col_values in sorted(values.items()):
+        #    text += '| %-16s ' % ('**'+str(avg(col_values))+'**')
+        #text += '|\n'
         return text
         
         
@@ -335,8 +337,15 @@ class Table(collections.defaultdict):
         return (self.cols, sums)
         
     
-    def get_row(self, row):
-        values = self[row].values()
+    def get_row(self, row, values=None):
+        '''
+        values has to be sorted by the corresponding column names
+        '''
+        if values is None:
+            values = []
+            for col in self.cols:
+                values.append(self.get(row).get(col))
+            
         only_one_value = len(set(values)) == 1
         #if len(set(values)) > 1:
             # There are at least two different values in the row
@@ -350,8 +359,7 @@ class Table(collections.defaultdict):
             
         text = ''
         text += '| %-30s ' % ('**'+row+'**')
-        for col in self.cols:
-            value = self.get(row).get(col)
+        for value in values:
             is_min = (value == min_value)
             is_max = (value == max_value)
             if self.highlight and only_one_value:
