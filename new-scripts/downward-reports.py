@@ -14,6 +14,7 @@ import tools
 import downward_suites
 from external import datasets
 from markup import Document
+import reports
 from reports import Report, ReportArgParser, Table
 
 
@@ -84,6 +85,13 @@ class PlanningReport(Report):
         '''
         Returns an empty table. Used and filled by subclasses.
         '''
+        # Decide on a group function
+        if 'score' in self.focus:
+            self.group_func = reports.avg
+        else:
+            self.group_func = sum
+            
+        # Decide whether we want to highlight minima or maxima
         max_attributes = ['solved', 'score']
         min_wins = True
         for attr in max_attributes:
@@ -107,8 +115,8 @@ class AbsolutePlanningReport(PlanningReport):
             
             
     def _get_table(self):
-        func = self.group_func
         table = PlanningReport._get_table(self)
+        func = self.group_func
         
         def existing(val):
             return not type(val) == datasets.MissingType
