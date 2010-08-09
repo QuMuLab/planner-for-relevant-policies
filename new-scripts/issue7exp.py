@@ -4,7 +4,7 @@ import sys
 #sys.path.insert(0, '../')
 import subprocess
 
-import planning
+#import planning
 import experiments
 import downward_suites
 
@@ -52,10 +52,10 @@ def setup():
 
 def build_planning_exp():
     parser=experiments.ExpArgParser()
-    parser.add_argument("-c", "--configs", default=[], 
+    parser.add_argument("-c", "--configs", default=[], required=True,
                         nargs='+', help="planner configurations")
-    parser.add_argument("-s", "--suite", default=[], nargs='+',
-                        help="tasks, domains or suites")
+    parser.add_argument("-s", "--suite", default=[], required=True,
+						nargs='+', help="tasks, domains or suites")
     
     exp = experiments.build_experiment(parser)
 
