@@ -32,7 +32,7 @@ def setup():
     if os.path.exists(planner_rev_path) and not os.path.exists(preprocessor):
         os.chdir(os.path.join(planner_rev_path, 'downward', 'preprocess'))
         subprocess.call(['make'])
-        os.chdir('../../')
+        os.chdir('../../../')
     
     # Needs compiling
     #planner = os.path.join(planner_rev_path, 'downward', 'search', 'release-search')
