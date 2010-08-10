@@ -4,6 +4,7 @@ import sys
 import subprocess
 
 import experiments
+import downward_suites
 import downward_configs as configs
 
 main_dir = 'issue102'
