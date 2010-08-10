@@ -85,7 +85,7 @@ def generate_problems(description):
         if not suite_func:
             raise SystemExit("unknown suite: %s" % suite_funcname)
         for domain_name in suite_func():
-            domain = repository.Domain(domain_name)
+            domain = Domain(domain_name)
             for problem in domain.problems[:number]:
                 yield problem
     elif isinstance(description, Problem):
