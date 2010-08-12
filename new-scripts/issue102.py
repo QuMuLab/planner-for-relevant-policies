@@ -6,6 +6,7 @@ import subprocess
 import experiments
 import downward_suites
 import downward_configs as configs
+import tools
 
 main_dir = 'issue102'
 
@@ -34,28 +35,32 @@ def make_reports():
 
 def setup():
     cwd = os.getcwd()
-    if not os.path.exists(main_dir):
-        os.mkdir(main_dir)
+    tools.makedirs(main_dir)
     os.chdir(main_dir)
     
-    if not os.path.exists('planner.cc'):
-        cmd = ('svn co %s .' % PLANNER_URL).split()
-        ret = subprocess.call(cmd)
     
-    makefile_path = 'Makefile'
-    makefile = open(makefile_path).read()
     
     for opt in optimizations:
+        tools.makedirs(opt)
+        os.chdir(opt)
+        if not os.path.exists('planner.cc'):
+            cmd = ('svn co %s .' % PLANNER_URL).split()
+            ret = subprocess.call(cmd)
+        
+        makefile_path = 'Makefile'
+        makefile = open(makefile_path).read()
+        
         planner_name = 'downward-' + opt
         new_make = makefile.replace('-O3', '-'+opt)
         new_make = new_make.replace('TARGET  = downward', 'TARGET  = ' + planner_name)
-        makefile_name = 'Makefile-' + opt
+        makefile_name = 'Makefile'# + '-' + opt
         with open(makefile_name, 'w') as file:
             file.write(new_make)
         
         if not os.path.exists(planner_name):
             # Needs compiling
-            subprocess.call(['make', '-f', makefile_name])
+            subprocess.call(['make',])# '-f', makefile_name])
+        os.chdir('../')
                 
     os.chdir(cwd)
 
@@ -73,7 +78,7 @@ def build_planning_exp():
     
     for opt in optimizations:
         planner_name = 'downward-' + opt
-        planner = os.path.join(main_dir, planner_name)
+        planner = os.path.join(main_dir, opt, planner_name)
         planner_var = 'PLANNER_' + opt
         exp.add_resource(planner_var, planner, planner_name)
         
