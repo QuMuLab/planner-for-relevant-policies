@@ -20,6 +20,16 @@ configs =   [   ('ou', configs.ou),
                 ('yY', configs.yY),
                 ('fF', configs.fF)
             ]
+            
+def make_reports():
+    cmd = './downward-reports.py issue102-STRIPS-eval/ '
+        '-a score_search_time score_total_time search_time total_time '
+        '--format html -c O0-blind O1-blind O2-blind O3-blind Os-blind'
+    for config_name, config in configs:
+        new_cmd = cmd.replace('blind', config_name)
+        new_cmd = new_cmd.split()
+        subprocess.call(new_cmd)
+    
 
 def setup():
     cwd = os.getcwd()
@@ -105,6 +115,9 @@ def build_planning_exp():
     return exp
 
 if __name__ == '__main__':
+    if 'report' in sys.argv:
+        make_reports()
+        sys.exit()
     setup()
     exp = build_planning_exp()
     exp.build()
