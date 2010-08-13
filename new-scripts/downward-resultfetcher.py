@@ -39,14 +39,14 @@ def build_fetcher(parser=FetchOptionParser()):
     
     #eval.add_pattern('rules_exp', r'Generated (\d+) rules', type=int)
     
-    eval.add_pattern('preprocessor_vars_exp', r'(\d+) variables of \d+ necessary', type=int)
-    eval.add_pattern('translator_vars_exp', r'\d+ variables of (\d+) necessary', type=int)
+    eval.add_pattern('preprocessor_vars', r'(\d+) variables of \d+ necessary', type=int)
+    eval.add_pattern('translator_vars', r'\d+ variables of (\d+) necessary', type=int)
     
-    eval.add_pattern('preprocessor_ops_exp', r'(\d+) of \d+ operators necessary', type=int)
-    eval.add_pattern('translator_ops_exp', r'\d+ of (\d+) operators necessary', type=int)
+    eval.add_pattern('preprocessor_ops', r'(\d+) of \d+ operators necessary', type=int)
+    eval.add_pattern('translator_ops', r'\d+ of (\d+) operators necessary', type=int)
     
-    eval.add_pattern('preprocessor_axioms_exp', r'(\d+) of \d+ axiom rules necessary', type=int)
-    eval.add_pattern('translator_axioms_exp', r'\d+ of (\d+) axiom rules necessary', type=int)
+    eval.add_pattern('preprocessor_axioms', r'(\d+) of \d+ axiom rules necessary', type=int)
+    eval.add_pattern('translator_axioms', r'\d+ of (\d+) axiom rules necessary', type=int)
     
     
     def completely_explored(content, old_props):
