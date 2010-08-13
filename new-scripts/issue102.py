@@ -24,7 +24,7 @@ configs =   [   ('ou', configs.ou),
             
 def make_reports():
     cmd = """\
-./downward-reports.py issue102-STRIPS-eval/ \
+./downward-reports.py issue102-STRIPS-NEW-eval/ \
 -a score_search_time score_total_time search_time total_time \
 --format html -c O0-blind O1-blind O2-blind O3-blind Os-blind"""
     for config_name, config in configs:
