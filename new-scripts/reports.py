@@ -48,7 +48,7 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('-d', '--dest', dest='report_dir', default='reports',
                             help='path to report directory')
                         
-        self.add_argument('--format', dest='output_format', default='tex',
+        self.add_argument('--format', dest='output_format', default='html',
                             help='format of the output file',
                             choices=sorted(txt2tags.TARGETS))
                             
