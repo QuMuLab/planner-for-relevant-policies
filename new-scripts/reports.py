@@ -28,7 +28,6 @@ from external import txt2tags
 from external import argparse
 
 
-
 def avg(values):
     """Computes the arithmetic mean of a list of numbers.
 
@@ -36,6 +35,16 @@ def avg(values):
     40.0
     """
     return round(sum(values, 0.0) / len(values), 4)
+    
+    
+def gm(values):
+    """Computes the geometric mean of a list of numbers.
+
+    >>> print gm([2, 8])
+    4.0
+    """
+    assert len(values) >= 1
+    return round(tools.prod(values) ** (1/len(values)), 4)
 
 
 class ReportArgParser(tools.ArgParser):

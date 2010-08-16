@@ -9,6 +9,19 @@ from external import argparse
 from external.configobj import ConfigObj
 
 
+def prod(values):
+    """Computes the product of a list of numbers.
+
+    >>> print prod([2, 3, 7])
+    42
+    """
+    assert len(values) >= 1
+    prod = 1
+    for value in values:
+        prod *= value
+    return prod
+
+
 def divide_list(seq, size):
     """
     >>> divide_list(range(10), 4)

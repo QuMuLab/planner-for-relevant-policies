@@ -24,8 +24,8 @@ O Detailed reports
 X Let user define wanted type for regexes
 X Use double-quotes for multiline strings
 
-O Vergleiche Ausgabe (v.a. expansions) des Translators, Prep., Search (Verwende athlon, opteron (mit core), schnell: amd, ausprobieren: xeon)
-O lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domains, cea (yY), ff (fF), oa10000 (M&S)
+X Vergleiche Ausgabe (v.a. expansions) des Translators, Prep., Search (Verwende athlon, opteron (mit core), schnell: amd, ausprobieren: xeon)
+X lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domains, cea (yY), ff (fF), oa10000 (M&S)
   suites: ALL, lm-cut-domains
   configs: 
     - ou, ob, oa10000 (LMCUT)
@@ -35,7 +35,7 @@ X Anzahl Axiome in properties
 X Anzahl Kanten im Causal Graph
 X Schreibe queue in properties file
 X Derived Vars in properties
-O Write high-level documentation
+X Write high-level documentation
 
 X Report multiple attributes at once
 X Colors for txt2tags
@@ -45,6 +45,7 @@ X Add priority option for gkigrid experiments
 
 X Unify evaluations
 X Add copy-all parameter
+O Only compare those problems that have been solved by all configs
 """
 
 from __future__ import with_statement
