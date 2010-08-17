@@ -122,7 +122,8 @@ class Report(object):
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
         
-        self.data = self._get_data(first_load=True)
+        self.data = None
+        self.orig_data = self._get_data()
         
         if not self.foci or self.foci == 'all':
             self.foci = self.data.get_attributes()
@@ -190,7 +191,7 @@ class Report(object):
         return group_dict
         
         
-    def _get_data(self, first_load=False):
+    def _get_data(self):
         """
         The data is reloaded for every attribute
         """
@@ -198,9 +199,7 @@ class Report(object):
         
         dump_exists = os.path.exists(dump_path)
         # Reload when the user requested it or when no dump exists
-        # We want to scan the dirs only the first time when self.reload
-        # is True
-        if (self.reload and first_load) or not dump_exists:
+        if self.reload or not dump_exists:
             data = DataSet()
             logging.info('Started collecting data')
             for base, dir, files in os.walk(self.eval_dir):
@@ -261,7 +260,8 @@ class Report(object):
         if self.infos:
             res += '\n\n====================\n'
         for focus in self.foci:
-            self.data = self._get_data()
+            self.data = self.orig_data.copy()
+            print 'DATA', self.orig_data
             self.focus = focus
             try:
                 res += '+ %s +\n%s\n' % (self.focus, self._get_table())
