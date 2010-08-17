@@ -261,6 +261,7 @@ class Report(object):
             res += '- %s\n' % info
         if self.infos:
             res += '\n\n====================\n'
+        print 'FOCI', self.foci
         for focus in self.foci:
             logging.info('Reporting "%s"' % focus)
             self.data = self.orig_data.copy()

@@ -303,8 +303,8 @@ if __name__ == "__main__":
     elif report_type == 'cmp':
         report = ComparativePlanningReport()
         
-    report.build()
     print report
+    report.build()
     report.write()
         
     #report.add_filter(domain='gripper')
