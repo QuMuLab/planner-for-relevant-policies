@@ -123,17 +123,18 @@ class PlanningReport(Report):
         Returns an empty table. Used and filled by subclasses.
         '''
         # For some reports only compare commonly solved tasks
-        self.set_grouping('domain', 'problem')
-        for (domain, problem), group in self.group_dict.items():
-            all_solved = all(group['solved'])
-            #print 'SOLVED', domain, problem, group['solved'], all_solved
-            if self.focus in self.commonly_solved_foci and not all_solved:
-                def delete_not_commonly_solved(run):
-                    if run['domain'] == domain and run['problem'] == problem:
-                        return False
-                    return True
-                    
-                self.data = self.data.filtered(delete_not_commonly_solved)
+        if self.focus in self.commonly_solved_foci:
+            self.set_grouping('domain', 'problem')
+            for (domain, problem), group in self.group_dict.items():
+                all_solved = all(group['solved'])
+                #print 'SOLVED', domain, problem, group['solved'], all_solved
+                if not all_solved:
+                    def delete_not_commonly_solved(run):
+                        if run['domain'] == domain and run['problem'] == problem:
+                            return False
+                        return True
+                        
+                    self.data = self.data.filtered(delete_not_commonly_solved)
                 
         # Decide on a group function
         if 'score' in self.focus:
