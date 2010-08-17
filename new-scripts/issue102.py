@@ -27,7 +27,7 @@ def make_reports():
 ./downward-reports.py issue102-STRIPS-NEW-eval/ \
 -a score_search_time score_total_time search_time total_time \
 solved \
---format html -c O0-blind O1-blind O2-blind O3-blind Os-blind"""
+-c O0-blind O1-blind O2-blind O3-blind Os-blind"""
     for config_name, config in configs:
         new_cmd = cmd.replace('blind', config_name)
         new_cmd = new_cmd.split()

@@ -128,6 +128,8 @@ class Report(object):
         if not self.foci or self.foci == 'all':
             self.foci = self.data.get_attributes()
         
+        logging.info('Attributes: %s' % self.foci)
+        
         if self.show_attributes:
             print
             print 'Available attributes:'
@@ -261,7 +263,6 @@ class Report(object):
             res += '\n\n====================\n'
         for focus in self.foci:
             self.data = self.orig_data.copy()
-            print 'DATA', self.orig_data
             self.focus = focus
             try:
                 res += '+ %s +\n%s\n' % (self.focus, self._get_table())
