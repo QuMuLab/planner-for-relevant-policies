@@ -170,6 +170,11 @@ class DataSet(Bunch):
         for item in self.items:
             attrs |= set(item.keys())
         return sorted(list(attrs))
+        
+    def copy(self):
+        """
+        """
+        return DataSet(self)
     
 
 
