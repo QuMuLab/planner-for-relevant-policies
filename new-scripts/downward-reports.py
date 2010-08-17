@@ -127,7 +127,8 @@ class PlanningReport(Report):
             self.set_grouping('domain', 'problem')
             for (domain, problem), group in self.group_dict.items():
                 all_solved = all(group['solved'])
-                #print 'SOLVED', domain, problem, group['solved'], all_solved
+                logging.debug('SOLVED %s %s:%s %s, %s' % \
+                    (self.focus, domain, problem, group['solved'], all_solved))
                 if not all_solved:
                     def delete_not_commonly_solved(run):
                         if run['domain'] == domain and run['problem'] == problem:
@@ -138,6 +139,8 @@ class PlanningReport(Report):
                 
         # Decide on a group function
         if 'score' in self.focus:
+            self.group_func = reports.avg
+        elif self.focus in ['search_time', 'total_time']:
             self.group_func = reports.gm
         else:
             self.group_func = sum

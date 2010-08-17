@@ -17,7 +17,7 @@ import datetime
 import collections
 import cPickle
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
+
                     
 import tools
 from markup import Document
@@ -83,7 +83,8 @@ class ReportArgParser(tools.ArgParser):
                         
                         
     def parse_args(self, *args, **kwargs):
-        args = argparse.ArgumentParser.parse_args(self, *args, **kwargs)
+        args = tools.ArgParser.parse_args(self, *args, **kwargs)
+        
         args.eval_dir = args.source
         
         args.eval_dir = os.path.normpath(os.path.abspath(args.eval_dir))
@@ -261,9 +262,7 @@ class Report(object):
             res += '- %s\n' % info
         if self.infos:
             res += '\n\n====================\n'
-        print 'FOCI', self.foci
         for focus in self.foci:
-            logging.info('Reporting "%s"' % focus)
             self.data = self.orig_data.copy()
             self.focus = focus
             try:
