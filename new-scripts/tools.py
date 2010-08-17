@@ -2,11 +2,15 @@ import os
 import sys
 import shutil
 import re
+import logging
 from shutil import *
 from collections import MutableMapping
 
 from external import argparse
 from external.configobj import ConfigObj
+
+
+LOG_LEVEL = None
 
 
 def prod(values):
@@ -191,6 +195,30 @@ class ArgParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
         argparse.ArgumentParser.__init__(self, *args, #add_help=False,
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
+                
+        # The option may have already been added by a parent
+        try:
+            self.add_argument('-l', '--log-level', choices=['DEBUG', 'INFO', 'WARNING'],
+                            dest='log_level', default='INFO')
+        except argparse.ArgumentError:
+            pass
+            
+    def parse_known_args(self, *args, **kwargs):
+        args, remaining = argparse.ArgumentParser.parse_known_args(self, *args, **kwargs)
+        
+        global LOG_LEVEL
+        # Set log level only once (May have already been deleted from sys.argv)
+        if not LOG_LEVEL:
+            # Python adds a default handler if some log is generated before here
+            # Remove all handlers that have been added automatically
+            root_logger = logging.getLogger('')
+            for handler in root_logger.handlers:
+                root_logger.removeHandler(handler)
+            
+            LOG_LEVEL = getattr(logging, args.log_level.upper())
+            logging.basicConfig(level=LOG_LEVEL, format='%(asctime)-s %(levelname)-8s %(message)s',)
+        
+        return (args, remaining)
                 
     def set_help_active(self):
         self.add_argument(
