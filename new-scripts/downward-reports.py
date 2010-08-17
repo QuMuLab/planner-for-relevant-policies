@@ -72,6 +72,13 @@ class PlanningReport(Report):
         self.focus = None
         self.output = ''
         
+        # For some attributes only compare commonly solved tasks
+        self.commonly_solved_foci = ['expanded', 'generated', 'plan_length', 
+                                    'search_time', 'total_time']
+        info = 'Report only commonly solved problems for %s'
+        info %= self.commonly_solved_foci
+        self.add_info(info)
+        
         self.problems = downward_suites.build_suite(self.suite)
         
         def filter_by_problem(run):
@@ -115,9 +122,22 @@ class PlanningReport(Report):
         '''
         Returns an empty table. Used and filled by subclasses.
         '''
+        # For some reports only compare commonly solved tasks
+        self.set_grouping('domain', 'problem')
+        for (domain, problem), group in self.group_dict.items():
+            all_solved = all(group['solved'])
+            #print 'SOLVED', domain, problem, group['solved'], all_solved
+            if self.focus in self.commonly_solved_foci and not all_solved:
+                def delete_not_commonly_solved(run):
+                    if run['domain'] == domain and run['problem'] == problem:
+                        return False
+                    return True
+                    
+                self.data = self.data.filtered(delete_not_commonly_solved)
+                
         # Decide on a group function
         if 'score' in self.focus:
-            self.group_func = reports.avg
+            self.group_func = reports.gm
         else:
             self.group_func = sum
             
@@ -168,9 +188,12 @@ class AbsolutePlanningReport(PlanningReport):
             self.set_grouping('config', 'domain', 'problem')
             for (config, domain, problem), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
+                name = domain + ':' + problem
                 if not values:
                     show_missing_attribute_msg()
-                table.add_cell(domain + ':' + problem, config, func(values))
+                assert len(values) <= 1, \
+                    '%s occurs in results more than once' % name
+                table.add_cell(name, config, func(values))
         
         if self.resolution == 'suite' or not self.hide_sum_row:
             self.set_grouping('config')

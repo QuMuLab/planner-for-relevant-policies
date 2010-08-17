@@ -122,7 +122,7 @@ class Report(object):
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
         
-        self.data = self._get_data()
+        self.data = self._get_data(first_load=True)
         
         if not self.foci or self.foci == 'all':
             self.foci = self.data.get_attributes()
@@ -138,6 +138,8 @@ class Report(object):
         
         self.grouping = []
         self.order = []
+        
+        self.infos = []
         
         
     def add_filter(self, *filter_funcs, **filter_pairs):
@@ -158,6 +160,12 @@ class Report(object):
         
     def set_order(self, *order):
         self.order = order
+        
+    def add_info(self, info):
+        """
+        Add strings of additional info to the report
+        """
+        self.infos.append(info)
         
        
     @property
@@ -182,11 +190,17 @@ class Report(object):
         return group_dict
         
         
-    def _get_data(self):
+    def _get_data(self, first_load=False):
+        """
+        The data is reloaded for every attribute
+        """
         dump_path = os.path.join(self.eval_dir, 'data_dump')
         
         dump_exists = os.path.exists(dump_path)
-        if self.reload or not dump_exists:
+        # Reload when the user requested it or when no dump exists
+        # We want to scan the dirs only the first time when self.reload
+        # is True
+        if (self.reload and first_load) or not dump_exists:
             data = DataSet()
             logging.info('Started collecting data')
             for base, dir, files in os.walk(self.eval_dir):
@@ -242,13 +256,18 @@ class Report(object):
         
     def __str__(self):
         res = ''
+        for info in self.infos:
+            res += '- %s\n' % info
+        if self.infos:
+            res += '\n\n====================\n'
         for focus in self.foci:
+            self.data = self._get_data()
             self.focus = focus
             try:
                 res += '+ %s +\n%s\n' % (self.focus, self._get_table())
             except TypeError, err:
                 logging.info('Omitting attribute "%s" (%s)' % (focus, err))
-        return res    
+        return res
 
                             
         
@@ -268,9 +287,10 @@ class Table(collections.defaultdict):
         
     @property    
     def rows(self):
+        special_rows = ['SUM', 'AVG', 'GM']
         rows = self.keys()
-        # Let the sum row be the last one
-        key = lambda row: 'zzz' if row.upper() in ['SUM', 'AVG'] else row.lower()
+        # Let the sum, etc. rows be the last ones
+        key = lambda row: 'zzz'+row.lower() if row.upper() in special_rows else row.lower()
         rows = sorted(rows, key=key)
         return rows
         
