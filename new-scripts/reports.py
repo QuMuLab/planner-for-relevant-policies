@@ -235,7 +235,8 @@ class Report(object):
         
     def build(self):
         doc = Document(title=self.name())
-        doc.add_text(str(self))
+        string = str(self)
+        doc.add_text(string)
         
         self.output = doc.render(self.output_format, {'toc': 1})
         return self.output
@@ -266,7 +267,9 @@ class Report(object):
             self.data = self.orig_data.copy()
             self.focus = focus
             try:
-                res += '+ %s +\n%s\n' % (self.focus, self._get_table())
+                table = self._get_table()
+                print table
+                res += '+ %s +\n%s\n' % (self.focus, table)
             except TypeError, err:
                 logging.info('Omitting attribute "%s" (%s)' % (focus, err))
         return res

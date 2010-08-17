@@ -45,7 +45,8 @@ X Add priority option for gkigrid experiments
 
 X Unify evaluations
 X Add copy-all parameter
-O Only compare those problems that have been solved by all configs
+X Only compare those problems that have been solved by all configs
+O Handle iterative planner results
 """
 
 from __future__ import with_statement

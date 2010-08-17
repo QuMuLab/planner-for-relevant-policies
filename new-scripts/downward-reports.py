@@ -135,7 +135,7 @@ class PlanningReport(Report):
                             return False
                         return True
                         
-                    self.data = self.data.filtered(delete_not_commonly_solved)
+                    self.data.filter(delete_not_commonly_solved)
                 
         # Decide on a group function
         if 'score' in self.focus:
@@ -175,9 +175,9 @@ class AbsolutePlanningReport(PlanningReport):
         def existing(val):
             return not type(val) == datasets.MissingType
             
-        def show_missing_attribute_msg():
-            msg = 'No data has the attribute "%s". ' % self.focus
-            msg += 'Are you sure you typed it in correctly?'
+        def show_missing_attribute_msg(name):
+            msg = '%s: The attribute "%s" was not found. ' % (name, self.focus)
+            #msg += 'Are you sure you typed it in correctly?'
             logging.error(msg)
         
         
@@ -186,7 +186,9 @@ class AbsolutePlanningReport(PlanningReport):
             for (config, domain), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
                 if not values:
-                    show_missing_attribute_msg()
+                    #print 'NO values', config, domain, group[self.focus]
+                    show_missing_attribute_msg(config+'-'+domain)
+                    continue
                 table.add_cell(domain, config, func(values))
         elif self.resolution == 'problem':
             self.set_grouping('config', 'domain', 'problem')
@@ -194,7 +196,8 @@ class AbsolutePlanningReport(PlanningReport):
                 values = filter(existing, group[self.focus])
                 name = domain + ':' + problem
                 if not values:
-                    show_missing_attribute_msg()
+                    show_missing_attribute_msg(name)
+                    continue
                 assert len(values) <= 1, \
                     '%s occurs in results more than once' % name
                 table.add_cell(name, config, func(values))
@@ -209,7 +212,8 @@ class AbsolutePlanningReport(PlanningReport):
             for (config,), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
                 if not values:
-                    show_missing_attribute_msg()
+                    show_missing_attribute_msg(config)
+                    continue
                 table.add_cell(row_name, config, func(values))
             
         return table
@@ -306,7 +310,6 @@ if __name__ == "__main__":
     elif report_type == 'cmp':
         report = ComparativePlanningReport()
         
-    print report
     report.build()
     report.write()
         
