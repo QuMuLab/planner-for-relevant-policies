@@ -21,4 +21,5 @@ for config in $1-eval/*; do
     done; 
 done
 
+echo Cleaning Up
 rm -fr $1 $1-eval
