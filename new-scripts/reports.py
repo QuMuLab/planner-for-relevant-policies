@@ -134,7 +134,7 @@ class Report(object):
         if self.show_attributes:
             print
             print 'Available attributes:'
-            print self.data.get_attributes()
+            print self.orig_data.get_attributes()
             sys.exit()
         
         self.filter_funcs = []
