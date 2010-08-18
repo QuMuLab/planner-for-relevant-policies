@@ -127,7 +127,7 @@ class Report(object):
         self.orig_data = self._get_data()
         
         if not self.foci or self.foci == 'all':
-            self.foci = self.data.get_attributes()
+            self.foci = self.orig_data.get_attributes()
         
         logging.info('Attributes: %s' % self.foci)
         
