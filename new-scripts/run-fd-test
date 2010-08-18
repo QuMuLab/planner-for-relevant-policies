@@ -21,4 +21,4 @@ for config in $1-eval/*; do
     done; 
 done
 
-#rm -fr $1 $1-eval
+rm -fr $1 $1-eval
