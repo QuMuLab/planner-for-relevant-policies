@@ -31,8 +31,8 @@ class FastDownwardTestStep(ShellCommand):
                                  suite=suite)
         
     def commandComplete(self, cmd):       
-        properties = ['expanded', 'total_time', 'solved']
-        base_dir = self.name + "-eval"        
+        properties = ['expanded', 'total_time', 'solved']        
+        base_dir = os.path.join(self.workdir, self.name + "-eval")
         for config in os.listdir(base_dir):    
             for domain in os.listdir(os.path.join(base_dir, config)):
                 for problem in os.listdir(os.path.join(base_dir, config, domain)):
