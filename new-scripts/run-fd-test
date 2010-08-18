@@ -3,8 +3,11 @@
 # $2 - configs
 # $3 - suite
 
+echo Creating Experiment
 python downward-experiments.py $1 -c $2 -s $3
-$1/run
-python downward-resultfetcher.py $1
 
-#rm -fr $1 $1-eval
+echo Running Experiment
+$1/run
+
+echo Fetching Results 
+python downward-resultfetcher.py $1
