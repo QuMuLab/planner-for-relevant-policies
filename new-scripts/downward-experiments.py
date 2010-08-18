@@ -57,8 +57,8 @@ def get_configs(configs_strings):
             continue
         filtered_configs = [(name, c) for (name, c) in parse_configs(file) \
                             if name in config_names]
-        found = [c for (name, c) in filtered_configs]
-        not_found = [c for c in config_names if c not in found]
+        found = [name for (name, c) in filtered_configs]
+        not_found = [n for n in config_names if n not in found]
         if not_found:
             logging.error('The configs %s were not found in "%s"' % (not_found, file))
             sys.exit(1)
