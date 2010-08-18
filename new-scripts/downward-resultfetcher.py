@@ -207,6 +207,18 @@ def build_fetcher(parser=FetchOptionParser()):
                 'score_search_time': log_score(old_props.get('search_time'), 
                         min_bound=1.0, max_bound=1800.0, min_score=0.0),
                 }
+                
+    def check_min_values(content, old_props):
+        """
+        Ensure that times are at least 0.1s if they are present in log
+        """
+        new_props = {}
+        for time in ['search_time', 'total_time']:
+            sec = old_props.get(time, None)
+            if sec is not None:
+                sec = max(sec, 0.1)
+                new_props[time] = sec
+        return new_props
                     
         
     #eval.add_function(completely_explored)
@@ -225,6 +237,8 @@ def build_fetcher(parser=FetchOptionParser()):
 #    eval.add_function(cg_arcs, file='output')
     
     eval.add_function(scores)
+    
+    eval.add_function(check_min_values)
     
     return eval
 
