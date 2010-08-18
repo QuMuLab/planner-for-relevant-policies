@@ -11,3 +11,14 @@ $1/run
 
 echo Fetching Results 
 python downward-resultfetcher.py $1
+
+echo Printing Results
+for config in $1-eval/*; do 
+    for domain in $config/*; do 
+        for problem in $domain/*; do 
+            python print_results.py $problem/properties 
+        done;   
+    done; 
+done
+
+#rm -fr $1 $1-eval
