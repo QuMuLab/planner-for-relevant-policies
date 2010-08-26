@@ -11,8 +11,9 @@ TIMEOUT = 1800
 MEMORY = 2048
 
 CONFIGURATIONS = [
-    "oaX", # A* with merge-and-shrink; domain-dependent parameters
-           # will be added in place of X.
+    ("base-10000", ["--search", "astar(mas(num_states=10000))"]),
+    ("base-50000", ["--search", "astar(mas(num_states=50000))"]),
+    ("base-100000", ["--search", "astar(mas(num_states=100000))"]),
     ]
 
 HELP='''Generate a job file JOBFILE to run certain configurations of
@@ -41,7 +42,7 @@ def main():
     actions.prepare_gkigrid_job_search(
         options.jobfile, options.suite, options.configurations,
         options.timeout, options.memory)
-            
+
 
 if __name__ == "__main__":
     main()

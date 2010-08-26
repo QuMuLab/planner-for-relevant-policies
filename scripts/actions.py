@@ -18,8 +18,8 @@ def translate_dir(prob):
 def preprocess_dir(prob):
     return joinpath(paths.RESULTS_DIR, "preprocess", prob.domain, prob.problem)
 
-def search_dir(prob, config):
-    return joinpath(paths.RESULTS_DIR, "search", "version-%s" % config,
+def search_dir(prob, config_name):
+    return joinpath(paths.RESULTS_DIR, "search", "version-%s" % config_name,
                     prob.domain, prob.problem)
 
 def translator_executable(relaxed=False):
@@ -33,10 +33,10 @@ def preprocessor_executable():
     return joinpath(DOWNWARD_DIR, "preprocess", "preprocess")
     
 def planner_executable():
-    return joinpath(DOWNWARD_DIR, "search", "release-search")
+    return joinpath(DOWNWARD_DIR, "search", "downward")
 
 def planner_debug_executable():
-    return joinpath(DOWNWARD_DIR, "search", "search")
+    return joinpath(DOWNWARD_DIR, "search", "downward-debug")
 
 
 def do_translate(problem, generate_relaxed_problem=False):
@@ -138,30 +138,6 @@ def do_search(problem, configname, timeout, memory, debug=False):
     return None
 
 
-def prepare_workdir(workdir):
-    make_dir(workdir)
-    copy_files([planner_executable()], joinpath(workdir, "resources"))
-    copy_files(["start-jobs"], workdir, src_dir="data")
-
-
-def prepare_problem(workdir, problem):
-    problemdir = joinpath(workdir, "inputs", str(problem))
-    copy_files(TRANSLATE_OUTPUTS, problemdir, src_dir=translate_dir(problem))
-    copy_files(PREPROCESS_OUTPUTS, problemdir, src_dir=preprocess_dir(problem))
-
-
-def prepare_job_search(workdir, problem, config, timeout, memory):
-    job = "FD-%s-%s" % (problem, config)
-    jobdir = joinpath(workdir, "jobs", job)
-    make_dirs(jobdir)
-    batch_file = open("data/downward-search.pbs").read() % dict(
-        jobname=job, timeout=timeout, memory_kb=memory * 1024,
-        problem=problem, config=config)
-    jobfile = joinpath(jobdir, "downward-search.pbs")
-    open(jobfile, "w").write(batch_file)
-    make_executable(jobfile)
-
-
 def prepare_gkigrid_job_search(jobfile, problems, configs, timeout, memory):
     num_tasks = len(problems) * len(configs)
     jobfile_base = splitext(jobfile)[0]
@@ -180,27 +156,23 @@ def prepare_gkigrid_job_search(jobfile, problems, configs, timeout, memory):
 
     task_num = 1
     for problem in problems:
-        for config in configs:
-            realconfig = config
-            if realconfig.endswith("X"):
-                realconfig = realconfig[:-1]
-                realconfig += {
-                    "logistics00": "200000",
-                    "pipesworld-notankage": "2500",
-                    "pipesworld-tankage": "1000",
-                    "psr-small": "200000",
-                    "satellite": "10000A3",
-                    "tpp": "50000A3",
-                    }[str(problem.domain)]
-
-            result_dir = search_dir(problem, config)
+        for config_name, config in configs:
+            ## TODO: Should we put the automagic parameter selection back in?
+            ## "logistics00": "200000",
+            ## "pipesworld-notankage": "2500",
+            ## "pipesworld-tankage": "1000",
+            ## "psr-small": "200000",
+            ## "satellite": "10000A3",
+            ## "tpp": "50000A3",
+            result_dir = search_dir(problem, config_name)
             task_params = {
                 "task_num": task_num,
                 "timeout": timeout,
                 "memory_kb": memory * 1024,
                 "result_dir": result_dir,
                 "planner_executable": planner_executable(),
-                "realconfig": realconfig,
+                "config_name": config_name,
+                "config": config,
                 "preprocessed_input": joinpath(preprocess_dir(problem), "output"),
                 "mutex_file": joinpath(translate_dir(problem), "all.groups"),
                 }
