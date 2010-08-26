@@ -157,6 +157,10 @@ def prepare_gkigrid_job_search(jobfile, problems, configs, timeout, memory):
     task_num = 1
     for problem in problems:
         for config_name, config in configs:
+            ## TODO: This way of quoting is not perfect and should be fixed,
+            ##       but it will work for now.
+            config = " ".join("'%s'" % arg for arg in config)
+
             ## TODO: Should we put the automagic parameter selection back in?
             ## "logistics00": "200000",
             ## "pipesworld-notankage": "2500",

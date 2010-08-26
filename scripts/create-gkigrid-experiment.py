@@ -11,9 +11,16 @@ TIMEOUT = 1800
 MEMORY = 2048
 
 CONFIGURATIONS = [
-    ("base-10000", ["--search", "astar(mas(num_states=10000))"]),
-    ("base-50000", ["--search", "astar(mas(num_states=50000))"]),
-    ("base-100000", ["--search", "astar(mas(num_states=100000))"]),
+    ("base-10000",    ["--search", "astar(mas(max_states=10000))"]),
+    ("base-50000",    ["--search", "astar(mas(max_states=50000))"]),
+    ("base-100000",   ["--search", "astar(mas(max_states=100000))"]),
+    ("conf54-10000",  ["--search", "astar(mas(max_states=10000, merge_strategy=5, shrink_strategy=4))"]),
+    ("conf54-50000",  ["--search", "astar(mas(max_states=50000, merge_strategy=5, shrink_strategy=4))"]),
+    ("conf54-100000", ["--search", "astar(mas(max_states=100000, merge_strategy=5, shrink_strategy=4))"]),
+    ("conf55-10000",  ["--search", "astar(mas(max_states=10000, merge_strategy=5, shrink_strategy=5))"]),
+    ("conf55-50000",  ["--search", "astar(mas(max_states=50000, merge_strategy=5, shrink_strategy=5))"]),
+    ("conf55-100000", ["--search", "astar(mas(max_states=100000, merge_strategy=5, shrink_strategy=5))"]),
+    ("conf56-1",      ["--search", "astar(mas(max_states=1, merge_strategy=5, shrink_strategy=6))"]),
     ]
 
 HELP='''Generate a job file JOBFILE to run certain configurations of

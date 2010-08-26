@@ -17,12 +17,12 @@
 
 function run-task-wrapped {
     CONFIG_NAME=$1
-    CONFIG=$2
-    PREPROCESSED_INPUT=$3
-    MUTEX_FILE=$4
-    PLANNER_EXECUTABLE=$5
-    TIMEOUT=$6
-    MEMORY_KB=$7
+    PREPROCESSED_INPUT=$2
+    MUTEX_FILE=$3
+    PLANNER_EXECUTABLE=$4
+    TIMEOUT=$5
+    MEMORY_KB=$6
+    shift 6
     pwd
     date
     hostname
@@ -41,7 +41,7 @@ function run-task-wrapped {
 	ulimit -c 0
 	ulimit -t $TIMEOUT
 	ulimit -v $MEMORY_KB
-	$PLANNER_EXECUTABLE "$CONFIG" < $PREPROCESSED_INPUT
+	$PLANNER_EXECUTABLE "$@" < $PREPROCESSED_INPUT
     ) > search.log 2> search.err
     echo exit code: $?
     times
