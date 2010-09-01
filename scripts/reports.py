@@ -422,3 +422,15 @@ def report_list_unsolved(suite, results):
 def report_status(suite, results):
     for r in results:
         print "%10s [%2s] %s" % (get_status(r), r.arguments, r.problem)
+
+def myrepr(value):
+    if isinstance(value, float):
+        return str(value)
+    else:
+        return repr(value)
+
+def report_dump(suite, results):
+    for r in results:
+        items = sorted(r.__dict__.items())
+        info = " ".join("%s=%s" % (key, myrepr(value)) for key, value in items)
+        print "[%s] %s %s" % (r.arguments, r.problem, info)
