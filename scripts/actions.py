@@ -285,6 +285,8 @@ def parse_result(problem, arguments, cutoff_time=None):
         if "until last jump" in line:
             continue
         parts = line.split()
+        if not parts:
+            continue
         if parts[:2] == ["Plan", "length:"]:
             verify(parts[3:] == ["step(s)."])
             data["length"] = int(parts[2])
