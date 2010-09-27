@@ -22,7 +22,7 @@ from reports import Report, ReportArgParser, Table
 # Create a parser only for parsing the report type
 report_type_parser = tools.ArgParser(add_help=False)
 report_type_parser.epilog = 'Note: The help output may depend on the already selected options'
-report_type_parser.add_argument('-r', '--report', choices=['abs', 'rel', 'cmp'],
+report_type_parser.add_argument('-r', '--report', choices=['abs', 'rel', 'cmp','any'],
                                 default='abs', help='Select a report type')
                                 
                                 
@@ -154,7 +154,39 @@ class PlanningReport(Report):
         table = PlanningTable(self.focus, min_wins=min_wins)
         return table
 
-
+class AnyAttributeReport(PlanningReport):
+    """
+    Write an any-attribute (anytime, any-expanded, ...) report
+    || time            | fF               | yY               |
+    | 10               | 10               | 12               |
+    | 20               | 21               | 17               |
+    """
+    def __init__(self, *args, **kwargs):
+        PlanningReport.__init__(self, *args, **kwargs)
+        
+    def _get_table(self):        
+        table = PlanningTable(self.focus, highlight=False, numeric_rows=True)        
+        
+        if len(self.foci) != 1:
+            logging.error("Please select exactly one attribute for an any-attribute report")
+            sys.exit(1)
+        
+        min_value = 0
+        max_value = 1800
+        step = 5
+        
+        self.set_grouping('config')                   
+        for (config, ), group in self.group_dict.items():
+            group.filter(solved=1)
+            group.sort(self.focus)            
+            for time_limit in xrange(min_value, max_value + step, step):                                            
+                table.add_cell(str(time_limit), config, 
+                               len(group.filtered(lambda di: di[self.focus] <= time_limit))
+                               )        
+        
+        return table
+        
+    
 
 class AbsolutePlanningReport(PlanningReport):
     """
@@ -309,6 +341,8 @@ if __name__ == "__main__":
         report = RelativePlanningReport()
     elif report_type == 'cmp':
         report = ComparativePlanningReport()
+    elif report_type == 'any':
+        report = AnyAttributeReport()        
         
     report.build()
     report.write()

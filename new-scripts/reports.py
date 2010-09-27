@@ -278,12 +278,13 @@ class Report(object):
         
 
 class Table(collections.defaultdict):
-    def __init__(self, title='', highlight=True, min_wins=True):
+    def __init__(self, title='', highlight=True, min_wins=True, numeric_rows=False):
         collections.defaultdict.__init__(self, dict)
         
         self.title = title
         self.highlight = highlight
         self.min_wins = min_wins
+        self.numeric_rows = numeric_rows
         
         
     def add_cell(self, row, col, value):
@@ -295,7 +296,10 @@ class Table(collections.defaultdict):
         special_rows = ['SUM', 'AVG', 'GM']
         rows = self.keys()
         # Let the sum, etc. rows be the last ones
-        key = lambda row: 'zzz'+row.lower() if row.upper() in special_rows else row.lower()
+        if self.numeric_rows:
+            key = lambda row: int(row)
+        else:
+            key = lambda row: 'zzz'+row.lower() if row.upper() in special_rows else row.lower()
         rows = sorted(rows, key=key)
         return rows
         
@@ -369,7 +373,10 @@ class Table(collections.defaultdict):
         max_wins = not min_wins
             
         text = ''
-        text += '| %-30s ' % ('**'+row+'**')
+        if self.numeric_rows:
+            text += '| %-30s ' % (row)
+        else:
+            text += '| %-30s ' % ('**'+row+'**')
         for value in values:
             is_min = (value == min_value)
             is_max = (value == max_value)
