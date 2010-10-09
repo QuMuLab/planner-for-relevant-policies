@@ -110,10 +110,10 @@ def _make_checkouts(combinations):
     
 
 
-def build_comparison_exp(combinations):
-    _make_checkouts(combinations)
-    
+def build_comparison_exp(combinations):    
     exp = experiments.build_experiment(parser=downward_configs.get_dw_parser())
+    
+    _make_checkouts(combinations)
             
     problems = downward_suites.build_suite(exp.suite)
     
@@ -179,4 +179,4 @@ def build_comparison_exp(combinations):
                 run.set_property('id', [ext_config, problem.domain, 
                                         problem.problem])
             
-    return exp
+    exp.build()
