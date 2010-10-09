@@ -121,7 +121,8 @@ class Experiment(object):
         this resource that can also be used to refer to it in shell scripts.
         """
         dest = self._get_abs_path(dest)
-        self.resources.append((source, dest))
+        if not (source, dest) in self.resources:
+            self.resources.append((source, dest))
         self.env_vars[resource_name] = dest
         
     def add_run(self):
