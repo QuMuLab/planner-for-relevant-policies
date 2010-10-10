@@ -23,7 +23,6 @@ import tools
 from markup import Document
 from external.configobj import ConfigObj
 from external.datasets import DataSet
-from external import datasets
 from external import txt2tags
 from external import argparse
 
