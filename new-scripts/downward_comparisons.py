@@ -17,6 +17,8 @@ SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
 CHECKOUTS_DIRNAME = os.path.basename(sys.argv[0])[:-3] + '-checkouts'
 CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
 
+DOWNWARD_DIR = os.path.join(SCRIPTS_DIR, '../downward')
+
 # The standard URLs
 TRANSLATE_URL = 'svn+ssh://downward/trunk/downward/translate'
 PREPROCESS_URL = 'svn+ssh://downward/trunk/downward/preprocess'
@@ -35,19 +37,30 @@ def _svn_checkout(repo_path, revision, working_path):
             
             
 class Checkout(object):
-    def __init__(self, repo_url, rev, local_dir):
+    def __init__(self, repo_url, rev, local_dir, name):
         self.repo = repo_url
         self.rev = str(rev)
-        self.dir = os.path.join(CHECKOUTS_DIR, local_dir)
-        self.name = local_dir
+        self.name = name
+        
+        if os.path.isabs(local_dir):
+            self.dir = local_dir
+        else:
+            self.dir = os.path.join(CHECKOUTS_DIR, local_dir)
         
     def checkout(self):
-        _svn_checkout(self.repo, self.rev, self.dir)
+        if not self.rev == 'WORK':
+            _svn_checkout(self.repo, self.rev, self.dir)
         
         
 class TranslatorCheckout(Checkout):
     def __init__(self, repo_url=TRANSLATE_URL, rev='HEAD'):
-        Checkout.__init__(self, repo_url, rev, 'translate-' + str(rev))
+        name = 'translate-' + str(rev)
+        if rev == 'WORK':
+            local_dir = os.path.join(DOWNWARD_DIR, 'translate')
+        else:
+            local_dir = name
+            
+        Checkout.__init__(self, repo_url, rev, local_dir, name)
         
     def get_executable(self):
         """ Returns the path to the python module or a binary """
@@ -56,7 +69,13 @@ class TranslatorCheckout(Checkout):
         
 class PreprocessorCheckout(Checkout):
     def __init__(self, repo_url=PREPROCESS_URL, rev='HEAD'):
-        Checkout.__init__(self, repo_url, rev, 'preprocess-' + str(rev))
+        name = 'preprocess-' + str(rev)
+        if rev == 'WORK':
+            local_dir = os.path.join(DOWNWARD_DIR, 'preprocess')
+        else:
+            local_dir = name
+            
+        Checkout.__init__(self, repo_url, rev, local_dir, name)
         
     def get_executable(self):
         """ Returns the path to the python module or a binary """
@@ -65,7 +84,13 @@ class PreprocessorCheckout(Checkout):
 
 class PlannerCheckout(Checkout):
     def __init__(self, repo_url=SEARCH_URL, rev='HEAD'):
-        Checkout.__init__(self, repo_url, rev, 'search-' + str(rev))
+        name = 'search-' + str(rev)
+        if rev == 'WORK':
+            local_dir = os.path.join(DOWNWARD_DIR, 'search')
+        else:
+            local_dir = name
+            
+        Checkout.__init__(self, repo_url, rev, local_dir, name)
         
     def get_executable(self):
         """ Returns the path to the python module or a binary """
@@ -75,6 +100,17 @@ class PlannerCheckout(Checkout):
             if os.path.exists(planner):
                 return planner
         return None
+        
+        
+def get_same_rev_combo(rev='HEAD'):
+    """
+    Helper function that returns checkouts of the same revision for all
+    subsystems
+    """
+    translator = TranslatorCheckout(rev=rev)
+    preprocessor = PreprocessorCheckout(rev=rev)
+    planner = PlannerCheckout(rev=rev)
+    return (translator, preprocessor, planner)
              
         
 
@@ -132,7 +168,10 @@ def build_comparison_exp(combinations):
         planner_name = "PLANNER_%s" % planner_co.rev
         exp.add_resource(planner_name, planner, planner_co.name)
         
-        if planner_co.rev == 'HEAD' or int(planner_co.rev) >= 4425:
+        new_syntax = planner_co.rev in ['HEAD', 'WORK'] or \
+                        int(planner_co.rev) >= 4425
+                        
+        if new_syntax:
             # configs is a list of (nickname,config) pairs
             configs = downward_configs.get_configs(exp.configs)
         else:
@@ -180,3 +219,14 @@ def build_comparison_exp(combinations):
                                         problem.problem])
             
     exp.build()
+    
+
+if __name__ == '__main__':
+    # If the module is invoked a s a script, compare the working copy with
+    # the last checked-in version
+    combinations = [
+        get_same_rev_combo('HEAD'),
+        get_same_rev_combo('WORK'),
+                   ]
+               
+    build_comparison_exp(combinations)
