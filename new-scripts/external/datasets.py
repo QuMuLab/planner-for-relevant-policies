@@ -79,7 +79,7 @@ class DataSet(Bunch):
         """Look up the key in the data set. If it is not present, look
         it up in all items and return a vector."""
         if key in self:
-            return Bunch.__getitem__(self, key)
+            return [Bunch.__getitem__(self, key)]
         else:
             return [item.get(key, missing) for item in self.items]
 
