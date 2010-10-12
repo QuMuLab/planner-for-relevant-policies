@@ -4,8 +4,8 @@ Simple script to demonstrate the use of experiments.py for
 fast downward experiments
 
 Example usage:
-./downward-experiments.py test-exp -c downward-configs.py:cfg1 \
-                downward-configs.py:cfg3 -s gripper:prob01.pddl
+./downward-experiments.py test-exp -c downward_configs.py:cfg1 \
+                downward_configs.py:cfg3 -s gripper:prob01.pddl
 """
 import os
 import sys
@@ -102,4 +102,12 @@ def build_experiment():
 
 
 if __name__ == '__main__':
-    build_experiment()
+    #build_experiment()
+    
+    # Now that we have the comparisons module, we don't need the code in here
+    # anymore. It should maybe be kept as a simple reference example for using
+    # the experiments module.
+    
+    from downward_comparisons import *
+    combinations = [get_same_rev_combo('WORK')]
+    build_comparison_exp(combinations)

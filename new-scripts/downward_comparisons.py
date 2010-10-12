@@ -212,6 +212,8 @@ def build_comparison_exp(combinations):
                 run.set_property('preprocessor', preprocessor_co.rev)
                 run.set_property('planner', planner_co.rev)
                 
+                run.set_property('commandline_config', config)
+                
                 run.set_property('config', ext_config)
                 run.set_property('domain', problem.domain)
                 run.set_property('problem', problem.problem)
@@ -222,7 +224,7 @@ def build_comparison_exp(combinations):
     
 
 if __name__ == '__main__':
-    # If the module is invoked a s a script, compare the working copy with
+    # If the module is invoked as a script, compare the working copy with
     # the last checked-in version
     combinations = [
         get_same_rev_combo('HEAD'),
