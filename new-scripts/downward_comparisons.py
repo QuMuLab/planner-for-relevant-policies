@@ -24,16 +24,6 @@ TRANSLATE_URL = 'svn+ssh://downward/trunk/downward/translate'
 PREPROCESS_URL = 'svn+ssh://downward/trunk/downward/preprocess'
 SEARCH_URL = 'svn+ssh://downward/trunk/downward/search'
 
-         
-
-def _svn_checkout(repo_path, revision, working_path):
-    if not os.path.exists(working_path):
-        cmd = 'svn co %s@%s %s' % (repo_path, revision, working_path)
-        print cmd
-        ret = subprocess.call(cmd.split())
-    assert os.path.exists(working_path), \
-            'Could not checkout to "%s"' % working_path
-            
             
             
 class Checkout(object):
@@ -48,8 +38,24 @@ class Checkout(object):
             self.dir = os.path.join(CHECKOUTS_DIR, local_dir)
         
     def checkout(self):
+        # We don't need to check out the working copy
         if not self.rev == 'WORK':
-            _svn_checkout(self.repo, self.rev, self.dir)
+            # If there's already a checkout, don't checkout again
+            working_path = self.dir
+            if not os.path.exists(working_path):
+                cmd = 'svn co %s@%s %s' % (self.repo, self.rev, working_path)
+                print cmd
+                ret = subprocess.call(cmd.split())
+            assert os.path.exists(working_path), \
+                    'Could not checkout to "%s"' % working_path
+            
+        # Needs compiling?
+        executable = self.get_executable()
+        if not os.path.exists(executable):
+            os.chdir(self.dir)
+            subprocess.call(['make'])
+            os.chdir('../')
+        #_svn_checkout(self.repo, self.rev, self.dir)
         
         
 class TranslatorCheckout(Checkout):
@@ -123,24 +129,8 @@ def _make_checkouts(combinations):
     for translator_co, preprocessor_co, planner_co in combinations:
         
         translator_co.checkout()
-        
         preprocessor_co.checkout()
-        
-        # Needs compiling
-        preprocessor = os.path.join(preprocessor_co.dir, 'preprocess')
-        if  not os.path.exists(preprocessor):
-            os.chdir(preprocessor_co.dir)
-            subprocess.call(['make'])
-            os.chdir('../')
-        
         planner_co.checkout()
-        
-        # Needs compiling
-        planner = planner_co.get_executable()
-        if planner is None:
-            os.chdir(planner_co.dir)
-            subprocess.call(['make'])
-            os.chdir('../')
                 
     os.chdir(cwd)
     

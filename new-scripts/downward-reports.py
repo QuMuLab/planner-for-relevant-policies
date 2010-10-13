@@ -9,6 +9,7 @@ import sys
 import os
 import logging
 import datetime
+import operator
 from collections import defaultdict
 
 import tools
@@ -66,6 +67,10 @@ class PlanningReport(Report):
             help='tasks, domains or suites (if none specified, use whole suite)')
         parser.add_argument('--res', default='domain', dest='resolution',
             help='resolution of the report', choices=['suite', 'domain', 'problem'])
+            
+        parser.add_argument('--filter', nargs='*', default=[],
+                            help='filters will be applied as follows: ' \
+                                'expanded:lt:100 -> only process if run[expanded] < 100')
         
         Report.__init__(self, parser)
         
@@ -105,6 +110,8 @@ class PlanningReport(Report):
             return False
         
         self.add_filter(filter_by_problem, filter_by_config)
+        
+        self.parse_filters()
             
             
     def name(self):
@@ -116,6 +123,36 @@ class PlanningReport(Report):
         name += '-' + self.resolution[0]
         name += '-' + self.report
         return name
+        
+        
+    def parse_filters(self):
+        '''
+        Filter strings have the form e.g. 
+        expanded:lt:100 or solved:eq:1 or generated:ge:2000
+        '''
+        for string in self.filter:
+            self.parse_filter(string)
+            
+            
+    def parse_filter(self, string):
+        print string
+        
+        attribute, op, value = string.split(':')
+        
+        try:
+            value = float(value)
+        except ValueError:
+            pass
+            
+        op = getattr(operator, op.lower())
+        
+        #def func(run):
+        #    valid = op(run[attribute], value)
+        #    return valid
+        func = lambda run: op(run[attribute], value)
+        
+        self.add_filter(func)
+            
         
         
     def _get_table(self):
@@ -342,13 +379,16 @@ if __name__ == "__main__":
     elif report_type == 'cmp':
         report = ComparativePlanningReport()
     elif report_type == 'any':
-        report = AnyAttributeReport()        
+        report = AnyAttributeReport()
+        
+    #report.add_filter(lambda item: item['expanded'] < 10)
         
     report.build()
     report.write()
         
     #report.add_filter(domain='gripper')
     #report.add_filter(lambda item: item['expanded'] == '21')
+    
     #report.set_grouping('config', 'domain', 'problem')
     #report.write()
     #print report_text
