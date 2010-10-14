@@ -23,7 +23,7 @@ from reports import Report, ReportArgParser, Table
 # Create a parser only for parsing the report type
 report_type_parser = tools.ArgParser(add_help=False)
 report_type_parser.epilog = 'Note: The help output may depend on the already selected options'
-report_type_parser.add_argument('-r', '--report', choices=['abs', 'rel', 'cmp','any'],
+report_type_parser.add_argument('-r', '--report', choices=['abs', 'rel', 'cmp','any', 'suite'],
                                 default='abs', help='Select a report type')
                                 
                                 
@@ -121,7 +121,7 @@ class PlanningReport(Report):
         if self.suite:
             name += '-' + '+'.join(self.suite)
         name += '-' + self.resolution[0]
-        name += '-' + self.report
+        name += '-' + self.report_type
         return name
         
         
@@ -190,6 +190,7 @@ class PlanningReport(Report):
                 min_wins = False
         table = PlanningTable(self.focus, min_wins=min_wins)
         return table
+
 
 class AnyAttributeReport(PlanningReport):
     """
@@ -363,6 +364,55 @@ class ComparativePlanningReport(PlanningReport):
         return table
         
         
+class SuiteReport(PlanningReport):
+    """
+    Write a list of problems to a file
+    
+    We do not need any markup processing or loop over attributes here, 
+    so the build and write methods are implemented right here.
+    
+    The data is filtered by the filter functions given on the commandline,
+    all the runs are checked whether they pass the filters and the remaining
+    runs are sorted, the duplicates are removed and the resulting list of
+    problems is written to an output file
+    """
+    def __init__(self, *args, **kwargs):
+        PlanningReport.__init__(self, *args, **kwargs)
+        
+        self.resolution = 'problem'
+        self.set_grouping(None)
+        self.output_format = 'txt'
+            
+    def build(self):
+        self.data = self.orig_data.copy()
+        data = self.data.filtered(*self.filter_funcs, **self.filter_pairs)
+        if len(data) == 0:
+            sys.exit('No problems match those filters')
+        problems = [run['domain'] + ':' + run['problem'] for run in data]
+        # Sort and remove duplicates
+        problems = sorted(set(problems))
+        self.output = '\n'.join(problems) + '\n'
+        print '\nSUITE:'
+        print self.output
+        return self.output
+        
+    def write(self):
+        if not self.output:
+            self.output = self.build()
+            
+        if not self.dry:
+            ext = self.output_format
+            exp_name = os.path.basename(self.eval_dir).replace('-eval', '')
+            filters = '-'.join(self.filter)
+            filename = exp_name + '-suite-' + filters +  '.' + ext
+            output_file = os.path.join(self.report_dir, filename)
+            with open(output_file, 'w') as file:
+                logging.info('Writing output to "%s"' % output_file)
+                file.write(self.output)
+        
+        logging.info('Finished writing report')
+        
+        
 if __name__ == "__main__":
     known_args, remaining_args = report_type_parser.parse_known_args()
     
@@ -380,6 +430,12 @@ if __name__ == "__main__":
         report = ComparativePlanningReport()
     elif report_type == 'any':
         report = AnyAttributeReport()
+    elif report_type == 'suite':
+        report = SuiteReport()
+        
+        
+    # Copy the report type
+    report.report_type = report_type
         
     #report.add_filter(lambda item: item['expanded'] < 10)
         
