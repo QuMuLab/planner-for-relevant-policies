@@ -232,18 +232,19 @@ class Report(object):
         raise Error('Not implemented')
         
         
-    def build(self):
+    def write(self):
         doc = Document(title=self.name())
         string = str(self)
+        
+        if not string:
+            logging.info('No tables generated. ' \
+                        'This happens when no significant changes occured. ' \
+                        'Therefore no output file has been created')
+            return
+            
         doc.add_text(string)
         
         self.output = doc.render(self.output_format, {'toc': 1})
-        return self.output
-        
-        
-    def write(self):
-        if not self.output:
-            self.output = self.build()
             
         if not self.dry:
             ext = 'html' if self.output_format == 'xhtml' else self.output_format
@@ -262,15 +263,26 @@ class Report(object):
             res += '- %s\n' % info
         if self.infos:
             res += '\n\n====================\n'
+        
+        tables = []
         for focus in self.foci:
             self.data = self.orig_data.copy()
             self.focus = focus
             try:
                 table = self._get_table()
-                print table
-                res += '+ %s +\n%s\n' % (self.focus, table)
+                if table:
+                    # We return None for a table if we don't want to add it
+                    print table
+                    tables.append(table)
             except TypeError, err:
                 logging.info('Omitting attribute "%s" (%s)' % (focus, err))
+                    
+        if not tables:
+            return ''
+            
+        for table in tables:
+            res += '+ %s +\n%s\n' % (self.focus, table)
+            
         return res
 
                             
@@ -310,23 +322,28 @@ class Table(collections.defaultdict):
             for key in dict.keys():
                 if key not in cols:
                     cols.append(key)
-        return sorted(cols)
+        # Put special columns at the end
+        key = lambda col: 'zzz'+col.lower() if col.lower() in ['quotient'] else col.lower()
+        return sorted(cols, key=key)
         
         
     def get_cells_in_row(self, row):
-        return self[row].values()
+        return [self[row][col] for col in self.cols]
         
         
     def get_relative(self):
         """
-        Find the max in each row and write the relative value into each cell.
+        Take the first value of each row and divide every value in the row by it
         Returns a new table
+        
+        Unused for now
         """
         rel_table = Table(self.title)
+        col1 = self.cols[0]
         for row in self.rows:
-            max_in_row = max(self[row].values())
-            for col, cell in self[row].items():
-                rel_value = 0 if max_in_row == 0 else round(cell / max_in_row, 4)
+            val1 = self[row][col1]
+            for col, cell in self[row].iteritems():
+                rel_value = 0 if val1 == 0 else round(cell / val1, 4)
                 rel_table.add_cell(row, col, rel_value)
         return rel_table
         
