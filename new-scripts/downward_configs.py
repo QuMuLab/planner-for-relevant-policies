@@ -2,6 +2,7 @@
 Example configurations taken from 
 http://alfons.informatik.uni-freiburg.de/downward/PlannerUsage
 """
+import sys
 import logging
 from collections import defaultdict
 
@@ -43,6 +44,9 @@ oa50000 = """\
 --search "astar(mas())"\
 """
 
+def astar_searches():
+    return [('blind', blind), ('oa50000', oa50000)]
+
 
 def get_configs(configs_strings):
     """
@@ -52,55 +56,45 @@ def get_configs(configs_strings):
     config_strings can contain strings of the form 
     "configs.py:cfg13" or "configs.py"
     """
-    def parse_configs(file):
-        assert file.endswith('.py')
-        module_name = file[:-3]
+    def import_file(file):
+        if file.endswith('.py'):
+            module_name = file[:-3]
+        else:
+            module_name = file
         try:
             module = __import__(module_name)
+            return module
         except ImportError, err:
             logging.error('File "%s" could not be imported' % file)
             sys.exit(1)
-        config_names = [c for c in dir(module) if not c.startswith('_')]
-        configs = [(name, getattr(module, name)) for name in config_names]
-        # We only want strings, no functions or imported modules
-        configs = filter(lambda (name, config): type(config) == str, configs)
-        return configs
         
     all_configs = []
         
-    complete_files = []
     files_to_configs = defaultdict(list)
     for config_string in configs_strings:
         if ':' in config_string:
             config_file, config_name = config_string.split(':')
-            files_to_configs[config_file].append(config_name)
-        elif config_string.endswith('.py'):
-                # We have a complete file
-                complete_files.append(config_string)
         else:
             # Check if this module has the config
-            config = globals().get(config_string, None)
-            if config is not None:
-                all_configs.append((config_string, config))
-            else:
-                print 'Config "%s" could not be found' % config_string
-    
-    
-    for file in complete_files:
-        all_configs.extend(parse_configs(file))
+            config_file, config_name = __file__, config_string
+            
+        files_to_configs[config_file].append(config_name)
     
     for file, config_names in files_to_configs.iteritems():
-        if file in complete_files:
-            # We have already imported this file
-            continue
-        filtered_configs = [(name, c) for (name, c) in parse_configs(file) \
-                            if name in config_names]
-        found = [name for (name, c) in filtered_configs]
-        not_found = [n for n in config_names if n not in found]
-        if not_found:
-            logging.error('The configs %s were not found in "%s"' % (not_found, file))
-            sys.exit(1)
-        all_configs.extend(filtered_configs)
+        module = import_file(file)
+        module_dict = module.__dict__
+        for config_name in config_names:
+            config_or_func = module_dict.get(config_name, None)
+            if config_or_func is None:
+                msg = 'Config "%s" could not be found in "%s"' % (config_name, file)
+                logging.error(msg)
+                sys.exit()
+            try:
+                config_list = config_or_func()
+            except TypeError:
+                config_list = [(config_name, config_or_func)]
+            
+            all_configs.extend(config_list)
     
     logging.info('Found configs: %s' % all_configs)
     return all_configs
@@ -118,4 +112,8 @@ def get_dw_parser():
                             required=True, 
                             help='e.g. "configs.py:cfg13" or "configs.py"')
     return dw_parser
+    
+    
+if __name__ == '__main__':
+    get_configs(['blind', 'downward_configs:astar_searches'])
 
