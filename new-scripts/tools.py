@@ -94,6 +94,19 @@ def convert_to_correct_type(val):
         pass
     return val
     
+    
+def import_python_file(filename):
+    if filename.endswith('.py'):
+        module_name = filename[:-3]
+    else:
+        module_name = filename
+    try:
+        module = __import__(module_name)
+        return module
+    except ImportError, err:
+        logging.error('File "%s" could not be imported' % filename)
+        sys.exit(1)
+    
                 
                 
 class Properties(ConfigObj):
