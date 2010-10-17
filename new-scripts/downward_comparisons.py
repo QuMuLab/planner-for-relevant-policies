@@ -51,7 +51,7 @@ class Checkout(object):
             
         # Needs compiling?
         executable = self.get_executable()
-        if not os.path.exists(executable):
+        if not executable or not os.path.exists(executable):
             os.chdir(self.dir)
             subprocess.call(['make'])
             os.chdir('../')

@@ -3,6 +3,7 @@ import sys
 import shutil
 import re
 import logging
+import traceback
 from shutil import *
 from collections import MutableMapping
 
@@ -93,6 +94,25 @@ def convert_to_correct_type(val):
     except (ValueError, SyntaxError):
         pass
     return val
+    
+    
+def import_python_file(filename):
+    filename = os.path.normpath(filename)
+    filename = os.path.basename(filename)
+    if filename.endswith('.py'):
+        module_name = filename[:-3]
+    elif filename.endswith('.pyc'):
+        module_name = filename[:-4]
+    else:
+        module_name = filename
+        
+    try:
+        module = __import__(module_name)
+        return module
+    except ImportError, err:
+        logging.error('File "%s" could not be imported: %s' % (filename, err))
+        print traceback.format_exc()
+        sys.exit(1)
     
                 
                 

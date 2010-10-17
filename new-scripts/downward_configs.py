@@ -7,6 +7,14 @@ import logging
 from collections import defaultdict
 
 import experiments
+import tools
+import downward_suites
+
+HELP = """\
+Configurations can be specified in the following ways: \
+ou, astar_searches, myconfigfile:yY, myconfigfile:lama_configs
+The python modules have to live in the scripts dir.
+"""
 
 # Eager A* search with landmark-cut heuristic (previously configuration ou)
 ou = '--search "astar(lmcut())"'
@@ -46,6 +54,9 @@ oa50000 = """\
 
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]
+    
+    
+
 
 
 def get_configs(configs_strings):
@@ -55,19 +66,7 @@ def get_configs(configs_strings):
     
     config_strings can contain strings of the form 
     "configs.py:cfg13" or "configs.py"
-    """
-    def import_file(file):
-        if file.endswith('.py'):
-            module_name = file[:-3]
-        else:
-            module_name = file
-        try:
-            module = __import__(module_name)
-            return module
-        except ImportError, err:
-            logging.error('File "%s" could not be imported' % file)
-            sys.exit(1)
-        
+    """        
     all_configs = []
         
     files_to_configs = defaultdict(list)
@@ -81,7 +80,7 @@ def get_configs(configs_strings):
         files_to_configs[config_file].append(config_name)
     
     for file, config_names in files_to_configs.iteritems():
-        module = import_file(file)
+        module = tools.import_python_file(file)
         module_dict = module.__dict__
         for config_name in config_names:
             config_or_func = module_dict.get(config_name, None)
@@ -107,10 +106,9 @@ def get_dw_parser():
     # We can add our own commandline parameters
     dw_parser = experiments.ExpArgParser()
     dw_parser.add_argument('-s', '--suite', default=[], nargs='+', 
-                            required=True, help='tasks, domains or suites')
+                            required=True, help=downward_suites.HELP)
     dw_parser.add_argument('-c', '--configs', default=[], nargs='+', 
-                            required=True, 
-                            help='e.g. "configs.py:cfg13" or "configs.py"')
+                            required=True, help=HELP)
     return dw_parser
     
     

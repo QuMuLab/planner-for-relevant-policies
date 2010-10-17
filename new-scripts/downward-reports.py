@@ -144,8 +144,12 @@ class PlanningReport(Report):
         except ValueError:
             pass
             
-        op = getattr(operator, op.lower())
-        
+        try:
+            op = getattr(operator, op.lower())
+        except AttributeError, e:
+            logging.error('The operator module has no operator "%s"' % op)
+            sys.exit()
+            
         #def func(run):
         #    valid = op(run[attribute], value)
         #    return valid
@@ -425,7 +429,6 @@ class SuiteReport(PlanningReport):
         
         self.resolution = 'problem'
         self.set_grouping(None)
-        self.output_format = 'txt'
         
     def write(self):
         self.data = self.orig_data.copy()
@@ -435,15 +438,16 @@ class SuiteReport(PlanningReport):
         problems = [run['domain'] + ':' + run['problem'] for run in data]
         # Sort and remove duplicates
         problems = sorted(set(problems))
-        self.output = '\n'.join(problems) + '\n'
+        problems = ['        "%s",\n' % problem for problem in problems]
+        self.output = 'def suite():\n    return [\n' + ''.join(problems) + '    ]\n'
         print '\nSUITE:'
         print self.output
             
         if not self.dry:
-            ext = self.output_format
             exp_name = os.path.basename(self.eval_dir).replace('-eval', '')
-            filters = '-'.join(self.filter)
-            filename = exp_name + '-suite-' + filters +  '.' + ext
+            filters = '_'.join(self.filter)
+            filters = filters.replace(':', '')
+            filename = exp_name + '_suite_' + filters +  '.py'
             output_file = os.path.join(self.report_dir, filename)
             with open(output_file, 'w') as file:
                 logging.info('Writing output to "%s"' % output_file)
