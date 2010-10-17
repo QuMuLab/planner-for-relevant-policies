@@ -435,7 +435,8 @@ class SuiteReport(PlanningReport):
         problems = [run['domain'] + ':' + run['problem'] for run in data]
         # Sort and remove duplicates
         problems = sorted(set(problems))
-        self.output = '\n'.join(problems) + '\n'
+        #problems = ['%s,']
+        self.output = 'mysuite = [\n' + ',\n  '.join(problems) + ']\n'
         print '\nSUITE:'
         print self.output
             
