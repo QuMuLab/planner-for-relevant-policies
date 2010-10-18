@@ -1,12 +1,20 @@
 #! /usr/bin/env python
 """
-A module that has methods for checking out different revisions of the three
-components of fast-downward (translate, preprocess, search) and performing
-experiments with them.
+A module that prepares experiments for preprocessing planning problems
+
+When the resultfetcher is run the following directory structure is created:
+
+SCRIPTS_DIR
+    - preprocessed-tasks
+        - TRANSLATOR_REV-PREPROCESSOR_REV
+            - DOMAIN
+                - PROBLEM
+                    - output
 """
 import os
 import sys
 import subprocess
+import logging
 
 import experiments
 import downward_suites
@@ -14,11 +22,12 @@ import downward_configs
 
 # e.g. issue69.py -> issue69-checkouts
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
-CHECKOUTS_DIRNAME = os.path.basename(sys.argv[0])[:-3] + \
-                                    '-checkouts'.replace('-experiments-', '')
+CHECKOUTS_DIRNAME = os.path.basename(sys.argv[0])[:-3] + '-checkouts'
 CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
 
 DOWNWARD_DIR = os.path.join(SCRIPTS_DIR, '../downward')
+
+PREPROCESSED_TASKS_DIR = os.path.join(SCRIPTS_DIR, 'preprocessed-tasks')
 
 # The standard URLs
 TRANSLATE_URL = 'svn+ssh://downward/trunk/downward/translate'
@@ -137,89 +146,76 @@ def _make_checkouts(combinations):
     
 
 
-def build_comparison_exp(combinations):    
-    exp = experiments.build_experiment(parser=downward_configs.get_dw_parser())
+def build_preprocess_exp(combinations):
+    parser = experiments.ExpArgParser()
     
-    _make_checkouts(combinations)
+    parser.add_argument('-s', '--suite', default=[], nargs='+', 
+                        required=True, help=downward_suites.HELP)
+    
+    exp = experiments.build_experiment(parser)
+    
+    # Set defaults for faster preprocessing
+    #exp.suite = ['ALL']
+    exp.runs_per_task = 10
+    logging.info('GkiGrid experiments: runs per task set to %s' % exp.runs_per_task)
+    import multiprocessing
+    exp.processes = multiprocessing.cpu_count()
+    logging.info('Local experiments: processes set to %s' % exp.processes)
+    
+    #_make_checkouts(combinations)
+    #TODO: Use all combinations
+    translator_co, preprocessor_co = combinations[0]
             
     problems = downward_suites.build_suite(exp.suite)
     
-    for translator_co, preprocessor_co, planner_co in combinations:
+    translator = translator_co.get_executable()
+    assert os.path.exists(translator), translator
+    
+    preprocessor = preprocessor_co.get_executable()
+    assert os.path.exists(preprocessor)
+    preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
+    exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
+     
+    for problem in problems:
+        run = exp.add_run()
+        run.require_resource(preprocessor_name)
         
-        translator = translator_co.get_executable()
-        assert os.path.exists(translator), translator
+        domain_file = problem.domain_file()
+        problem_file = problem.problem_file()
+        run.add_resource("DOMAIN", domain_file, "domain.pddl")
+        run.add_resource("PROBLEM", problem_file, "problem.pddl")
         
-        preprocessor = preprocessor_co.get_executable()
-        assert os.path.exists(preprocessor)
-        preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
-        exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
+        translator = os.path.abspath(translator)
+        translate_cmd = '%s %s %s' % (translator, domain_file, 
+                                        problem_file)
         
-        planner = planner_co.get_executable()
-        assert os.path.exists(planner)
-        planner_name = "PLANNER_%s" % planner_co.rev
-        exp.add_resource(planner_name, planner, planner_co.name)
+        preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
         
-        new_syntax = planner_co.rev in ['HEAD', 'WORK'] or \
-                        int(planner_co.rev) >= 4425
-                        
-        if new_syntax:
-            # configs is a list of (nickname,config) pairs
-            configs = downward_configs.get_configs(exp.configs)
-        else:
-            # Use the old config names
-            # We use the config names also as nicknames
-            configs = zip(exp.configs, exp.configs)
-         
-        for config_name, config in configs:
-            for problem in problems:
-                run = exp.add_run()
-                run.require_resource(preprocessor_name)
-                run.require_resource(planner_name)
-                
-                domain_file = problem.domain_file()
-                problem_file = problem.problem_file()
-                run.add_resource("DOMAIN", domain_file, "domain.pddl")
-                run.add_resource("PROBLEM", problem_file, "problem.pddl")
-                
-                translator = os.path.abspath(translator)
-                translate_cmd = '%s %s %s' % (translator, domain_file, 
-                                                problem_file)
-                
-                preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
-                
-                run.set_preprocess('%s; %s' % (translate_cmd, preprocess_cmd))
-                
-                run.set_command("$%s %s < output" % (planner_name, config))
-                
-                run.declare_optional_output("*.groups")
-                run.declare_optional_output("output")
-                run.declare_optional_output("output.sas")
-                run.declare_optional_output("sas_plan")
-                
-                ext_config = '-'.join([translator_co.rev, preprocessor_co.rev, 
-                                        planner_co.rev, config_name])
-                
-                run.set_property('translator', translator_co.rev)
-                run.set_property('preprocessor', preprocessor_co.rev)
-                run.set_property('planner', planner_co.rev)
-                
-                run.set_property('commandline_config', config)
-                
-                run.set_property('config', ext_config)
-                run.set_property('domain', problem.domain)
-                run.set_property('problem', problem.problem)
-                run.set_property('id', [ext_config, problem.domain, 
-                                        problem.problem])
+        run.set_command('%s; %s' % (translate_cmd, preprocess_cmd))
+        
+        run.declare_optional_output("*.groups")
+        run.declare_optional_output("output.sas")
+        run.declare_optional_output("output")
+        
+        ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
+        
+        run.set_property('translator', translator_co.rev)
+        run.set_property('preprocessor', preprocessor_co.rev)
+        
+        run.set_property('config', ext_config)
+        run.set_property('domain', problem.domain)
+        run.set_property('problem', problem.problem)
+        run.set_property('id', [ext_config, problem.domain, 
+                                problem.problem])
             
     exp.build()
     
 
 if __name__ == '__main__':
-    # If the module is invoked as a script, compare the working copy with
-    # the last checked-in version
+    # If the module is invoked as a script, preprocess the files with the 
+    # translator and preprocessor of the working copy
     combinations = [
-        get_same_rev_combo('HEAD'),
-        get_same_rev_combo('WORK'),
+        (TranslatorCheckout(rev='WORK'), PreprocessorCheckout(rev='WORK')),
                    ]
                
-    build_comparison_exp(combinations)
+    build_preprocess_exp(combinations)
