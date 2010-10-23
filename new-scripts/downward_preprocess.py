@@ -60,6 +60,9 @@ def build_preprocess_exp(combinations):
     assert os.path.exists(preprocessor)
     preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
     exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
+    
+    exp.set_property('translator', translator_co.rev)
+    exp.set_property('preprocessor', preprocessor_co.rev)
      
     for problem in problems:
         run = exp.add_run()
@@ -71,8 +74,7 @@ def build_preprocess_exp(combinations):
         run.add_resource("PROBLEM", problem_file, "problem.pddl")
         
         translator = os.path.abspath(translator)
-        translate_cmd = '%s %s %s' % (translator, domain_file, 
-                                        problem_file)
+        translate_cmd = '%s %s %s' % (translator, domain_file, problem_file)
         
         preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
         
@@ -84,8 +86,7 @@ def build_preprocess_exp(combinations):
         
         ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
         
-        run.set_property('translator', translator_co.rev)
-        run.set_property('preprocessor', preprocessor_co.rev)
+        
         
         run.set_property('config', ext_config)
         run.set_property('domain', problem.domain)

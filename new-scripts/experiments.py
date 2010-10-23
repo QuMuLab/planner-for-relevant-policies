@@ -48,7 +48,7 @@ X Add copy-all parameter
 X Only compare those problems that have been solved by all configs
 O Handle iterative planner results
 O Ask about DataSet dict access method returning lists or values
-O Global experiment properties file
+X Global experiment properties file
 """
 
 from __future__ import with_statement
@@ -102,6 +102,8 @@ class Experiment(object):
         self.resources = []
         self.env_vars = {}
         
+        self.properties = tools.Properties()
+        
         if self.exp_root_dir:
             self.base_dir = os.path.join(self.exp_root_dir, self.exp_name)
         else:
@@ -110,6 +112,19 @@ class Experiment(object):
         self.base_dir = os.path.abspath(self.base_dir)
         logging.info('Base Dir: "%s"' % self.base_dir)
         
+    def set_property(self, name, value):
+        """
+        Add a key-value property to the experiment. These can be used later for 
+        evaluation
+        
+        Example:
+        >>> exp.set_property('translator', '4321')
+        """
+        # id parts can only be strings
+        if name == 'id':
+            assert type(value) == list, value
+            value = map(str, value)
+        self.properties[name] = value
         
     def add_resource(self, resource_name, source, dest):
         """
@@ -146,6 +161,7 @@ class Experiment(object):
         self._build_main_script()
         self._build_resources()
         self._build_runs()
+        self._build_properties_file()
         
         
     def _get_abs_path(self, rel_path):
@@ -210,6 +226,11 @@ class Experiment(object):
         """
         for run in self.runs:
             run.build()
+            
+    
+    def _build_properties_file(self):
+        self.properties.filename = self._get_abs_path('properties')
+        self.properties.write()
             
         
         
