@@ -7,6 +7,7 @@ experiments with them.
 import os
 import sys
 import subprocess
+import logging
 
 import experiments
 import downward_suites
@@ -20,127 +21,176 @@ CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
 
 DOWNWARD_DIR = os.path.join(SCRIPTS_DIR, '../downward')
 
-# The standard URLs
-TRANSLATE_URL = 'svn+ssh://downward/trunk/downward/translate'
-PREPROCESS_URL = 'svn+ssh://downward/trunk/downward/preprocess'
-SEARCH_URL = 'svn+ssh://downward/trunk/downward/search'
-
             
             
-class Checkout(object):
-    def __init__(self, repo_url, rev, local_dir, name):
-        self.repo = repo_url
+class Checkout(object):    
+    def __init__(self, part, repo, rev, checkout_dir, name):
+        # Directory name of the planner part (translate, preprocess, search)
+        self.part = part
+        self.repo = repo
         self.rev = str(rev)
         self.name = name
         
-        if os.path.isabs(local_dir):
-            self.dir = local_dir
-        else:
-            self.dir = os.path.join(CHECKOUTS_DIR, local_dir)
+        if not os.path.isabs(checkout_dir):
+            checkout_dir = os.path.join(CHECKOUTS_DIR, checkout_dir)
+        self.checkout_dir = checkout_dir
         
     def checkout(self):
         # We don't need to check out the working copy
         if not self.rev == 'WORK':
             # If there's already a checkout, don't checkout again
-            working_path = self.dir
-            if not os.path.exists(working_path):
-                cmd = 'svn co %s@%s %s' % (self.repo, self.rev, working_path)
+            path = self.checkout_dir
+            if os.path.exists(path):
+                logging.info('Checkout "%s" already exists' % path)
+            else:
+                cmd = self.get_checkout_cmd()
                 print cmd
                 ret = subprocess.call(cmd.split())
-            assert os.path.exists(working_path), \
-                    'Could not checkout to "%s"' % working_path
+            assert os.path.exists(path), \
+                    'Could not checkout to "%s"' % path
+                    
+    def get_checkout_cmd(self):
+        raise Exception('Not implemented')
             
+    def compile(self):
+        """
+        """
         # Needs compiling?
         executable = self.get_executable()
-        if not executable or not os.path.exists(executable):
-            os.chdir(self.dir)
+        if executable is None or not os.path.exists(executable):
+            os.chdir(self.exe_dir)
             subprocess.call(['make'])
-            os.chdir('../')
-        #_svn_checkout(self.repo, self.rev, self.dir)
-        
-        
-class TranslatorCheckout(Checkout):
-    def __init__(self, repo_url=TRANSLATE_URL, rev='HEAD'):
-        name = 'translate-' + str(rev)
-        if rev == 'WORK':
-            local_dir = os.path.join(DOWNWARD_DIR, 'translate')
-        else:
-            local_dir = name
-            
-        Checkout.__init__(self, repo_url, rev, local_dir, name)
+            os.chdir(SCRIPTS_DIR)
         
     def get_executable(self):
         """ Returns the path to the python module or a binary """
-        return os.path.join(self.dir, 'translate.py')
-        
-        
-class PreprocessorCheckout(Checkout):
-    def __init__(self, repo_url=PREPROCESS_URL, rev='HEAD'):
-        name = 'preprocess-' + str(rev)
-        if rev == 'WORK':
-            local_dir = os.path.join(DOWNWARD_DIR, 'preprocess')
-        else:
-            local_dir = name
-            
-        Checkout.__init__(self, repo_url, rev, local_dir, name)
-        
-    def get_executable(self):
-        """ Returns the path to the python module or a binary """
-        return os.path.join(self.dir, 'preprocess')
-        
-
-class PlannerCheckout(Checkout):
-    def __init__(self, repo_url=SEARCH_URL, rev='HEAD'):
-        name = 'search-' + str(rev)
-        if rev == 'WORK':
-            local_dir = os.path.join(DOWNWARD_DIR, 'search')
-        else:
-            local_dir = name
-            
-        Checkout.__init__(self, repo_url, rev, local_dir, name)
-        
-    def get_executable(self):
-        """ Returns the path to the python module or a binary """
-        names = ['downward', 'release-search', 'search']
+        names = ['translate.py', 'preprocess', 
+                'downward', 'release-search', 'search']
         for name in names:
-            planner = os.path.join(self.dir, name)
+            planner = os.path.join(self.exe_dir, name)
             if os.path.exists(planner):
                 return planner
         return None
         
+
+
+# ---------- Mercurial ---------------------------------------------------------
+
+class HgCheckout(Checkout):
+    DEFAULT_URL = 'ssh://downward'
+    DEFAULT_REV = 'tip'
+    
+    def __init__(self, part, repo, rev):
+        #TODO: Find proper absolute revision
+        #rev = revname
+        revname = str(rev).upper()
+        name = part + '-' + revname
         
-def get_same_rev_combo(rev='HEAD'):
-    """
-    Helper function that returns checkouts of the same revision for all
-    subsystems
-    """
-    translator = TranslatorCheckout(rev=rev)
-    preprocessor = PreprocessorCheckout(rev=rev)
-    planner = PlannerCheckout(rev=rev)
-    return (translator, preprocessor, planner)
-             
+        if revname == 'WORK':
+            checkout_dir = os.path.join(SCRIPTS_DIR, '../')
+        else:
+            checkout_dir = rev
+            
+        Checkout.__init__(self, part, repo, rev, checkout_dir, name)
+        
+    def get_checkout_cmd(self):
+        return 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
+        
+    @property
+    def exe_dir(self):
+        assert os.path.exists(self.checkout_dir)
+        exe_dir = os.path.join(self.checkout_dir, 'downward', self.part)
+        # "downward" dir has been renamed to "src"
+        if not os.path.exists(exe_dir):
+            self.exe_dir = os.path.join(self.checkout_dir, 'src', self.part)
+        return exe_dir
+            
+            
+class TranslatorHgCheckout(HgCheckout):
+    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
+        HgCheckout.__init__(self, 'translate', repo, rev)
+            
+class PreprocessorHgCheckout(HgCheckout):
+    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
+        HgCheckout.__init__(self, 'preprocess', repo, rev)
+        
+class PlannerHgCheckout(HgCheckout):
+    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
+        HgCheckout.__init__(self, 'search', repo, rev)
+        
+        
+        
+# ---------- Subversion --------------------------------------------------------
+        
+class SvnCheckout(Checkout):
+    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward'
+    DEFAULT_REV = 'HEAD'
+    
+    def __init__(self, part, repo, rev=DEFAULT_REV):
+        name = part + '-' + str(rev)
+        if rev == 'WORK':
+            checkout_dir = os.path.join(DOWNWARD_DIR, part)
+        else:
+            checkout_dir = name
+            
+        Checkout.__init__(self, part, repo, rev, checkout_dir, name)
+        
+    def get_checkout_cmd(self):
+        return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
+        
+    @property
+    def exe_dir(self):
+        # checkout_dir is exe_dir for SVN
+        assert os.path.exists(self.checkout_dir)
+        return self.checkout_dir
+        
+        
+class TranslatorSvnCheckout(SvnCheckout):
+    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/translate'
+    
+    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
+        SvnCheckout.__init__(self, 'translate', repo, rev)
+        
+        
+class PreprocessorSvnCheckout(SvnCheckout):
+    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/preprocess'
+    
+    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
+        SvnCheckout.__init__(self, 'preprocess', repo, rev)
         
 
-def _make_checkouts(combinations):
+class PlannerSvnCheckout(SvnCheckout):
+    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/search'
+    
+    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
+        SvnCheckout.__init__(self, 'search', repo, rev)
+             
+# ------------------------------------------------------------------------------
+
+
+
+def make_checkouts(combinations):
+    """
+    Checks out and compiles the code
+    """
     cwd = os.getcwd()
     if not os.path.exists(CHECKOUTS_DIR):
         os.mkdir(CHECKOUTS_DIR)
     os.chdir(CHECKOUTS_DIR)
     
-    for translator_co, preprocessor_co, planner_co in combinations:
+    for combo in combinations:
+        for part in combo:
+            part.checkout()
+            part.compile()
         
-        translator_co.checkout()
-        preprocessor_co.checkout()
-        planner_co.checkout()
-                
     os.chdir(cwd)
     
 
 
-def build_comparison_exp(combinations):    
+def build_comparison_exp(combinations):
     exp = experiments.build_experiment(parser=downward_configs.get_dw_parser())
     
-    _make_checkouts(combinations)
+    make_checkouts(combinations)
             
     problems = downward_suites.build_suite(exp.suite)
     
@@ -214,12 +264,16 @@ def build_comparison_exp(combinations):
     exp.build()
     
 
-if __name__ == '__main__':
-    # If the module is invoked as a script, compare the working copy with
-    # the last checked-in version
+def test():
     combinations = [
-        get_same_rev_combo('HEAD'),
-        get_same_rev_combo('WORK'),
+        (TranslatorHgCheckout(), PreprocessorHgCheckout(rev='tip'), PlannerHgCheckout(rev='WORK')),
+        (TranslatorSvnCheckout(), PreprocessorSvnCheckout(rev='HEAD'), PlannerSvnCheckout(rev='WORK')),
+        (TranslatorSvnCheckout(4321), PreprocessorHgCheckout(rev='tip'), PlannerSvnCheckout(rev='HEAD')),
                    ]
-               
+    
     build_comparison_exp(combinations)
+
+    
+
+if __name__ == '__main__':
+    test()

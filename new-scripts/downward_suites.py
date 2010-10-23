@@ -165,25 +165,6 @@ def suite_interesting():
     boring = set(["gripper", "miconic", "miconic-simpleadl", "movie"])
     return [domain for domain in suite_all() if domain not in boring]
 
-def suite_icaps04_paper():
-    # The domains considered in the ICAPS 2004 CG heuristic paper, i.e.,
-    # all IPC 1-3 STRIPS domains.
-    suite = [
-        "blocks", "depot", "driverlog", "freecell", "grid", "gripper",
-        "logistics00", "logistics98", "miconic", "movie", "mprime", "mystery",
-        "zenotravel",
-        ]
-
-    # Only the first 20 Rovers and Satellite tasks are from IPC3.
-    # The remaining ones were introduced later.
-    for domain in ["rovers", "satellite"]:
-        tasks = list(Domain(domain))
-        suite += tasks[:20]
-
-    suite = build_suite(suite)
-    unsolvable = set(build_suite(suite_unsolvable()))
-    return [p for p in suite if p not in unsolvable]
-
 def suite_first_tasks():
     suite = []
     for domain in suite_all():
