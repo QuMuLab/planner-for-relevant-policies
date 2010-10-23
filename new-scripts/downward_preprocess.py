@@ -55,50 +55,62 @@ def build_preprocess_exp(combinations):
     exp.set_property('copy_all', True)
     
     downward_comparisons.make_checkouts(combinations)
-    #TODO: Use all combinations
-    translator_co, preprocessor_co = combinations[0]
             
     problems = downward_suites.build_suite(exp.suite)
     
-    translator = translator_co.get_executable()
-    assert os.path.exists(translator), translator
+    for translator_co, preprocessor_co in combinations:
     
-    preprocessor = preprocessor_co.get_executable()
-    assert os.path.exists(preprocessor)
-    preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
-    exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
-    
-    exp.set_property('translator', translator_co.rev)
-    exp.set_property('preprocessor', preprocessor_co.rev)
-     
-    for problem in problems:
-        run = exp.add_run()
-        run.require_resource(preprocessor_name)
+        translator = translator_co.get_executable()
+        assert os.path.exists(translator), translator
         
-        domain_file = problem.domain_file()
-        problem_file = problem.problem_file()
-        run.add_resource("DOMAIN", domain_file, "domain.pddl")
-        run.add_resource("PROBLEM", problem_file, "problem.pddl")
-        
-        translator = os.path.abspath(translator)
-        translate_cmd = '%s %s %s' % (translator, domain_file, problem_file)
-        
-        preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
-        
-        run.set_command('%s; %s' % (translate_cmd, preprocess_cmd))
-        
-        run.declare_optional_output("*.groups")
-        run.declare_optional_output("output.sas")
-        run.declare_optional_output("output")
-        
-        ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
-        
-        run.set_property('config', ext_config)
-        run.set_property('domain', problem.domain)
-        run.set_property('problem', problem.problem)
-        run.set_property('id', [ext_config, problem.domain, problem.problem])
+        preprocessor = preprocessor_co.get_executable()
+        assert os.path.exists(preprocessor)
+        preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
+        exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
+         
+        for problem in problems:
+            run = exp.add_run()
+            run.require_resource(preprocessor_name)
+            
+            domain_file = problem.domain_file()
+            problem_file = problem.problem_file()
+            run.add_resource("DOMAIN", domain_file, "domain.pddl")
+            run.add_resource("PROBLEM", problem_file, "problem.pddl")
+            
+            translator = os.path.abspath(translator)
+            translate_cmd = '%s %s %s' % (translator, domain_file, problem_file)
+            
+            preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
+            
+            run.set_command('%s; %s' % (translate_cmd, preprocess_cmd))
+            
+            run.declare_optional_output("*.groups")
+            run.declare_optional_output("output.sas")
+            run.declare_optional_output("output")
+            
+            ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
+            
+            run.set_property('translator', translator_co.rev)
+            run.set_property('preprocessor', preprocessor_co.rev)
+            
+            run.set_property('config', ext_config)
+            run.set_property('domain', problem.domain)
+            run.set_property('problem', problem.problem)
+            run.set_property('id', [ext_config, problem.domain, problem.problem])
             
     exp.build()
+    
+    
+def test():
+    from downward_comparisons import TranslatorHgCheckout, PreprocessorHgCheckout, \
+                                    TranslatorSvnCheckout, PreprocessorSvnCheckout
+    combinations = [
+        (TranslatorHgCheckout(), PreprocessorHgCheckout(rev='TIP')),
+        (TranslatorSvnCheckout(), PreprocessorSvnCheckout(rev='head')),
+        (TranslatorSvnCheckout(rev=4321), PreprocessorHgCheckout(rev='tip')),
+        (TranslatorHgCheckout(rev='a640c9a9284c'), PreprocessorHgCheckout(rev='work')),
+    ]
+    build_preprocess_exp(combinations)
     
 
 if __name__ == '__main__':
@@ -108,4 +120,6 @@ if __name__ == '__main__':
     preprocessor = downward_comparisons.PreprocessorHgCheckout(rev='WORK')
     combinations = [(translator, preprocessor)]
                
-    build_preprocess_exp(combinations)
+    
+    #build_preprocess_exp(combinations)
+    test()

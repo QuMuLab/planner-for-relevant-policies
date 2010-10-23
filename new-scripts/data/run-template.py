@@ -24,7 +24,7 @@ CHECK_INTERVAL = 0.5           # how often we query the process group status
 # make sure we're in the run directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-redirects = {'stdout': open('run.log', 'w'), 'stderr': open('run.err', 'w')}
+redirects = {'stdout': open('run.log', 'a'), 'stderr': open('run.err', 'a')}
 
 
 def set_limit(kind, amount):

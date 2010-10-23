@@ -13,12 +13,14 @@ import re
 import experiments
 import downward_suites
 import downward_configs
+import downward_preprocess
 import tools
 
 # e.g. issue69.py -> issue69-checkouts
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
-CHECKOUTS_DIRNAME = os.path.basename(sys.argv[0])[:-3] + \
-                                    '-checkouts'.replace('-experiments-', '')
+#CHECKOUTS_DIRNAME = os.path.basename(sys.argv[0])[:-3] + \
+#                                    '-checkouts'.replace('-experiments-', '')
+CHECKOUTS_DIRNAME = 'checkouts'
 CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
 
 DOWNWARD_DIR = os.path.join(SCRIPTS_DIR, '../downward')
@@ -223,9 +225,111 @@ def make_checkouts(combinations):
         
     os.chdir(cwd)
     
+    
+def _get_configs(planner_rev, config_list):
+    """
+    Turn the list of config names from the command line into a list of
+    (config_nick, config_string) pairs
+    """
+    # New syntax <=> we use mercurial (hex, not numbers) or rev >= 4425
+    try:
+        rev_number = int(planner_rev)
+    except ValueError:
+        rev_number = None
+    new_syntax = rev_number is None or rev_number >= 4425
+                    
+    if new_syntax:
+        # configs is a list of (nickname,config) pairs
+        configs = downward_configs.get_configs(config_list)
+    else:
+        # Use the old config names
+        # We use the config names also as nicknames
+        configs = zip(config_list, config_list)
+    return configs
+    
 
 
-def build_comparison_exp(combinations):
+def build_search_exp(combinations):
+    exp = experiments.build_experiment(parser=downward_configs.get_dw_parser())
+    
+    make_checkouts(combinations)
+            
+    problems = downward_suites.build_suite(exp.suite)
+    
+    #preprocess_combos = []
+    experiment_combos = []
+    
+    for combo in combinations:
+        
+        if len(combo) == 1:
+            planner_co = combo[0]
+            assert planner_co.part == 'search'
+            translator_co = TranslatorHgCheckout(rev='WORK')
+            preprocessor_co = PreprocessorHgCheckout(rev='WORK')
+        else:
+            assert len(combo) == 3
+            translator_co, preprocessor_co, planner_co = combo
+            assert translator_co.part == 'translate'
+            assert preprocessor_co.part == 'preprocess'
+            assert planner_co.part == 'search'
+            
+        experiment_combos.append((translator_co, preprocessor_co, planner_co))
+        
+    for translator_co, preprocessor_co, planner_co in experiment_combos:
+        
+        planner = planner_co.get_executable()
+        assert os.path.exists(planner)
+        planner_name = "PLANNER_%s" % planner_co.rev
+        exp.add_resource(planner_name, planner, planner_co.name)
+        
+        configs = _get_configs(planner_co.rev, exp.configs)
+         
+        for config_name, config in configs:
+            for problem in problems:
+                run = exp.add_run()
+                run.require_resource(planner_name)
+                
+                tasks_dir = downward_preprocess.PREPROCESSED_TASKS_DIR
+                preprocess_version = translator_co.rev+'-'+preprocessor_co.rev
+                preprocess_dir = os.path.join(tasks_dir, preprocess_version,
+                                    problem.domain, problem.problem)
+                output = os.path.join(preprocess_dir, 'output')
+                # Add the preprocess files for later parsing
+                output_sas = os.path.join(preprocess_dir, 'output.sas')
+                run_log = os.path.join(preprocess_dir, 'run.log')
+                run_err = os.path.join(preprocess_dir, 'run.err')
+                if not os.path.exists(output):
+                    msg = 'Preprocessed file not found at "%s". ' % output_file
+                    msg += 'Have you run the preprocessing experiment?'
+                    logging.warning(msg)
+                run.add_resource('OUTPUT', output, 'output')
+                run.add_resource('OUTPUT_SAS', output_sas, 'output.sas')
+                run.add_resource('RUN_LOG', run_log, 'run.log')
+                run.add_resource('RUN_ERR', run_err, 'run.err')
+                
+                run.set_command("$%s %s < $OUTPUT" % (planner_name, config))
+                
+                run.declare_optional_output("sas_plan")
+                
+                ext_config = '-'.join([translator_co.rev, preprocessor_co.rev, 
+                                        planner_co.rev, config_name])
+                
+                run.set_property('translator', translator_co.rev)
+                run.set_property('preprocessor', preprocessor_co.rev)
+                run.set_property('planner', planner_co.rev)
+                
+                run.set_property('commandline_config', config)
+                
+                run.set_property('config', ext_config)
+                run.set_property('domain', problem.domain)
+                run.set_property('problem', problem.problem)
+                run.set_property('id', [ext_config, problem.domain, 
+                                        problem.problem])
+            
+    exp.build()
+    
+    
+def build_complete_exp(combinations):
     exp = experiments.build_experiment(parser=downward_configs.get_dw_parser())
     
     make_checkouts(combinations)
@@ -247,20 +351,7 @@ def build_comparison_exp(combinations):
         planner_name = "PLANNER_%s" % planner_co.rev
         exp.add_resource(planner_name, planner, planner_co.name)
         
-        # New syntax <=> we use mercurial (hex, not numbers) or rev >= 4425
-        try:
-            rev_number = int(planner_co.rev)
-        except ValueError:
-            rev_number = None
-        new_syntax = rev_number is None or rev_number >= 4425
-                        
-        if new_syntax:
-            # configs is a list of (nickname,config) pairs
-            configs = downward_configs.get_configs(exp.configs)
-        else:
-            # Use the old config names
-            # We use the config names also as nicknames
-            configs = zip(exp.configs, exp.configs)
+        configs = _get_configs(planner_co.rev, exp.configs)
          
         for config_name, config in configs:
             for problem in problems:
@@ -314,7 +405,7 @@ def test():
         (TranslatorHgCheckout(rev='a640c9a9284c'), PreprocessorHgCheckout(rev='work'), PlannerHgCheckout(rev='623')),
                    ]
     
-    build_comparison_exp(combinations)
+    build_search_exp(combinations)
 
     
 
