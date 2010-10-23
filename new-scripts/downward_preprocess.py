@@ -47,6 +47,10 @@ def build_preprocess_exp(combinations):
     exp.processes = multiprocessing.cpu_count()
     logging.info('Local experiments: processes set to %s' % exp.processes)
     
+    # Set the eval directory already here, we don't want the results to land
+    # in the default testname-eval
+    exp.set_property('eval_dir', PREPROCESSED_TASKS_DIR)
+    
     downward_comparisons.make_checkouts(combinations)
     #TODO: Use all combinations
     translator_co, preprocessor_co = combinations[0]
@@ -85,8 +89,6 @@ def build_preprocess_exp(combinations):
         run.declare_optional_output("output")
         
         ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
-        
-        
         
         run.set_property('config', ext_config)
         run.set_property('domain', problem.domain)

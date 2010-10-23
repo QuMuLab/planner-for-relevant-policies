@@ -94,11 +94,11 @@ class HgCheckout(Checkout):
         else:
             checkout_dir = rev_abs
             
-        Checkout.__init__(self, part, repo, rev, checkout_dir, name)
+        Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
         
     def get_rev_abs(self, repo, rev):
         if rev.upper() == 'WORK':
-            cmd = 'hg id -i'
+            return 'WORK'#cmd = 'hg id -i'
         else:
             cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
         return tools.run_command(cmd)
@@ -147,7 +147,7 @@ class SvnCheckout(Checkout):
         else:
             checkout_dir = part + '-' + rev_abs
             
-        Checkout.__init__(self, part, repo, rev, checkout_dir, name)
+        Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
         
     def get_rev_abs(self, repo, rev):
         try:
@@ -247,8 +247,12 @@ def build_comparison_exp(combinations):
         planner_name = "PLANNER_%s" % planner_co.rev
         exp.add_resource(planner_name, planner, planner_co.name)
         
-        new_syntax = planner_co.rev in ['HEAD', 'WORK'] or \
-                        int(planner_co.rev) >= 4425
+        # New syntax <=> we use mercurial (hex, not numbers) or rev >= 4425
+        try:
+            rev_number = int(planner_co.rev)
+        except ValueError:
+            rev_number = None
+        new_syntax = rev_number is None or rev_number >= 4425
                         
         if new_syntax:
             # configs is a list of (nickname,config) pairs
