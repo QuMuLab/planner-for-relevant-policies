@@ -33,7 +33,7 @@ class FetchOptionParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, **kwargs)
       
-        self.add_argument('exp_dirs', nargs='+',
+        self.add_argument('exp_dir',
                 help='path to experiment directory', type=self.directory)
         
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
@@ -48,14 +48,22 @@ class FetchOptionParser(tools.ArgParser):
         # args is the populated namespace, i.e. the Fetcher instance
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
         
-        args.exp_dirs = map(lambda dir: os.path.normpath(os.path.abspath(dir)), args.exp_dirs)
-        logging.info('Exp dirs: "%s"' % args.exp_dirs)
+        args.exp_dir = os.path.normpath(os.path.abspath(args.exp_dir))
+        logging.info('Exp dir: "%s"' % args.exp_dir)
+        
+        # Update the args with the values from the experiment's properties file
+        exp_props_file = os.path.join(args.exp_dir, 'properties')
+        if os.path.exists(exp_props_file):
+            exp_props = tools.Properties(exp_props_file)
+            args.__dict__.update(exp_props)
+            #args.eval_dir = exp_props.get('eval_dir', None)
         
         if not args.eval_dir:
-            parent_dir = os.path.dirname(args.exp_dirs[0])
-            dir_name = os.path.basename(args.exp_dirs[0])
+            parent_dir = os.path.dirname(args.exp_dir)
+            dir_name = os.path.basename(args.exp_dir)
             args.eval_dir = os.path.join(parent_dir, dir_name + '-eval')
-            logging.info('Eval dir: "%s"' % args.eval_dir)
+        
+        logging.info('Eval dir: "%s"' % args.eval_dir)
         
         return args
         
@@ -139,7 +147,8 @@ class _FileParser(object):
                     msg %= (pattern.group, pattern, self.filename)
                     logging.error(msg)
             elif pattern.required:
-                logging.error('_Pattern "%s" not present in file "%s"' % (pattern, self.filename))
+                logging.error('_Pattern "%s" not present in file "%s"' % \
+                                                    (pattern, self.filename))
         return found_props
         
         
@@ -169,22 +178,17 @@ class Fetcher(object):
         self.run_dirs = self._get_run_dirs()
         
         self.file_parsers = defaultdict(_FileParser)
-    
         
     def _get_run_dirs(self):
-        run_dirs = []
-        for dir in self.exp_dirs:
-            run_dirs.extend(glob(os.path.join(dir, 'runs-*-*', '*')))
-        return run_dirs
+        return glob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
         
-        
-    def add_pattern(self, name, regex_string, group=1, file='run.log', required=True,
-                        type=str, flags=''):
+    def add_pattern(self, name, regex_string, group=1, file='run.log', 
+                        required=True, type=str, flags=''):
         """
-        During evaluate() look for pattern in file and add what is found in group
-        to the properties dictionary under "name"
+        During evaluate() look for pattern in file and add what is found in 
+        group to the properties dictionary under "name"
         
-        properties[name] = re.compile(regex_string).search(file_content).group(group)
+        properties[name] = re.compile(regex_str).search(file_content).group(group)
         
         If required is True and the pattern is not found in file, an error
         message is printed
@@ -199,7 +203,6 @@ class Fetcher(object):
         """
         regex_string = r'\s*%s\s*[:=]\s*(.+)' % name
         self.add_pattern(name, regex_string, 1, file)
-        
         
     def add_function(self, function, file='run.log'):
         """

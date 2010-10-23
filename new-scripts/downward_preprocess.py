@@ -51,6 +51,9 @@ def build_preprocess_exp(combinations):
     # in the default testname-eval
     exp.set_property('eval_dir', PREPROCESSED_TASKS_DIR)
     
+    # We need the "output" file, not only the properties file
+    exp.set_property('copy_all', True)
+    
     downward_comparisons.make_checkouts(combinations)
     #TODO: Use all combinations
     translator_co, preprocessor_co = combinations[0]
