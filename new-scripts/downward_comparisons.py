@@ -8,10 +8,12 @@ import os
 import sys
 import subprocess
 import logging
+import re
 
 import experiments
 import downward_suites
 import downward_configs
+import tools
 
 # e.g. issue69.py -> issue69-checkouts
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
@@ -81,17 +83,25 @@ class HgCheckout(Checkout):
     DEFAULT_REV = 'tip'
     
     def __init__(self, part, repo, rev):
-        #TODO: Find proper absolute revision
-        #rev = revname
-        revname = str(rev).upper()
-        name = part + '-' + revname
+        rev_nick = str(rev).upper()
+        # Find proper absolute revision
+        rev_abs = self.get_rev_abs(repo, rev)
         
-        if revname == 'WORK':
+        name = part + '-' + rev_nick
+        
+        if rev_nick == 'WORK':
             checkout_dir = os.path.join(SCRIPTS_DIR, '../')
         else:
-            checkout_dir = rev
+            checkout_dir = rev_abs
             
         Checkout.__init__(self, part, repo, rev, checkout_dir, name)
+        
+    def get_rev_abs(self, repo, rev):
+        if rev.upper() == 'WORK':
+            cmd = 'hg id -i'
+        else:
+            cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
+        return tools.run_command(cmd)
         
     def get_checkout_cmd(self):
         return 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
@@ -102,7 +112,7 @@ class HgCheckout(Checkout):
         exe_dir = os.path.join(self.checkout_dir, 'downward', self.part)
         # "downward" dir has been renamed to "src"
         if not os.path.exists(exe_dir):
-            self.exe_dir = os.path.join(self.checkout_dir, 'src', self.part)
+            exe_dir = os.path.join(self.checkout_dir, 'src', self.part)
         return exe_dir
             
             
@@ -126,14 +136,42 @@ class SvnCheckout(Checkout):
     DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward'
     DEFAULT_REV = 'HEAD'
     
+    REV_REGEX = re.compile(r'Revision: (\d+)')
+    
     def __init__(self, part, repo, rev=DEFAULT_REV):
-        name = part + '-' + str(rev)
+        rev = str(rev)
+        name = part + '-' + rev
+        rev_abs = self.get_rev_abs(repo, rev)
         if rev == 'WORK':
             checkout_dir = os.path.join(DOWNWARD_DIR, part)
         else:
-            checkout_dir = name
+            checkout_dir = part + '-' + rev_abs
             
         Checkout.__init__(self, part, repo, rev, checkout_dir, name)
+        
+    def get_rev_abs(self, repo, rev):
+        try:
+            rev_number = int(rev)
+            return rev
+        except ValueError:
+            pass
+            
+        if rev.upper() == 'WORK':
+            return 'WORK'
+        elif rev.upper() == 'HEAD':
+            # We want the HEAD revision number
+            env = {'LANG': 'C'}
+            cmd = 'svn info %s' % repo
+            output = tools.run_command(cmd, env=env)
+            match = self.REV_REGEX.search(output)
+            if not match:
+                logging.error('Unable to get HEAD revision number')
+                sys.exit()
+            rev_number = match.group(1)
+            return rev_number
+        else:
+            logging.error('Invalid SVN revision specified: %s' % rev)
+            sys.exit()
         
     def get_checkout_cmd(self):
         return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
@@ -266,9 +304,10 @@ def build_comparison_exp(combinations):
 
 def test():
     combinations = [
-        (TranslatorHgCheckout(), PreprocessorHgCheckout(rev='tip'), PlannerHgCheckout(rev='WORK')),
-        (TranslatorSvnCheckout(), PreprocessorSvnCheckout(rev='HEAD'), PlannerSvnCheckout(rev='WORK')),
-        (TranslatorSvnCheckout(4321), PreprocessorHgCheckout(rev='tip'), PlannerSvnCheckout(rev='HEAD')),
+        (TranslatorHgCheckout(), PreprocessorHgCheckout(rev='TIP'), PlannerHgCheckout(rev='WORK')),
+        (TranslatorSvnCheckout(), PreprocessorSvnCheckout(rev='head'), PlannerSvnCheckout(rev='WORK')),
+        (TranslatorSvnCheckout(rev=4321), PreprocessorHgCheckout(rev='tip'), PlannerSvnCheckout(rev='HEAD')),
+        (TranslatorHgCheckout(rev='a640c9a9284c'), PreprocessorHgCheckout(rev='work'), PlannerHgCheckout(rev='623')),
                    ]
     
     build_comparison_exp(combinations)

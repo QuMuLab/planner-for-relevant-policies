@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import subprocess
 import re
 import logging
 import traceback
@@ -113,6 +114,18 @@ def import_python_file(filename):
         logging.error('File "%s" could not be imported: %s' % (filename, err))
         print traceback.format_exc()
         sys.exit(1)
+        
+        
+def run_command(cmd, env=None):
+    """
+    Runs command cmd and returns the output
+    """
+    logging.info('Running command "%s"' % cmd)
+    if type(cmd) == str:
+        cmd = cmd.split()
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
+    output = p.communicate()[0].strip()
+    return output
     
                 
                 

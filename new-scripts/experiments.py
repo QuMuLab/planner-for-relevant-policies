@@ -47,7 +47,7 @@ X Unify evaluations
 X Add copy-all parameter
 X Only compare those problems that have been solved by all configs
 O Handle iterative planner results
-O Ask about DataSet dict access method returning lists or values
+X Ask about DataSet dict access method returning lists or values
 X Global experiment properties file
 """
 
