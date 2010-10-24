@@ -18,10 +18,10 @@ import tools
 
 # e.g. issue69.py -> issue69-checkouts
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
-#CHECKOUTS_DIRNAME = os.path.basename(sys.argv[0])[:-3] + \
-#                                    '-checkouts'.replace('-experiments-', '')
 CHECKOUTS_DIRNAME = 'checkouts'
 CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
+if not os.path.exists(CHECKOUTS_DIR):
+    os.mkdir(CHECKOUTS_DIR)
 
 DOWNWARD_DIR = os.path.join(SCRIPTS_DIR, '../downward')
 
@@ -212,18 +212,20 @@ class PlannerSvnCheckout(SvnCheckout):
 def make_checkouts(combinations):
     """
     Checks out and compiles the code
+    We allow both lists of checkouts and list of checkout tuples
     """
-    cwd = os.getcwd()
-    if not os.path.exists(CHECKOUTS_DIR):
-        os.mkdir(CHECKOUTS_DIR)
-    os.chdir(CHECKOUTS_DIR)
+    parts = []
     
     for combo in combinations:
-        for part in combo:
-            part.checkout()
-            part.compile()
-        
-    os.chdir(cwd)
+        if isinstance(combo, Checkout):
+            parts.append(combo)
+        else:
+            for part in combo:
+                parts.append(part)
+    
+    for part in parts:
+        part.checkout()
+        part.compile()
     
     
 def _get_configs(planner_rev, config_list):
@@ -250,19 +252,25 @@ def _get_configs(planner_rev, config_list):
 
 
 def build_search_exp(combinations):
+    """
+    combinations can either be a list of PlannerCheckouts or a list of tuples
+    (translator_co, preprocessor_co, planner_co)
+    
+    In the first case we fill the list with Translate and Preprocessor 
+    "Checkouts" that use the working copy code
+    """
     exp = experiments.build_experiment(parser=downward_configs.get_dw_parser())
     
     make_checkouts(combinations)
             
     problems = downward_suites.build_suite(exp.suite)
     
-    #preprocess_combos = []
     experiment_combos = []
     
     for combo in combinations:
         
-        if len(combo) == 1:
-            planner_co = combo[0]
+        if isinstance(combo, Checkout):
+            planner_co = combo
             assert planner_co.part == 'search'
             translator_co = TranslatorHgCheckout(rev='WORK')
             preprocessor_co = PreprocessorHgCheckout(rev='WORK')
@@ -299,8 +307,9 @@ def build_search_exp(combinations):
                 run_log = os.path.join(preprocess_dir, 'run.log')
                 run_err = os.path.join(preprocess_dir, 'run.err')
                 if not os.path.exists(output):
-                    msg = 'Preprocessed file not found at "%s". ' % output_file
-                    msg += 'Have you run the preprocessing experiment?'
+                    msg = 'Preprocessed file not found at "%s". ' % output
+                    msg += 'Have you run the preprocessing experiment '
+                    msg += 'and ./resultfetcher ?'
                     logging.warning(msg)
                 run.add_resource('OUTPUT', output, 'output')
                 run.add_resource('OUTPUT_SAS', output_sas, 'output.sas')
@@ -325,7 +334,6 @@ def build_search_exp(combinations):
                 run.set_property('problem', problem.problem)
                 run.set_property('id', [ext_config, problem.domain, 
                                         problem.problem])
-            
     exp.build()
     
     
@@ -393,21 +401,23 @@ def build_complete_exp(combinations):
                 run.set_property('problem', problem.problem)
                 run.set_property('id', [ext_config, problem.domain, 
                                         problem.problem])
-            
     exp.build()
     
 
 def test():
     combinations = [
-        (TranslatorHgCheckout(), PreprocessorHgCheckout(rev='TIP'), PlannerHgCheckout(rev='WORK')),
-        (TranslatorSvnCheckout(), PreprocessorSvnCheckout(rev='head'), PlannerSvnCheckout(rev='WORK')),
-        (TranslatorSvnCheckout(rev=4321), PreprocessorHgCheckout(rev='tip'), PlannerSvnCheckout(rev='HEAD')),
-        (TranslatorHgCheckout(rev='a640c9a9284c'), PreprocessorHgCheckout(rev='work'), PlannerHgCheckout(rev='623')),
+        (TranslatorHgCheckout(), PreprocessorHgCheckout(rev='TIP'), 
+                                PlannerHgCheckout(rev='WORK')),
+        (TranslatorSvnCheckout(), PreprocessorSvnCheckout(rev='head'), 
+                                PlannerSvnCheckout(rev='WORK')),
+        (TranslatorSvnCheckout(rev=4321), PreprocessorHgCheckout(rev='tip'), 
+                                PlannerSvnCheckout(rev='HEAD')),
+        (TranslatorHgCheckout(rev='a640c9a9284c'), 
+            PreprocessorHgCheckout(rev='work'), PlannerHgCheckout(rev='623')),
                    ]
-    
     build_search_exp(combinations)
 
-    
 
 if __name__ == '__main__':
-    test()
+    planners = [PlannerHgCheckout(rev='WORK')]
+    build_search_exp(planners)
