@@ -25,6 +25,9 @@ if not os.path.exists(CHECKOUTS_DIR):
 
 DOWNWARD_DIR = os.path.join(SCRIPTS_DIR, '../downward')
 
+
+ABS_REV_CACHE = {}
+
             
             
 class Checkout(object):    
@@ -101,9 +104,12 @@ class HgCheckout(Checkout):
     def get_rev_abs(self, repo, rev):
         if rev.upper() == 'WORK':
             return 'WORK'#cmd = 'hg id -i'
-        else:
-            cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
-        return tools.run_command(cmd)
+        cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
+        if cmd in ABS_REV_CACHE:
+            return ABS_REV_CACHE[cmd]
+        rev = tools.run_command(cmd)
+        ABS_REV_CACHE[cmd] = rev
+        return rev
         
     def get_checkout_cmd(self):
         return 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
@@ -164,12 +170,15 @@ class SvnCheckout(Checkout):
             # We want the HEAD revision number
             env = {'LANG': 'C'}
             cmd = 'svn info %s' % repo
+            if cmd in ABS_REV_CACHE:
+                return ABS_REV_CACHE[cmd]
             output = tools.run_command(cmd, env=env)
             match = self.REV_REGEX.search(output)
             if not match:
                 logging.error('Unable to get HEAD revision number')
                 sys.exit()
             rev_number = match.group(1)
+            ABS_REV_CACHE[cmd] = rev_number
             return rev_number
         else:
             logging.error('Invalid SVN revision specified: %s' % rev)
