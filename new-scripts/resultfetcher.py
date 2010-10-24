@@ -51,6 +51,13 @@ class FetchOptionParser(tools.ArgParser):
         args.exp_dir = os.path.normpath(os.path.abspath(args.exp_dir))
         logging.info('Exp dir: "%s"' % args.exp_dir)
         
+        if args.exp_dir.endswith('eval'):
+            answer = raw_input('The source directory seems to be an evaluation '
+                                'directory. Are you sure you this is an '
+                                'experiment directory? (Y/N): ')
+            if not answer.upper() == 'Y':
+                sys.exit()
+        
         # Update the args with the values from the experiment's properties file
         exp_props_file = os.path.join(args.exp_dir, 'properties')
         if os.path.exists(exp_props_file):
