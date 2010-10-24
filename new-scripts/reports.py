@@ -264,7 +264,9 @@ class Report(object):
         if self.infos:
             res += '\n\n====================\n'
         
-        tables = []
+        # maps from attribute to table
+        tables = {}
+        
         for focus in self.foci:
             self.data = self.orig_data.copy()
             self.focus = focus
@@ -273,15 +275,15 @@ class Report(object):
                 if table:
                     # We return None for a table if we don't want to add it
                     print table
-                    tables.append(table)
+                    tables[self.focus] = table
             except TypeError, err:
                 logging.info('Omitting attribute "%s" (%s)' % (focus, err))
                     
         if not tables:
             return ''
             
-        for table in tables:
-            res += '+ %s +\n%s\n' % (self.focus, table)
+        for attribute, table in tables.iteritems():
+            res += '+ %s +\n%s\n' % (attribute, table)
             
         return res
 
