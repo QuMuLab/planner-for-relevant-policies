@@ -3,9 +3,9 @@
 from downward_comparisons import *
 
 combinations = [
-    (TranslatorCheckout(), PreprocessorCheckout(), PlannerCheckout(rev=3612)),
-    (TranslatorCheckout(), PreprocessorCheckout(), PlannerCheckout(rev=3613)),
-    (TranslatorCheckout(), PreprocessorCheckout(), PlannerCheckout(rev='HEAD')),
+    (TranslatorSvnCheckout(rev=3613), PreprocessorSvnCheckout(), PlannerSvnCheckout(rev=3612)),
+    (TranslatorSvnCheckout(rev=3613), PreprocessorSvnCheckout(), PlannerSvnCheckout(rev=3613)),
+    (TranslatorSvnCheckout(rev=3613), PreprocessorSvnCheckout(), PlannerSvnCheckout(rev='HEAD')),
                ]
                
-build_comparison_exp(combinations)
+build_complete_exp(combinations)

@@ -33,6 +33,10 @@ def build_preprocess_exp(combinations):
     parser.add_argument('-s', '--suite', default=[], nargs='+', 
                         required=True, help=downward_suites.HELP)
     
+    # Add for compatibility, not actually parsed
+    parser.add_argument('-c', '--configs', default=[], nargs='*', 
+                            required=False, help=downward_configs.HELP)
+    
     exp = experiments.build_experiment(parser)
     
     # Set defaults for faster preprocessing
