@@ -1,7 +1,7 @@
 from os.path import join as joinpath, splitext
 
 import benchmark
-from paths import DOWNWARD_DIR
+from paths import SRC_DIR
 import paths
 from tools import (copy_files, move_files, move_optional_files,
                    delete_files, make_dir, make_dirs, make_executable)
@@ -23,20 +23,20 @@ def search_dir(prob, config_name):
                     prob.domain, prob.problem)
 
 def translator_executable(relaxed=False):
-    basedir = joinpath(DOWNWARD_DIR, "translate")
+    basedir = joinpath(SRC_DIR, "translate")
     if relaxed:
         return joinpath(basedir, "translate-relaxed.py")
     else:
         return joinpath(basedir, "translate.py")
     
 def preprocessor_executable():
-    return joinpath(DOWNWARD_DIR, "preprocess", "preprocess")
+    return joinpath(SRC_DIR, "preprocess", "preprocess")
     
 def planner_executable():
-    return joinpath(DOWNWARD_DIR, "search", "downward")
+    return joinpath(SRC_DIR, "search", "src")
 
 def planner_debug_executable():
-    return joinpath(DOWNWARD_DIR, "search", "downward-debug")
+    return joinpath(SRC_DIR, "search", "src-debug")
 
 
 def do_translate(problem, generate_relaxed_problem=False):
