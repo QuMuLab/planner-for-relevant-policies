@@ -75,7 +75,7 @@ class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, parents=[exp_type_parser], **kwargs)
       
-        self.add_argument('exp_name', 
+        self.add_argument('name', 
                     help='name of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
             '-t', '--timeout', type=int, default=1800,
@@ -87,9 +87,9 @@ class ExpArgParser(tools.ArgParser):
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
         self.add_argument(
-            '--exp-root-dir', 
+            '--root-dir', 
             help='directory where this experiment should be located (default is this folder). ' \
-                    'The new experiment will reside in <exp-root-dir>/<exp-name>')
+                    'The new experiment will reside in <root-dir>/<exp-name>')
         
     
 
@@ -102,13 +102,16 @@ class Experiment(object):
         self.resources = []
         self.env_vars = {}
         
+        # Print some instructions for further processing at the end
+        self.end_instructions = ''
+        
         self.properties = tools.Properties()
         
-        if self.exp_root_dir:
-            self.base_dir = os.path.join(self.exp_root_dir, self.exp_name)
+        if self.root_dir:
+            self.base_dir = os.path.join(self.root_dir, self.name)
         else:
             module_dir = os.path.dirname(__file__)
-            self.base_dir = os.path.join(module_dir, self.exp_name)
+            self.base_dir = os.path.join(module_dir, self.name)
         self.base_dir = os.path.abspath(self.base_dir)
         logging.info('Base Dir: "%s"' % self.base_dir)
         
@@ -162,6 +165,9 @@ class Experiment(object):
         self._build_resources()
         self._build_runs()
         self._build_properties_file()
+        
+        if self.end_instructions:
+            logging.info(self.end_instructions)
         
         
     def _get_abs_path(self, rel_path):
@@ -239,9 +245,12 @@ class LocalExperiment(Experiment):
         import multiprocessing
         cores = multiprocessing.cpu_count()
         parser.add_argument(
-            '-p', '--processes', type=int, default=1, choices=xrange(1, cores+1),
+            '-j', '--processes', type=int, default=1, choices=xrange(1, cores+1),
             help='number of parallel processes to use (default: 1)')
         Experiment.__init__(self, parser=parser)
+        
+        self.end_instructions = 'You can run the experiment now by calling ' \
+            '"./%(name)s/run"' % {'name': self.name}
         
         
     def _build_main_script(self):
@@ -281,10 +290,14 @@ class GkiGridExperiment(Experiment):
             '--runs-per-task', type=int, default=1,
             help='how many runs to put into one task')
         parser.add_argument(
-            '-p', '--priority', type=int, default=0, choices=xrange(-1023, 1024+1),
+            '--priority', type=int, default=0, choices=xrange(-1023, 1024+1),
             metavar='NUM', help='priority of the job [-1023, 1024]')
             
         Experiment.__init__(self, parser=parser)
+        
+        self.filename = self.name if self.name.endswith('.q') else self.name + '.q'
+        self.end_instructions = 'You can run submit the experiment to the ' \
+            'queue now by calling "qsub ./%(name)s/%(filename)s"' % self.__dict__
         
         
     def _build_main_script(self):
@@ -294,8 +307,8 @@ class GkiGridExperiment(Experiment):
         num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
         current_dir = os.path.dirname(os.path.abspath(__file__))
         job_params = {
-            'logfile': os.path.join(current_dir, self.exp_name, self.exp_name + '.log'),
-            'errfile': os.path.join(current_dir, self.exp_name, self.exp_name + '.err'),
+            'logfile': os.path.join(current_dir, self.name, self.name + '.log'),
+            'errfile': os.path.join(current_dir, self.name, self.name + '.err'),
             'driver_timeout': self.timeout + 30,
             'num_tasks': num_tasks,
             'queue': self.queue,
@@ -315,12 +328,10 @@ class GkiGridExperiment(Experiment):
                 script += '  cd %s\n' % run.dir
                 script += '  ./run\n'
             script += 'fi\n'
-                        
-        name = self.exp_name
-        filename = name if name.endswith('.q') else name + '.q'
-        filename = self._get_abs_path(filename)
         
-        with open(filename, 'w') as file:
+        self.filename = self._get_abs_path(self.filename)
+        
+        with open(self.filename, 'w') as file:
             file.write(script)
     
 

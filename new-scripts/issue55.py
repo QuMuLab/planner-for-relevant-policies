@@ -1,18 +1,18 @@
 #! /usr/bin/env python
 
-from downward_comparisons import *
+from downward_experiments import *
 
-branch = 'svn+ssh://downward/branches/translate-andrew/downward/translate'
+branch = 'svn+ssh://downward-svn/branches/translate-andrew/downward/translate'
 
-preprocessor = PreprocessorCheckout()
-planner = PlannerCheckout(rev=3842)
+preprocessor = PreprocessorSvnCheckout()
+planner = PlannerSvnCheckout(rev=3842)
 
 combinations = [
-    (TranslatorCheckout(repo_url=branch, rev=3827), preprocessor, planner),
-    (TranslatorCheckout(repo_url=branch, rev=3829), preprocessor, planner),
-    (TranslatorCheckout(repo_url=branch, rev=3840), preprocessor, planner),
-    (TranslatorCheckout(rev=4283), preprocessor, planner),
-    (TranslatorCheckout(rev=4703), preprocessor, planner),
+    (TranslatorSvnCheckout(repo=branch, rev=3827), preprocessor, planner),
+    (TranslatorSvnCheckout(repo=branch, rev=3829), preprocessor, planner),
+    (TranslatorSvnCheckout(repo=branch, rev=3840), preprocessor, planner),
+    (TranslatorSvnCheckout(rev=4283), preprocessor, planner),
+    (TranslatorSvnCheckout(rev=4703), preprocessor, planner),
                ]
                
-build_comparison_exp(combinations)
+build_experiment(combinations)

@@ -13,7 +13,6 @@ import re
 import experiments
 import downward_suites
 import downward_configs
-import downward_preprocess
 import tools
 
 # e.g. issue69.py -> issue69-checkouts
@@ -22,8 +21,10 @@ CHECKOUTS_DIRNAME = 'checkouts'
 CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
 if not os.path.exists(CHECKOUTS_DIR):
     os.mkdir(CHECKOUTS_DIR)
-
-DOWNWARD_DIR = os.path.join(SCRIPTS_DIR, '../downward')
+    
+PREPROCESSED_TASKS_DIR = os.path.join(SCRIPTS_DIR, 'preprocessed-tasks')
+if not os.path.exists(PREPROCESSED_TASKS_DIR):
+    os.mkdir(PREPROCESSED_TASKS_DIR)
 
 
 ABS_REV_CACHE = {}
@@ -48,7 +49,7 @@ class Checkout(object):
             # If there's already a checkout, don't checkout again
             path = self.checkout_dir
             if os.path.exists(path):
-                logging.info('Checkout "%s" already exists' % path)
+                logging.debug('Checkout "%s" already exists' % path)
             else:
                 cmd = self.get_checkout_cmd()
                 print cmd
@@ -150,10 +151,12 @@ class SvnCheckout(Checkout):
         rev = str(rev)
         name = part + '-' + rev
         rev_abs = self.get_rev_abs(repo, rev)
+        
         if rev == 'WORK':
-            checkout_dir = os.path.join(DOWNWARD_DIR, part)
-        else:
-            checkout_dir = part + '-' + rev_abs
+            logging.error('Comparing SVN working copy is not supported')
+            sys.exit(1)
+            
+        checkout_dir = part + '-' + rev_abs
             
         Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
         
@@ -258,9 +261,116 @@ def _get_configs(planner_rev, config_list):
         configs = zip(config_list, config_list)
     return configs
     
+    
+    
+def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
+    """
+    When the option --preprocess is passed on the commandline this method
+    is invoked an creates a preprocessing experiment.
+    
+    When the resultfetcher is run the following directory structure is created:
+
+    SCRIPTS_DIR
+        - preprocessed-tasks
+            - TRANSLATOR_REV-PREPROCESSOR_REV
+                - DOMAIN
+                    - PROBLEM
+                        - output
+    """
+    
+    parser.add_argument('-s', '--suite', default=[], nargs='+', 
+                        required=True, help=downward_suites.HELP)
+    
+    # Add for compatibility, not actually parsed
+    parser.add_argument('-c', '--configs', default=[], nargs='*', 
+                            required=False, help=downward_configs.HELP)
+    
+    exp = experiments.build_experiment(parser)
+    
+    # Use unique name for the preprocess experiment
+    if not exp.name.endswith('-p'):
+        exp.name += '-p'
+        logging.info('Experiment name set to %s' % exp.name)
+        
+    # Use unique dir for the preprocess experiment
+    if not exp.base_dir.endswith('-p'):
+        exp.base_dir += '-p'
+        logging.info('Experiment directory set to %s' % exp.base_dir)
+        
+    # Add some instructions
+    if type(exp) == experiments.LocalExperiment:
+        exp.end_instructions = 'Preprocess experiment has been created. ' \
+            'Before you can create the search experiment you have to run\n' \
+            './%(exp_name)s/run\n' \
+            './resultfetcher.py %(exp_name)s' % {'exp_name': exp.name}
+    
+    # Set defaults for faster preprocessing
+    #exp.suite = ['ALL']
+    exp.runs_per_task = 10
+    logging.info('GkiGrid experiments: runs per task set to %s' % exp.runs_per_task)
+    import multiprocessing
+    exp.processes = multiprocessing.cpu_count()
+    logging.info('Local experiments: processes set to %s' % exp.processes)
+    
+    # Set the eval directory already here, we don't want the results to land
+    # in the default testname-eval
+    exp.set_property('eval_dir', PREPROCESSED_TASKS_DIR)
+    
+    # We need the "output" file, not only the properties file
+    exp.set_property('copy_all', True)
+    
+    make_checkouts(combinations)
+            
+    problems = downward_suites.build_suite(exp.suite)
+    
+    for combo in combinations:
+        
+        # Omit a possible search checkout
+        translator_co, preprocessor_co = combo[:2]
+    
+        translator = translator_co.get_executable()
+        assert os.path.exists(translator), translator
+        
+        preprocessor = preprocessor_co.get_executable()
+        assert os.path.exists(preprocessor)
+        preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
+        exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
+         
+        for problem in problems:
+            run = exp.add_run()
+            run.require_resource(preprocessor_name)
+            
+            domain_file = problem.domain_file()
+            problem_file = problem.problem_file()
+            run.add_resource("DOMAIN", domain_file, "domain.pddl")
+            run.add_resource("PROBLEM", problem_file, "problem.pddl")
+            
+            translator = os.path.abspath(translator)
+            translate_cmd = '%s %s %s' % (translator, domain_file, problem_file)
+            
+            preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
+            
+            run.set_command('%s; %s' % (translate_cmd, preprocess_cmd))
+            
+            run.declare_optional_output("*.groups")
+            run.declare_optional_output("output.sas")
+            run.declare_optional_output("output")
+            
+            ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
+            
+            run.set_property('translator', translator_co.rev)
+            run.set_property('preprocessor', preprocessor_co.rev)
+            
+            run.set_property('config', ext_config)
+            run.set_property('domain', problem.domain)
+            run.set_property('problem', problem.problem)
+            run.set_property('id', [ext_config, problem.domain, problem.problem])
+            
+    exp.build()
+    
 
 
-def build_search_exp(combinations):
+def build_search_exp(combinations, parser=experiments.ExpArgParser()):
     """
     combinations can either be a list of PlannerCheckouts or a list of tuples
     (translator_co, preprocessor_co, planner_co)
@@ -268,7 +378,12 @@ def build_search_exp(combinations):
     In the first case we fill the list with Translate and Preprocessor 
     "Checkouts" that use the working copy code
     """
-    exp = experiments.build_experiment(parser=downward_configs.get_dw_parser())
+    parser.add_argument('-s', '--suite', default=[], nargs='+', 
+                            required=True, help=downward_suites.HELP)
+    parser.add_argument('-c', '--configs', default=[], nargs='+', 
+                            required=True, help=downward_configs.HELP)
+                            
+    exp = experiments.build_experiment(parser)
     
     make_checkouts(combinations)
             
@@ -306,21 +421,25 @@ def build_search_exp(combinations):
                 run = exp.add_run()
                 run.require_resource(planner_name)
                 
-                tasks_dir = downward_preprocess.PREPROCESSED_TASKS_DIR
+                tasks_dir = PREPROCESSED_TASKS_DIR
                 preprocess_version = translator_co.rev+'-'+preprocessor_co.rev
                 preprocess_dir = os.path.join(tasks_dir, preprocess_version,
                                     problem.domain, problem.problem)
                 output = os.path.join(preprocess_dir, 'output')
                 # Add the preprocess files for later parsing
+                test_groups = os.path.join(preprocess_dir, 'test.groups')
+                all_groups = os.path.join(preprocess_dir, 'all.groups')
                 output_sas = os.path.join(preprocess_dir, 'output.sas')
                 run_log = os.path.join(preprocess_dir, 'run.log')
                 run_err = os.path.join(preprocess_dir, 'run.err')
                 if not os.path.exists(output):
                     msg = 'Preprocessed file not found at "%s". ' % output
                     msg += 'Have you run the preprocessing experiment '
-                    msg += 'and ./resultfetcher ?'
+                    msg += 'and ./resultfetcher.py ?'
                     logging.warning(msg)
                 run.add_resource('OUTPUT', output, 'output')
+                run.add_resource('TEST_GROUPS', test_groups, 'test.groups')
+                run.add_resource('ALL_GROUPS', all_groups, 'all.groups')
                 run.add_resource('OUTPUT_SAS', output_sas, 'output.sas')
                 run.add_resource('RUN_LOG', run_log, 'run.log')
                 run.add_resource('RUN_ERR', run_err, 'run.err')
@@ -346,8 +465,13 @@ def build_search_exp(combinations):
     exp.build()
     
     
-def build_complete_exp(combinations):
-    exp = experiments.build_experiment(parser=downward_configs.get_dw_parser())
+def build_complete_exp(combinations, parser=experiments.ExpArgParser()):
+    parser.add_argument('-s', '--suite', default=[], nargs='+', 
+                            required=True, help=downward_suites.HELP)
+    parser.add_argument('-c', '--configs', default=[], nargs='+', 
+                            required=True, help=downward_configs.HELP)
+                            
+    exp = experiments.build_experiment(parser)
     
     make_checkouts(combinations)
             
@@ -424,9 +548,29 @@ def test():
         (TranslatorHgCheckout(rev='a640c9a9284c'), 
             PreprocessorHgCheckout(rev='work'), PlannerHgCheckout(rev='623')),
                    ]
-    build_search_exp(combinations)
+    build_experiment(combinations)
+    
+    
+def build_experiment(combinations):
+    parser = experiments.ExpArgParser()
+    parser.add_argument('-p', '--preprocess', action='store_true', default=False)
+    
+    known_args, remaining_args = parser.parse_known_args()
+    
+    preprocess = known_args.preprocess
+    logging.info('Preprocess exp: %s' % preprocess)
+    
+    if preprocess:
+        build_preprocess_exp(combinations, parser)
+    else:
+        build_search_exp(combinations, parser)
 
 
 if __name__ == '__main__':
-    planners = [PlannerHgCheckout(rev='WORK')]
-    build_search_exp(planners)
+    combinations = [(TranslatorHgCheckout(rev='WORK'), 
+                    PreprocessorHgCheckout(rev='WORK'), 
+                    PlannerHgCheckout(rev='WORK'))]
+                    
+    build_experiment(combinations)
+                    
+    
