@@ -10,9 +10,7 @@ The python modules have to live in the scripts dir.
 """
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 BENCHMARKS_DIR = os.path.join(ROOT_DIR, "benchmarks")
-RESULTS_DIR = os.path.join(ROOT_DIR, "results")
 
 
 class Repository(object):

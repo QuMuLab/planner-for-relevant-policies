@@ -10,6 +10,7 @@ import experiments
 import tools
 import downward_suites
 
+
 HELP = """\
 Configurations can be specified in the following ways: \
 ou, astar_searches, myconfigfile:yY, myconfigfile:lama_configs
@@ -97,19 +98,6 @@ def get_configs(configs_strings):
     
     logging.info('Found configs: %s' % all_configs)
     return all_configs
-    
-    
-def get_dw_parser():
-    '''
-    Returns a parser for fast-downward experiments
-    '''
-    # We can add our own commandline parameters
-    dw_parser = experiments.ExpArgParser()
-    dw_parser.add_argument('-s', '--suite', default=[], nargs='+', 
-                            required=True, help=downward_suites.HELP)
-    dw_parser.add_argument('-c', '--configs', default=[], nargs='+', 
-                            required=True, help=HELP)
-    return dw_parser
     
     
 if __name__ == '__main__':
