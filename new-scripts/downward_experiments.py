@@ -465,7 +465,7 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
     exp.build()
     
     
-def build_complete_exp(combinations, parser=experiments.ExpArgParser()):
+def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
     parser.add_argument('-s', '--suite', default=[], nargs='+', 
                             required=True, help=downward_suites.HELP)
     parser.add_argument('-c', '--configs', default=[], nargs='+', 

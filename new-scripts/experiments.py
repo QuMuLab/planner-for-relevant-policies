@@ -89,7 +89,7 @@ class ExpArgParser(tools.ArgParser):
         self.add_argument(
             '--root-dir', 
             help='directory where this experiment should be located (default is this folder). ' \
-                    'The new experiment will reside in <root-dir>/<exp-name>')
+                    'The new experiment will reside in <root-dir>/<name>')
         
     
 
