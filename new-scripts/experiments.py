@@ -102,6 +102,9 @@ class Experiment(object):
         self.resources = []
         self.env_vars = {}
         
+        # Print some instructions for further processing at the end
+        self.end_instructions = ''
+        
         self.properties = tools.Properties()
         
         if self.root_dir:
@@ -162,6 +165,9 @@ class Experiment(object):
         self._build_resources()
         self._build_runs()
         self._build_properties_file()
+        
+        if self.end_instructions:
+            logging.info(self.end_instructions)
         
         
     def _get_abs_path(self, rel_path):
@@ -243,6 +249,9 @@ class LocalExperiment(Experiment):
             help='number of parallel processes to use (default: 1)')
         Experiment.__init__(self, parser=parser)
         
+        self.end_instructions = 'You can run the experiment now by calling ' \
+            '"./%(name)s/run"' % {'name': self.name}
+        
         
     def _build_main_script(self):
         """
@@ -281,10 +290,14 @@ class GkiGridExperiment(Experiment):
             '--runs-per-task', type=int, default=1,
             help='how many runs to put into one task')
         parser.add_argument(
-            '-p', '--priority', type=int, default=0, choices=xrange(-1023, 1024+1),
+            '--priority', type=int, default=0, choices=xrange(-1023, 1024+1),
             metavar='NUM', help='priority of the job [-1023, 1024]')
             
         Experiment.__init__(self, parser=parser)
+        
+        self.filename = self.name if self.name.endswith('.q') else self.name + '.q'
+        self.end_instructions = 'You can run submit the experiment to the ' \
+            'queue now by calling "qsub ./%(name)s/%(filename)s"' % self.__dict__
         
         
     def _build_main_script(self):
@@ -315,11 +328,10 @@ class GkiGridExperiment(Experiment):
                 script += '  cd %s\n' % run.dir
                 script += '  ./run\n'
             script += 'fi\n'
-                        
-        filename = self.name if self.name.endswith('.q') else self.name + '.q'
-        filename = self._get_abs_path(filename)
         
-        with open(filename, 'w') as file:
+        self.filename = self._get_abs_path(self.filename)
+        
+        with open(self.filename, 'w') as file:
             file.write(script)
     
 

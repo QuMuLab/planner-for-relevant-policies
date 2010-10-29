@@ -13,7 +13,6 @@ import re
 import experiments
 import downward_suites
 import downward_configs
-import downward_preprocess
 import tools
 
 # e.g. issue69.py -> issue69-checkouts
@@ -50,7 +49,7 @@ class Checkout(object):
             # If there's already a checkout, don't checkout again
             path = self.checkout_dir
             if os.path.exists(path):
-                logging.info('Checkout "%s" already exists' % path)
+                logging.debug('Checkout "%s" already exists' % path)
             else:
                 cmd = self.get_checkout_cmd()
                 print cmd
@@ -297,6 +296,13 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
     if not exp.base_dir.endswith('-p'):
         exp.base_dir += '-p'
         logging.info('Experiment directory set to %s' % exp.base_dir)
+        
+    # Add some instructions
+    if type(exp) == experiments.LocalExperiment:
+        exp.end_instructions = 'Preprocess experiment has been created. ' \
+            'Before you can create the search experiment you have to run\n' \
+            './%(exp_name)s/run\n' \
+            './resultfetcher.py %(exp_name)s' % {'exp_name': exp.name}
     
     # Set defaults for faster preprocessing
     #exp.suite = ['ALL']
@@ -361,8 +367,6 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
             run.set_property('id', [ext_config, problem.domain, problem.problem])
             
     exp.build()
-    logging.info('Preprocess experiment has been created. '
-            'Do not forget to run it before creating the search experiment.')
     
 
 
