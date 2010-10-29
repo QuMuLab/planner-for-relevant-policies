@@ -24,7 +24,7 @@ import downward_comparisons
 # e.g. issue69.py -> issue69-checkouts
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
 DOWNWARD_DIR = os.path.join(SCRIPTS_DIR, '../downward')
-PREPROCESSED_TASKS_DIR = os.path.join(SCRIPTS_DIR, 'preprocessed-tasks')
+
 
 
 def build_preprocess_exp(combinations):
@@ -119,5 +119,5 @@ if __name__ == '__main__':
     translator = downward_comparisons.TranslatorHgCheckout(rev='WORK')
     preprocessor = downward_comparisons.PreprocessorHgCheckout(rev='WORK')
     combinations = [(translator, preprocessor)]
-               
+    
     build_preprocess_exp(combinations)
