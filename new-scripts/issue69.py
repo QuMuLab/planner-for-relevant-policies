@@ -8,4 +8,4 @@ combinations = [
     (TranslatorSvnCheckout(rev=3613), PreprocessorSvnCheckout(), PlannerSvnCheckout(rev='HEAD')),
                ]
                
-build_complete_exp(combinations)
+build_experiment(combinations)

@@ -431,7 +431,7 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                 if not os.path.exists(output):
                     msg = 'Preprocessed file not found at "%s". ' % output
                     msg += 'Have you run the preprocessing experiment '
-                    msg += 'and ./resultfetcher ?'
+                    msg += 'and ./resultfetcher.py ?'
                     logging.warning(msg)
                 run.add_resource('OUTPUT', output, 'output')
                 run.add_resource('TEST_GROUPS', test_groups, 'test.groups')
@@ -544,10 +544,10 @@ def test():
         (TranslatorHgCheckout(rev='a640c9a9284c'), 
             PreprocessorHgCheckout(rev='work'), PlannerHgCheckout(rev='623')),
                    ]
-    build_search_exp(combinations)
-
-
-if __name__ == '__main__':
+    build_experiment(combinations)
+    
+    
+def build_experiment(combinations):
     parser = experiments.ExpArgParser()
     parser.add_argument('-p', '--preprocess', action='store_true', default=False)
     
@@ -556,11 +556,17 @@ if __name__ == '__main__':
     preprocess = known_args.preprocess
     logging.info('Preprocess exp: %s' % preprocess)
     
-    combinations = [(TranslatorHgCheckout(rev='WORK'), 
-                    PreprocessorHgCheckout(rev='WORK'), 
-                    PlannerHgCheckout(rev='WORK'))]
-                    
     if preprocess:
         build_preprocess_exp(combinations, parser)
     else:
         build_search_exp(combinations, parser)
+
+
+if __name__ == '__main__':
+    combinations = [(TranslatorHgCheckout(rev='WORK'), 
+                    PreprocessorHgCheckout(rev='WORK'), 
+                    PlannerHgCheckout(rev='WORK'))]
+                    
+    build_experiment(combinations)
+                    
+    
