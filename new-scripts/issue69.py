@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from downward_comparisons import *
+from downward_experiments import *
 
 combinations = [
     (TranslatorSvnCheckout(rev=3613), PreprocessorSvnCheckout(), PlannerSvnCheckout(rev=3612)),
