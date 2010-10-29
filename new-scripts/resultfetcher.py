@@ -58,17 +58,23 @@ class FetchOptionParser(tools.ArgParser):
             if not answer.upper() == 'Y':
                 sys.exit()
         
-        # Update the args with the values from the experiment's properties file
+        # Update some args with the values from the experiment's properties file
+        # if the values have not been set on the commandline
         exp_props_file = os.path.join(args.exp_dir, 'properties')
         if os.path.exists(exp_props_file):
             exp_props = tools.Properties(exp_props_file)
-            args.__dict__.update(exp_props)
+            if not args.eval_dir and 'eval_dir' in exp_props:
+                args.eval_dir = exp_props['eval_dir']
+            if 'copy_all' in exp_props:
+                args.copy_all = exp_props['copy_all']
+            #args.__dict__.update(exp_props)
             #args.eval_dir = exp_props.get('eval_dir', None)
         
-        if not args.eval_dir:
-            parent_dir = os.path.dirname(args.exp_dir)
+        if not args.eval_dir or not os.path.isabs(args.eval_dir):
             dir_name = os.path.basename(args.exp_dir)
-            args.eval_dir = os.path.join(parent_dir, dir_name + '-eval')
+            name = args.eval_dir or dir_name + '-eval'
+            parent_dir = os.path.dirname(args.exp_dir)
+            args.eval_dir = os.path.join(parent_dir, name)
         
         logging.info('Eval dir: "%s"' % args.eval_dir)
         

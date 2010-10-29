@@ -108,9 +108,12 @@ class HgCheckout(Checkout):
         cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
         if cmd in ABS_REV_CACHE:
             return ABS_REV_CACHE[cmd]
-        rev = tools.run_command(cmd)
-        ABS_REV_CACHE[cmd] = rev
-        return rev
+        abs_rev = tools.run_command(cmd)
+        if not abs_rev:
+            logging.error('Revision %s is not present in repo %s' % (rev, repo))
+            sys.exit(1)
+        ABS_REV_CACHE[cmd] = abs_rev
+        return abs_rev
         
     def get_checkout_cmd(self):
         return 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
