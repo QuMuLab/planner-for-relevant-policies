@@ -78,10 +78,10 @@ class PlanningReport(Report):
         self.output = ''
         
         # For some attributes only compare commonly solved tasks
-        self.commonly_solved_foci = ['expanded', 'generated', 'plan_length', 
-                                    'search_time', 'total_time']
-        info = 'Report only commonly solved problems for %s'
-        info %= self.commonly_solved_foci
+        self.commonly_solved_foci = ['expanded', 'generated', 'memory', 
+                                    'plan_length', 'search_time', 'total_time']
+        info = 'Report only commonly solved problems for the following attributes: %s'
+        info %= ', '.join(self.commonly_solved_foci)
         self.add_info(info)
         
         self.problems = downward_suites.build_suite(self.suite)
