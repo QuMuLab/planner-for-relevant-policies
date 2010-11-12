@@ -8,17 +8,7 @@ import downward_suites
 import downward_configs
 import tools
 from downward_experiments import TranslatorHgCheckout, PreprocessorHgCheckout, \
-                                    PlannerHgCheckout, make_checkouts, _get_configs
-
-optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
-
-#configs =   [   ('ou', configs.ou),
-#                ('lama', configs.lama),
-#                ('blind', configs.blind),
-#                ('oa50000', configs.oa50000),
-#                ('yY', configs.yY),
-#                ('fF', configs.fF),
-#            ]
+                                PlannerHgCheckout, make_checkouts, _get_configs
 
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
@@ -29,11 +19,12 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                             
     exp = experiments.build_experiment(parser)
     
-    make_checkouts(combinations)
+    make_checkouts([(trans, pre, plan) for trans, pre, plan, opt in combinations])
             
     problems = downward_suites.build_suite(exp.suite)
     
-    for translator_co, preprocessor_co, planner_co in combinations:
+    # Pass opt directly
+    for translator_co, preprocessor_co, planner_co, opt in combinations:
         
         translator = translator_co.get_executable()
         assert os.path.exists(translator), translator
@@ -45,7 +36,6 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
         
         planner = planner_co.get_executable()
         assert os.path.exists(planner), planner
-        opt = os.path.basename(planner).split('-')[1]
         planner_name = "PLANNER_%s_%s" % (planner_co.rev, opt)
         exp.add_resource(planner_name, planner, planner_co.name)
         
@@ -96,7 +86,9 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
     exp.build()
     return exp
 
-if __name__ == '__main__':
+def compare_optimizations():
+    optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
+    
     translator = TranslatorHgCheckout()
     preprocessor = PreprocessorHgCheckout()
     
@@ -120,6 +112,54 @@ if __name__ == '__main__':
         with open(makefile_path, 'w') as file:
             file.write(new_make)
         
-        combos.append((translator, preprocessor, planner))
+        combos.append((translator, preprocessor, planner, opt))
     
     exp = build_complete_experiment(combos)
+    
+def compare_assertions():
+    settings = [
+        ('nopoint_noassert', []),
+        ('point_noassert', ['-fomit-frame-pointer']),
+        ('nopoint_assert', ['-DNDEBUG']),
+        ('point_assert', ['-fomit-frame-pointer', '-DNDEBUG']),
+        ]
+    
+    translator = TranslatorHgCheckout()
+    preprocessor = PreprocessorHgCheckout()
+    
+    combos = []
+    for name, deletions in settings:
+        planner = PlannerHgCheckout(rev='f48caab7cb5f')
+        planner.checkout_dir += '-' + name
+        print planner.checkout_dir
+        planner.checkout()
+        
+        makefile_path = os.path.join(planner.exe_dir, 'Makefile')
+        assert os.path.exists(makefile_path)
+        makefile = open(makefile_path).read()
+        
+        new_make = makefile
+        planner_name = 'downward-' + name
+        for deletion in deletions:
+            new_make = makefile.replace(deletion, '')
+        new_make = new_make.replace('TARGET  = downward\n', 'TARGET  = ' + planner_name + '\n')
+        
+        planner.executable = os.path.join(planner.exe_dir, planner_name)
+        import new
+        planner.get_executable = new.instancemethod(lambda self: self.executable, planner, planner.__class__)
+        with open(makefile_path, 'w') as file:
+            file.write(new_make)
+        
+        combos.append((translator, preprocessor, planner, name))
+    
+    exp = build_complete_experiment(combos)
+    
+if __name__ == '__main__':
+    if 'opt' in sys.argv:
+        sys.argv.remove('opt')
+        compare_optimizations()
+    elif 'assert' in sys.argv:
+        sys.argv.remove('assert')
+        compare_assertions()
+    else:
+        print 'Add "opt" or "assert" on the commandline to choose a test'
