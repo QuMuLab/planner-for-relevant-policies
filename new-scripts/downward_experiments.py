@@ -308,10 +308,14 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
             'Before you can create the search experiment you have to run\n' \
             './%(exp_name)s/run\n' \
             './resultfetcher.py %(exp_name)s' % {'exp_name': exp.name}
+    elif type(exp) == experiments.GkiGridExperiment:
+        exp.end_instructions = 'You can submit the preprocessing ' \
+            'experiment to the queue now by calling ' \
+            '"qsub ./%(name)s/%(filename)s"' % exp.__dict__
     
     # Set defaults for faster preprocessing
     #exp.suite = ['ALL']
-    exp.runs_per_task = 10
+    exp.runs_per_task = 8
     logging.info('GkiGrid experiments: runs per task set to %s' % exp.runs_per_task)
     import multiprocessing
     exp.processes = multiprocessing.cpu_count()
