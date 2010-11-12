@@ -26,7 +26,7 @@ PREPROCESSED_TASKS_DIR = os.path.join(SCRIPTS_DIR, 'preprocessed-tasks')
 if not os.path.exists(PREPROCESSED_TASKS_DIR):
     os.mkdir(PREPROCESSED_TASKS_DIR)
     
-BASE_DIR = os.path.join(SCRIPTS_DIR, '../')
+BASE_DIR = os.path.abspath(os.path.join(SCRIPTS_DIR, '../'))
 
 
 ABS_REV_CACHE = {}
@@ -80,7 +80,7 @@ class Checkout(object):
             planner = os.path.join(self.exe_dir, name)
             if os.path.exists(planner):
                 return planner
-        return None
+        return ''
         
 
 
@@ -493,7 +493,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
         exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
         
         planner = planner_co.get_executable()
-        assert os.path.exists(planner)
+        assert os.path.exists(planner), planner
         planner_name = "PLANNER_%s" % planner_co.rev
         exp.add_resource(planner_name, planner, planner_co.name)
         
@@ -540,6 +540,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 run.set_property('id', [ext_config, problem.domain, 
                                         problem.problem])
     exp.build()
+    return exp
     
 
 def test():
