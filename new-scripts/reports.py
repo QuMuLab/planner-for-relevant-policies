@@ -126,7 +126,7 @@ class Report(object):
         self.orig_data = self._get_data()
         
         if not self.foci or self.foci == 'all':
-            self.foci = self.orig_data.get_attributes()
+            self.foci = sorted(self.orig_data.get_attributes())
         
         logging.info('Attributes: %s' % self.foci)
         
@@ -282,7 +282,7 @@ class Report(object):
         if not tables:
             return ''
             
-        for attribute, table in tables.iteritems():
+        for attribute, table in sorted(tables.iteritems()):
             res += '+ %s +\n%s\n' % (attribute, table)
             
         return res
