@@ -25,6 +25,8 @@ if not os.path.exists(CHECKOUTS_DIR):
 PREPROCESSED_TASKS_DIR = os.path.join(SCRIPTS_DIR, 'preprocessed-tasks')
 if not os.path.exists(PREPROCESSED_TASKS_DIR):
     os.mkdir(PREPROCESSED_TASKS_DIR)
+    
+BASE_DIR = os.path.join(SCRIPTS_DIR, '../')
 
 
 ABS_REV_CACHE = {}
@@ -85,7 +87,7 @@ class Checkout(object):
 # ---------- Mercurial ---------------------------------------------------------
 
 class HgCheckout(Checkout):
-    DEFAULT_URL = 'ssh://downward'
+    DEFAULT_URL = BASE_DIR # 'ssh://downward'
     DEFAULT_REV = 'tip'
     
     def __init__(self, part, repo, rev):
