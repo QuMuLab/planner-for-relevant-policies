@@ -296,7 +296,7 @@ class GkiGridExperiment(Experiment):
         Experiment.__init__(self, parser=parser)
         
         self.filename = self.name if self.name.endswith('.q') else self.name + '.q'
-        self.end_instructions = 'You can run submit the experiment to the ' \
+        self.end_instructions = 'You can submit the experiment to the ' \
             'queue now by calling "qsub ./%(name)s/%(filename)s"' % self.__dict__
         
         
