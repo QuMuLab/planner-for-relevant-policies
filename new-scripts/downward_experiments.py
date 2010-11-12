@@ -88,7 +88,7 @@ class Checkout(object):
 
 class HgCheckout(Checkout):
     DEFAULT_URL = BASE_DIR # 'ssh://downward'
-    DEFAULT_REV = 'tip'
+    DEFAULT_REV = 'WORK'
     
     def __init__(self, part, repo, rev):
         rev_nick = str(rev).upper()
@@ -148,7 +148,7 @@ class PlannerHgCheckout(HgCheckout):
         
 class SvnCheckout(Checkout):
     DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward'
-    DEFAULT_REV = 'HEAD'
+    DEFAULT_REV = 'WORK'
     
     REV_REGEX = re.compile(r'Revision: (\d+)')
     
