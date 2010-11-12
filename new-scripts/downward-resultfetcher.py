@@ -24,6 +24,8 @@ def build_fetcher(parser=FetchOptionParser()):
     eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False, flags='I')
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int, required=False)
+    eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
+    
     
     #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
     #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
