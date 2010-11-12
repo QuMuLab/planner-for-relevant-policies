@@ -556,7 +556,7 @@ class Run(object):
             try:
                 shutil.copy2(source, dest)
             except IOError, err:
-                raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
+                logging.error('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
                                 
                                 
