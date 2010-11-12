@@ -5,9 +5,10 @@ import multiprocessing
 import subprocess
 import time
 
+
 def run_cmd(command):
     try:
-        run = subprocess.call(command, shell=True)
+        run = subprocess.call(command, shell=True, stdout=sys.stdout, stderr=sys.stderr)
     except KeyboardInterrupt:
         print 'Call to run interrupted'
         run.terminate()
