@@ -5,126 +5,121 @@ import subprocess
 
 import experiments
 import downward_suites
-import downward_configs as configs
+import downward_configs
 import tools
-
-main_dir = 'issue102'
-
-PLANNER_URL = 'svn+ssh://downward/trunk/downward/search'
+from downward_experiments import TranslatorHgCheckout, PreprocessorHgCheckout, \
+                                    PlannerHgCheckout, make_checkouts, _get_configs
 
 optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
 
-configs =   [   ('ou', configs.ou),
-                ('lama', configs.lama),
-                ('blind', configs.blind),
-                ('oa50000', configs.oa50000),
-                ('yY', configs.yY),
-                ('fF', configs.fF)
-            ]
-            
-def make_reports():
-    cmd = """\
-./downward-reports.py issue102-STRIPS25-eval/ \
--a score_search_time score_total_time search_time total_time \
-solved \
--c O0-blind O1-blind O2-blind O3-blind Os-blind"""
-    for config_name, config in configs:
-        new_cmd = cmd.replace('blind', config_name)
-        new_cmd = new_cmd.split()
-        subprocess.call(new_cmd)
-    
-
-def setup():
-    cwd = os.getcwd()
-    tools.makedirs(main_dir)
-    os.chdir(main_dir)
-    
-    
-    
-    for opt in optimizations:
-        tools.makedirs(opt)
-        os.chdir(opt)
-        if not os.path.exists('planner.cc'):
-            cmd = ('svn co %s .' % PLANNER_URL).split()
-            ret = subprocess.call(cmd)
-        
-        makefile_path = 'Makefile'
-        makefile = open(makefile_path).read()
-        
-        planner_name = 'downward-' + opt
-        new_make = makefile.replace('-O3', '-'+opt)
-        new_make = new_make.replace('TARGET  = downward', 'TARGET  = ' + planner_name)
-        makefile_name = 'Makefile'# + '-' + opt
-        with open(makefile_name, 'w') as file:
-            file.write(new_make)
-        
-        if not os.path.exists(planner_name):
-            # Needs compiling
-            subprocess.call(['make',])# '-f', makefile_name])
-        os.chdir('../')
-                
-    os.chdir(cwd)
+#configs =   [   ('ou', configs.ou),
+#                ('lama', configs.lama),
+#                ('blind', configs.blind),
+#                ('oa50000', configs.oa50000),
+#                ('yY', configs.yY),
+#                ('fF', configs.fF),
+#            ]
 
 
-
-
-def build_planning_exp():
-    parser=experiments.ExpArgParser()
-    parser.add_argument("-s", "--suite", default=[], required=True,
-                        nargs='+', help="tasks, domains or suites")
-    
+def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
+    parser.add_argument('-s', '--suite', default=[], nargs='+', 
+                            required=True, help=downward_suites.HELP)
+    parser.add_argument('-c', '--configs', default=[], nargs='+', 
+                            required=True, help=downward_configs.HELP)
+                            
     exp = experiments.build_experiment(parser)
+    
+    make_checkouts(combinations)
             
     problems = downward_suites.build_suite(exp.suite)
     
-    for opt in optimizations:
-        planner_name = 'downward-' + opt
-        planner = os.path.join(main_dir, opt, planner_name)
-        planner_var = 'PLANNER_' + opt
-        exp.add_resource(planner_var, planner, planner_name)
+    for translator_co, preprocessor_co, planner_co in combinations:
         
+        translator = translator_co.get_executable()
+        assert os.path.exists(translator), translator
+        
+        preprocessor = preprocessor_co.get_executable()
+        assert os.path.exists(preprocessor)
+        preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
+        exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
+        
+        planner = planner_co.get_executable()
+        assert os.path.exists(planner), planner
+        opt = os.path.basename(planner).split('-')[1]
+        planner_name = "PLANNER_%s_%s" % (planner_co.rev, opt)
+        exp.add_resource(planner_name, planner, planner_co.name)
+        
+        configs = _get_configs(planner_co.rev, exp.configs)
+         
         for config_name, config in configs:
             for problem in problems:
                 run = exp.add_run()
-                run.require_resource(planner_var)
+                run.require_resource(preprocessor_name)
+                run.require_resource(planner_name)
                 
                 domain_file = problem.domain_file()
                 problem_file = problem.problem_file()
                 run.add_resource("DOMAIN", domain_file, "domain.pddl")
                 run.add_resource("PROBLEM", problem_file, "problem.pddl")
                 
-                translator_path = os.path.abspath('../downward/translate/translate.py')
-                assert os.path.exists(translator_path)
-                translate_cmd = '%s %s %s' % (translator_path, domain_file, problem_file)
+                translator = os.path.abspath(translator)
+                translate_cmd = '%s %s %s' % (translator, domain_file, 
+                                                problem_file)
                 
-                preprocessor_path = '../downward/preprocess/preprocess'
-                preprocessor_path = os.path.abspath(preprocessor_path)
-                assert os.path.exists(preprocessor_path)
-                preprocess_cmd = '%s < %s' % (preprocessor_path, 'output.sas')
+                preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
                 
                 run.set_preprocess('%s; %s' % (translate_cmd, preprocess_cmd))
                 
-                run.set_command("$%s %s < output" % (planner_var, config))
+                run.set_command("$%s %s < output" % (planner_name, config))
                 
                 run.declare_optional_output("*.groups")
                 run.declare_optional_output("output")
                 run.declare_optional_output("output.sas")
                 run.declare_optional_output("sas_plan")
                 
-                ext_config = opt + '-' + config_name
-                
+                ext_config = '-'.join([opt, translator_co.rev, preprocessor_co.rev, 
+                                        planner_co.rev, config_name])
+                                        
                 run.set_property('opt', opt)
+                
+                run.set_property('translator', translator_co.rev)
+                run.set_property('preprocessor', preprocessor_co.rev)
+                run.set_property('planner', planner_co.rev)
+                
+                run.set_property('commandline_config', config)
+                
                 run.set_property('config', ext_config)
                 run.set_property('domain', problem.domain)
                 run.set_property('problem', problem.problem)
-                run.set_property('id', [ext_config, problem.domain, problem.problem])
-            
+                run.set_property('id', [ext_config, problem.domain, 
+                                        problem.problem])
+    exp.build()
     return exp
 
 if __name__ == '__main__':
-    if 'report' in sys.argv:
-        make_reports()
-        sys.exit()
-    setup()
-    exp = build_planning_exp()
-    exp.build()
+    translator = TranslatorHgCheckout()
+    preprocessor = PreprocessorHgCheckout()
+    
+    combos = []
+    for opt in optimizations:
+        planner = PlannerHgCheckout(rev='f48caab7cb5f')
+        planner.checkout_dir += '-' + opt
+        print planner.checkout_dir
+        planner.checkout()
+        
+        makefile_path = os.path.join(planner.exe_dir, 'Makefile')
+        assert os.path.exists(makefile_path)
+        makefile = open(makefile_path).read()
+        
+        planner_name = 'downward-' + opt
+        new_make = makefile.replace('-O3', '-'+opt)
+        new_make = new_make.replace('TARGET  = downward\n', 'TARGET  = ' + planner_name + '\n')
+        planner.executable = os.path.join(planner.exe_dir, planner_name)
+        import new
+        planner.get_executable = new.instancemethod(lambda self: self.executable, planner, planner.__class__)
+        with open(makefile_path, 'w') as file:
+            file.write(new_make)
+        
+        combos.append((translator, preprocessor, planner))
+    
+    exp = build_complete_experiment(combos)
