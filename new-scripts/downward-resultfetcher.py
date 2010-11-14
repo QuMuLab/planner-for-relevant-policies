@@ -42,14 +42,14 @@ def build_fetcher(parser=FetchOptionParser()):
     
     #eval.add_pattern('rules_exp', r'Generated (\d+) rules', type=int)
     
-    eval.add_pattern('preprocessor_vars', r'(\d+) variables of \d+ necessary', type=int)
-    eval.add_pattern('translator_vars', r'\d+ variables of (\d+) necessary', type=int)
+    eval.add_multipattern([(1, 'preprocessor_vars', int), (2, 'translator_vars', int)], 
+                            r'(\d+) variables of (\d+) necessary')
     
-    eval.add_pattern('preprocessor_ops', r'(\d+) of \d+ operators necessary', type=int)
-    eval.add_pattern('translator_ops', r'\d+ of (\d+) operators necessary', type=int)
+    eval.add_multipattern([(1, 'preprocessor_ops', int), (2, 'translator_ops', int)], 
+                            r'(\d+) of (\d+) operators necessary')
     
-    eval.add_pattern('preprocessor_axioms', r'(\d+) of \d+ axiom rules necessary', type=int)
-    eval.add_pattern('translator_axioms', r'\d+ of (\d+) axiom rules necessary', type=int)
+    eval.add_multipattern([(1, 'preprocessor_axioms', int), (2, 'translator_axioms', int)],
+                            r'(\d+) of (\d+) axiom rules necessary')
     
     
     def completely_explored(content, old_props):

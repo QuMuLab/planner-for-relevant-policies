@@ -80,15 +80,19 @@ class FetchOptionParser(tools.ArgParser):
         
         return args
         
-        
-    
-class _Pattern(object):
-    def __init__(self, name, regex_string, group, file, required, type, flags):
-        self.name = name
-        self.group = group
+
+class _MultiPattern(object):
+    """
+    Parses a file for a pattern containing multiple match groups.
+    Each group_number has an associated attribute name and a type
+    """
+    def __init__(self, groups, regex, file, required, flags):
+        """
+        groups is a list of (group_number, attribute_name, type) tuples
+        """
+        self.groups = groups
         self.file = file
         self.required = required
-        self.type = type
         
         flag = 0
         
@@ -100,10 +104,34 @@ class _Pattern(object):
             elif char == 'U': flag |= re.U
             elif char == 'X': flag |= re.X
         
-        self.regex = re.compile(regex_string, flag)
+        self.regex = re.compile(regex, flag)
+        
+    def search(self, content, filename):
+        found_props = {}
+        match = self.regex.search(content)
+        if match:
+            for group_number, attribute_name, type in self.groups:
+                try:
+                    value = match.group(group_number)
+                    value = type(value)
+                    found_props[attribute_name] = value
+                except IndexError:
+                    msg = 'Atrribute "%s" not found for pattern "%s" in file "%s"'
+                    msg %= (attribute_name, self, filename)
+                    logging.error(msg)
+        elif pattern.required:
+            logging.error('_Pattern "%s" not present in file "%s"' % \
+                                                (self, filename))
+        return found_props
         
     def __str__(self):
         return self.regex.pattern
+    
+
+class _Pattern(_MultiPattern):
+    def __init__(self, name, regex, group, file, required, type, flags):
+        groups = [(group, name, type)]
+        _MultiPattern.__init__(self, groups, regex, file, required, flags)
         
         
         
@@ -149,19 +177,7 @@ class _FileParser(object):
         found_props = {}
         
         for pattern in self.patterns:
-            match = pattern.regex.search(self.content)
-            if match:
-                try:
-                    value = match.group(pattern.group)
-                    value = pattern.type(value)
-                    found_props[pattern.name] = value
-                except IndexError:
-                    msg = 'Group "%s" not found for pattern "%s" in file "%s"'
-                    msg %= (pattern.group, pattern, self.filename)
-                    logging.error(msg)
-            elif pattern.required:
-                logging.error('_Pattern "%s" not present in file "%s"' % \
-                                                    (pattern, self.filename))
+            found_props.update(pattern.search(self.content, self.filename))
         return found_props
         
         
@@ -207,6 +223,18 @@ class Fetcher(object):
         message is printed
         """
         pattern = _Pattern(name, regex_string, group, file, required, type, flags)
+        self.file_parsers[file].add_pattern(pattern)
+        
+    def add_multipattern(self, groups, regex, file='run.log', required=True, flags=''):
+        """
+        During evaluate() look for "regex" in file. For each tuple of
+        (group_number, attribute_name, type) add the results for "group_number" 
+        to the properties file under "attribute_name" after casting it to "type".
+        
+        If required is True and the pattern is not found in file, an error
+        message is printed
+        """
+        pattern = _MultiPattern(groups, regex, file, required, flags)
         self.file_parsers[file].add_pattern(pattern)
         
     def add_key_value_pattern(self, name, file='run.log'):
