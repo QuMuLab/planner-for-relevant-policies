@@ -207,6 +207,7 @@ class Fetcher(object):
         self.run_dirs = self._get_run_dirs()
         
         self.file_parsers = defaultdict(_FileParser)
+        self.check = None
         
     def _get_run_dirs(self):
         return glob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
@@ -254,6 +255,13 @@ class Fetcher(object):
         """
         self.file_parsers[file].add_function(function)
         
+    def set_check(self, function):
+        """
+        After all properties have been parsed or calculated, run "function"
+        on them to assert some things.
+        """
+        self.check = function
+        
     def fetch(self):
         total_dirs = len(self.run_dirs)
         
@@ -278,6 +286,15 @@ class Fetcher(object):
             props.filename = os.path.join(dest_dir, 'properties')
             props.write()
             
+            if self.check:
+                try:
+                    self.check(props)
+                except AssertionError, e:
+                    msg = 'Parsed properties not valid in %s: %s'
+                    logging.error(msg % (prop_file, e))
+                    print '*' * 60
+                    props.write(sys.stdout)
+                    print '*' * 60
             logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
             
     
