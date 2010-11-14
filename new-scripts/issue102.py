@@ -37,7 +37,8 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
         planner = planner_co.get_executable()
         assert os.path.exists(planner), planner
         planner_name = "PLANNER_%s_%s" % (planner_co.rev, opt)
-        exp.add_resource(planner_name, planner, planner_co.name)
+        planner_filename = "search-%s-%s" % (planner_co.rev, opt)
+        exp.add_resource(planner_name, planner, planner_filename)
         
         configs = _get_configs(planner_co.rev, exp.configs)
          
