@@ -119,7 +119,7 @@ class _MultiPattern(object):
                     msg = 'Atrribute "%s" not found for pattern "%s" in file "%s"'
                     msg %= (attribute_name, self, filename)
                     logging.error(msg)
-        elif pattern.required:
+        elif self.required:
             logging.error('_Pattern "%s" not present in file "%s"' % \
                                                 (self, filename))
         return found_props
