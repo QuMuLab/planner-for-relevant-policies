@@ -13,6 +13,24 @@ import math
 
 from resultfetcher import Fetcher, FetchOptionParser
 
+def check(props):
+    if props.get('translator_error') == 1:
+        assert props.get('preprocessor_error') == 1, \
+                                'Translator error without preprocessor error'
+
+def add_preprocess_parsing(eval):
+    
+    def translator_error(content, old_props):
+        error = not 'Done! [' in content
+        return {'translator_error': int(error)}
+        
+    def preprocessor_error(content, old_props):
+        error = not 'Writing output...\ndone' in content
+        return {'preprocessor_error': int(error)}
+        
+    eval.add_function(translator_error)
+    eval.add_function(preprocessor_error)
+
 
 def build_fetcher(parser=FetchOptionParser()):
     eval = Fetcher(parser)
@@ -44,10 +62,8 @@ def build_fetcher(parser=FetchOptionParser()):
     
     eval.add_multipattern([(1, 'preprocessor_vars', int), (2, 'translator_vars', int)], 
                             r'(\d+) variables of (\d+) necessary')
-    
     eval.add_multipattern([(1, 'preprocessor_ops', int), (2, 'translator_ops', int)], 
                             r'(\d+) of (\d+) operators necessary')
-    
     eval.add_multipattern([(1, 'preprocessor_axioms', int), (2, 'translator_axioms', int)],
                             r'(\d+) of (\d+) axiom rules necessary')
     
@@ -242,6 +258,10 @@ def build_fetcher(parser=FetchOptionParser()):
     eval.add_function(scores)
     
     eval.add_function(check_min_values)
+    
+    add_preprocess_parsing(eval)
+    
+    eval.set_check(check)
     
     return eval
 

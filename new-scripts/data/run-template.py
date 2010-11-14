@@ -26,7 +26,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 redirects = {'stdout': open('run.log', 'a'), 'stderr': open('run.err', 'a')}
 properties_file = open('properties', 'a')
-properties_file.write('\n')
 
 
 def set_limit(kind, amount):
