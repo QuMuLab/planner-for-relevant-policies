@@ -67,7 +67,7 @@ import tools
       
 # Create a parser only for parsing the experiment type
 exp_type_parser = tools.ArgParser(add_help=False)
-exp_type_parser.add_argument('-e', '--exp_type', choices=['local', 'gkigrid', 'argo'],
+exp_type_parser.add_argument('-e', '--exp-type', choices=['local', 'gkigrid', 'argo'],
                                 default='local', help='Select an experiment type')
       
 

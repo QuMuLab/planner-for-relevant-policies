@@ -40,7 +40,7 @@ def add_property(name, value):
 
 def save_returncode(command, value):
     os.environ['RETURNCODE_%s' % command.upper()] = str(value)
-    add_property('returncode_%s' % command.lower(), str(value))
+    #add_property('returncode_%s' % command.lower(), str(value))
 
 #for cmd in ['preprocess', 'command', 'postprocess']:
 #    save_returncode(cmd, 'unfinished')
