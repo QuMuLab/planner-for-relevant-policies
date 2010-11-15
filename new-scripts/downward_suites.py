@@ -144,7 +144,7 @@ def build_suite(descriptions):
     return result
 
 
-def suite_all():
+def suite_ipc_one_to_five():
     # All IPC1-5 domains, including the trivial Movie.
     return [
         "airport", "assembly", "blocks", "depot", "driverlog",
@@ -245,6 +245,11 @@ def suite_strips():
             "trucks-strips",
             "zenotravel",
             ]
+            
+def suite_all():
+    domains = suite_ipc_one_to_five() + suite_lmcut_domains()
+    domains += ['seq-sat', 'seq-opt']
+    return list(sorted(set(domains)))
             
 
 def suite_five_per_domain():
