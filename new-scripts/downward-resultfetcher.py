@@ -17,16 +17,78 @@ def check(props):
     if props.get('translator_error') == 1:
         assert props.get('preprocessor_error') == 1, \
                                 'Translator error without preprocessor error'
+    
+def translator_error(content, old_props):
+    error = not 'Done! [' in content
+    return {'translator_error': int(error)}
+    
+def preprocessor_error(content, old_props):
+    error = not 'Writing output...\ndone' in content
+    return {'preprocessor_error': int(error)}
 
 def add_preprocess_parsing(eval):
+    """
+    Add some preprocess specific parsing:
     
-    def translator_error(content, old_props):
-        error = not 'Done! [' in content
-        return {'translator_error': int(error)}
-        
-    def preprocessor_error(content, old_props):
-        error = not 'Writing output...\ndone' in content
-        return {'preprocessor_error': int(error)}
+     * number of variables, derived variables, facts, operators, axioms and total
+       problem size after translating
+     * number of variables, derived variables, facts, operators, axioms and total
+       problem size after preprocessing
+     * number of invariant groups and total invariant group sizes after translating
+     * the numbers from the following lines of translator output:
+       170 relevant atoms
+       141 auxiliary atoms
+       311 final queue length
+       364 total queue pushes
+       13 uncovered facts
+       0 implied effects removed
+       0 effect conditions simplified
+       0 implied preconditions added
+       0 operators removed
+       38 propositions removed
+
+    Total problem size can be measured as the total number of tokens in the
+    output.sas/output file (sum(len(line.split()) for line in lines)).
+
+    Number of invariant groups is the second line in the "all.groups" file.
+
+    Total invariant group sizes is the sum over all numbers that follow a "group"
+    line in the "all.groups" file.
+    """
+    # Preprocessor output:
+    # 19 variables of 19 necessary
+    # 2384 of 2384 operators necessary.
+    # 0 of 0 axiom rules necessary
+    
+    # What does "rules" stand for?
+    #eval.add_pattern('rules', r'Generated (\d+) rules', type=int)
+    
+    eval.add_multipattern([(1, 'preprocessor_vars', int), (2, 'translator_vars', int)], 
+                            r'(\d+) variables of (\d+) necessary')
+    eval.add_multipattern([(1, 'preprocessor_ops', int), (2, 'translator_ops', int)], 
+                            r'(\d+) of (\d+) operators necessary')
+    eval.add_multipattern([(1, 'preprocessor_axioms', int), (2, 'translator_axioms', int)],
+                            r'(\d+) of (\d+) axiom rules necessary')
+    
+    # translator time
+    
+    # all detailed translator timings (lines of the form "XXX.YYYs CPU")
+    sections = [
+        'Parsing', 'Normalizing task', 'Generating Datalog program',
+        'Normalizing Datalog program', 'Preparing model', 'Computing model', 
+        'Completing instantiation', 'Instantiating', 
+        #'Finding invariants',
+        'Checking invariant weight', 'Instantiating groups',
+        'Collecting mutex groups', 'Choosing groups', 
+        'Building translation key', 'Computing fact groups', 
+        'Building STRIPS to SAS dictionary', 
+        'Building dictionary for full mutex groups', 'Simplifying axioms', 
+        'Processing axioms', 'Translating task', 'Building mutex information', 
+        'Detecting unreachable propositions', 'Writing translation key',
+        'Writing mutex key', 'Writing output', 'Done!']
+    for sec in sections:
+        attribute = 'translator_time_' + sec.lower().replace(' ', '_')
+        eval.add_pattern(attribute, r'%s.* \[(.+)s CPU' % sec, type=float)
         
     eval.add_function(translator_error)
     eval.add_function(preprocessor_error)
@@ -52,20 +114,7 @@ def build_fetcher(parser=FetchOptionParser()):
     #eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output', type=int, flags='M')
     
     
-    # Experimental
-    # Preprocessor output:
-    # 19 variables of 19 necessary
-    # 2384 of 2384 operators necessary.
-    # 0 of 0 axiom rules necessary
     
-    #eval.add_pattern('rules_exp', r'Generated (\d+) rules', type=int)
-    
-    eval.add_multipattern([(1, 'preprocessor_vars', int), (2, 'translator_vars', int)], 
-                            r'(\d+) variables of (\d+) necessary')
-    eval.add_multipattern([(1, 'preprocessor_ops', int), (2, 'translator_ops', int)], 
-                            r'(\d+) of (\d+) operators necessary')
-    eval.add_multipattern([(1, 'preprocessor_axioms', int), (2, 'translator_axioms', int)],
-                            r'(\d+) of (\d+) axiom rules necessary')
     
     
     def completely_explored(content, old_props):
