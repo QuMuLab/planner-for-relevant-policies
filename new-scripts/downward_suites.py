@@ -155,6 +155,20 @@ def suite_ipc_one_to_five():
         "psr-large", "psr-middle", "psr-small", "rovers", "satellite",
         "schedule", "storage", "tpp", "trucks", "zenotravel",
         ]
+        
+def suite_ipc08_opt():
+    return [
+        'openstacks-opt08-strips', 'woodworking-opt08-strips',
+        'transport-opt08-strips', 'elevators-opt08-strips',
+        'sokoban-opt08-strips', 'openstacks-opt08-adl',
+        ]
+        
+def suite_ipc08_sat():
+    return [
+        'woodworking-sat08-strips', 'openstacks-sat08-strips',
+        'openstacks-sat08-adl', 'elevators-sat08-strips',
+        'transport-sat08-strips', 'sokoban-sat08-strips',
+        ]
 
 def suite_interesting():
     # A domain is boring if all planners solve all tasks in < 1 sec.
@@ -189,9 +203,6 @@ def suite_minitest():
 def suite_tinytest():
     return ["gripper:prob01.pddl", "trucks-strips:p01.pddl",
             "trucks:p01.pddl", "psr-middle:p01-s17-n2-l2-f30.pddl"]
-            
-def suite_everything():
-    return suite_all() + ['openstacks-strips', 'pathways-noneg', 'trucks-strips']
 
 
 def suite_lmcut_domains():
@@ -248,7 +259,7 @@ def suite_strips():
             
 def suite_all():
     domains = suite_ipc_one_to_five() + suite_lmcut_domains()
-    domains += ['seq-sat', 'seq-opt']
+    domains += suite_ipc08_opt() + suite_ipc08_sat()
     return list(sorted(set(domains)))
             
 
