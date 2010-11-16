@@ -255,10 +255,10 @@ def add_preprocess_parsing(eval):
 
     # What does "rules" stand for?
     #eval.add_pattern('rules', r'Generated (\d+) rules', type=int)
-    
+
     # Number of invariant groups (second line in the "all.groups" file)
     # The file starts with "begin_groups\n7\ngroup"
-    eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n', 
+    eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
                         file='all.groups', type=int, flags='MS')
 
     # number of variables
@@ -328,10 +328,10 @@ def add_preprocess_functions(eval):
     eval.add_function(preprocessor_derived_vars, file='output')
 
     eval.add_function(cg_arcs, file='output')
-    
+
     eval.add_function(translator_problem_size, file='output.sas')
     eval.add_function(preprocessor_problem_size, file='output')
-    
+
     # Total invariant group sizes after translating
     # (sum over all numbers that follow a "group" line in the "all.groups" file)
     eval.add_function(translator_invariant_groups_total_size, file='all.groups')
@@ -362,9 +362,9 @@ def build_fetcher(parser=FetchOptionParser()):
         help='Do not parse preprocessing results')
     parser.add_argument('--no-search', action='store_true',
         help='Do not parse search results')
-    
+
     eval = Fetcher(parser)
-    
+
     if not eval.no_preprocess:
         add_preprocess_parsing(eval)
         add_preprocess_functions(eval)
