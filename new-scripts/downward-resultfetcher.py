@@ -141,6 +141,21 @@ def cg_arcs(content, old_props):
 
 
 
+def get_problem_size(content):
+    """
+    Total problem size can be measured as the total number of tokens in the
+    output.sas/output file (sum(len(line.split()) for line in lines)).
+    """
+    return sum([len(line.split()) for line in content.splitlines()])
+
+def translator_problem_size(content, old_props):
+    return {'translator_problem_size': get_problem_size(content)}
+
+def preprocessor_problem_size(content, old_props):
+    return {'preprocessor_problem_size': get_problem_size(content)}
+
+
+
 # Search functions -------------------------------------------------------------
 
 def completely_explored(content, old_props):
@@ -222,8 +237,7 @@ def add_preprocess_parsing(eval):
      * total problem size after preprocessing
      * number of invariant groups and total invariant group sizes after translating
 
-    Total problem size can be measured as the total number of tokens in the
-    output.sas/output file (sum(len(line.split()) for line in lines)).
+    
 
     Number of invariant groups is the second line in the "all.groups" file.
 
@@ -309,6 +323,9 @@ def add_preprocess_functions(eval):
     eval.add_function(preprocessor_derived_vars, file='output')
 
     eval.add_function(cg_arcs, file='output')
+    
+    eval.add_function(translator_problem_size, file='output.sas')
+    eval.add_function(preprocessor_problem_size, file='output')
 
 
 
@@ -332,11 +349,19 @@ def add_search_functions(eval):
 
 
 def build_fetcher(parser=FetchOptionParser()):
+    parser.add_argument('--no-preprocess', action='store_true',
+        help='Do not parse preprocessing results')
+    parser.add_argument('--no-search', action='store_true',
+        help='Do not parse search results')
+    
     eval = Fetcher(parser)
-    add_preprocess_parsing(eval)
-    add_preprocess_functions(eval)
-    add_search_parsing(eval)
-    add_search_functions(eval)
+    
+    if not eval.no_preprocess:
+        add_preprocess_parsing(eval)
+        add_preprocess_functions(eval)
+    if not eval.no_search:
+        add_search_parsing(eval)
+        add_search_functions(eval)
 
     eval.add_function(check_min_values)
     eval.set_check(check)
