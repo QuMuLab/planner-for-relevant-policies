@@ -86,51 +86,18 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                                         problem.problem])
     exp.build()
     return exp
-
-def compare_optimizations():
-    optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
     
+    
+def build_makefile_experiment(settings, planner_rev='tip'):
+    assert not planner_rev.upper() == 'WORK', \
+        'We have to use a real checkout for changing the makefiles'
+        
     translator = TranslatorHgCheckout()
     preprocessor = PreprocessorHgCheckout()
     
     combos = []
-    for opt in optimizations:
-        planner = PlannerHgCheckout(rev='f48caab7cb5f')
-        planner.checkout_dir += '-' + opt
-        print planner.checkout_dir
-        planner.checkout()
-        
-        makefile_path = os.path.join(planner.exe_dir, 'Makefile')
-        assert os.path.exists(makefile_path)
-        makefile = open(makefile_path).read()
-        
-        planner_name = 'downward-' + opt
-        new_make = makefile.replace('-O3', '-'+opt)
-        new_make = new_make.replace('TARGET  = downward\n', 'TARGET  = ' + planner_name + '\n')
-        planner.executable = os.path.join(planner.exe_dir, planner_name)
-        import new
-        planner.get_executable = new.instancemethod(lambda self: self.executable, planner, planner.__class__)
-        with open(makefile_path, 'w') as file:
-            file.write(new_make)
-        
-        combos.append((translator, preprocessor, planner, opt))
-    
-    exp = build_complete_experiment(combos)
-    
-def compare_assertions():
-    settings = [
-        ('nopoint_noassert', []),
-        ('point_noassert', ['-fomit-frame-pointer']),
-        ('nopoint_assert', ['-DNDEBUG']),
-        ('point_assert', ['-fomit-frame-pointer', '-DNDEBUG']),
-        ]
-    
-    translator = TranslatorHgCheckout()
-    preprocessor = PreprocessorHgCheckout()
-    
-    combos = []
-    for name, deletions in settings:
-        planner = PlannerHgCheckout(rev='f48caab7cb5f')
+    for name, replacements in settings:
+        planner = PlannerHgCheckout(rev=planner_rev)
         planner.checkout_dir += '-' + name
         print planner.checkout_dir
         planner.checkout()
@@ -141,19 +108,39 @@ def compare_assertions():
         
         new_make = makefile
         planner_name = 'downward-' + name
-        for deletion in deletions:
-            new_make = makefile.replace(deletion, '')
-        new_make = new_make.replace('TARGET  = downward\n', 'TARGET  = ' + planner_name + '\n')
+        for orig, replacement in replacements:
+            new_make = makefile.replace(orig, replacement)
+        old_target = 'TARGET  = downward\n'
+        new_target = 'TARGET  = ' + planner_name + '\n'
+        new_make = new_make.replace(old_target, new_target)
         
         planner.executable = os.path.join(planner.exe_dir, planner_name)
         import new
-        planner.get_executable = new.instancemethod(lambda self: self.executable, planner, planner.__class__)
+        method = [lambda self: self.executable, planner, planner.__class__]
+        planner.get_executable = new.instancemethod(*method)
         with open(makefile_path, 'w') as file:
             file.write(new_make)
         
         combos.append((translator, preprocessor, planner, name))
     
     exp = build_complete_experiment(combos)
+    
+    
+def compare_assertions():
+    settings = [
+        ('nopoint_noassert', []),
+        ('point_noassert', [('-fomit-frame-pointer', '')]),
+        ('nopoint_assert', [('-DNDEBUG', '')]),
+        ('point_assert', [('-fomit-frame-pointer', ''), ('-DNDEBUG', '')]),
+        ]
+    build_makefile_experiment(settings)
+    
+    
+def compare_optimizations():
+    optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
+    settings = [(opt, [('-O3', '-' + opt)]) for opt in optimizations]
+    build_makefile_experiment(settings)
+    
     
 if __name__ == '__main__':
     if 'opt' in sys.argv:
