@@ -210,7 +210,7 @@ class Fetcher(object):
         return glob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
         
     def add_pattern(self, name, regex_string, group=1, file='run.log', 
-                        required=True, type=str, flags=''):
+                        required=True, type=int, flags=''):
         """
         During evaluate() look for pattern in file and add what is found in 
         group to the properties dictionary under "name"

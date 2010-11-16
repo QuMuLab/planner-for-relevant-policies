@@ -124,10 +124,7 @@ def cg_arcs(content, old_props):
     if not match:
         logging.error('Number of arcs could not be determined')
         return {}
-    """
-    cg looks like
-    ['6', '1 16', '2 16', '3 8', '4 8', '5 8', '6 8', '4', ...]
-    """
+    # cg looks like ['6', '1 16', '2 16', '3 8', '4 8', '5 8', '6 8', '4', ...]
     cg = match.group(1).splitlines()
     arcs = 0
     for line in cg:
@@ -137,7 +134,7 @@ def cg_arcs(content, old_props):
         if len(parts) == 1:
             # We have a line containing the number of arcs for one node
             arcs += int(parts[0])
-    return {'cg_arcs': arcs}
+    return {'preprocessor_cg_arcs': arcs}
 
 
 
@@ -153,6 +150,17 @@ def translator_problem_size(content, old_props):
 
 def preprocessor_problem_size(content, old_props):
     return {'preprocessor_problem_size': get_problem_size(content)}
+
+
+
+def translator_invariant_groups_total_size(content, old_props):
+    """
+    Total invariant group sizes after translating
+    (sum over all numbers that follow a "group" line in the "all.groups" file)
+    """
+    groups = re.findall(r'group\n(\d+)', content, re.M|re.S)
+    total = sum(map(int, groups))
+    return {'translator_invariant_groups_total_size': total}
 
 
 
@@ -233,16 +241,6 @@ def add_preprocess_parsing(eval):
 
     TODO:
      * translator time
-     * total problem size after translating
-     * total problem size after preprocessing
-     * number of invariant groups and total invariant group sizes after translating
-
-    
-
-    Number of invariant groups is the second line in the "all.groups" file.
-
-    Total invariant group sizes is the sum over all numbers that follow a "group"
-    line in the "all.groups" file.
     """
     #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
     #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
@@ -257,6 +255,11 @@ def add_preprocess_parsing(eval):
 
     # What does "rules" stand for?
     #eval.add_pattern('rules', r'Generated (\d+) rules', type=int)
+    
+    # Number of invariant groups (second line in the "all.groups" file)
+    # The file starts with "begin_groups\n7\ngroup"
+    eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n', 
+                        file='all.groups', type=int, flags='MS')
 
     # number of variables
     eval.add_multipattern([(1, 'preprocessor_vars', int), (2, 'translator_vars', int)],
@@ -283,7 +286,9 @@ def add_preprocess_parsing(eval):
         'Detecting unreachable propositions', 'Writing translation key',
         'Writing mutex key', 'Writing output', 'Done!']
     for sec in sections:
-        attribute = 'translator_time_' + sec.lower().replace(' ', '_')
+        attribute = 'translator_time_' + sec.lower()
+        for orig, repl in [(' ', '_'), ('!', '')]:
+            attribute = attribute.replace(orig, repl)
         eval.add_pattern(attribute, r'%s.* \[(.+)s CPU' % sec, type=float)
 
     """
@@ -326,6 +331,10 @@ def add_preprocess_functions(eval):
     
     eval.add_function(translator_problem_size, file='output.sas')
     eval.add_function(preprocessor_problem_size, file='output')
+    
+    # Total invariant group sizes after translating
+    # (sum over all numbers that follow a "group" line in the "all.groups" file)
+    eval.add_function(translator_invariant_groups_total_size, file='all.groups')
 
 
 
