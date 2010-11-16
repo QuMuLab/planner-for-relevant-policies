@@ -30,6 +30,11 @@ yY = """\
 --search "lazy_greedy(hcea, preferred=(hcea))"\
 """
 
+yY_eager = """\
+--heuristic "hcea=cea()" \
+--search "eager_greedy(hcea, preferred=(hcea))"\
+"""
+
 fFyY = """\
 --heuristic "hff=ff()" --heuristic "hcea=cea()" \
 --search "lazy_greedy(hff, hcea, preferred=(hff, hcea))"\
@@ -53,10 +58,16 @@ oa50000 = """\
 --search "astar(mas())"\
 """
 
+oa200000 = """\
+--search "astar(mas(max_states=200000))"\
+"""
+
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]
     
-    
+def arch_comp_configs():
+    return [('blind', blind), ('oa200000', oa200000), ('yY', yY), 
+            ('yY_eager', yY_eager)]
 
 
 
