@@ -129,8 +129,8 @@ def cg_arcs(content, old_props):
     arcs = 0
     for line in cg:
         parts = line.split()
-        parts = map(lambda part: part.strip(), parts)
-        parts = filter(lambda part: len(part) > 0, parts)
+        parts = map(str.strip, parts)
+        parts = filter(bool, parts)
         if len(parts) == 1:
             # We have a line containing the number of arcs for one node
             arcs += int(parts[0])
@@ -327,7 +327,7 @@ def add_preprocess_functions(eval):
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
 
-    eval.add_function(cg_arcs, file='output')
+    #eval.add_function(cg_arcs, file='output')
 
     eval.add_function(translator_problem_size, file='output.sas')
     eval.add_function(preprocessor_problem_size, file='output')
