@@ -178,12 +178,10 @@ class _FileParser(object):
         return found_props
         
         
-    def _apply_functions(self, old_props):
-        new_props = {}
-        
+    def _apply_functions(self, props):
         for function in self.functions:
-            new_props.update(function(self.content, old_props))
-        return new_props
+            props.update(function(self.content, props))
+        return props
     
         
     
