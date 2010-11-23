@@ -82,6 +82,7 @@
 .cpp ./FastEnvironment
 .cpp ./instantiation
 .cpp ./SASActions
+.cpp ./ToFnMain
 
 @instantiate
 .lex ./pddl+
@@ -201,3 +202,51 @@
 .cpp ./FuncAnalysis
 .cpp ./HowWhatWhenMain
 .cpp ./HowAnalyser
+
+@pinguplan
+.lex ./pddl+
+.y.cpp ./pddl+
+.cpp ./ptree
+.cpp ./TypedAnalyser
+.cpp ./DebugWriteController
+.cpp ./typecheck
+.cpp ./TimSupport
+.cpp ./TIM
+.cpp ./FuncAnalysis
+.cpp ./PingusTranslator
+.cpp ./PinguPlanGenerator
+
+@planrec
+
+.lex ./pddl+
+.y.cpp ./pddl+
+.cpp ./ptree
+.cpp ./Action
+.cpp ./Proposition
+.cpp ./FuncExp
+.cpp ./typecheck
+.cpp ./PlanRec
+.cpp ./Validator
+.cpp ./RepairAdvice
+.cpp ./LaTeXSupport
+.cpp ./State
+.cpp ./Plan
+.cpp ./Ownership
+.cpp ./Environment
+.cpp ./Polynomial
+.cpp ./DebugWriteController
+.cpp ./Utils
+.cpp ./TrajectoryConstraints
+.cpp ./RobustAnalyse
+.cpp ./random
+.cpp ./Events
+.cpp ./PrettyPrinter
+.cpp ./TypedAnalyser
+.cpp ./TimSupport
+.cpp ./TIM
+.cpp ./FuncAnalysis
+.cpp ./SimpleEval
+.cpp ./instantiation
+.cpp ./CausalGraph
+.cpp ./ToFunction
+.cpp ./SASActions

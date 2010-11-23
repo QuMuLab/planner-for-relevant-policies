@@ -1,8 +1,34 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 /*-----------------------------------------------------------------------------
   VAL - The Automatic Plan Validator for PDDL+
 
-  $Date: 2005/06/07 14:00:00 $
-  $Revision: 4 $
+  $Date: 2009-02-05 10:50:10 $
+  $Revision: 1.2 $
 
   Maria Fox, Richard Howey and Derek Long - PDDL+ and VAL
   Stephen Cresswell - PDDL Parser
@@ -104,6 +130,7 @@ protected:
 	
 public:
 	Action(Validator * v,const operator_ * a,const const_symbol_list* bs);
+	Action(Validator * v,const operator_ * a,Environment * bs);
 	Action(Validator * v,const operator_ * a,const vector<const_symbol *> & vs);
   Action(Validator * v,const operator_ * a,const const_symbol_list* bs,const plan_step * ps);
 	
@@ -175,6 +202,10 @@ public:
 
 
 
+
+
+	
+
 class CondCommunicationAction : public Action {
 private:
 	mutable bool status;
@@ -191,10 +222,15 @@ private:
 	effect_lists * els;
 	effect_lists * ele;
 
+	Environment * vars;
+
 public:
 	CondCommunicationAction(Validator * v,const durative_action * a,const const_symbol_list * bs,
 		goal_list * gs,goal_list * gi,goal_list * ge,
 		effect_lists * es,effect_lists * el);
+	CondCommunicationAction(Validator * v,const durative_action * a,const const_symbol_list * bs,
+		goal_list * gs,goal_list * gi,goal_list * ge,
+		effect_lists * es,effect_lists * el,Environment * vs);
 	~CondCommunicationAction();
 
 	void write(ostream & o) const 
@@ -231,6 +267,14 @@ public:
 	const Action * partner() const;
 };
 
+void buildForAllCondActions(Validator * vld,const durative_action * da,
+	const const_symbol_list * params,goal_list * gls,
+		goal_list * gli,goal_list * gle,effect_lists * locels,
+		effect_lists * locele,const var_symbol_list * vars,
+		var_symbol_list::const_iterator i,
+		vector<const CondCommunicationAction *> & condActions,
+		Environment * env);
+		
 class CtsEffectAction : public Action {
 private:
 	ActiveCtsEffects * ace;

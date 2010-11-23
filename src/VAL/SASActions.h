@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #ifndef __SASACTION
 #define __SASACTION
 
@@ -29,6 +55,17 @@ public:
 	bool matches(ValueRep * vrep,FastEnvironment * fs);
 	ValueRep(ValueRep * vr,FastEnvironment * fenv);
 	const string typeName() const {return ptp->getName();};
+	const pddl_type * getType() const {return ptp;};
+	void write(ostream & o) const 
+	{
+		o << ptp->getName() << "_" << segment;
+	};
+};
+
+inline ostream & operator << (ostream & o,const ValueRep & v)
+{
+	v.write(o);
+	return o;
 };
 
 class SegmentRep {
@@ -140,14 +177,19 @@ public:
 			otherprecs[(*i)->head].push_back(this);
 		};
 	};
-
+	typedef VMap::const_iterator iterator;
+	iterator precondsBegin() const {return preconditions.begin();};
+	iterator precondsEnd() const {return preconditions.end();};
+	iterator postcondsBegin() const {return postconditions.begin();};
+	iterator postcondsEnd() const {return postconditions.end();};
+	
 	void write(ostream & o) const
 	{
 		o << "(:action " << op->name->getName() << "\n  :parameters (";
 		for(VAL::var_symbol_list::const_iterator ps = op->parameters->begin();
 									ps != op->parameters->end();++ps)
 		{
-			o << "?" << (*ps)->getName() << " ";
+			o << "?" << (*ps)->getName() << " - " << (*ps)->type->getName() << " ";
 		};
 		o << ")\n  :precondition (and\n";
 		for(VMap::const_iterator i = preconditions.begin();i != preconditions.end();++i)

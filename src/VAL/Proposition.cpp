@@ -1,8 +1,34 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 /*-----------------------------------------------------------------------------
   VAL - The Automatic Plan Validator for PDDL+
 
-  $Date: 2005/06/07 14:00:00 $
-  $Revision: 4 $
+  $Date: 2009-02-05 10:50:21 $
+  $Revision: 1.2 $
 
   Maria Fox, Richard Howey and Derek Long - PDDL+ and VAL
   Stephen Cresswell - PDDL Parser
@@ -960,7 +986,6 @@ Comparison::evaluateAtPoint(const State * s) const
 bool
 Comparison::evaluateAtPointError(const State * s) const
 {
-  
       double eval = s->evaluate(comp->getLHS(),bindings)  - s->evaluate(comp->getRHS(),bindings);
       double tooSmall = 0.0001;
                   
@@ -1003,7 +1028,7 @@ Comparison::evaluate(const State * s,vector<const DerivedGoal*> DPs) const
     if(ctsFtn == 0)  return evaluateAtPoint(s); 
     // RH proposed Error version here, but seems
     // wrong to me!
-         
+
     return ctsFtn->checkInvariant(this,s,endOfInterval,rhsIntervalOpen);
    
      /*
@@ -1835,7 +1860,7 @@ bool isExpressionConstant(const expression * e,const ActiveCtsEffects * ace,cons
 void Comparison::setUpComparisons(const ActiveCtsEffects * ace,bool rhsOpen)
 {
 	if(ctsFtn != 0) delete ctsFtn;
-	endOfInterval = ace->localUpdateTime;// cout << endOfInterval << " setupcomps\n";
+	endOfInterval = ace->localUpdateTime; //cout << endOfInterval << " setupcomps\n";
 
 	rhsIntervalOpen = rhsOpen;
 
@@ -1853,7 +1878,7 @@ void Comparison::setUpComparisons(const ActiveCtsEffects * ace,bool rhsOpen)
 		map<const FuncExp *,ActiveFE*>::const_iterator i = ace->activeFEs.find(fexp);
 
 		if(i !=  ace->activeFEs.end())
-      {               //  cout << " cts ftn = "<<  *(i->second->ctsFtn) <<"\n";
+      {                 //cout << " cts ftn = "<<  *(i->second->ctsFtn) <<"\n";
         if(const BatteryCharge * bc = dynamic_cast<const BatteryCharge *>(i->second->ctsFtn))
         {
             numSoln = bc; fndefined  = true;
@@ -2459,7 +2484,7 @@ bool QfiedGoal::evaluateQfiedGoal(const State * s,vector<const DerivedGoal*> DPs
      //get list of instansiated parameters for the qfied prop, so for forall(?z ?y), we have a grounded list for every z? and ?y
      set<var_symbol*> svs = getVariables(qg);
      vector<const_symbol_list*> constantsList = defineUndefinedParameters(newBlankConstSymbolList(const_cast<var_symbol_list*>(qg->getVars()),vld),const_cast<var_symbol_list*>(qg->getVars()),vld,svs);
-
+     if(constantsList.empty()) return qg->getQuantifier()==E_FORALL;
      //now create a conjunction or disjunction with the qfied variables substituted
        //map<parameter_symbol*,parameter_symbol*> newvars;
        Environment & env = const_cast<Environment &>(bindings);

@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #include "FastEnvironment.h"
 #include "TimSupport.h"
 #include <cstdio>
@@ -15,6 +41,7 @@ extern int yydebug;
 using std::ifstream;
 using std::ofstream;
 using std::ostream;
+using std::cerr;
 
 namespace VAL {
 
@@ -70,8 +97,14 @@ void performTIMAnalysis(char * argv[])
 		if (current_in_stream->bad())
 		{
 		    // Output a message now
-		    cout << "Failed to open\n";
-		    
+		    cerr << "Failed to open ";
+		    if (i) {
+			cerr << "problem";
+		    } else {
+			cerr << "domain";
+		    }
+		    cerr << " file " << current_filename << "\n";
+		    exit(0);
 		    // Log an error to be reported in summary later
 		    line_no= 0;
 		    log_error(E_FATAL,"Failed to open file");
@@ -90,14 +123,46 @@ void performTIMAnalysis(char * argv[])
 		delete current_in_stream;
     }
     // Output the errors from all input files
-//    current_analysis->error_list.report();
+    if(current_analysis->error_list.errors) {
+	cerr << "Critical Errors Encountered in Domain/Problem File\n";
+	cerr << "--------------------------------------------------\n\n";
+        cerr << "Due to critical errors in the supplied domain/problem file, the planner\n";
+	cerr << "has to terminate.  The errors encountered are as follows:\n";
+    	current_analysis->error_list.report();
+	exit(0);
+    } else if (current_analysis->error_list.warnings) {
+        cout << "Warnings encountered when parsing Domain/Problem File\n";
+	cerr << "-----------------------------------------------------\n\n";
+        cerr << "The supplied domain/problem file appear to violate part of the PDDL\n";
+        cerr << "language specification.  Specifically:\n";
+    	current_analysis->error_list.report();
+	cerr << "\nThe planner will continue, but you may wish to fix your files accordingly\n";
+    }
+
     delete yfl;
 
     DurativeActionPredicateBuilder dapb;
     current_analysis->the_domain->visit(&dapb);
 
 	theTC = new TypeChecker(current_analysis);
-    
+    	if (!theTC->typecheckDomain()) {
+		cerr << "Type Errors Encountered in Domain File\n";
+		cerr << "--------------------------------------\n\n";
+		cerr << "Due to type errors in the supplied domain file, the planner\n";
+		cerr << "has to terminate.  The log of type checking is as follows:\n\n";
+		Verbose = true;
+		theTC->typecheckDomain();
+		exit(0);
+	}
+	if (!theTC->typecheckProblem()) {
+		cerr << "Type Errors Encountered in Problem File\n";
+		cerr << "---------------------------------------\n\n";
+		cerr << "Due to type errors in the supplied problem file, the planner\n";
+		cerr << "has to terminate.  The log of type checking is as follows:\n\n";
+		Verbose = true;
+		theTC->typecheckProblem();
+		exit(0);
+	}
     TypePredSubstituter a;
     current_analysis->the_problem->visit(&a);
    	current_analysis->the_domain->visit(&a); 

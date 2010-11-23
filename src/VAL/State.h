@@ -1,8 +1,34 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 /*-----------------------------------------------------------------------------
   VAL - The Automatic Plan Validator for PDDL+
 
-  $Date: 2005/06/07 14:00:00 $
-  $Revision: 4 $
+  $Date: 2009-02-05 10:50:23 $
+  $Revision: 1.2 $
 
   Maria Fox, Richard Howey and Derek Long - PDDL+ and VAL
   Stephen Cresswell - PDDL Parser
@@ -20,6 +46,7 @@
  ----------------------------------------------------------------------------*/
 #include "Proposition.h"
 #include "FuncExp.h"
+#include "StateObserver.h"
 #include<set>
 using std::set;
 
@@ -54,6 +81,8 @@ private:
    set<const SimpleProposition *> changedLiterals;
    set<const FuncExp *> changedPNEs;
  	 FEScalar evaluateFE(const FuncExp * fe) const;
+
+   static vector<StateObserver *> sos;
    
 public:
 	State(Validator * const v,const effect_lists* is);
@@ -139,6 +168,17 @@ public:
 
 	const_iterator begin() const {return const_iterator(*this);};
 	const_iterator end() const {const_iterator ci(*this); ci.toEnd(); return ci;};
+
+	void nowUpdated(const Happening * h)
+	{
+		for(vector<StateObserver *>::iterator i = sos.begin();i != sos.end();++i)
+		{
+			(*i)->notifyChanged(this,h);
+		};
+	};
+	
+	static void addObserver(StateObserver * s) {sos.push_back(s);}
+	bool hasObservers() const {return !sos.empty();}
 };
 
 inline ostream & operator<<(ostream & o,const State & s)

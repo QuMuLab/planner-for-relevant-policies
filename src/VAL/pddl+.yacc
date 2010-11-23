@@ -1,8 +1,8 @@
  /*
   PDDL2.1 grammar file for bison.
 
-  $Date: April 2006 $
-  $Revision: 3.2 $
+  $Date: 2009-02-11 17:20:39 $
+  $Revision: 1.5 $
 
   s.n.cresswell@durham.ac.uk
   Derek Long
@@ -58,6 +58,17 @@ thing+             c_things          thing_list
 
 int yyerror(char *);
 
+#ifndef YY_
+# if YYENABLE_NLS
+#  if ENABLE_NLS
+#   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
+#   define YY_(msgid) dgettext ("bison-runtime", ((char *)msgid))
+#  endif
+# endif
+# ifndef YY_
+#  define YY_(msgid) ((char *) msgid)
+# endif
+#endif
 
 extern int yylex();
 
@@ -138,14 +149,14 @@ using namespace VAL;
 
 
 %type <t_effect_lists> c_effects c_conj_effect c_effect c_initial_state
-      c_a_effect c_p_effects c_p_effect c_da_effect c_da_effects
+      c_a_effect c_p_effects c_p_effect c_da_effect c_da_effects c_da_cts_only_effect c_da_cts_only_effects
       c_a_effect_da c_p_effect_da c_p_effects_da
       c_init_els c_proc_effect c_proc_effects
 %type <t_simple_effect> c_pos_simple_effect c_neg_simple_effect
                         c_init_pos_simple_effect c_init_neg_simple_effect
 %type <t_cond_effect> c_cond_effect
 %type <t_forall_effect> c_forall_effect
-%type <t_timed_effect> c_timed_effect c_timed_initial_literal
+%type <t_timed_effect> c_timed_effect c_cts_only_timed_effect c_timed_initial_literal
 
 //%type <t_parameter_symbol> c_parameter_symbol
 %type <t_type> /* c_type */ c_primitive_type c_new_primitive_type 
@@ -168,7 +179,7 @@ using namespace VAL;
 %type <t_goal> c_goal_descriptor c_pre_goal_descriptor c_pref_goal_descriptor  c_goal_spec c_duration_constraint c_da_gd c_timed_gd /* c_f_comp */ 
 %type <t_con_goal> c_constraints_def c_constraints_probdef c_constraint_goal c_pref_con_goal c_pref_goal
 %type <t_goal_list> c_goal_list c_pre_goal_descriptor_list c_duration_constraints c_da_gds c_constraint_goal_list c_pref_con_goal_list
-%type <t_quantifier> c_quantifier c_forall c_exists
+%type <t_quantifier> /*c_quantifier*/ c_forall c_exists
 
 %type <t_func_term> c_f_head /* c_new_f_head */  c_ground_f_head
 %type <t_assignment> c_assignment c_f_assign_da
@@ -215,7 +226,7 @@ using namespace VAL;
        EFFECTS 
        INITIAL_EFFECT FINAL_EFFECT INVARIANT DURATION /* Redundant */
        AT_START AT_END OVER_ALL
-       AND OR EXISTS FORALL IMPLY NOT WHEN EITHER
+       AND OR EXISTS FORALL IMPLY NOT WHEN WHENEVER EITHER
        PROBLEM FORDOMAIN INITIALLY
        OBJECTS GOALS EQ LENGTH SERIAL PARALLEL METRIC
        MINIMIZE MAXIMIZE
@@ -244,7 +255,11 @@ mystartsymbol :
   
 c_domain : 
     OPEN_BRAC DEFINE c_domain_name c_preamble CLOSE_BRAC 
-       {$$= $4; $$->name= $3;delete [] $3;}
+       {$$= $4; $$->name= $3;delete [] $3;
+	if (types_used && !types_defined) {
+		yyerrok; log_error(E_FATAL,"Syntax error in domain - no :types section, but types used in definitions."); 
+	}
+	}
 |   OPEN_BRAC DEFINE c_domain_name error 
     	{yyerrok; $$=static_cast<domain*>(NULL);
        	log_error(E_FATAL,"Syntax error in domain"); }  // Helpful?
@@ -253,7 +268,7 @@ c_domain :
 // Assumes operators defns are last, and at least one of them present.
 c_preamble :
      c_domain_require_def c_preamble  {$$= $2; $$->req= $1;} 
-   | c_type_names c_preamble          {$$= $2; $$->types= $1;}
+   | c_type_names c_preamble          {types_defined = true; $$= $2; $$->types= $1;}
    | c_domain_constants c_preamble    {$$= $2; $$->constants= $1;}
    | c_predicates c_preamble          {$$= $2; 
                                        $$->predicates= $1; }
@@ -364,6 +379,7 @@ c_typed_var_list :        /* Type specified */
       $$->splice($$->end(),*$4);   /* Join lists */ 
       delete $4;                   /* Delete (now empty) list */
       requires(E_TYPING);
+      types_used = true;
    }
 |  c_var_symbol_list HYPHEN c_either_type c_typed_var_list 
    {  
@@ -372,6 +388,7 @@ c_typed_var_list :        /* Type specified */
       $$->splice($$->end(),*$4);   /* Join lists */ 
       delete $4;                   /* Delete (now empty) list */
       requires(E_TYPING);
+      types_used = true;
    }
 |  c_var_symbol_list                /* No type specified */
    {
@@ -400,6 +417,7 @@ c_typed_consts :
       $1->splice($1->end(),*$4); /* Join lists */ 
       delete $4;                   /* Delete (now empty) list */
       requires(E_TYPING);
+      types_used = true;
    }
 |  c_new_const_symbols HYPHEN c_either_type c_typed_consts 
    {  
@@ -408,6 +426,7 @@ c_typed_consts :
       $1->splice($1->end(),*$4);
       delete $4;
       requires(E_TYPING);
+      types_used = true;
    }
 | /* No type specified */
     c_new_const_symbols {$$= $1;}
@@ -602,6 +621,11 @@ c_da_effect :
 	  $$->cond_effects.push_back(
 	       new cond_effect($3,$4));
           requires(E_COND_EFFS); }
+|   OPEN_BRAC WHENEVER c_goal_descriptor c_da_cts_only_effect CLOSE_BRAC
+        { $$= new effect_lists;
+	  $$->cond_assign_effects.push_back(
+	       new cond_effect($3,$4));
+          requires(E_COND_EFFS); }
 |   c_timed_effect 
         { $$=new effect_lists;
           $$->timed_effects.push_back($1); }
@@ -634,6 +658,45 @@ c_timed_effect :
 	log_error(E_FATAL,"Syntax error in timed effect"); }
 ;
 
+c_cts_only_timed_effect :
+    OPEN_BRAC INCREASE c_f_head c_f_exp_t CLOSE_BRAC
+        {$$=new timed_effect(new effect_lists,E_CONTINUOUS);
+         $$->effs->assign_effects.push_front(
+	     new assignment($3,E_INCREASE,$4)); }
+|   OPEN_BRAC DECREASE c_f_head c_f_exp_t CLOSE_BRAC
+        {$$=new timed_effect(new effect_lists,E_CONTINUOUS);
+         $$->effs->assign_effects.push_front(
+	     new assignment($3,E_DECREASE,$4)); }
+|   OPEN_BRAC error CLOSE_BRAC
+	{yyerrok; $$=NULL;
+	log_error(E_FATAL,"Syntax error in conditional continuous effect"); }
+;
+
+c_da_cts_only_effect :
+    OPEN_BRAC AND c_da_cts_only_effects CLOSE_BRAC
+        { $$=$3; }        
+|   OPEN_BRAC c_forall 
+      OPEN_BRAC c_typed_var_list CLOSE_BRAC 
+      c_da_cts_only_effect
+    CLOSE_BRAC
+        { $$= new effect_lists; 
+          $$->forall_effects.push_back(
+	       new forall_effect($6, $4, current_analysis->var_tab_stack.pop())); 
+          requires(E_COND_EFFS);}
+|   OPEN_BRAC WHENEVER c_goal_descriptor c_da_cts_only_effect CLOSE_BRAC
+        { $$= new effect_lists;
+	  $$->cond_assign_effects.push_back(
+	       new cond_effect($3,$4));
+          requires(E_COND_EFFS); }
+|   c_cts_only_timed_effect 
+        { $$=new effect_lists;
+          $$->timed_effects.push_back($1); }
+;
+
+c_da_cts_only_effects :
+    c_da_cts_only_effects c_da_cts_only_effect { $$=$1; $1->append_effects($2); delete $2; }
+|   /* empty */ { $$= new effect_lists; }
+;
 
 c_a_effect_da :
     OPEN_BRAC AND c_p_effects_da CLOSE_BRAC {$$= $3;}
@@ -875,12 +938,19 @@ c_comparison_op :
 c_pre_goal_descriptor :
 	c_pref_goal_descriptor
 		{$$= $1;}
+/*|	c_goal_descriptor
+		{$$=$1;} 
+;
+
+*/
 |   OPEN_BRAC AND c_pre_goal_descriptor_list CLOSE_BRAC
 		{$$ = new conj_goal($3);}
 |   OPEN_BRAC c_forall OPEN_BRAC c_typed_var_list CLOSE_BRAC
         c_pre_goal_descriptor CLOSE_BRAC
         {$$= new qfied_goal(E_FORALL,$4,$6,current_analysis->var_tab_stack.pop());
         requires(E_UNIV_PRECS);}
+ | OPEN_BRAC AND CLOSE_BRAC {$$ = new conj_goal(new goal_list);}
+ | OPEN_BRAC CLOSE_BRAC {$$ = new conj_goal(new goal_list);}
 ;
 
 c_pref_con_goal :
@@ -914,8 +984,8 @@ c_pref_goal :
 c_pref_con_goal_list :
 	c_pref_con_goal_list c_pref_con_goal
 		{$$=$1; $1->push_back($2);}
-|	/* empty */
-		{$$= new goal_list;}
+|	c_pref_con_goal
+		{$$= new goal_list; $$->push_back($1);}
 ;
 	
 c_pref_goal_descriptor :
@@ -923,6 +993,8 @@ c_pref_goal_descriptor :
 	{$$= new preference($3); requires(E_PREFERENCES);}
 |   OPEN_BRAC PREFERENCE NAME c_goal_descriptor CLOSE_BRAC
 	{$$= new preference($3,$4); requires(E_PREFERENCES);}
+// Restored...
+
 |	c_goal_descriptor
 	{$$=$1;} 
 ;
@@ -930,8 +1002,8 @@ c_pref_goal_descriptor :
 c_constraint_goal_list :
 	c_constraint_goal_list c_constraint_goal
 	{$$ = $1; $$->push_back($2);}
-|   /* Empty */
-	{$$ = new goal_list;}
+|       c_constraint_goal
+	{$$ = new goal_list; $$->push_back($1);}
 ;
 
 c_constraint_goal :
@@ -977,7 +1049,10 @@ c_goal_descriptor :
 |  OPEN_BRAC IMPLY c_goal_descriptor c_goal_descriptor CLOSE_BRAC 
        {$$= new imply_goal($3,$4);
         requires(E_DISJUNCTIVE_PRECONDS);}
-|  OPEN_BRAC c_quantifier OPEN_BRAC c_typed_var_list CLOSE_BRAC 
+|  OPEN_BRAC c_forall OPEN_BRAC c_typed_var_list CLOSE_BRAC 
+       c_goal_descriptor CLOSE_BRAC 
+       {$$= new qfied_goal($2,$4,$6,current_analysis->var_tab_stack.pop());} 
+|  OPEN_BRAC c_exists OPEN_BRAC c_typed_var_list CLOSE_BRAC 
        c_goal_descriptor CLOSE_BRAC 
        {$$= new qfied_goal($2,$4,$6,current_analysis->var_tab_stack.pop());} 
 |  OPEN_BRAC c_comparison_op c_f_exp c_f_exp CLOSE_BRAC 
@@ -988,20 +1063,20 @@ c_goal_descriptor :
 c_pre_goal_descriptor_list :
 	c_pre_goal_descriptor_list c_pre_goal_descriptor
 		{$$=$1; $1->push_back($2);}
-|	/* empty */
-		{$$= new goal_list;}
+|	c_pre_goal_descriptor
+		{$$= new goal_list; $$->push_back($1);}
 ;
 
 c_goal_list :
     c_goal_list c_goal_descriptor
         {$$=$1; $1->push_back($2);}
-|   /* empty */
-        {$$= new goal_list;}
+|   c_goal_descriptor
+	{$$= new goal_list; $$->push_back($1);}
 ;
 
-c_quantifier : 
-    c_forall {$$=$1;}
-|   c_exists {$$=$1;}
+//c_quantifier : 
+//    c_forall {$$=$1;}
+//|   c_exists {$$=$1;}
 ;
 
 c_forall :
@@ -1278,7 +1353,12 @@ c_problem : OPEN_BRAC
               OPEN_BRAC FORDOMAIN NAME CLOSE_BRAC
               c_problem_body
             CLOSE_BRAC
-            {$$=$11; $$->name = $5; $$->domain_name = $9;}
+            {$$=$11; $$->name = $5; $$->domain_name = $9;
+		if (types_used && !types_defined) {
+			yyerrok; log_error(E_FATAL,"Syntax error in problem file - types used, but no :types section in domain file."); 
+		}
+
+	}
 |   OPEN_BRAC DEFINE OPEN_BRAC PROBLEM error
     	{yyerrok; $$=NULL;
        	log_error(E_FATAL,"Syntax error in problem definition."); }

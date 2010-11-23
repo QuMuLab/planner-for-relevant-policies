@@ -1,8 +1,34 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 /*-----------------------------------------------------------------------------
   VAL - The Automatic Plan Validator for PDDL+
 
-  $Date: 2005/06/07 14:00:00 $
-  $Revision: 4 $
+  $Date: 2009-02-05 10:50:21 $
+  $Revision: 1.2 $
 
   Maria Fox, Richard Howey and Derek Long - PDDL+ and VAL
   Stephen Cresswell - PDDL Parser
@@ -162,6 +188,7 @@ struct ExecutionContext {
 };
 
 
+typedef pair<pair<const expression *,bool>, const Environment *> ExprnPair; //bool is true if increasing
 
 struct ActiveFE {
 
@@ -170,7 +197,7 @@ struct ActiveFE {
 
 	int colour;		//for topological sort
 
-	vector<pair< pair<const expression *,bool> ,const Environment *> > exprns;  //bool is true if increasing
+	vector<ExprnPair> exprns;  
 
 	const CtsFunction * ctsFtn; 				//cts fn defining FEs values on interval it is changing on
 
@@ -183,9 +210,15 @@ struct ActiveFE {
 	void removeParentFE(const ActiveFE * a);
 	void addParentFEs(const ActiveCtsEffects * ace,const expression * e,const Environment * bs);
    bool appearsInEprsn(const ActiveCtsEffects * ace,const expression * e,const Environment * bs) const;
+   bool canResolveToExp(const map<const FuncExp*,ActiveFE*> activeFEs,Validator *) const;
 
 	~ActiveFE();
 };
+
+
+bool isConstLinearChangeExpr(const ExprnPair & exp,const map<const FuncExp *,ActiveFE *> activeFEs,Validator * vld);
+bool isConstant(const expression * exp,const Environment * env,const map<const FuncExp *,ActiveFE *> activeFEs,Validator * vld);
+const expression* getRateExpression(const expression* aExpression);
 
 //the following class contains all the active cts effects that are to be updated before each regular happening at
 //the same point in time

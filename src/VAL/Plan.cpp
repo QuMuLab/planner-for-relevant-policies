@@ -1,8 +1,34 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 /*-----------------------------------------------------------------------------
   VAL - The Automatic Plan Validator for PDDL+
 
-  $Date: 2005/06/07 14:00:00 $
-  $Revision: 4 $
+  $Date: 2009-02-05 10:50:21 $
+  $Revision: 1.2 $
 
   Maria Fox, Richard Howey and Derek Long - PDDL+ and VAL
   Stephen Cresswell - PDDL Parser
@@ -236,7 +262,8 @@ Happening::applyTo(State * s) const
 	};
 	              
 	effs.enact(s);
-                  
+    s->nowUpdated(this);
+    
 	return true;
 
 };
@@ -791,8 +818,16 @@ void ActiveCtsEffects::buildAFECtsFtns()
 
 	for(vector<ActiveFE*>::iterator i = loopDepActiveFEs.begin();i != loopDepActiveFEs.end();++i)
 	{                        
-		  if( (*i)->exprns.size() == 1)
+//		cout << *((*i)->fe) << " is the expression and " << (*i)->exprns.size() << " its size\n";
+//		for(vector<pair< pair<const expression *,bool> ,const Environment *> >::const_iterator j = (*i)->exprns.begin();
+//			j != (*i)->exprns.end();++j)
+//		{
+//			cout << *(j->first.first) << " " << j->first.second << "\n";
+//			
+//		}
+		  if( (*i)->canResolveToExp(activeFEs,vld))
          {
+  //       	cout << "We're going to try to build an Exponential here\n";
            if( (*i)->ctsFtn == 0) (*i)->ctsFtn = buildExp(*i);
          }
          else    
@@ -806,6 +841,52 @@ void ActiveCtsEffects::buildAFECtsFtns()
 	{                                  
        if( (*i)->ctsFtn == 0) (*i)->ctsFtn = buildExp(*i); 
 	};
+};
+
+bool ActiveFE::canResolveToExp(const map<const FuncExp*,ActiveFE*> activeFEs,Validator * vld) const
+{
+	if(exprns.size() == 1) return true;
+// Add a new case to handle the situation in which we have two expressions, but one is a constant
+// multiple of #t
+	if(exprns.size() == 2)
+	{
+		if(isConstLinearChangeExpr(exprns[0],activeFEs,vld) || isConstLinearChangeExpr(exprns[1],activeFEs,vld))
+			return true;
+	};
+	return false;
+};
+
+bool isConstLinearChangeExpr(const ExprnPair & exp,const map<const FuncExp *,ActiveFE *> activeFEs,Validator * vld)
+{
+	const expression * ex = getRateExpression(exp.first.first);
+	return isConstant(ex,exp.second,activeFEs,vld);
+};
+
+bool isConstant(const expression * exp,const Environment * env,const map<const FuncExp *,ActiveFE *> activeFEs,Validator * vld)
+{
+	const func_term * ft = dynamic_cast<const func_term *>(exp);
+	if(ft) 
+	{
+		const FuncExp * ftt = vld->fef.buildFuncExp(ft,*env);
+		if(activeFEs.find(ftt) != activeFEs.end())
+		{
+//			cout << "Found non-constant FuncTerm " << *ftt << "\n";
+			return false;
+		}
+		else return true;
+	};
+	const num_expression * nt = dynamic_cast<const num_expression *>(exp);
+	if(nt)
+	{
+		return true;
+	};
+	const binary_expression * be = dynamic_cast<const binary_expression *>(exp);
+	if(be)
+	{
+		return isConstant(be->getLHS(),env,activeFEs,vld) &&
+			isConstant(be->getRHS(),env,activeFEs,vld);
+	};
+	return false;	
 };
 
 void ActiveCtsEffects::visitActiveFE(ActiveFE * afe,vector<ActiveFE*> & topSAFEs)
@@ -925,7 +1006,7 @@ const CtsFunction * ActiveCtsEffects::buildExp(const ActiveFE * afe)
 {
                                 
    const Polynomial * expPoly; // p(t)
-   CoScalar kValue, cValue = 0; // for f(t) = K e^{p(t)} + c
+   CoScalar kValue = 0, cValue = 0; // for f(t) = K e^{p(t)} + c
 	const expression* rateExprn;
 	const expression* constExprn = 0;
 	const expression* FEExprn = 0;
@@ -934,33 +1015,53 @@ const CtsFunction * ActiveCtsEffects::buildExp(const ActiveFE * afe)
 	const FuncExp * fexp = 0;
 
 	//not handling sums of exp functions, yet
-	if(afe->exprns.size() != 1)
+	if(!afe->canResolveToExp(activeFEs,vld))
 	{
 		DiffEqunError dee;
 		throw dee;
 	};
 
-
 	pair<pair<const expression*,bool>,const Environment *> exprn = * afe->exprns.begin();
-   rateExprn = getRateExpression(exprn.first.first);
- 
-	if(const func_term * fexpression = dynamic_cast<const func_term *>(rateExprn))
-
+   	rateExprn = getRateExpression(exprn.first.first);
+   	const Environment * env = exprn.second;
+   	bool incr = exprn.first.second;
+   	const expression * constExpA = 0;
+ 	const Environment * envC = 0;
+//cout << "Stage 1\n";
+	if(afe->exprns.size() == 2)
 	{
-		fexp = vld->fef.buildFuncExp(fexpression,*exprn.second);
+//		cout << "Stage 2\n";
+		if(isConstant(rateExprn,exprn.second,activeFEs,vld))
+		{
+			constExpA = rateExprn;
+			envC = env;
+			rateExprn = getRateExpression(afe->exprns[1].first.first);
+			env = afe->exprns[1].second;
+			incr = afe->exprns[1].first.second;
+		}
+		else
+		{
+			constExpA = getRateExpression(afe->exprns[1].first.first);
+			envC = afe->exprns[1].second;
+		};
+	};
+//	cout << "Stage 3: " << *rateExprn << "\n";
+	if(const func_term * fexpression = dynamic_cast<const func_term *>(rateExprn))
+	{
+		fexp = vld->fef.buildFuncExp(fexpression,*env);
 
 		if(fexp != afe->fe) simpleExp = false;
 
 	  }
 	else if(const mul_expression * me = dynamic_cast<const mul_expression *>(rateExprn))
 	{
-
-         if(afe->appearsInEprsn(this,me->getLHS(),exprn.second))
+//		cout << "Stage 4\n";
+         if(afe->appearsInEprsn(this,me->getLHS(),env))
          {
              constExprn = me->getRHS();   fexp = afe->fe;
              FEExprn = me->getLHS();
          }
-         else if(afe->appearsInEprsn(this,me->getRHS(),exprn.second))
+         else if(afe->appearsInEprsn(this,me->getRHS(),env))
          {
              constExprn = me->getLHS();   fexp = afe->fe;
              FEExprn = me->getRHS();
@@ -969,8 +1070,8 @@ const CtsFunction * ActiveCtsEffects::buildExp(const ActiveFE * afe)
          {
              simpleExp = false;
              if(afe->parentFEs.size() == 1) fexp = (*afe->parentFEs.begin())->fe;
-
-             if((*afe->parentFEs.begin())->appearsInEprsn(this,me->getRHS(),exprn.second))
+             
+             if((*afe->parentFEs.begin())->appearsInEprsn(this,me->getRHS(),env))
              {
                  constExprn = me->getLHS();
                  FEExprn = me->getRHS();
@@ -994,6 +1095,7 @@ const CtsFunction * ActiveCtsEffects::buildExp(const ActiveFE * afe)
          //end of extracting const expression and FE expression
       
               
+//cout << "We are here with " << *fexp << " and " << *constExprn << "\n";
 
 	if(fexp == 0)
 	{
@@ -1006,7 +1108,7 @@ const CtsFunction * ActiveCtsEffects::buildExp(const ActiveFE * afe)
 	if(simpleExp)  //simple in the sense that does not depend on other PNES that are exps
 	{
 		//const exprn depends on the FE?
-		if(afe->appearsInEprsn(this,constExprn,exprn.second))
+		if(afe->appearsInEprsn(this,constExprn,env))
 		{
 			DiffEqunError dee;
 			throw dee;
@@ -1017,13 +1119,13 @@ const CtsFunction * ActiveCtsEffects::buildExp(const ActiveFE * afe)
 
     if(constExprn != 0)
     {                                    
-      		 bPoly = getPoly(constExprn,this,exprn.second,localUpdateTime);    
+      		 bPoly = getPoly(constExprn,this,env,localUpdateTime);    
              bPoly = bPoly.integrate(); //leave constant term zero, this part of constant
     }
     else
              bPoly.setCoeff(1,1);
                        
-      if(!(exprn.first.second)) bPoly = - bPoly;
+      if(!(incr)) bPoly = - bPoly;
 
 		//add boundary condition
 		double bc =  afe->fe->evaluate(&(vld->getState()));
@@ -1042,35 +1144,46 @@ const CtsFunction * ActiveCtsEffects::buildExp(const ActiveFE * afe)
       //handle different cases for FE expression, may be (a-f), (f-a) or f
       if(dynamic_cast<const func_term *>(FEExprn))
 		{
-
+//cout << "This is the case....\n";
        kValue = bc;  // divided by e^{b(0)}   
+
+       // We can also deal with the special case where we have two expressions in the exprns list for this
+       // activeFE and one is constant, A, and the other is B.f for constant B.
+       if(constExpA)
+       {
+//       	cout << "We are handling our special case...\n";
+       	cValue = -(vld->getState().evaluate(constExpA,*envC)/vld->getState().evaluate(constExprn,*env));
+       	if(!incr) cValue = -cValue;
+       	kValue -= cValue;
+       };
+       	
       }
       else if(const minus_expression * minexprn = dynamic_cast<const minus_expression *>(FEExprn))
       {
 
 
-             if(dynamic_cast<const func_term *>(minexprn->getLHS()) && afe->appearsInEprsn(this,minexprn->getLHS(),exprn.second))
+             if(dynamic_cast<const func_term *>(minexprn->getLHS()) && afe->appearsInEprsn(this,minexprn->getLHS(),env))
              {
-                                 if(afe->appearsInEprsn(this,minexprn->getRHS(),exprn.second))
+                                 if(afe->appearsInEprsn(this,minexprn->getRHS(),env))
                             		{
 
                             			DiffEqunError dee;
                             			throw dee;
                             		};
-                           FEScalar minExprnConst = vld->getState().evaluate(minexprn->getRHS(),*exprn.second);
+                           FEScalar minExprnConst = vld->getState().evaluate(minexprn->getRHS(),*env);
                            kValue = bc - minExprnConst;
                            cValue = minExprnConst;
              }
-             else if(dynamic_cast<const func_term *>(minexprn->getRHS()) && afe->appearsInEprsn(this,minexprn->getRHS(),exprn.second))
+             else if(dynamic_cast<const func_term *>(minexprn->getRHS()) && afe->appearsInEprsn(this,minexprn->getRHS(),env))
 
              {
-                                 if(afe->appearsInEprsn(this,minexprn->getLHS(),exprn.second))
+                                 if(afe->appearsInEprsn(this,minexprn->getLHS(),env))
                             		{
                             			DiffEqunError dee;
                             			throw dee;
 
                             		};
-                           FEScalar minExprnConst = vld->getState().evaluate(minexprn->getLHS(),*exprn.second);
+                           FEScalar minExprnConst = vld->getState().evaluate(minexprn->getLHS(),*env);
                            kValue = bc - minExprnConst;
                            cValue = minExprnConst;
                            bPoly = - bPoly;
@@ -1114,7 +1227,7 @@ const CtsFunction * ActiveCtsEffects::buildExp(const ActiveFE * afe)
 				CoScalar bc =  afe->fe->evaluate(&(vld->getState()));
 
 				if(constExprn != 0)
-					constVal = vld->getState().evaluate(constExprn,*exprn.second);
+					constVal = vld->getState().evaluate(constExprn,*env);
 
 				//if constants are zero the exp is not an exp!
 				if(constVal == 0)
@@ -1372,7 +1485,7 @@ void ActiveCtsEffects::clearCtsEffects()
 
 void EffectsRecord::enact(State * s) const
 {
-   if(!(s->getValidator()->hasEvents()))
+   if(!(s->getValidator()->hasEvents()) && !s->hasObservers())
    {
       	for(vector<const SimpleProposition *>::const_iterator i = dels.begin();i != dels.end();++i)
 
@@ -1727,13 +1840,20 @@ struct handleDAConditionalEffects {
 	effect_lists * els;
 	effect_lists * ele;
 	effect_lists * elc; 
+
+	const var_symbol_list * vars;
 	
 	vector<const CondCommunicationAction *> condActions;
 	vector<const CondCommunicationAction *> ctsCondActions;
 	
 	handleDAConditionalEffects(Validator * v,const durative_action * d,const const_symbol_list * ps,
 										effect_lists * es,effect_lists * ee,effect_lists * ec) :
-			vld(v), da(d), params(ps), els(es), ele(ee), elc(ec)
+			vld(v), da(d), params(ps), els(es), ele(ee), elc(ec), vars(0)
+	{};
+
+	handleDAConditionalEffects(Validator * v,const durative_action * d,const const_symbol_list * ps,
+										effect_lists * es,effect_lists * ee,effect_lists * ec,const var_symbol_list * vs) :
+			vld(v), da(d), params(ps), els(es), ele(ee), elc(ec), vars(vs)
 	{};
 
 	void operator()(const forall_effect * fa)
@@ -1746,15 +1866,22 @@ struct handleDAConditionalEffects {
 			
 			handleDAConditionalEffects hDAc
 				= for_each(fa->getEffects()->cond_effects.begin(),fa->getEffects()->cond_effects.end(),
-							handleDAConditionalEffects(vld,da,params,lels,lele,lelc));	
-			if(!hDAc.ctsCondActions.empty() || !hDAc.condActions.empty())
+							handleDAConditionalEffects(vld,da,params,lels,lele,lelc,fa->getVarsList()));	
+							
+			if(!hDAc.ctsCondActions.empty())
 			{
-				cout << "Continuous effects or conditional effects spanning durative action, in quantified conditions...\n";
+				cout << "Continuous effects spanning durative action, in quantified conditions...\n";
+				cout << "This is really complex stuff! Unfortunately, VAL doesn't even try to deal with it.\n";
 				cout << "Tell Derek to fix this!\n";
 				SyntaxTooComplex stc;
 				throw(stc);
 			};
-			
+
+			if(!hDAc.condActions.empty())
+			{
+				condActions.insert(condActions.end(),hDAc.condActions.begin(),hDAc.condActions.end());
+			}
+	
 // These use empty symbol tables, which will protect the variables from being
 // deleted twice. 
 			if(!lels->cond_effects.empty())
@@ -1821,6 +1948,7 @@ struct handleDAConditionalEffects {
 		else
 		{
 			delete locelc;
+			locelc = 0;
 		};
 
 			
@@ -1854,13 +1982,15 @@ struct handleDAConditionalEffects {
 			return;
 		};
 
-
-		
-	condActions.push_back(new CondCommunicationAction(vld,da,params,gls,gli,gle,locels,locele));
-
-			
-	
-		
+		Environment bs = buildBindings(da,*params);
+		if(vars)
+		{
+			buildForAllCondActions(vld,da,params,gls,gli,gle,locels,locele,vars,vars->begin(),condActions,&bs);
+		}
+		else
+		{
+			condActions.push_back(new CondCommunicationAction(vld,da,params,gls,gli,gle,locels,locele));
+		}	
 	};
 };
 
@@ -1892,7 +2022,7 @@ Plan::planBuilder::handleDurativeAction(const durative_action * da,const const_s
 // conditional effects that spread across the span of the action. Others can be 
 // handled as standard quantified conditional effects.
 
-	for_each(da->effects->forall_effects.begin(),da->effects->forall_effects.end(),
+	hDAc = for_each(da->effects->forall_effects.begin(),da->effects->forall_effects.end(),
 				hDAc);
 					
 	goal_list * ds = new goal_list();
@@ -1944,7 +2074,7 @@ Plan::planBuilder::handleDurativeAction(const durative_action * da,const const_s
 	action * dae = new safeaction(da->name,da->parameters,cge,ele,da->symtab);
 		// Note that we must use safeactions here, to ensure that the actions we create don't
 		// think they own their components for deletion.
-         
+
 	StartAction * sa = new StartAction(vld,das,params,inv,elc,duration,ds,hDAc.condActions,hDAc.ctsCondActions,ps);
 	tas.push_back(make_pair(start,sa));
 	
@@ -2083,8 +2213,7 @@ Polynomial getPoly(const expression * e,const ActiveCtsEffects * ace,const Envir
 				}
             else if(dynamic_cast<const NumericalSolution *>(i->second->ctsFtn))
             {
-
-                  
+            	cout << *(i->second->ctsFtn) << "\n";
                  InvariantError  ie;
                  throw ie;
             };

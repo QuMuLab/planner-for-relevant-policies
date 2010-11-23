@@ -1,8 +1,34 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 /*-----------------------------------------------------------------------------
   VAL - The Automatic Plan Validator for PDDL+
 
-  $Date: 2005/06/07 14:00:00 $
-  $Revision: 4 $
+  $Date: 2009-02-05 10:50:10 $
+  $Revision: 1.2 $
 
   Maria Fox, Richard Howey and Derek Long - PDDL+ and VAL
   Stephen Cresswell - PDDL Parser
@@ -433,6 +459,7 @@ StartAction::confirmPrecondition(const State * s) const
 
 bool CondCommunicationAction::confirmInitialPrecondition(const State * s) const
 {		
+	cout << "First one being checked\n";
 	if(!initPre) 
 	{
 		status = true;
@@ -440,6 +467,7 @@ bool CondCommunicationAction::confirmInitialPrecondition(const State * s) const
 	};
 	
 	status = initPre->evaluate(s);
+	cout << "Status now " << status << "\n";
 	return true;
 };
 
@@ -511,17 +539,24 @@ struct FAEhandler {
 			return a->handleEffects(o,e,s,effs,*env,markPreCons);
 		};
 		var_symbol_list::const_iterator j = i++;
+		// Inefficient to repeat the lookup for the range of (*i) when dropping down through this variable
+		// for second+ times.
 		vector<const_symbol *> ds = i != endpt?vld->range(*i):vector<const_symbol *>();
 		ds.swap(cs);
 		for(vector<const_symbol *>::iterator k = ds.begin();k != ds.end();++k)
 		{
-
-			//cout << "Handling " << (*j)->getName() << "\n";
+			//cout << "Handling " << (*j)->getName() << " = " << (*k)->getName() << " and i: " << (i==endpt) << "\n";
 			bds[*j] = *k;
-			if(!handle(markPreCons)) return false;
-
+			if(!handle(markPreCons))
+			{
+				i = j;
+				ds.swap(cs);
+				return false;
+			}
 		};
-
+		
+		i = j;
+		ds.swap(cs);
 		return true;
 	};
 };
@@ -532,7 +567,7 @@ Action::handleEffects(Ownership & o,EffectsRecord & e,
 {
 	for(list<simple_effect*>::const_iterator i = effs->add_effects.begin();
 					i != effs->add_effects.end();++i)
-	{           
+	{   
 		const SimpleProposition * p = vld->pf.buildLiteral((*i)->prop,bds);
 		if(!o.ownsForAdd(this,p)) 
 		{
@@ -626,6 +661,24 @@ Action::Action(Validator * v,const operator_ * a,const const_symbol_list* bs) :
   actionName = n;
 };
 
+Action::Action(Validator * v,const operator_ * a,Environment * bs) : 
+		act(a), bindings(*bs), 
+		timedInitialLiteral(a->name->getName().substr(0,6)=="Timed "),
+		vld(v), pre(vld->pf.buildProposition(act->precondition,bindings)), planStep(0)
+{
+  string n = act->name->getName();
+
+	for( var_symbol_list::const_iterator i = act->parameters->begin() ; i != act->parameters->end(); ++i)
+	{
+		n += bindings.find(*i)->second->getName();
+	};
+
+  actionName = n;
+
+  cout << "Just built " << n << "\n";
+};
+
+
 Action::Action(Validator * v,const operator_ * a,const vector<const_symbol *> & bs) :
 		act(a), bindings(buildBindings(a,bs)), 
 		timedInitialLiteral(a->name->getName().substr(0,6)=="Timed "),
@@ -657,6 +710,40 @@ Action::Action(Validator * v,const operator_ * a,const const_symbol_list* bs,con
   actionName = n;
 };
 
+
+void buildForAllCondActions(Validator * vld,const durative_action * da,
+	const const_symbol_list * params,goal_list * gls,
+		goal_list * gli,goal_list * gle,effect_lists * locels,
+		effect_lists * locele,const var_symbol_list * vars,
+		var_symbol_list::const_iterator i,
+		vector<const CondCommunicationAction *> & condActions,
+		Environment * env)
+{
+	cout << "OK, ready to go\n";
+
+	if(i == vars->end())
+	{
+		cout << "Ready to construct one\n";
+		condActions.push_back(new CondCommunicationAction(vld,da,params,gls,gli,gle,locels,locele,env));
+	}
+	else
+	{
+		vector<const_symbol *> vals = vld->range(*i);
+		const var_symbol * v = *i;
+		
+		++i;
+		for(vector<const_symbol*>::iterator j = vals.begin();j != vals.end();++j)
+		{
+		  cout << " considering value " << (*j)->getName() << "\n";
+			(*env)[v] = *j;
+			buildForAllCondActions(vld,da,params,gls,gli,gle,locels,locele,vars,i,condActions,env);
+		};
+		--i;
+	}
+}
+
+
+		
 CondCommunicationAction::CondCommunicationAction(Validator * v,const durative_action * a,const const_symbol_list * bs,
 	goal_list * gs,goal_list * gi,goal_list * ge,
 	effect_lists * es,effect_lists * el) : 
@@ -667,8 +754,26 @@ CondCommunicationAction::CondCommunicationAction(Validator * v,const durative_ac
 	gli(new conj_goal(const_cast<goal_list*>(gi))), 
 	invPre(gi->empty()?0:vld->pf.buildProposition(gli,bindings)),
 	gle(act->precondition),
-	els(es), ele(el) {};
+	els(es), ele(el), vars(0) {};
 
+
+CondCommunicationAction::CondCommunicationAction(Validator * v,const durative_action * a,const const_symbol_list * bs,
+	goal_list * gs,goal_list * gi,goal_list * ge,
+	effect_lists * es,effect_lists * el,Environment * vs) : 
+	Action(v,new safeaction(a->name,a->parameters,new conj_goal(const_cast<goal_list*>(ge)),el,a->symtab),vs), 
+	status(true),
+	gls(new conj_goal(const_cast<goal_list*>(gs))), 
+//	initPre(gs->empty()?0:vld->pf.buildProposition(gls,bindings)),
+	gli(new conj_goal(const_cast<goal_list*>(gi))), 
+//	invPre(gi->empty()?0:vld->pf.buildProposition(gli,bindings)),
+	gle(act->precondition),
+	els(es), ele(el), vars(vs) 
+{
+	cout << "I have a real forall CCA to build for variables: ";
+	
+
+};
+	
 CondCommunicationAction::~CondCommunicationAction() {
 	delete initPre;
 	delete invPre;
@@ -794,6 +899,7 @@ void CondCommunicationAction::markOwnedPreconditions(Ownership & o) const
 
 bool CondCommunicationAction::confirmPrecondition(const State * s) const
 {
+cout << "Checking a CondAction prec\n";
 	if(invPre && status)
 	{
 		if(TestingPNERobustness) ace->addActiveFEs(true);

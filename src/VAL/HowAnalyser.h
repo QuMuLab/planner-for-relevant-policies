@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #ifndef __HOWANALYSER
 #define __HOWANALYSER
 
@@ -154,15 +180,15 @@ public:
 					for(extended_pred_symbol::OpProps::const_iterator j = (*i)->addsBegin();
 							j != (*i)->addsEnd();++j)
 					{
-						if(acts.find(j->first) == acts.end())
+						if(acts.find(j->op) == acts.end())
 						{
-							acts.insert(make_pair(j->first,new HWWAction(j->first)));
+							acts.insert(make_pair(j->op,new HWWAction(j->op)));
 						};
 						int pc = 0;
 						vector<int> ags;
-						cout << "\n\t" << *(j->first->name) << "(";
-					 	for(var_symbol_list::const_iterator k = j->first->parameters->begin();
-					 			k != j->first->parameters->end();++k,++pc)
+						cout << "\n\t" << *(j->op->name) << "(";
+					 	for(var_symbol_list::const_iterator k = j->op->parameters->begin();
+					 			k != j->op->parameters->end();++k,++pc)
 					 	{
 					 		unsigned int ac = 0;
 					 		bool d = false;
@@ -205,7 +231,7 @@ public:
 					 		};
 					 	};
 					 	cout << ")";
-					 	acts[j->first]->add(ags,*i);
+					 	acts[j->op]->add(ags,*i);
 					};
 				};
 				cout << "\n";
