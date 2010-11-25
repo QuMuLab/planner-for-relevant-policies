@@ -21,6 +21,7 @@ def check(props):
 
 # Preprocessing functions ------------------------------------------------------
 
+# TODO: Is there a better way to parse this? Are the returncodes enough already?
 def translator_error(content, old_props):
     error = not 'Done! [' in content
     return {'translator_error': int(error)}

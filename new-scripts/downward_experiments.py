@@ -359,6 +359,8 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
             
             preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
             
+            # We can use the main command here, because preprocessing uses
+            # a separate directory
             run.set_command('%s; %s' % (translate_cmd, preprocess_cmd))
             
             run.declare_optional_output("*.groups")
