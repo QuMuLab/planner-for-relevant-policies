@@ -266,6 +266,12 @@ def _get_configs(planner_rev, config_list):
         configs = zip(config_list, config_list)
     return configs
     
+def _get_preprocess_cmd(translator, preprocessor_name, domain, problem):
+    translator = os.path.abspath(translator)
+    translate_cmd = '%s %s %s' % (translator, domain, problem)
+    preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
+    return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
+    
     
     
 def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
@@ -354,14 +360,12 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
             run.add_resource("DOMAIN", domain_file, "domain.pddl")
             run.add_resource("PROBLEM", problem_file, "problem.pddl")
             
-            translator = os.path.abspath(translator)
-            translate_cmd = '%s %s %s' % (translator, domain_file, problem_file)
-            
-            preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
+            pre_cmd = _get_preprocess_cmd(translator, preprocessor_name, \
+                                        domain_file, problem_file)
             
             # We can use the main command here, because preprocessing uses
             # a separate directory
-            run.set_command('%s; %s' % (translate_cmd, preprocess_cmd))
+            run.set_command(pre_cmd)
             
             run.declare_optional_output("*.groups")
             run.declare_optional_output("output.sas")
@@ -516,13 +520,9 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 run.add_resource("DOMAIN", domain_file, "domain.pddl")
                 run.add_resource("PROBLEM", problem_file, "problem.pddl")
                 
-                translator = os.path.abspath(translator)
-                translate_cmd = '%s %s %s' % (translator, domain_file, 
-                                                problem_file)
-                
-                preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
-                
-                run.set_preprocess('%s; %s' % (translate_cmd, preprocess_cmd))
+                pre_cmd = _get_preprocess_cmd(translator, preprocessor_name, \
+                                        domain_file, problem_file)
+                run.set_preprocess(pre_cmd)
                 
                 run.set_command("$%s %s < output" % (planner_name, config))
                 
