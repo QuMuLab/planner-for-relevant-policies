@@ -3,8 +3,6 @@
 
 import os
 import resource
-import signal
-import socket
 import sys
 import time
 import subprocess
@@ -27,66 +25,64 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 redirects = {'stdout': open('run.log', 'a'), 'stderr': open('run.err', 'a')}
 properties_file = open('properties', 'a')
 
-
 def set_limit(kind, amount):
     try:
         resource.setrlimit(kind, (amount, amount))
-    except OSError, e:
+    except (OSError, ValueError), e:
         redirects['stderr'].write('Error: %s\n' % e)
+        sys.exit()
 
 def add_property(name, value):
     properties_file.write('%s = %s\n' % (name, repr(value)))
     properties_file.flush()
 
-def save_returncode(command, value):
-    os.environ['RETURNCODE_%s' % command.upper()] = str(value)
-    #add_property('returncode_%s' % command.lower(), str(value))
+def save_returncode(command_name, value):
+    os.environ['%s_RETURNCODE' % command_name.upper()] = str(value)
+    add_property('%s_returncode' % command_name.lower(), str(value))
+    # TODO: Do we want to mark errors here already?
+    #if value > 0:
+    #    add_property('%s_error' % command_name.lower(), str(value))
 
-#for cmd in ['preprocess', 'command', 'postprocess']:
-#    save_returncode(cmd, 'unfinished')
+def run_command(command, name):
+    """
+    Calls the command with subprocess.call()
+    The timeout does not have to be checked here since the subprocess is
+    automatically stopped when the timeout is reached. In that case returncode
+    gets the value 137 and the rest of the method is still executed.
+    """
+    start_times = os.times()
+    
+    add_property(name + '_start_time', str(datetime.datetime.now()))
+
+    try:
+        returncode = subprocess.call(command, shell=True, **redirects)
+    except MemoryError:
+        redirects['stderr'].write('Error: MemoryError\n')
+        # TODO: what is a good memory error returncode?
+        returncode = 888
+    except KeyboardInterrupt:
+        redirects['stdout'].write('%s interrupted\n' % name)
+        # TODO: what is a good keyboard interrupt returncode?
+        returncode = 999
+    
+    end_times = os.times()
+    time = end_times[2] + end_times[3] - start_times[2] - start_times[3]
+    add_property(name + '_time', round(time, 3))
+    
+    save_returncode(name, returncode)
+    return returncode
 
 
 preprocess_command = """***PREPROCESS_COMMAND***"""
-if preprocess_command:
-    retcode = subprocess.call(preprocess_command, shell=True, **redirects)
-    save_returncode('preprocess', retcode)
-else:
-    save_returncode('preprocess', 'unused')
+run_command(preprocess_command, 'preprocess')
 
-
+# Limits can not be increased, so set them only once after the preprocessing
 set_limit(resource.RLIMIT_CPU, timeout)
 set_limit(resource.RLIMIT_AS, memory)
 set_limit(resource.RLIMIT_CORE, 0)
 
-start_time = time.clock()
-term_attempted = False
-
-add_property('run_start_time', str(datetime.datetime.now()))
-
-run = subprocess.Popen("""***RUN_COMMAND***""", shell=True, **redirects)
-
-try:
-    while True:
-        time.sleep(CHECK_INTERVAL)
-
-        alive = run.poll() is None
-        if not alive:
-            break
-
-        passed_time = time.clock() - start_time
-        if passed_time > timeout and not term_attempted:
-            run.terminate()
-            term_attempted = True
-        elif passed_time > timeout + KILL_DELAY and term_attempted:
-            run.kill()
-            break
-except KeyboardInterrupt:
-    redirects['stdout'].write('Run interrupted\n')
-    run.returncode = 'interrupted'
-    run.terminate()
-
-# Save the returncode in an environment variable and in the properties file
-save_returncode('command', run.returncode)
+command = """***RUN_COMMAND***"""
+returncode = run_command(command, 'command')
 
 
 optional_output = ***OPTIONAL_OUTPUT***
@@ -95,29 +91,26 @@ resources = ***RESOURCES***
 run_files = ['run', 'run.log', 'run.err', 'properties']
 
 # Check the output files
-if run.returncode == 0:
+if returncode == 0:
     found_files = os.listdir('.')
 
     detected_optional_files = []
     for file_glob in optional_output:
         detected_optional_files.extend(glob.glob(file_glob))
 
-    expected_files = resources + run_files + detected_optional_files + required_output
+    expected_files = resources + run_files + detected_optional_files + \
+                     required_output
 
     for file in found_files:
         if file not in expected_files:
             # We have more files than expected
-            redirects['stderr'].write('ERROR: Unexpected file "%s"\n' % file)
+            redirects['stderr'].write('Error: Unexpected file "%s"\n' % file)
     for required_file in required_output:
         if not required_file in found_files:
             # We are missing a required file
-            redirects['stderr'].write('ERROR: Required file missing "%s"\n' % required_file)
-
+            msg = 'Error: Required file missing "%s"\n' % required_file
+            redirects['stderr'].write(msg)
 
 
 postprocess_command = """***POSTPROCESS_COMMAND***"""
-if postprocess_command:
-    retcode = subprocess.call(postprocess_command, shell=True, **redirects)
-    save_returncode('postprocess', retcode)
-else:
-    save_returncode('postprocess', 'unused')
+run_command(postprocess_command, 'postprocess')
