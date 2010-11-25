@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #ifndef __TYPEDANALYSER
 #define __TYPEDANALYSER
 
@@ -67,6 +93,8 @@ public:
 	virtual void write(ostream & o) const = 0;
 	virtual void notify(void(extended_pred_symbol::*f)(operator_ *,const proposition *),
 							operator_ * o,const proposition * p) {};
+	virtual void notify(void(extended_pred_symbol::*f)(derivation_rule *,const proposition *),
+							derivation_rule * o,const proposition * p) {};
 	virtual PropInfo * get(FastEnvironment * f,const proposition * p) const = 0;
 	virtual PropInfo * get(Environment * f,const proposition * p) const = 0;
 	virtual PropInfo * partialGet(FastEnvironment * f,const proposition * p) const = 0;
@@ -317,7 +345,16 @@ public:
 	};
 };
 
-typedef pair<operator_*,const proposition *> OpProp;
+struct OpProp {
+	
+	operator_* op;
+	derivation_rule* drv;
+	const proposition* second;
+	
+
+	OpProp(operator_* o, const proposition * p) : op(o), drv(0), second(p) {};
+	OpProp(derivation_rule* o, const proposition *p) : op(0), drv(o), second(p) {};
+};
 
 typedef vector<pddl_typed_symbol *> Types;
 
@@ -340,6 +377,7 @@ protected:
 	OpProps negpreconds;
 	OpProps adds;
 	OpProps dels;
+
 
 	PropStore * props;
 
@@ -508,14 +546,47 @@ public:
 		{
 			cout << "Final fail with " << p->head->getName() << "\n";
 		};
-		*/
+*/		
 		if(eps) return eps->appearsStatic();
 		return false;
 	};
 
+	bool cannotIncrease() const
+	{
+		return timedInitials.empty() && adds.empty() && isPrimitiveType();
+	}
+	
 	bool isDefinitelyStatic() const
 	{
 		if(!appearsStatic()) return false;
+		if(types.empty()) return true;
+/*
+ 		vector<vector<const pddl_type *> > alltps;
+		for(Types::const_iterator i = types.begin();i != types.end();++i)
+		{
+			if(!theTC->isLeafType((*i)->type))
+			{
+				cout << (*i)->type->getName() << " ";
+				alltps.push_back(theTC->leaves((*i)->type));
+			}
+			else
+			{
+				alltps.push_back(vector<const pddl_type *>(1,(*i)->type));
+			};
+		};
+		cout << "Got " << alltps.size() << " of sizes: ";
+		for(vector<vector<const pddl_type *> >::const_iterator i = alltps.begin();
+			i != alltps.end();++i)
+			{
+				cout << i->size() << " ";
+			}
+			cout << "\n";
+*/
+		return isPrimitiveType();
+	}
+
+	bool isPrimitiveType() const
+	{
 		for(Types::const_iterator i = types.begin();i != types.end();++i)
 		{
 			if(!theTC->isLeafType((*i)->type))
@@ -525,6 +596,11 @@ public:
 			};
 		};
 		return true;
+	};
+
+	extended_pred_symbol * getPrimitive(FastEnvironment * f,const proposition * p)
+	{
+		return records()->getEP(f,p);
 	};
 		
 	bool appearsStatic() const
@@ -536,23 +612,39 @@ public:
 	
 	void addPosPre(operator_ * o,const proposition * p) 
 	{
-		pospreconds.push_back(make_pair(o,p));
+		pospreconds.push_back(OpProp(o,p));
 		records()->notify(&extended_pred_symbol::addPosPre,o,p);
 	};
 	void addNegPre(operator_ * o,const proposition * p) 
 	{
-		negpreconds.push_back(make_pair(o,p));
+		negpreconds.push_back(OpProp(o,p));
 		records()->notify(&extended_pred_symbol::addNegPre,o,p);
 	};
 	void addAdd(operator_ * o,const proposition * p) 
 	{
-		adds.push_back(make_pair(o,p));
+		adds.push_back(OpProp(o,p));
 		records()->notify(&extended_pred_symbol::addAdd,o,p);
 	};
 	void addDel(operator_ * o,const proposition * p) 
 	{
-		dels.push_back(make_pair(o,p));
+		dels.push_back(OpProp(o,p));
 		records()->notify(&extended_pred_symbol::addDel,o,p);
+	};
+
+	void addPosPre(derivation_rule * o,const proposition * p) 
+	{
+		pospreconds.push_back(OpProp(o,p));
+		records()->notify(&extended_pred_symbol::addPosPre,o,p);
+	};
+	void addNegPre(derivation_rule * o,const proposition * p) 
+	{
+		negpreconds.push_back(OpProp(o,p));
+		records()->notify(&extended_pred_symbol::addNegPre,o,p);
+	};
+	void addAdd(derivation_rule * o,const proposition * p) 
+	{
+		adds.push_back(OpProp(o,p));
+		records()->notify(&extended_pred_symbol::addAdd,o,p);
 	};
 
 	void writeName(ostream & o) const
@@ -599,7 +691,8 @@ public:
 		for(OpProps::const_iterator i = pospreconds.begin();
 				i != pospreconds.end();++i)
 		{
-			if(i->first) o << "\t" << i->first->name->getName() << "\n";
+			if(i->op) o << "\t" << i->op->name->getName() << "\n";
+			if(i->drv)   o << "\t" << i->drv->get_head()->head->getName() << "\n";
 		};
 		if(!negpreconds.empty())
 		{
@@ -607,7 +700,8 @@ public:
 			for(OpProps::const_iterator i = negpreconds.begin();
 					i != negpreconds.end();++i)
 			{
-				if(i->first) o << "\t" << i->first->name->getName() << "\n";
+				if(i->op) o << "\t" << i->op->name->getName() << "\n";
+				if(i->drv)   o << "\t" << i->drv->get_head()->head->getName() << "\n";
 			};
 		};
 		if(appearsStatic()) 
@@ -629,16 +723,21 @@ public:
 			for(OpProps::const_iterator i = adds.begin();
 					i != adds.end();++i)
 			{
-				if(i->first) o << "\t" << i->first->name->getName() << "\n";
+				if(i->op) o << "\t" << i->op->name->getName() << "\n";
+				if(i->drv)   o << "\t" << i->drv->get_head()->head->getName() << "\n";
 			};
 		};
 		o << "Dels:\n";
 		for(OpProps::const_iterator i = dels.begin();
 				i != dels.end();++i)
 		{
-			if(i->first) o << "\t" << i->first->name->getName() << "\n";
+			if(i->op) o << "\t" << i->op->name->getName() << "\n";
+			if(i->drv)   o << "\t" << i->drv->get_head()->head->getName() << "\n";
 		};
-
+		if(cannotIncrease())
+		{
+			o << "Cannot increase\n";
+		}
 
 	};
 	void visit(VisitController * v) const
@@ -744,7 +843,7 @@ public:
 		preds(), baseStores(), timedBases()
 	{};
 
-	void set(proposition * p)
+	void set_prop(proposition * p)
 	{
 		Associater * aa = a->handle(p);
 		if(a != aa)
@@ -974,7 +1073,7 @@ public:
 	};
 	virtual void visit_proposition(proposition * p)
 	{
-		HPS(p->head)->set(p);
+		HPS(p->head)->set_prop(p);
 	};
 	virtual void visit_qfied_goal(qfied_goal * p) 
 	{p->getGoal()->visit(this);};
@@ -1027,6 +1126,11 @@ public:
 		p->precondition->visit(this);
 		p->effects->visit(this);
 	};
+	virtual void visit_derivation_rule(derivation_rule * r)
+	{
+		if (r->get_body()) r->get_body()->visit(this);
+		visit_proposition(r->get_head());
+	};
 	virtual void visit_action(action * p)
 	{
 		visit_operator_(static_cast<operator_*>(p));
@@ -1052,7 +1156,8 @@ public:
 	virtual void visit_domain(domain * p) 
 	{
 		visit_operator_list(p->ops);
-		p->predicates->visit(this);
+		if (p->drvs) visit_derivations_list(p->drvs);
+		if(p->predicates) p->predicates->visit(this);
 	};
 
 	virtual void visit_pred_decl(pred_decl * p)
@@ -1069,6 +1174,7 @@ private:
 	bool pos;
 	bool adding;
 	operator_ * op;
+	derivation_rule * drv;
 
 	vector<durative_action *> das;
 
@@ -1081,11 +1187,11 @@ private:
 	
 public:
 	Analyser() : initially(false), when(0), finally(false), 
-		pos(true), adding(true), op(0), toIgnore()
+		pos(true), adding(true), op(0), drv(0), toIgnore()
 	{};
 	
 	Analyser(const vector<pred_symbol *> & ti) : initially(false), when(0), finally(false),
-		pos(true), adding(true), op(0), toIgnore(ti)
+		pos(true), adding(true), op(0), drv(0), toIgnore(ti)
 	{};
 
 	vector<durative_action *> & getFixedDAs() 
@@ -1113,11 +1219,13 @@ public:
 			{
 				if(pos)
 				{
-					EPS(p->getProp()->head)->addPosPre(op,p->getProp());
+					if (op) EPS(p->getProp()->head)->addPosPre(op,p->getProp());
+					if (drv) EPS(p->getProp()->head)->addPosPre(drv,p->getProp());
 				}
 				else
 				{
-					EPS(p->getProp()->head)->addNegPre(op,p->getProp());
+					if (op) EPS(p->getProp()->head)->addNegPre(op,p->getProp());
+					if (drv) EPS(p->getProp()->head)->addNegPre(drv,p->getProp());
 				};
 			};
 		};
@@ -1125,7 +1233,7 @@ public:
 	virtual void visit_qfied_goal(qfied_goal * p) 
 	{p->getGoal()->visit(this);};
 	virtual void visit_conj_goal(conj_goal * p) 
-	{p->getGoals()->visit(this);};
+	{if(p) p->getGoals()->visit(this);};
 	virtual void visit_disj_goal(disj_goal * p) 
 	{p->getGoals()->visit(this);};
 	virtual void visit_timed_goal(timed_goal * p) 
@@ -1213,6 +1321,15 @@ public:
 		adding = true;
 		p->precondition->visit(this);
 		p->effects->visit(this);
+		op = 0;
+	};
+	virtual void visit_derivation_rule(derivation_rule * p) 
+	{
+		drv = p;
+		adding = true;
+		p->get_body()->visit(this);
+		if(filterFn(p->get_head()->head)) EPS(p->get_head()->head)->addAdd(drv,p->get_head());
+		drv = 0;
 	};
 	virtual void visit_action(action * p)
 	{
@@ -1244,6 +1361,7 @@ public:
 	virtual void visit_domain(domain * p) 
 	{
 		visit_operator_list(p->ops);
+		if (p->drvs) visit_derivations_list(p->drvs);
 		vector<durative_action *> fdas;
 		for(vector<durative_action *>::iterator i = das.begin();i != das.end();++i)
 		{
@@ -1332,7 +1450,10 @@ public:
 		{
 			EFT(p->getFunction())->addGoal();
 		}
-		else EFT(p->getFunction())->addPre(op);
+		else {
+			if (op) EFT(p->getFunction())->addPre(op);
+			if (drv) EFT(p->getFunction())->addPre(drv);
+		}
 	};
 };
 

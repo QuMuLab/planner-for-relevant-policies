@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #include "FuncAnalysis.h"
 #include <set>
 #include <algorithm>
@@ -212,7 +238,7 @@ void extended_func_symbol::applyUpdates()
 		if(FAverbose)
 			cout << "Was " << cval << " and now increasing by " << ae() << "\n";
 		cval += ae();
-		if(FAverbose && cval == E_ALL && find(preconds.begin(),preconds.end(),j->first) != preconds.end())
+		if(FAverbose && cval == E_ALL && find(preconds.begin(),preconds.end(),pair<operator_*,derivation_rule*>(j->first,0)) != preconds.end())
 		{
 			cout << "But note that a precondition applies\n";
 		};
@@ -223,7 +249,7 @@ void extended_func_symbol::applyUpdates()
 		if(FAverbose) 
 			cout << "Was " << cval << " and now decreasing by " << ae() << "\n";
 		cval -= ae();
-		if(FAverbose && cval == E_ALL && std::find(preconds.begin(),preconds.end(),j->first) != preconds.end())
+		if(FAverbose && cval == E_ALL && std::find(preconds.begin(),preconds.end(),pair<operator_*,derivation_rule*>(j->first,0)) != preconds.end())
 		{
 			cout << "But note that a precondition applies\n";
 		};
@@ -234,7 +260,7 @@ void extended_func_symbol::applyUpdates()
 		if(FAverbose)
 			cout << "Was " << cval << " and now scaling by " << ae() << "\n";
 		cval *= ae();
-		if(FAverbose && cval == E_ALL && std::find(preconds.begin(),preconds.end(),j->first) != preconds.end())
+		if(FAverbose && cval == E_ALL && std::find(preconds.begin(),preconds.end(),pair<operator_*,derivation_rule*>(j->first,0)) != preconds.end())
 		{
 			cout << "But note that a precondition applies\n";
 		};

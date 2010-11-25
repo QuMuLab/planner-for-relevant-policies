@@ -1,8 +1,36 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #include "ToFunction.h"
 #include "FastEnvironment.h"
 #include "SASActions.h"
 #include "instantiation.h"
 #include "SimpleEval.h"
+
+#define SASOUTPUT if(use_sasoutput)
 
 using std::cerr;
 
@@ -10,6 +38,8 @@ using namespace VAL;
 using namespace Inst;
 
 namespace SAS {
+
+bool use_sasoutput = false;
 
 ostream & operator<<(ostream & o,const ValHolder & vh)
 {
@@ -139,24 +169,26 @@ vector<ValueElement *> constructValue(Range & range,TIMobjectSymbol * tob)
 
 void ValueStructure::initialise()
 {
-	cout << "Initialising for " << pt->getName() << " in range: " << *this << "\n\n";
+	SASOUTPUT {
+	cout << "Initialising for " << pt->getName() << " in range: " << *this << "\n\n"; };
 
 	vector<VAL::const_symbol *> cs(theTC->range(pt));
 	for(vector<VAL::const_symbol*>::iterator i = cs.begin();i != cs.end();++i)
 	{
 		if((rngs[TOB(*i)] = constructValue(range,TOB(*i))).size() > 0)
 		{
+			SASOUTPUT {
 			cout << "Constructed an initial value for " << *TOB(*i) << ": (";
 			for_each(rngs[TOB(*i)].begin(),rngs[TOB(*i)].end()-1,ptrwriter<ValueElement>(cout,","));
 			cout << **(rngs[TOB(*i)].end()-1);
-			cout << ")\n";
+			cout << ")\n"; };
 		}
 		else
 		{
-			cout << "No initial value for " << *TOB(*i) << "\n";
+			SASOUTPUT {cout << "No initial value for " << *TOB(*i) << "\n";};
 		};
 	};
-	cout << "\n";
+	SASOUTPUT {cout << "\n";};
 };
 
 void FunctionStructure::initialise()
@@ -376,7 +408,7 @@ vector<ValueElement *> constructValue(const ValueStructure & vvs,
 		};
 		if(potentiallyLinked && !ps)
 		{
-			cout << "Potential link for a value\n";
+			SASOUTPUT {cout << "Potential link for a value\n";};
 		};
 		vs.push_back(new ValueElement(ps,vals));
 	};
@@ -405,7 +437,9 @@ public:
 	virtual void visit_disj_goal(disj_goal * p) 
 	{cout << "Cannot handle disjunctive preconditions yet!\n"; exit(0);};
 	virtual void visit_timed_goal(timed_goal * p) 
-	{cout << "Not yet handling temporal domains...\n";exit(0);};
+	{cout << "CAUTION: Temporal goal\n";
+	p->getGoal()->visit(this); 
+	cout << "Done Temporal goal\n";};
 	virtual void visit_imply_goal(imply_goal * p) 
 	{cout << "Cannot handle implicative preconditions yet!\n";exit(0);};
 	virtual void visit_neg_goal(neg_goal * p) 
@@ -427,7 +461,7 @@ public:
 		parameter_symbol_list::const_iterator ps = p->args->begin();
 		for(unsigned int i = 0;i < p->args->size();++i,++ps)
 		{
-//			cout << "Handle " << *(TPS(p->head)->property(i)) << "\n";
+			cout << "Handle " << *(TPS(p->head)->property(i)) << "\n";
 // The following assumes that a property will be single valued for all parameters (of any types)
 // that may instantiate a particular position. This looks for any one single valued property 
 // matching the property from the proposition (which can be for a more general type than the 
@@ -441,11 +475,11 @@ public:
 			};
 			for(vector<Property*>::const_iterator prp = ms.begin();prp != ms.end();++prp)
 			{
-//			cout << "Considering " << **prp << "\n";
+			cout << "Considering " << **prp << "\n";
 				if((*prp)->isSingleValued())
 				{
-//					cout << "Think I should allocate this to parameter " << 
-//							(static_cast<const IDsymbol<var_symbol>*>(*ps)->getId()) << "\n";
+					cout << "Think I should allocate this to parameter " << 
+						(static_cast<const IDsymbol<var_symbol>*>(*ps)->getId()) << "\n";
 					gathered[(static_cast<const IDsymbol<var_symbol>*>(*ps)->getId())].
 									push_back(make_pair(TPS(p->head)->property(i),p));
 					break;
@@ -474,8 +508,8 @@ public:
 			prevalues.swap(values);
 		};
 		
-		cout << (stateForAll?"Precondition":"Postcondition") 
-				<< " states for " << *TAS(op->name) << "\n";
+		SASOUTPUT {cout << (stateForAll?"Precondition":"Postcondition") 
+				<< " states for " << *TAS(op->name) << "\n";};
 		int c = 0;
 		for(var_symbol_list::const_iterator ps = op->parameters->begin();
 									ps != op->parameters->end();++ps,++c)
@@ -531,13 +565,14 @@ public:
 				{
 					if((*ve)->size() > 0)
 					{
-						cout << (*atp)->getName() << " [" << cc << "] " << (*ps)->getName() << " = "
-							<< **ve << "\n";
+						SASOUTPUT {cout << (*atp)->getName() << " [" << cc << "] " << (*ps)->getName() << " = "
+							<< **ve << "\n";};
 						valueFor[*ps].push_back(new ValueRep(*atp,cc,*ve));
 					};
 				};
 			};
 		};
+		SASOUTPUT {
 		if(stateForAll && !theStatics.empty())
 		{
 			cout << "\nStatic conditions:\n";
@@ -566,6 +601,7 @@ public:
 				cout << ")\n";
 			};
 		};
+		};
 	};
 	SASActionTemplate * completeAction(operator_ * op,const VMap & pre,const VMap & post,
 											ConditionGatherer & cg) const
@@ -579,7 +615,7 @@ void FunctionStructure::processActions()
 	for(operator_list::const_iterator i = current_analysis->the_domain->ops->begin();
 				i != current_analysis->the_domain->ops->end();++i)
 	{
-		cout << "===========\n" << *TAS((*i)->name) << "\n";
+		SASOUTPUT {cout << "===========\n" << *TAS((*i)->name) << "\n";};
 /*		for(TIMactionSymbol::RCiterator r = TAS((*i)->name)->begin();r != TAS((*i)->name)->end();++r)
 		{
 			cout << **r << "\n";
@@ -596,12 +632,16 @@ void FunctionStructure::processActions()
 		eff.collect(*i,this,false,posts);
 		sasActionTemplates[*i] = pg.completeAction(*i,pres,posts,eff);
 	};
-	cout << "\n\n\n\n";
+	SASOUTPUT {cout << "\n\n\n\n";
 	for(SASActionTemplates::const_iterator i = sasActionTemplates.begin();
 								i != sasActionTemplates.end();++i)
 	{
 		cout << *(i->second) << "\n";
-	};
+	};};
+};
+
+void FunctionStructure::buildLayers()
+{
 	SimpleEvaluator::setInitialState();
 	for(operator_list::const_iterator os = current_analysis->the_domain->ops->begin();
 						os != current_analysis->the_domain->ops->end();++os)
@@ -805,12 +845,12 @@ void FunctionStructure::restructure(const operator_ * op,const var_symbol * prm,
 											const vector<const pddl_type *> & rtps)
 {
 
- 	cout << "Looking for shared state structure in types: ";
+ 	SASOUTPUT {cout << "Looking for shared state structure in types: ";
 	for(vector<const pddl_type *>::const_iterator i = rtps.begin(); i != rtps.end(); ++i)
 	{
 		cout << (*i)->getName() << " ";
 	};
-	cout << "\n";
+	cout << "\n";};
 	if(rtps.size() > 2) 
 	{
 		cerr << "Not sure how to handle so many sub-types for this abstraction process!\n"
@@ -1007,12 +1047,12 @@ bool FunctionStructure::growOneLevel()
 		for(extended_pred_symbol::OpProps::const_iterator j = EPS(others[i]->head)->posPresBegin();
 				j != EPS(others[i]->head)->posPresEnd();++j)
 		{
-			for(int k = startFor(j->first);k != endFor(j->first);++k)
+			for(int k = startFor(j->op);k != endFor(j->op);++k)
 			{
 				if(!(--(unsatisfiedPrecs[k])))
 				{
 					cout << "Enacting " << *instantiatedOp::getInstOp(k) << "\n";
-					sasActionTemplates[j->first]->enact(instantiatedOp::getInstOp(k)->getEnv(),reachables,others);
+					sasActionTemplates[j->op]->enact(instantiatedOp::getInstOp(k)->getEnv(),reachables,others);
 					activated = true;
 				};
 			};
@@ -1059,33 +1099,12 @@ bool FunctionStructure::tryMatchedPre(int k,instantiatedOp * iop,const var_symbo
 	{
 //	cout << "One down\n";
 		if(--(unsatisfiedPrecs[k])) return false;
-		cout << "Enacting " << *iop << "\n";
+		SASOUTPUT {cout << "Enacting " << *iop << "\n";};
 		sasact->enact(iop->getEnv(),reachables,others);
 		return true;
 	}
 	return false;
 };
 
-};
-
-using namespace SAS;
-
-int main(int argc,char * argv[])
-{
-	performTIMAnalysis(&argv[1]);
-
-	FunctionStructure fs;
-	fs.normalise();
-	fs.initialise();
-
-	fs.processActions();
-	
-    fs.setUpInitialState();
-    int level = 0;
-    while(fs.growOneLevel())
-    {
-    	++level;
-    	cout << "Built level: " << level << "\n";
-    };
 };
 

@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #ifndef __TIMSUPPORT
 #define __TIMSUPPORT
 
@@ -6,6 +32,7 @@
 #include <set>
 #include <memory>
 #include <iterator>
+#include <string.h>
 
 #include "TIMUtilities.h"
 #include "TypedAnalyser.h"
@@ -381,6 +408,9 @@ private:
 	vector<TIMobjectSymbol *> objects;
 
 	bool isStateValued;
+
+	bool isLS;
+	bool LSchecked;
 	
 public:
 	PropertySpace(Property * p,TransitionRule * t);
@@ -446,6 +476,7 @@ public:
 	SIterator begin() const {return states.begin();};
 	SIterator end() const {return states.end();};
 	int numStates() const {return states.size();};
+	bool isLockingSpace();
 };
 
 ostream & operator<<(ostream & o,const PropertySpace & p);
@@ -459,6 +490,7 @@ class TransitionRule {
 private:
 	TIMAnalyser * tan;
 	VAL::operator_ * op;
+	VAL::derivation_rule * drv;
 	opType opt;
 	int var;
 	PropertyState * enablers;
@@ -474,6 +506,10 @@ private:
 	
 public:
 	TransitionRule(TIMAnalyser * t,VAL::operator_ * o,int v,
+					PropertyState * e,PropertyState * l,PropertyState * r,
+					opType ty = INSTANT);
+
+	TransitionRule(TIMAnalyser * t,VAL::derivation_rule * o,int v,
 					PropertyState * e,PropertyState * l,PropertyState * r,
 					opType ty = INSTANT);
 	
@@ -532,6 +568,7 @@ struct ProtoRule {
 
 	TIMAnalyser * tan;
 	VAL::operator_ * op;
+	VAL::derivation_rule * drv;
 	opType opt;
 	int var;
 	
@@ -540,7 +577,10 @@ struct ProtoRule {
 	vector<Property *> dels;
 
 	ProtoRule(TIMAnalyser * t,VAL::operator_ * o,int v,opType ty = INSTANT) : 
-		tan(t), op(o), opt(ty), var(v) {};
+		tan(t), op(o), drv(0), opt(ty), var(v) {};
+
+	ProtoRule(TIMAnalyser * t,VAL::derivation_rule * o,int v,opType ty = INSTANT) : 
+		tan(t), op(0), drv(o), opt(ty), var(v) {};
 	
 	void insertPre(Property * p)
 	{
@@ -619,11 +659,22 @@ class DurativeActionPredicateBuilder : public VAL::VisitController {
 private:
 	bool inserting;	
 	vector<VAL::pred_symbol *> toIgnore;
+	VAL::durative_action * replacePreconditionsOf;
 public:
 	DurativeActionPredicateBuilder() : VisitController(), inserting(true) {};
 	const vector<VAL::pred_symbol *> & getIgnores() const {return toIgnore;};
 	
 	void reverse() {inserting = false;};
+	virtual void visit_conj_goal(VAL::conj_goal * cg) {        
+        using namespace VAL;
+
+        replacePreconditionsOf->precondition = cg->getGoals()->front();
+        const_cast<goal_list*>(cg->getGoals())->pop_front();
+    }
+
+    virtual void visit_timed_goal(VAL::timed_goal* ) {
+        replacePreconditionsOf->precondition = 0;
+    } 
 	
 	virtual void visit_durative_action(VAL::durative_action * p)
 	{
@@ -643,11 +694,16 @@ public:
 			p->effects->timed_effects.push_front(ts);
 			p->effects->timed_effects.push_front(te);
 			timed_goal * tg = new timed_goal(new simple_goal(new proposition(nm,p->parameters),E_POS),E_OVER_ALL);
-			goal_list * gs = new goal_list;
-			gs->push_front(tg);
-			gs->push_front(p->precondition);
-			conj_goal * cg = new conj_goal(gs);
-			p->precondition = cg;
+			if(p->precondition) 
+			{
+				goal_list * gs = new goal_list;
+				gs->push_front(tg);
+				gs->push_front(p->precondition);
+				conj_goal * cg = new conj_goal(gs);
+				p->precondition = cg;
+			} else {
+				p->precondition = tg;
+			}
 		}
 		else
 		{
@@ -657,10 +713,10 @@ public:
 			t = p->effects->timed_effects.front();
 			p->effects->timed_effects.pop_front();
 			delete t;
-			conj_goal * cg = (conj_goal*)(p->precondition);
-			p->precondition = cg->getGoals()->front();
-			const_cast<goal_list*>(cg->getGoals())->pop_front();
-			delete cg;
+			replacePreconditionsOf = p;
+			goal * oldprecondition = p->precondition;
+			p->precondition->visit(this);
+			delete oldprecondition;
 		};
 	};
 
@@ -737,6 +793,7 @@ private:
 	bool overall;
 	
 	VAL::operator_ * op;
+	VAL::derivation_rule * drv;
 	vector<ProtoRule *> rules;
 	TRules trules;
 	vector<PropertySpace *> propspaces;
@@ -756,7 +813,7 @@ public:
 	TIMAnalyser(VAL::TypeChecker & tc,VAL::analysis * a) :
 	    tcheck(tc), an(a), fan(a->func_tab), 
 	    adding(true), initially(false), finally(false), 
-	    isDurative(false), overall(false), op(0) 
+	    isDurative(false), overall(false), op(0) ,drv(0)
 	{};
 	VAL::TypeChecker & getTC() {return tcheck;};
 	
@@ -775,7 +832,7 @@ public:
 	virtual void visit_timed_goal(VAL::timed_goal * p) 
 	{
 		using namespace VAL;
-		if(p->getTime() == (atStart?E_AT_START:E_AT_END) || overall && p->getTime()==E_OVER_ALL)
+		if(p->getTime() == (atStart?E_AT_START:E_AT_END) || (overall && p->getTime()==E_OVER_ALL))
 			p->getGoal()->visit(this);
 	};	
 	virtual void visit_imply_goal(VAL::imply_goal * p) 
@@ -787,6 +844,7 @@ public:
 		OUTPUT cout << "Negative goal\n";
 	};
 	virtual void visit_simple_effect(VAL::simple_effect * p);
+	virtual void visit_simple_derivation_effect(VAL::derivation_rule * p);
 	virtual void visit_forall_effect(VAL::forall_effect * p) 
 	{
 		OUTPUT cout << "Quantified effect\n";
@@ -813,6 +871,16 @@ public:
 		p->del_effects.pc_list<simple_effect*>::visit(this);
 		adding = whatwas;
 	};
+	virtual void visit_derivation_rule(VAL::derivation_rule * p) 
+	{
+		drv = p;
+		adding = true;
+		rules = vector<ProtoRule*>(p->get_head()->args->size(),0);
+		p->get_body()->visit(this);
+		visit_simple_derivation_effect(p);
+		for_each(rules.begin(),rules.end(),processRule(trules));
+		drv = 0;
+	};
 	virtual void visit_operator_(VAL::operator_ * p) 
 	{
 		op = p;
@@ -821,6 +889,7 @@ public:
 		p->precondition->visit(this);
 		p->effects->visit(this);
 		for_each(rules.begin(),rules.end(),processRule(trules));
+		op = 0;
 	};
 	virtual void visit_action(VAL::action * p)
 	{
@@ -860,6 +929,7 @@ public:
 	virtual void visit_domain(VAL::domain * p) 
 	{
 		visit_operator_list(p->ops);
+		if (p->drvs) visit_derivations_list(p->drvs);
 		setUpSpaces();
 	};
 	virtual void visit_problem(VAL::problem * p)
@@ -934,8 +1004,8 @@ struct mRec {
 
 	bool operator<(const mRec & m) const
 	{
-		return first < m.first || (first == m.first &&
-					second < m.second || opt < m.opt);
+		return (first < m.first || (first == m.first &&
+					second < m.second) || opt < m.opt);
 	};
 };
 
@@ -1048,10 +1118,10 @@ struct mutRec {
 
 	bool operator<(const mutRec & m) const
 	{
-		return first < m.first || 
-					first == m.first && (second < m.second ||
-						second == m.second && (one < m.one ||
-						    one == m.one && other < m.other));
+		return (first < m.first || 
+					(first == m.first && (second < m.second ||
+						(second == m.second && (one < m.one ||
+						    (one == m.one && other < m.other))))));
 	};
 		
 };

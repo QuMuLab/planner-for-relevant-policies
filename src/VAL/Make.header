@@ -10,9 +10,12 @@ MYCODEDIR := .
 
 # Directories to search for header files
 
+SEARCHDIRS := -I- -I${MYCODEDIR}
+# Note that -I- should be -iquote for g++ version 4
+
 # makemake variables
 
-DEPENDFLAGS := -g -Wall -Werror
+DEPENDFLAGS := -g -Wall -Werror ${SEARCHDIRS}
 
 # C preprocessor (C, C++, FORTRAN)
 

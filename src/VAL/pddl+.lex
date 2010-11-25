@@ -8,6 +8,7 @@
   using std::cerr;
   using std::istream;
   using namespace VAL;
+extern "C" int yywrap();
 
 %}
 %option case-insensitive
@@ -154,6 +155,11 @@ at_time "at"{whitespace}{float}
 
 %% 
 
-int yyFlexLexer::yywrap() {
+
+extern "C++" {
+  int yyFlexLexer::yywrap()
+{
 	return 1;
-}
+};
+};
+

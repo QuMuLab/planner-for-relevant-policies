@@ -1,9 +1,35 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 
 /*-----------------------------------------------------------------------------
   Member functions for parse tree classes
 
-  $Date: 2001/10/23 12:18:00 $
-  $Revision: 3.2 $
+  $Date: 2009-02-11 17:20:38 $
+  $Revision: 1.4 $
 
   stephen.cresswell@cis.strath.ac.uk
   July 2001.
@@ -493,6 +519,9 @@ void effect_lists::append_effects(effect_lists* from)
     cond_effects.splice(
 	cond_effects.begin(),
 	from->cond_effects);
+    cond_assign_effects.splice(
+        cond_assign_effects.begin(),
+        from->cond_assign_effects);
     assign_effects.splice(
 	assign_effects.begin(),
 	from->assign_effects);
@@ -518,6 +547,9 @@ void effect_lists::display(int ind) const
 
     LABEL(cond_effects);
     cond_effects.display(ind);
+
+    LABEL(cond_assign_effects);
+    cond_assign_effects.display(ind);
 
     LABEL(assign_effects);
     assign_effects.display(ind);
@@ -738,6 +770,9 @@ namespace VAL {
   Functions called from parser that perform checks, and possibly generate
   errors.
   --------------------------------------------------------------------------*/
+
+bool types_defined = false;
+bool types_used = false;
 
 void requires(pddl_req_flag flags)
 {

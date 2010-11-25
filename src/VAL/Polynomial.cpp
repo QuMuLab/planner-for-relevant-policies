@@ -1,8 +1,34 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 /*-----------------------------------------------------------------------------
   VAL - The Automatic Plan Validator for PDDL+
 
-  $Date: 2005/06/07 14:00:00 $
-  $Revision: 4 $
+  $Date: 2009-02-05 10:50:21 $
+  $Revision: 1.2 $
 
   Maria Fox, Richard Howey and Derek Long - PDDL+ and VAL
   Stephen Cresswell - PDDL Parser
@@ -95,7 +121,7 @@ void Intervals::write(ostream & o) const
 
 			if(i->second.second) o << " ]"; else o << " )";
 
-			if(++i != intervals.end()) if(LaTeX) o << "\\cup"; else o << " U ";
+			if(++i != intervals.end()) {if(LaTeX) o << "\\cup"; else o << " U ";};
 
 		};
          if(LaTeX) o << "$";
@@ -125,7 +151,7 @@ void Intervals::writeOffset(double t) const
 			if(i->second.second) *report << " ]"; else cout << " )";
 
 
-			if(++i != intervals.end()) if(LaTeX) *report << "\\cup"; else cout << " U ";
+			if(++i != intervals.end()) {if(LaTeX) *report << "\\cup"; else cout << " U ";};
 
 		};
        if(LaTeX) *report << "$";
@@ -1221,7 +1247,7 @@ pair<vector<pair<intervalEnd,intervalEnd> >,vector<CoScalar> > Polynomial::isola
 //do roots exist on the open interval (0,t)?
 bool Polynomial::rootsExist(CoScalar t) const
 {
-   if(getDegree() < 3) if(getRoots(t).size() > 0) return true; else return false;
+   if(getDegree() < 3) {if(getRoots(t).size() > 0) return true; else return false;};
    
 	pair<vector<pair<intervalEnd,intervalEnd> >,vector<CoScalar> > isolExact;
 	bool ans = false;
@@ -1552,7 +1578,6 @@ Intervals NumericalSolution::getIntervals(const Comparison * comp, const State* 
 
 bool Polynomial::checkInvariant(const Comparison * comp, const State* s,CoScalar t,bool rhsIntervalOpen) const
 {
-
    	if(getDegree() == 0)
       	{
               return comp->evaluateAtPoint(s);
@@ -1582,8 +1607,7 @@ bool Polynomial::checkInvariant(const Comparison * comp, const State* s,CoScalar
 
       		if( (degree == 1))
       		{
-
-      			if( (evaluate(0) >= 0) && (evaluate(t) >= 0))
+      			if( (evaluate(0) > - accuracy) && (evaluate(t) > - accuracy))
       			{
       				return true;
       			};
@@ -1759,16 +1783,16 @@ if( (greater && (j->second - offSet < 0)) ||
 for( ; j != points.end(); )
 {
   ++j; if( j->first == t) break;
-  if( (greater && (j->second - offSet < 0) || (j->second - offSet <= 0 && !strict)) ||
-      (!greater && (j->second - offSet > 0) || (j->second - offSet >= 0 && !strict))) return false;
+  if( ((greater && (j->second - offSet < 0)) || (j->second - offSet <= 0 && !strict)) ||
+      ((!greater && (j->second - offSet > 0)) || (j->second - offSet >= 0 && !strict))) return false;
 
      
 };
 //check end point
 if(j != points.end())
 {              
-if( (greater && (j->second - offSet < 0) || (j->second - offSet <= 0 && !strict && !rhsIntervalOpen)) ||
-      (!greater && (j->second - offSet > 0) || (j->second - offSet >= 0 && !strict && !rhsIntervalOpen))) return false;
+if( ((greater && (j->second - offSet < 0)) || (j->second - offSet <= 0 && !strict && !rhsIntervalOpen)) ||
+      ((!greater && (j->second - offSet > 0)) || (j->second - offSet >= 0 && !strict && !rhsIntervalOpen))) return false;
 };
       
 return true;

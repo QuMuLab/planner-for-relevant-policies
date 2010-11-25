@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #ifndef __ANALYSER
 #define __ANALYSER
 
@@ -20,21 +46,28 @@ private:
 	vector<operator_*> adds;
 	vector<operator_*> dels;
 	
+	vector<derivation_rule*> derivedPreconds;
+	vector<derivation_rule*> derivedAdds;
+
 public:
 	extended_pred_symbol(const string & nm) : pred_symbol(nm), 
 			initialState(0), goalState(0), preconds(),
-			adds(), dels() {};
+			adds(), dels(), derivedPreconds(), derivedAdds() {};
 
 	void setGoal() {++goalState;};
 	void setInitial() {++initialState;};
 	int isGoal() const {return goalState;};
 	int isInitial() const {return initialState;};
 
-	bool isStatic() const {return adds.empty() && dels.empty();};
-	bool decays() const {return adds.empty() && !dels.empty();};
+	bool isStatic() const {return adds.empty() && derivedAdds.empty() && dels.empty();};
+	bool decays() const {return adds.empty() && derivedAdds.empty() && !dels.empty();};
 	
 	void addPre(operator_ * o) {preconds.push_back(o);};
+	void addPre(derivation_rule * o) {derivedPreconds.push_back(o);};
+
 	void addAdd(operator_ * o) {adds.push_back(o);};
+	void addAdd(derivation_rule * o) {derivedAdds.push_back(o);};
+
 	void addDel(operator_ * o) {dels.push_back(o);};
 
 	void write(ostream & o) const
@@ -91,8 +124,9 @@ private:
 	bool finally;
 	bool adding;
 	operator_ * op;
+	derivation_rule * drv;
 public:
-	Analyser() : initially(false), finally(false), adding(true), op(0) {};
+	Analyser() : initially(false), finally(false), adding(true), op(0), drv(0) {};
 	virtual void visit_pred_decl(pred_decl * p) 
 	{
 		p->getPred()->visit(this);
@@ -105,7 +139,8 @@ public:
 		}
 		else
 		{
-			EPS(p->getProp()->head)->addPre(op);
+			if (op) EPS(p->getProp()->head)->addPre(op);
+			if (drv) EPS(p->getProp()->head)->addPre(drv);
 		};
 	};
 	virtual void visit_qfied_goal(qfied_goal * p) 
@@ -171,12 +206,21 @@ public:
 		p->del_effects.pc_list<simple_effect*>::visit(this);
 		adding = whatwas;
 	};
+	virtual void visit_derivation_rule(derivation_rule * r)
+	{
+		drv = r;
+		adding = true;
+		r->get_body()->visit(this);
+		EPS(r->get_head()->head)->addAdd(drv);
+		drv = 0;
+	};
 	virtual void visit_operator_(operator_ * p) 
 	{
 		op = p;
 		adding = true;
 		p->precondition->visit(this);
 		p->effects->visit(this);
+		op = 0;
 	};
 	virtual void visit_action(action * p)
 	{
@@ -199,6 +243,7 @@ public:
 	virtual void visit_domain(domain * p) 
 	{
 		visit_operator_list(p->ops);
+		if (p->drvs) visit_derivations_list(p->drvs);
 	};
 };
 

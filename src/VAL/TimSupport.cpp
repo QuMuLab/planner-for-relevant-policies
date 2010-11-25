@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #include "FastEnvironment.h"
 #include "TimSupport.h"
 #include "ptree.h"
@@ -12,9 +38,12 @@ using std::set;
 using std::copy;
 using std::inserter;
 
+#include <assert.h>
+
 namespace TIM {
 
 using namespace VAL;
+
 
 ostream & operator<<(ostream & o, const Property & p)
 {
@@ -36,6 +65,12 @@ template<>
 TIMpredSymbol * findPred(simple_effect * g)
 {
 	return static_cast<TIMpredSymbol*>(const_cast<pred_symbol *>(g->prop->head));
+};
+
+template<>
+TIMpredSymbol * findPred(derivation_rule * g)
+{
+	return static_cast<TIMpredSymbol*>(const_cast<pred_symbol *>(g->get_head()->head));
 };
 
 bool PropertySpace::contains(TIMobjectSymbol * t) const
@@ -67,13 +102,29 @@ var_symbol * getAt(var_symbol_list * ps,int v)
 	for(;v > 0;--v,++i);
 	return *i;
 };
+
+parameter_symbol * getAt(parameter_symbol_list * ps,int v)
+{
+	parameter_symbol_list::iterator i = ps->begin();
+	for(;v > 0;--v,++i);
+	return *i;
+};
+
 	
 TransitionRule::TransitionRule(TIMAnalyser * t,operator_ * o,int v,
 					PropertyState * e,PropertyState * l,PropertyState * r,
 					opType ty) : 
-	tan(t), op(o), opt(ty), var(v), enablers(e), lhs(l), rhs(r),
+	tan(t), op(o), drv(0), opt(ty), var(v), enablers(e), lhs(l), rhs(r),
 	objects(var>=0?tan->getTC().range(getAt(op->parameters,var)):vector<const_symbol*>())
 {};
+
+TransitionRule::TransitionRule(TIMAnalyser * t,derivation_rule * o,int v,
+					PropertyState * e,PropertyState * l,PropertyState * r,
+					opType ty) : 
+	tan(t), op(0), drv(o), opt(ty), var(v), enablers(e), lhs(l), rhs(r),
+	objects(var>=0?tan->getTC().range(getAt(drv->get_head()->args,var)):vector<const_symbol*>())
+{};
+
 
 bool TransitionRule::applicableIn(const PropertyState * ps) const
 {
@@ -316,6 +367,22 @@ struct process_argument_in_effect : public process_argument {
 	};
 };
 
+struct process_argument_in_derivation_effect : public process_argument {
+	process_argument_in_derivation_effect(TIMAnalyser * t,derivation_rule * g) : 
+		process_argument(t,g)
+	{};
+
+	virtual ~process_argument_in_derivation_effect() {};
+	
+	virtual void operator()(parameter_symbol * p)
+	{
+		Property * prop = timps->property(arg);
+		++arg;
+		ta->insertEff(getId(p),prop);
+	};
+};
+
+
 struct process_constant_in_goal : public process_argument {
 	process_constant_in_goal(TIMAnalyser * t,simple_goal * g) : 
 		process_argument(t,g)
@@ -376,7 +443,26 @@ bool Property::matches(const extended_pred_symbol * eps,pddl_type * pt)
 	if(EPS(predicate)->getParent() != eps->getParent()) return false;
 	//cout << "A: " << *pt << "\n";
 	//cout << "B: " << *eps << "\n";
-	if(*(eps->tcBegin()+posn))
+	Types::const_iterator tcItr = eps->tcBegin()+posn;
+        if (tcItr == eps->tcEnd()) {
+		std::cerr << "A problem has been encountered with your domain/problem file.\n";
+		std::cerr << "-------------------------------------------------------------\n";
+		std::cerr << "Unfortunately, a bug has been encountered in your domain and problem file,\n";
+		std::cerr << "and the planner has to terminate.  The predicate:\n\n";
+		std::cerr << "\t" << eps->getName() << "\n\n";
+		int realArgs = 0;
+		{
+			Types::const_iterator tcsItr = eps->tcBegin();
+			Types::const_iterator tcsEnd = eps->tcEnd();
+			for (; tcsItr != tcsEnd; ++tcsItr) ++realArgs;
+		}
+		std::cerr << "...takes " << realArgs << " argument";
+		if (realArgs != 1) std::cerr << "s";
+		std::cerr << ", but has been given at least " << posn + 1 << ".\n";
+		exit(0);
+
+        }
+	if(*tcItr)
 	{
 	//	cout << "C: " << **(eps->tcBegin()+posn) << "\n";
 	}
@@ -385,7 +471,7 @@ bool Property::matches(const extended_pred_symbol * eps,pddl_type * pt)
 	//	cout << "C: ***\n";
 		return false;
 	};
-	return pt == (*(eps->tcBegin()+posn))->type;
+	return (pt == (*tcItr)->type);
 };
 
 bool Property::equivalent(const Property * p) const
@@ -521,6 +607,12 @@ void TIMAnalyser::visit_simple_effect(simple_effect * p)
 	};
 };
 
+void TIMAnalyser::visit_simple_derivation_effect(derivation_rule * p) 
+{
+	for_each(p->get_head()->args->begin(),p->get_head()->args->end(),
+				process_argument_in_derivation_effect(this,p));
+};
+
 void TIMAnalyser::insertPre(int v,Property * p)
 {
 	if(v<0) 
@@ -535,9 +627,12 @@ void TIMAnalyser::insertPre(int v,Property * p)
 	}
 	else
 	{
-		MEX(op)->addCondition(p,v,isDurative?(atStart?START:END):INSTANT);
+		if (op) MEX(op)->addCondition(p,v,isDurative?(atStart?START:END):INSTANT);
 	};
-	if(!rules[v]) rules[v] = new ProtoRule(this,op,v,isDurative?(atStart?START:END):INSTANT);
+	if(!rules[v]) {
+		if (op) rules[v] = new ProtoRule(this,op,v,isDurative?(atStart?START:END):INSTANT);
+		if (drv) rules[v] = new ProtoRule(this,drv,v,isDurative?(atStart?START:END):INSTANT);
+	}
 	rules[v]->insertPre(p);
 };
 
@@ -548,7 +643,10 @@ void TIMAnalyser::insertEff(int v,Property * p)
 		OUTPUT cout << "Property for a constant\n";
 		return;
 	};
-	if(!rules[v]) rules[v] = new ProtoRule(this,op,v,isDurative?(atStart?START:END):INSTANT);
+	if(!rules[v]) {
+		if (op) rules[v] = new ProtoRule(this,op,v,isDurative?(atStart?START:END):INSTANT);
+		if (drv) rules[v] = new ProtoRule(this,drv,v,isDurative?(atStart?START:END):INSTANT);
+	}
 	if(adding)
 	{
 		rules[v]->insertAdd(p);
@@ -598,11 +696,13 @@ void ProtoRule::addRules(TRules & trules)
 	set_intersection(dels.begin(),dels.end(),adds.begin(),adds.end(),
 						inserter(is,is.begin()));
 // Problem here: if we have a constant we still need to know what it is...
-	parameter_symbol * v = var>=0?getAt(op->parameters,var):0;
+	parameter_symbol * v = (var>=0?(op ? getAt(op->parameters,var) : getAt(drv->get_head()->args,var)):0);
 	vector<const pddl_type *> types(tan->getTC().leaves(v->type));
 	if(types.empty()) types.push_back(v->type);
-	if(is.size()>1 || is.size()==1 && (dels.size()>1 || adds.size()>1)) 
+	if(is.size()>1 || ((is.size()==1) && (dels.size()>1 || adds.size()>1))) 
 	{
+		assert(op);
+		//don't worry, cannot ever be true for derivation rules: have no delete effects, so is empty, dels empty....
 		for(vector<Property*>::iterator i = is.begin();i != is.end();++i)
 		{
 			Property * p = *i;
@@ -648,7 +748,11 @@ void ProtoRule::addRules(TRules & trules)
 		PropertyState * e = PropertyState::getPS(tan,*pt,es.begin(),es.end());
 		PropertyState * l = PropertyState::getPS(tan,*pt,dels.begin(),dels.end());
 		PropertyState * r = PropertyState::getPS(tan,*pt,adds.begin(),adds.end());
-		trules.push_back(new TransitionRule(tan,op,var,e,l,r,opt));
+		if (op) {
+			trules.push_back(new TransitionRule(tan,op,var,e,l,r,opt));
+		} else {
+			trules.push_back(new TransitionRule(tan,drv,var,e,l,r,opt));
+		}
 	};
 };
 
@@ -721,15 +825,17 @@ struct rulePartitioner {
 
 void TransitionRule::distributeEnablers()
 {
-	MutexStore * m = MEX(op);
+	if (op) {
+		MutexStore *m = MEX(op);
 // The enabler mRecs in an op record the enabling property, the variable affected
 // by the rule that is enabled and the part of the operator the rule comes from:
 // START, MIDDLE or END
-	m->add(enablers->begin(),enablers->end(),var,opt);
+		m->add(enablers->begin(),enablers->end(),var,opt);
+	}
 };
 
 PropertySpace::PropertySpace(Property * p,TransitionRule * t) :
-	properties(1,p), isStateValued(!t->isAttribute()) 
+	properties(1,p), isStateValued(!t->isAttribute()), LSchecked(false)
 {
 	rules.insert(t);
 };
@@ -762,6 +868,15 @@ ostream & operator<<(ostream & o,const PropertySpace & p)
 PropertySpace * spaceSet(PM::DataSource & p)
 {
 	return PM::grabData(p)->finalise();
+};
+
+bool PropertySpace::isLockingSpace()
+{
+	if(LSchecked) return isLS;
+	LSchecked = true;
+
+	cout << "Complete check on locking spaces\n";
+	return false;
 };
 
 void TIMAnalyser::setUpSpaces()
@@ -892,11 +1007,14 @@ void PropertySpace::assembleMutexes(Property * p1,Property * p2)
 // make two different state transitions.
 void TransitionRule::assembleMutex(TransitionRule * tr)
 {
-	OUTPUT cout << "Mutex caused by rules: " << *this 
-			<< " (" << this->byWhat()->name->getName() << ") and " << *tr 
-			<< " (" << tr->byWhat()->name->getName() << ")\n";
-	mutex::constructMutex(op,var,tr->op,tr->var,opt,tr->opt);
-	mutex::constructMutex(tr->op,tr->var,op,var,tr->opt,opt);
+	if (op) {
+		OUTPUT cout << "Mutex caused by rules: " << *this 
+				<< " (" << this->byWhat()->name->getName() << ") and " << *tr 
+				<< " (" << tr->byWhat()->name->getName() << ")\n";
+
+		mutex::constructMutex(op,var,tr->op,tr->var,opt,tr->opt);
+		mutex::constructMutex(tr->op,tr->var,op,var,tr->opt,opt);
+	}
 };
 
 ostream & operator<<(ostream & o,opType opt)

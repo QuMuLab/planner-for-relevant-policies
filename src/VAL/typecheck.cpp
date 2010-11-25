@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #include "typecheck.h"
 #include "ptree.h"
 #include <functional>
@@ -442,16 +468,59 @@ bool TypeChecker::typecheckProposition(const proposition * p)
 		if(Verbose) *report << "Predicate " << p->head->getName() << " not found\n";
 		return false;
 	};
+	int idx = 1;
+
 	var_symbol_list::const_iterator arg = (*prd)->getArgs()->begin();
-	parameter_symbol_list::const_iterator e = p->args->end();
-	for(parameter_symbol_list::const_iterator i = p->args->begin();i != e;++i,++arg)
+	const var_symbol_list::const_iterator argEnd = (*prd)->getArgs()->end();
+	
+	parameter_symbol_list::const_iterator i = p->args->begin();
+	const parameter_symbol_list::const_iterator e = p->args->end();
+
+	for(;i != e && arg != argEnd;++i,++arg,++idx)
 	{
 		if(!subType(*i,*arg)) 
 		{
-			if(Verbose) *report << "Type problem in " << *p << "\n";
+			if(Verbose) {
+				*report << "Type problem with proposition (";
+				*report << p->head->getName();
+				parameter_symbol_list::const_iterator it = p->args->begin();
+				parameter_symbol_list::const_iterator et = p->args->end();
+				for(;it != et;++it) {
+					*report << " " << (*it)->getName();
+				}
+				*report << ") - parameter " << idx << " is incorrectly typed\n";			
+			}
 			return false;
 		};
 	};
+	if (i != e) {
+		if(Verbose) {
+			*report << "Problem with proposition (";
+			*report << p->head->getName();
+			parameter_symbol_list::const_iterator it = p->args->begin();
+			parameter_symbol_list::const_iterator et = p->args->end();
+			for(;it != et;++it) {
+				*report << " " << (*it)->getName();
+			}
+			*report << ") - too many parameters\n";
+		}
+		return false;
+	}
+
+	if (arg != argEnd) {
+		if(Verbose) {
+			*report << "Problem with proposition (";
+			*report << p->head->getName();
+			parameter_symbol_list::const_iterator it = p->args->begin();
+			parameter_symbol_list::const_iterator et = p->args->end();
+			for(;it != et;++it) {
+				*report << " " << (*it)->getName();
+			}
+			*report << ") - too few parameters\n";
+		}
+		return false;
+	}
+
 	return true;
 };
 
@@ -464,16 +533,52 @@ bool TypeChecker::typecheckFuncTerm(const func_term * ft)
 	if(fd==thea->the_domain->functions->end())
 		return false;
 	var_symbol_list::const_iterator arg = (*fd)->getArgs()->begin();
-	parameter_symbol_list::const_iterator e = ft->getArgs()->end();
-	for(parameter_symbol_list::const_iterator i = ft->getArgs()->begin();
-			i != e;++i,++arg)
+	const var_symbol_list::const_iterator argEnd = (*fd)->getArgs()->end();
+	parameter_symbol_list::const_iterator i = ft->getArgs()->begin();
+	const parameter_symbol_list::const_iterator e = ft->getArgs()->end();
+	int idx = 1;
+	for(; i != e && arg != argEnd;++i,++arg,++idx)
 	{
 		if(!subType(*i,*arg)) 
 		{
-			if(Verbose) *report << "Type problem in function term " << *ft << "\n";
+			if(Verbose) {
+				*report << "Type problem with function term (";
+				*report << ft->getFunction()->getName();
+				parameter_symbol_list::const_iterator it = ft->getArgs()->begin();
+				parameter_symbol_list::const_iterator et = ft->getArgs()->end();
+				for(;it != et;++it) {
+					*report << " " << (*it)->getName();
+				}
+				*report << ") - parameter " << idx << " is incorrectly typed\n";
+			}
 			return false;
 		};
 	};
+	if (arg != argEnd) {
+		if(Verbose) {
+			*report << "Problem with function term (";
+			*report << ft->getFunction()->getName();
+			parameter_symbol_list::const_iterator it = ft->getArgs()->begin();
+			parameter_symbol_list::const_iterator et = ft->getArgs()->end();
+			for(;it != et;++it) {
+				*report << " " << (*it)->getName();
+			}
+			*report << ") - too few parameters\n";
+		}
+	}
+	if (i != e) {
+		if(Verbose) {
+			*report << "Problem with function term (";
+			*report << ft->getFunction()->getName();
+			parameter_symbol_list::const_iterator it = ft->getArgs()->begin();
+			parameter_symbol_list::const_iterator et = ft->getArgs()->end();
+			for(;it != et;++it) {
+				*report << " " << (*it)->getName();
+			}
+			*report << ") - too many parameters\n";
+		}
+	}
+
 	return true;
 };
 
@@ -626,13 +731,22 @@ bool TypeChecker::typecheckAction(const operator_ * act)
 {
 	if(!isTyped) return true;
 	if(Verbose) *report << "Type-checking " << act->name->getName() << "\n";
-	if(!typecheckGoal(act->precondition)) return false;
-	if(!typecheckEffects(act->effects)) return false;
+	if(!typecheckGoal(act->precondition)) {
+		if(Verbose) *report << "Conditions fail type-checking.\n";
+		return false;
+	}
+	if(!typecheckEffects(act->effects)) {
+		if(Verbose) *report << "Effects fail type-checking.\n";
+		return false;
+	}
 	if(const durative_action * da = dynamic_cast<const durative_action *>(act))
 	{
-		return typecheckGoal(da->dur_constraint);
+		if (!typecheckGoal(da->dur_constraint)) {
+			if(Verbose) *report << "Duration constraint fails type-checking.\n";
+			return false;
+		};
 	};
-	
+	if(Verbose) *report << "...action passes type checking.\n";
 	return true;
 };
 
@@ -675,10 +789,19 @@ bool TypeChecker::typecheckProblem()
 		ParseFailure pf;
 		throw(pf);
 	};
-	return (!thea->the_problem->the_goal || typecheckGoal(thea->the_problem->the_goal)) &&
-			typecheckEffects(thea->the_problem->initial_state) &&
-			  (!thea->the_problem->constraints ||
-			  		typecheckGoal(thea->the_problem->constraints));
+	if (thea->the_problem->the_goal && !typecheckGoal(thea->the_problem->the_goal)) {
+		if (Verbose) *report << "Type-checking goal failed\n";
+		return false;
+	}
+	if (!typecheckEffects(thea->the_problem->initial_state)) {
+		if (Verbose) *report << "Type-checking initial state failed\n";
+		return false;
+	}
+	if (thea->the_problem->constraints && !typecheckGoal(thea->the_problem->constraints)) {
+		if (Verbose) *report << "Type-checking constraints failed\n";
+		return false;
+	}
+	return true;
 };
 
 bool TypeChecker::typecheckPlan(const plan * p)
@@ -698,6 +821,19 @@ vector<const_symbol *> TypeChecker::range(const var_symbol * v)
 	
 	return l;
 };
+
+vector<const_symbol *> TypeChecker::range(const parameter_symbol * v) 
+{
+	vector<const_symbol *> l;
+	for(const_symbol_table::const_iterator i = thea->const_tab.begin();
+			i != thea->const_tab.end();++i)
+	{
+		if(subType(i->second,v)) l.push_back(i->second);
+	};
+	
+	return l;
+};
+
 
 vector<const_symbol *> TypeChecker::range(const pddl_type * t) 
 {

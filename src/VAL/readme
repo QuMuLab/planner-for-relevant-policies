@@ -4,6 +4,7 @@ VAL - The Automatic Plan Validator for PDDL3
 Derek Long and Maria Fox - PDDL2.1 and VAL, extensions to PDDL3
 Stephen Cresswell - PDDL2.1 Parser
 Richard Howey - Continuous Effects, derived predicates, timed initial literals and LaTeX Report in VAL
+Andrew and Amanda Coles - bug fixes, parser improvements and instantiation modifications.
 
 Strathclyde Planning Group, University of Strathclyde, UK
 
@@ -16,7 +17,7 @@ releases, but this has made it harder to compile under older compilers
 to construct versions that will compile under other environments. Windows
 is our priority, but please contact us if you have other specific needs.
 [This is currently progressing very slowly - the parser and lexer are probematic
-and the best option is probably to use Cygwin.]
+and the best option is probably to use Cygwin. We have got a version working with Cygwin quite successfully.]
 
 
 The parser requires flex++ and bison (also Gnu tools). See below for known 
@@ -123,6 +124,10 @@ looking into this, but if you are included, please let us know.
 
 Change Log
 ==========
+
+1.12.09: This change log has not been updated properly for some time, but
+         this version contains bug fixes, various bits of other tools and 
+         improvements in parser error messages. 
 
 16.06.07:   Significant collection of bug fixes, addition of some new tools (several
             in partial stages of development).

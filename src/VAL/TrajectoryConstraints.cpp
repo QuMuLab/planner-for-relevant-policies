@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #include "TrajectoryConstraints.h"
 #include "Proposition.h"
 #include "VisitController.h"
@@ -408,7 +434,7 @@ bool TrajectoryConstraintsMonitor::checkAtState(const State & s)
 	
 	for(Propositions::const_iterator i = always.begin();i != always.end();++i)
 	{
-		if(always.size() < 10) MESSAGE("Checking " << **i);
+		if(always.size() < 10) {MESSAGE("Checking " << **i);};
 		if(!(*i)->evaluate(&s))
 		{
 			*report << "Failure to satisfy: " << **i << "\n";
@@ -433,7 +459,7 @@ bool TrajectoryConstraintsMonitor::checkAtState(const State & s)
 	for(Deadlines::const_iterator i = within.begin();i != within.end();++i)
 	{
 		if(within.size() < 10)
-			MESSAGE("Checking deadline goal: " << *(i->second) << " by " << i->first);
+			{MESSAGE("Checking deadline goal: " << *(i->second) << " by " << i->first);};
 		if(s.getTime() > i->first)
 		{
 			MESSAGE("Failed to meet deadline on " << *(i->second) << " (" << 

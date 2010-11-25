@@ -1,3 +1,29 @@
+/************************************************************************
+ * Copyright 2008, Strathclyde Planning Group,
+ * Department of Computer and Information Sciences,
+ * University of Strathclyde, Glasgow, UK
+ * http://planning.cis.strath.ac.uk/
+ *
+ * Maria Fox, Richard Howey and Derek Long - VAL
+ * Stephen Cresswell - PDDL Parser
+ *
+ * This file is part of VAL, the PDDL validator.
+ *
+ * VAL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VAL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VAL.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ************************************************************************/
+
 #ifndef __FUNCANALYSIS
 #define __FUNCANALYSIS
 
@@ -132,7 +158,7 @@ typedef vector<Updater> Updates;
 
 class extended_func_symbol : public func_symbol {
 protected:
-	vector<operator_*> preconds;
+	vector<pair<operator_*, derivation_rule*> > preconds;
 	vector<assignment*> initials;
 	Updates assigns;
 	Updates increasers;
@@ -185,7 +211,11 @@ public:
 	};
 	void addPre(operator_* o) 
 	{
-		preconds.push_back(o);
+		preconds.push_back(pair<operator_*, derivation_rule*>(o,0));
+	};
+	void addPre(derivation_rule * o) 
+	{
+		preconds.push_back(pair<operator_*, derivation_rule*>(0,o));
 	};
 	void addAssign(operator_ * o,assignment * a) 
 	{
@@ -206,6 +236,14 @@ public:
 			increasers.push_back(make_pair(o,a));
 		};
 	};
+	bool onlyGoingDown() {
+		return assigns.empty() && increasers.empty() && !decreasers.empty() && scalers.empty()
+			&& continuous.empty();
+	}
+	bool onlyGoingUp() {
+                return assigns.empty() && !increasers.empty() && decreasers.empty() && scalers.empty()
+                        && continuous.empty();
+        }
 	void addContinuous(operator_ * o,assignment * a)
 	{
 		continuous.push_back(make_pair(o,a));
@@ -277,10 +315,11 @@ public:
 	{
 		o << "Report for: " << getName() << "\n";
 		o << "Preconditions:\n";
-		for(vector<operator_*>::const_iterator i = preconds.begin();
+		for(vector<pair<operator_*,derivation_rule*> >::const_iterator i = preconds.begin();
 				i != preconds.end();++i)
 		{
-			if(*i) o << "\t" << (*i)->name->getName() << "\n";
+			if(i->first) o << "\t" << i->first->name->getName() << "\n";
+			if(i->second) o << "\t" << i->second->get_head()->head->getName() << "\n";
 		};
 		
 		if(isStatic()) 
