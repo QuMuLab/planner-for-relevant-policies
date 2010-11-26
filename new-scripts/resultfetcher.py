@@ -185,8 +185,6 @@ class _FileParser(object):
 
 
 
-
-
 class Fetcher(object):
     """
     If copy-all is True, copies files from run dirs into a new tree under
@@ -300,5 +298,3 @@ if __name__ == "__main__":
     fetcher = Fetcher()
     fetcher.fetch()
     logging.info('Finished copying files')
-
-
