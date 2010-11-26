@@ -81,6 +81,10 @@ class Checkout(object):
             if os.path.exists(planner):
                 return planner
         return ''
+        
+    @property
+    def parent_rev(self):
+        raise Exception('Not implemented')
 
 
 
@@ -103,10 +107,11 @@ class HgCheckout(Checkout):
             checkout_dir = rev_abs
 
         Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
+        self.parent = None
 
     def get_rev_abs(self, repo, rev):
         if rev.upper() == 'WORK':
-            return 'WORK'#cmd = 'hg id -i'
+            return 'WORK' #cmd = 'hg id -i'
         cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
         if cmd in ABS_REV_CACHE:
             return ABS_REV_CACHE[cmd]
@@ -119,6 +124,17 @@ class HgCheckout(Checkout):
 
     def get_checkout_cmd(self):
         return 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
+
+    @property
+    def parent_rev(self):
+        if self.parent:
+            return self.parent
+        rev = self.rev
+        if self.rev == 'WORK':
+            rev = 'tip'
+        cmd = 'hg log -r %s --template {node|short}' % rev
+        self.parent = tools.run_command(cmd)
+        return self.parent
 
     @property
     def exe_dir(self):
@@ -375,6 +391,9 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
 
             run.set_property('translator', translator_co.rev)
             run.set_property('preprocessor', preprocessor_co.rev)
+            
+            run.set_property('translator_parent', translator_co.parent_rev)
+            run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
 
             run.set_property('config', ext_config)
             run.set_property('domain', problem.domain)
@@ -469,6 +488,10 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                 run.set_property('translator', translator_co.rev)
                 run.set_property('preprocessor', preprocessor_co.rev)
                 run.set_property('planner', planner_co.rev)
+                
+                run.set_property('translator_parent', translator_co.parent_rev)
+                run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
+                run.set_property('planner_parent', planner_co.parent_rev)
 
                 run.set_property('commandline_config', config)
 
@@ -537,6 +560,10 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 run.set_property('translator', translator_co.rev)
                 run.set_property('preprocessor', preprocessor_co.rev)
                 run.set_property('planner', planner_co.rev)
+                
+                run.set_property('translator_parent', translator_co.parent_rev)
+                run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
+                run.set_property('planner_parent', planner_co.parent_rev)
 
                 run.set_property('commandline_config', config)
 
