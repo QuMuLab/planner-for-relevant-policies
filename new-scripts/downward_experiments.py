@@ -110,7 +110,7 @@ class HgCheckout(Checkout):
         self.parent = None
 
     def get_rev_abs(self, repo, rev):
-        if rev.upper() == 'WORK':
+        if str(rev).upper() == 'WORK':
             return 'WORK' #cmd = 'hg id -i'
         cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
         if cmd in ABS_REV_CACHE:
