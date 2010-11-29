@@ -2,7 +2,7 @@
 
 from downward_experiments import *
 
-translator1 = TranslatorHgCheckout(rev=750)
+translator1 = TranslatorHgCheckout(rev='750')
 translator2 = TranslatorHgCheckout(rev='WORK')
 preprocessor = PreprocessorHgCheckout()
 
