@@ -360,9 +360,21 @@ CanonicalHeuristic::CanonicalHeuristic(const vector<vector<int> > &pat_coll) : p
     vector<int> q_clique; // contains actual calculated maximal clique
     q_clique.reserve(number_patterns);
     max_cliques_expand(vertices_1, vertices_2, q_clique);
-    cout << "expanded." << endl;
-    // TODO now we could forget cgraph, because we've got maximal cliques
     dump();
+
+    // maybe unnecessary, but we don't need cgraph anymore
+    cgraph.clear();
+
+    // build all pattern databases
+    Timer timer;
+    timer();
+    for (int i = 0; i < pattern_collection.size(); ++i) {
+        PDBAbstraction pdb = PDBAbstraction(pattern_collection[i]);
+        pattern_databases.push_back(pdb);
+    }
+    timer.stop();
+    cout << pattern_collection.size() << " pdbs constructed." << endl;
+    cout << "Construction time for all pdbs: " << timer << endl;
 }
 
 CanonicalHeuristic::~CanonicalHeuristic() {
@@ -447,58 +459,53 @@ void CanonicalHeuristic::build_cgraph() {
 
 int CanonicalHeuristic::get_maxi_vertex(const vector<int> &subg, const vector<int> &cand) const {
     // assert that subg and cand are sorted
-    // how is complexity of subg.sort() and cand.sort() if they are sorted yet?
-    int max = -1;
-    int vertex = -1;
+    size_t max = 0;
+    int vertex = subg[0];
     
-    vector<int>::const_iterator it = subg.begin();
-    while (*it > -1 && it != subg.end()) {
-        vector<int> intersection(subg.size(), -1); // intersection [ -1, -1, ..., -1 ]
+    for (size_t i = 1; i < subg.size(); ++i) {
+        vector<int> intersection;
+        intersection.reserve(subg.size());
         // for vertex u in subg get u's adjacent vertices --> cgraph[subg[i]];
-        vector<int>::iterator it2 = set_intersection(cand.begin(), cand.end(),
-            cgraph[*it].begin(), cgraph[*it].end(), intersection.begin());
-        if (int(it2 - intersection.begin()) > max) {
-            max = int(it2 - intersection.begin());
-            vertex = *it;
+        set_intersection(cand.begin(), cand.end(), cgraph[subg[i]].begin(), cgraph[subg[i]].end(), back_inserter(intersection));
+
+        if (intersection.size() > max) {
+            max = intersection.size();
+            vertex = subg[i];
         }
-        it++;
     }
     return vertex;
 }
 
 void CanonicalHeuristic::max_cliques_expand(vector<int> &subg, vector<int> &cand, vector<int> &q_clique) {
-    if (subg[0] == -1) {
+    if (subg.empty()) {
         //cout << "clique" << endl;
         max_cliques.push_back(q_clique);
-    }
-    else {
+    } else {
         int u = get_maxi_vertex(subg, cand);
         
-        vector<int> ext_u(cand.size(), -1); // ext_u = cand - gamma(u)
-        set_difference(cand.begin(), cand.end(), cgraph[u].begin(), cgraph[u].end(), ext_u.begin());
-        
-        vector<int>::iterator it_ext = ext_u.begin();
-        vector<int>::iterator it_cand = cand.begin();
-        
-        while (*it_ext > -1 && it_ext != ext_u.end()) { // while cand - gamma(u) is not empty
-            
-            int q = *it_ext; // q is a vertex in cand - gamma(u)
+        vector<int> ext_u;
+        ext_u.reserve(cand.size());
+        set_difference(cand.begin(), cand.end(), cgraph[u].begin(), cgraph[u].end(), back_inserter(ext_u));
+
+        for (size_t i = 0; i < ext_u.size(); ++i) { // while cand - gamma(u) is not empty
+            int q = ext_u[i]; // q is a vertex in cand - gamma(u)
             //cout << q << ",";
             q_clique.push_back(q);
             
             // subg_q = subg n gamma(q)
-            vector<int> subg_q(subg.size(), -1);
-            set_intersection(subg.begin(), subg.end(), cgraph[q].begin(), cgraph[q].end(), subg_q.begin());
+            vector<int> subg_q;
+            subg_q.reserve(subg.size());
+            set_intersection(subg.begin(), subg.end(), cgraph[q].begin(), cgraph[q].end(), back_inserter(subg_q));
             
             // cand_q = cand n gamma(q)
-            vector<int> cand_q(cand.size(), -1);
-            set_intersection(it_cand, cand.end(), cgraph[q].begin(), cgraph[q].end(), cand_q.begin());
+            vector<int> cand_q;
+            cand_q.reserve(cand.size());
+            set_intersection(cand.begin() + i, cand.end(), cgraph[q].begin(), cgraph[q].end(), back_inserter(cand_q));
             
             max_cliques_expand(subg_q, cand_q, q_clique);
             
             // remove q from cand --> cand = cand - q
-            it_cand++;
-            it_ext++;
+            // is done --> with index i
             
             //cout << "back"  << endl;
             q_clique.pop_back();
@@ -513,9 +520,7 @@ int CanonicalHeuristic::get_heuristic_value(const State &state) const {
         vector<int> clique = max_cliques[i];
         int h_val = 0;
         for (size_t j = 0; j < clique.size(); ++j) {
-            //PDBAbstraction pdb = pattern_databases.find(clique[j])->second;
-            PDBAbstraction pdb = pattern_databases.at(clique[j]);
-            h_val += pdb.get_heuristic_value(state);
+            h_val += pattern_databases[clique[j]].get_heuristic_value(state);
         }
         if (h_val > max_val) {
             max_val = h_val;
@@ -597,7 +602,7 @@ void PDBHeuristic::initialize() {
     
     // pdbabstraction function tests
     // 1. blocks-7-2 test-pattern
-    int patt[] = {9, 10, 11, 12, 13, 14};
+    //int patt[] = {9, 10, 11, 12, 13, 14};
     //int patt[] = {1, 2};
     
     // 2. driverlog-6 test-pattern
@@ -612,12 +617,12 @@ void PDBHeuristic::initialize() {
     // 5. logistics00-5-1 test-pattern
     //int patt[] = {0, 1, 2, 3, 4, 5, 6, 7};
     
-    vector<int> pattern(patt, patt + sizeof(patt) / sizeof(int));
+    /*vector<int> pattern(patt, patt + sizeof(patt) / sizeof(int));
     Timer timer;
     timer();
     pdb_abstraction = new PDBAbstraction(pattern);
     timer.stop();
-    cout << "PDB construction time: " << timer << endl;
+    cout << "PDB construction time: " << timer << endl;*/
     //pdb_abstraction->dump();
 
     
@@ -638,7 +643,7 @@ void PDBHeuristic::initialize() {
     pattern_collection[1] = pattern_2;*/
 
     //3. three patterns logistics00 6-2
-    /*int patt_1[2] = {3, 4};
+    int patt_1[2] = {3, 4};
     vector<int> pattern_1(patt_1, patt_1 + sizeof(patt_1) / sizeof(int));
     int patt_2[2] = {5, 6};
     vector<int> pattern_2(patt_2, patt_2 + sizeof(patt_2) / sizeof(int));
@@ -647,7 +652,7 @@ void PDBHeuristic::initialize() {
     vector<vector<int> > pattern_collection(3);
     pattern_collection[0] = pattern_1;
     pattern_collection[1] = pattern_2;
-    pattern_collection[2] = pattern_3;*/
+    pattern_collection[2] = pattern_3;
 
     //1. one pattern driverlog 6
     /*int patt_1[7] = {4, 5, 7, 9, 10, 11, 12};
@@ -728,33 +733,20 @@ void PDBHeuristic::initialize() {
     pattern_collection[1] = pattern_2;
     pattern_collection[2] = pattern_3;
     pattern_collection[3] = pattern_4;
-    pattern_collection[4] = pattern_5;
-
+    pattern_collection[4] = pattern_5;*/
 
     canonical_heuristic = new CanonicalHeuristic(pattern_collection);
-
-    // build all pdbs
-    Timer timer;
-    timer();
-    for (int i = 0; i < pattern_collection.size(); ++i) {
-        PDBAbstraction pdb = PDBAbstraction(pattern_collection[i]);
-        //canonical_heuristic->pattern_databases.insert(pair<int, PDBAbstraction>(i, pdb));
-        canonical_heuristic->pattern_databases.push_back(pdb);
-    }
-    timer.stop();
-    cout << pattern_collection.size() << " pdbs constructed." << endl;
-    cout << "Construction time for all pdbs: " << timer << endl;*/
 
     //cout << "Done initializing." << endl;
 }
 
 int PDBHeuristic::compute_heuristic(const State &state) {
-    int h = pdb_abstraction->get_heuristic_value(state);
+    /*int h = pdb_abstraction->get_heuristic_value(state);
     //cout << "h:" << h << endl;
     if (h == numeric_limits<int>::max())
         return -1;
-    return h;
-    //return canonical_heuristic->get_heuristic_value(state);
+    return h;*/
+    return canonical_heuristic->get_heuristic_value(state);
 }
 
 ScalarEvaluator *PDBHeuristic::create(const vector<string> &config, int start, int &end, bool dry_run) {

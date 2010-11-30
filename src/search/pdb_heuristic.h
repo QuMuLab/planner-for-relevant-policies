@@ -3,7 +3,6 @@
 
 #include "heuristic.h"
 #include <vector>
-#include <map>
 
 class Edge {
 public:
@@ -86,8 +85,6 @@ class CanonicalHeuristic {
 public:
     explicit CanonicalHeuristic(const std::vector<std::vector<int> > &pat_coll);
     ~CanonicalHeuristic();
-    //std::map<int, PDBAbstraction> pattern_databases; // pattern in pattern collection --> final pdb
-    //TODO: don't use maps!
     std::vector<PDBAbstraction> pattern_databases; // final pattern databases
     int get_heuristic_value(const State &state) const; // returns the canonical heuristic value (with respect
         // to the pattern collection) for a state
@@ -96,7 +93,7 @@ public:
 
 class PDBHeuristic : public Heuristic {
     PDBAbstraction *pdb_abstraction;
-    //CanonicalHeuristic *canonical_heuristic;
+    CanonicalHeuristic *canonical_heuristic;
     void verify_no_axioms_no_cond_effects() const; // SAS+ tasks only
 protected:
     virtual void initialize();
