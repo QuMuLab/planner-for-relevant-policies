@@ -109,7 +109,7 @@ def build_makefile_experiment(settings, planner_rev='tip'):
         new_make = makefile
         planner_name = 'downward-' + name
         for orig, replacement in replacements:
-            new_make = makefile.replace(orig, replacement)
+            new_make = new_make.replace(orig, replacement)
         old_target = 'TARGET  = downward\n'
         new_target = 'TARGET  = ' + planner_name + '\n'
         new_make = new_make.replace(old_target, new_target)
