@@ -309,7 +309,7 @@ class GkiGridExperiment(Experiment):
         job_params = {
             'logfile': os.path.join(current_dir, self.name, self.name + '.log'),
             'errfile': os.path.join(current_dir, self.name, self.name + '.err'),
-            'driver_timeout': self.timeout + 30,
+            'driver_timeout': self.timeout * self.runs_per_task + 30,
             'num_tasks': num_tasks,
             'queue': self.queue,
             'priority': self.priority,
