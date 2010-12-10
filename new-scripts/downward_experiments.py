@@ -335,14 +335,6 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
             'experiment to the queue now by calling ' \
             '"qsub ./%(name)s/%(filename)s"' % exp.__dict__
 
-    # Set defaults for faster preprocessing
-    #exp.suite = ['ALL']
-    exp.runs_per_task = 8
-    logging.info('GkiGrid experiments: runs per task set to %s' % exp.runs_per_task)
-    import multiprocessing
-    exp.processes = multiprocessing.cpu_count()
-    logging.info('Local experiments: processes set to %s' % exp.processes)
-
     # Set the eval directory already here, we don't want the results to land
     # in the default testname-eval
     exp.set_property('eval_dir', PREPROCESSED_TASKS_DIR)
