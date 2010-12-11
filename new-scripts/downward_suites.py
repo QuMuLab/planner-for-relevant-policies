@@ -4,7 +4,8 @@ import re
 import tools
 
 HELP = """\
-tasks, domains and suites can be specified in the following ways: gripper, gripper:prob01.pddl, \
+Comma separated list of tasks, domains or suites. They can have the following \
+forms: gripper, gripper:prob01.pddl, \
 TEST, mysuitefile.py:myTEST, TEST_FIRST5, mysuitefile.py:myTEST_FIRST5
 The python modules have to live in the scripts dir.
 """
@@ -21,7 +22,7 @@ class Repository(object):
         self.domains = [Domain(domain) for domain in domains]
     def __iter__(self):
         return iter(self.domains)
-        
+
 
 class Domain(object):
     def __init__(self, domain):
@@ -42,7 +43,7 @@ class Domain(object):
         return cmp(self.domain, other.domain)
     def __iter__(self):
         return iter(self.problems)
-        
+
 
 class Problem(object):
     def __init__(self, domain, problem):
@@ -70,13 +71,13 @@ class Problem(object):
 def generate_problems(description):
     """
     Descriptions have the form:
-    
+
     gripper:prob01.pddl
     gripper
     TEST
     mysuitefile.py:mytest
     mysuitefile.py:MYTEST
-    
+
     TEST_FIRST5
     mysuitefile.py:MYTEST_FIRST5
     """
@@ -85,20 +86,20 @@ def generate_problems(description):
         # This will work for all suites that only list domains and will
         # return the first problem of each domain
         description += '1'
-        
+
     number_expr = re.compile(r'.*FIRST([-]?\d+)', re.IGNORECASE)
     number_result = number_expr.search(description)
-    
-    
+
+
     if '.py:' in description:
         filename, rest = description.split(':', 1)
         description = rest
     else:
         filename = __file__
-    
+
     module = tools.import_python_file(filename)
     module_dict = module.__dict__
-        
+
     if number_result:
         # Allow writing SUITE_NAME_FIRSTn
         # This will work for all suites that only list domains and will
@@ -155,14 +156,14 @@ def suite_ipc_one_to_five():
         "psr-large", "psr-middle", "psr-small", "rovers", "satellite",
         "schedule", "storage", "tpp", "trucks", "zenotravel",
         ]
-        
+
 def suite_ipc08_opt():
     return [
         'openstacks-opt08-strips', 'woodworking-opt08-strips',
         'transport-opt08-strips', 'elevators-opt08-strips',
         'sokoban-opt08-strips', 'openstacks-opt08-adl',
         ]
-        
+
 def suite_ipc08_sat():
     return [
         'woodworking-sat08-strips', 'openstacks-sat08-strips',
@@ -196,10 +197,10 @@ def suite_test():
     return ["grid", "gripper", "blocks"]
 
 def suite_minitest():
-    return ["gripper:prob01.pddl", "gripper:prob02.pddl", 
+    return ["gripper:prob01.pddl", "gripper:prob02.pddl",
             "gripper:prob03.pddl", "zenotravel:pfile1",
             "zenotravel:pfile2", "zenotravel:pfile3", ]
-            
+
 def suite_tinytest():
     return ["gripper:prob01.pddl", "trucks-strips:p01.pddl",
             "trucks:p01.pddl", "psr-middle:p01-s17-n2-l2-f30.pddl"]
@@ -229,7 +230,7 @@ def suite_lmcut_domains():
             "trucks-strips",
             "zenotravel",
             ]
-            
+
 
 def suite_strips():
     # like suite_lmcut_domains, but without openstacks-strips (which has
@@ -256,12 +257,12 @@ def suite_strips():
             "trucks-strips",
             "zenotravel",
             ]
-            
+
 def suite_all():
     domains = suite_ipc_one_to_five() + suite_lmcut_domains()
     domains += suite_ipc08_opt() + suite_ipc08_sat()
     return list(sorted(set(domains)))
-            
+
 
 def suite_five_per_domain():
     for domain in Repository():
@@ -287,11 +288,11 @@ def select_evenly_spread(seq, num_items):
    step_size = (len(seq) - 1) / float(num_items - 1)
    float_indices = [i * step_size for i in range(num_items)]
    return [seq[int(round(index))] for index in float_indices]
-   
-   
+
+
 if __name__ == '__main__':
     print build_suite([
-        'gripper', 
+        'gripper',
         'gripper:prob01.pddl',
         # Four times the same suite:
         'downward_suites.py:TEST',

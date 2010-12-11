@@ -39,6 +39,7 @@ class Checkout(object):
         self.part = part
         self.repo = repo
         self.rev = str(rev)
+        # Nickname for the checkout (used for reports and checkout directory)
         self.name = name
 
         if not os.path.isabs(checkout_dir):
@@ -94,23 +95,24 @@ class HgCheckout(Checkout):
     DEFAULT_URL = BASE_DIR # 'ssh://downward'
     DEFAULT_REV = 'WORK'
 
-    def __init__(self, part, repo, rev):
+    def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, name=''):
         rev_nick = str(rev).upper()
         # Find proper absolute revision
         rev_abs = self.get_rev_abs(repo, rev)
 
-        name = part + '-' + rev_nick
-
         if rev_nick == 'WORK':
             checkout_dir = os.path.join(SCRIPTS_DIR, '../')
         else:
-            checkout_dir = rev_abs
+            checkout_dir = name if name else rev_abs
+
+        if not name:
+            name = part + '-' + rev_nick
 
         Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
         self.parent = None
 
     def get_rev_abs(self, repo, rev):
-        if rev.upper() == 'WORK':
+        if str(rev).upper() == 'WORK':
             return 'WORK' #cmd = 'hg id -i'
         cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
         if cmd in ABS_REV_CACHE:
@@ -147,16 +149,16 @@ class HgCheckout(Checkout):
 
 
 class TranslatorHgCheckout(HgCheckout):
-    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
-        HgCheckout.__init__(self, 'translate', repo, rev)
+    def __init__(self, *args, **kwargs):
+        HgCheckout.__init__(self, 'translate', *args, **kwargs)
 
 class PreprocessorHgCheckout(HgCheckout):
-    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
-        HgCheckout.__init__(self, 'preprocess', repo, rev)
+    def __init__(self, *args, **kwargs):
+        HgCheckout.__init__(self, 'preprocess', *args, **kwargs)
 
 class PlannerHgCheckout(HgCheckout):
-    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
-        HgCheckout.__init__(self, 'search', repo, rev)
+    def __init__(self, *args, **kwargs):
+        HgCheckout.__init__(self, 'search', *args, **kwargs)
 
 
 
@@ -241,7 +243,6 @@ class PlannerSvnCheckout(SvnCheckout):
 # ------------------------------------------------------------------------------
 
 
-
 def make_checkouts(combinations):
     """
     Checks out and compiles the code
@@ -304,14 +305,6 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
                     - PROBLEM
                         - output
     """
-
-    parser.add_argument('-s', '--suite', default=[], nargs='+',
-                        required=True, help=downward_suites.HELP)
-
-    # Add for compatibility, not actually parsed
-    parser.add_argument('-c', '--configs', default=[], nargs='*',
-                            required=False, help=downward_configs.HELP)
-
     exp = experiments.build_experiment(parser)
 
     # Use unique name for the preprocess experiment
@@ -334,14 +327,6 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
         exp.end_instructions = 'You can submit the preprocessing ' \
             'experiment to the queue now by calling ' \
             '"qsub ./%(name)s/%(filename)s"' % exp.__dict__
-
-    # Set defaults for faster preprocessing
-    #exp.suite = ['ALL']
-    exp.runs_per_task = 8
-    logging.info('GkiGrid experiments: runs per task set to %s' % exp.runs_per_task)
-    import multiprocessing
-    exp.processes = multiprocessing.cpu_count()
-    logging.info('Local experiments: processes set to %s' % exp.processes)
 
     # Set the eval directory already here, we don't want the results to land
     # in the default testname-eval
@@ -412,11 +397,6 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
     In the first case we fill the list with Translate and Preprocessor
     "Checkouts" that use the working copy code
     """
-    parser.add_argument('-s', '--suite', default=[], nargs='+',
-                            required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], nargs='+',
-                            required=True, help=downward_configs.HELP)
-
     exp = experiments.build_experiment(parser)
 
     make_checkouts(combinations)
@@ -504,11 +484,6 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
-    parser.add_argument('-s', '--suite', default=[], nargs='+',
-                            required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], nargs='+',
-                            required=True, help=downward_configs.HELP)
-
     exp = experiments.build_experiment(parser)
 
     make_checkouts(combinations)
@@ -591,20 +566,29 @@ def test():
 
 
 def build_experiment(combinations):
-    parser = experiments.ExpArgParser()
+    parser = tools.ArgParser(add_help=False)
     parser.add_argument('-p', '--preprocess', action='store_true', default=False,
                         help='build preprocessing experiment')
     parser.add_argument('--complete', action='store_true', default=False,
                         help='build complete experiment (overrides -p)')
 
     known_args, remaining_args = parser.parse_known_args()
+    # delete parsed args
+    sys.argv = [sys.argv[0]] + remaining_args
 
-    preprocess = known_args.preprocess
-    logging.info('Preprocess exp: %s' % preprocess)
+    logging.info('Preprocess exp: %s' % known_args.preprocess)
+
+    config_needed = known_args.complete or not known_args.preprocess
+
+    parser = experiments.ExpArgParser()
+    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
+                            required=True, help=downward_suites.HELP)
+    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
+                            required=config_needed, help=downward_configs.HELP)
 
     if known_args.complete:
         build_complete_experiment(combinations, parser)
-    elif preprocess:
+    elif known_args.preprocess:
         build_preprocess_exp(combinations, parser)
     else:
         build_search_exp(combinations, parser)
