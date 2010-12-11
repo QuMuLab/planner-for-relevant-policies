@@ -64,7 +64,7 @@ class PlanningReport(Report):
         parser.add_argument('-c', '--configs', type=tools.csv, default=[], 
             help='planner configurations (if none specified, use all found configs)')
         parser.add_argument('-s', '--suite', type=tools.csv, default=[], 
-            help='tasks, domains or suites (if none specified, use whole suite)')
+            help=downward_suites.HELP)
         parser.add_argument('--res', default='domain', dest='resolution',
             help='resolution of the report', choices=['suite', 'domain', 'problem'])
             

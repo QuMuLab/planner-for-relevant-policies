@@ -4,7 +4,8 @@ import re
 import tools
 
 HELP = """\
-tasks, domains and suites can be specified in the following ways: gripper, gripper:prob01.pddl, \
+Comma separated list of tasks, domains or suites. They can have the following \
+forms: gripper, gripper:prob01.pddl, \
 TEST, mysuitefile.py:myTEST, TEST_FIRST5, mysuitefile.py:myTEST_FIRST5
 The python modules have to live in the scripts dir.
 """
