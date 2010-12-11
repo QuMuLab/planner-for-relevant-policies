@@ -564,19 +564,21 @@ def test():
 
 
 def build_experiment(combinations):
-    parser = experiments.ExpArgParser(add_help=False)
+    parser = tools.ArgParser(add_help=False)
     parser.add_argument('-p', '--preprocess', action='store_true', default=False,
                         help='build preprocessing experiment')
     parser.add_argument('--complete', action='store_true', default=False,
                         help='build complete experiment (overrides -p)')
 
     known_args, remaining_args = parser.parse_known_args()
-    parser.set_help_active()
+    # delete parsed args
+    sys.argv = [sys.argv[0]] + remaining_args
 
     logging.info('Preprocess exp: %s' % known_args.preprocess)
 
     config_needed = known_args.complete or not known_args.preprocess
 
+    parser = experiments.ExpArgParser()
     parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
     parser.add_argument('-c', '--configs', default=[], type=tools.csv,

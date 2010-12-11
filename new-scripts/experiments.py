@@ -585,7 +585,7 @@ def build_experiment(parser=ExpArgParser()):
     type = known_args.exp_type
     logging.info('Experiment type: %s' % type)
 
-    parser.epilog = 'Note: The help output depends on the selected experiment type'
+    parser.epilog = 'Note: The available options depend on the selected experiment type'
 
     if type == 'local':
         exp = LocalExperiment(parser)
