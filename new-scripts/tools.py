@@ -224,6 +224,11 @@ def fast_updatetree(src, dst):
         raise Error(errors)
         
         
+def csv(string):
+    string = string.strip(', ')
+    return string.split(',')
+
+
 class ArgParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
         argparse.ArgumentParser.__init__(self, *args, #add_help=False,

@@ -12,9 +12,9 @@ from downward_experiments import TranslatorHgCheckout, PreprocessorHgCheckout, \
 
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
-    parser.add_argument('-s', '--suite', default=[], nargs='+', 
+    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], nargs='+', 
+    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
                             required=True, help=downward_configs.HELP)
                             
     exp = experiments.build_experiment(parser)

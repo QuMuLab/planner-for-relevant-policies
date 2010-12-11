@@ -61,14 +61,14 @@ class PlanningReport(Report):
     """
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
-        parser.add_argument('-c', '--configs', nargs='*', default=[], 
+        parser.add_argument('-c', '--configs', type=tools.csv, default=[], 
             help='planner configurations (if none specified, use all found configs)')
-        parser.add_argument('-s', '--suite', nargs='*', default=[], 
+        parser.add_argument('-s', '--suite', type=tools.csv, default=[], 
             help='tasks, domains or suites (if none specified, use whole suite)')
         parser.add_argument('--res', default='domain', dest='resolution',
             help='resolution of the report', choices=['suite', 'domain', 'problem'])
             
-        parser.add_argument('--filter', nargs='*', default=[],
+        parser.add_argument('--filter', type=tools.csv, default=[],
                             help='filters will be applied as follows: ' \
                                 'expanded:lt:100 -> only process if run[expanded] < 100')
         

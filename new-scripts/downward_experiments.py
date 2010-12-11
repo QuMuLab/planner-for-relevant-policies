@@ -241,7 +241,6 @@ class PlannerSvnCheckout(SvnCheckout):
 # ------------------------------------------------------------------------------
 
 
-
 def make_checkouts(combinations):
     """
     Checks out and compiles the code
@@ -305,11 +304,11 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
                         - output
     """
 
-    parser.add_argument('-s', '--suite', default=[], nargs='+',
+    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                         required=True, help=downward_suites.HELP)
 
     # Add for compatibility, not actually parsed
-    parser.add_argument('-c', '--configs', default=[], nargs='*',
+    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
                             required=False, help=downward_configs.HELP)
 
     exp = experiments.build_experiment(parser)
@@ -404,9 +403,9 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
     In the first case we fill the list with Translate and Preprocessor
     "Checkouts" that use the working copy code
     """
-    parser.add_argument('-s', '--suite', default=[], nargs='+',
+    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], nargs='+',
+    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
                             required=True, help=downward_configs.HELP)
 
     exp = experiments.build_experiment(parser)
@@ -496,9 +495,9 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
-    parser.add_argument('-s', '--suite', default=[], nargs='+',
+    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], nargs='+',
+    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
                             required=True, help=downward_configs.HELP)
 
     exp = experiments.build_experiment(parser)
