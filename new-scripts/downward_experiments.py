@@ -303,14 +303,6 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
                     - PROBLEM
                         - output
     """
-
-    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
-                        required=True, help=downward_suites.HELP)
-
-    # Add for compatibility, not actually parsed
-    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
-                            required=False, help=downward_configs.HELP)
-
     exp = experiments.build_experiment(parser)
 
     # Use unique name for the preprocess experiment
@@ -403,11 +395,6 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
     In the first case we fill the list with Translate and Preprocessor
     "Checkouts" that use the working copy code
     """
-    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
-                            required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
-                            required=True, help=downward_configs.HELP)
-
     exp = experiments.build_experiment(parser)
 
     make_checkouts(combinations)
@@ -495,11 +482,6 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
-    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
-                            required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
-                            required=True, help=downward_configs.HELP)
-
     exp = experiments.build_experiment(parser)
 
     make_checkouts(combinations)
@@ -591,12 +573,18 @@ def build_experiment(combinations):
     known_args, remaining_args = parser.parse_known_args()
     parser.set_help_active()
 
-    preprocess = known_args.preprocess
-    logging.info('Preprocess exp: %s' % preprocess)
+    logging.info('Preprocess exp: %s' % known_args.preprocess)
+
+    config_needed = known_args.complete or not known_args.preprocess
+
+    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
+                            required=True, help=downward_suites.HELP)
+    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
+                            required=config_needed, help=downward_configs.HELP)
 
     if known_args.complete:
         build_complete_experiment(combinations, parser)
-    elif preprocess:
+    elif known_args.preprocess:
         build_preprocess_exp(combinations, parser)
     else:
         build_search_exp(combinations, parser)
