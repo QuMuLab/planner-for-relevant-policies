@@ -77,8 +77,9 @@ class ReportArgParser(tools.ArgParser):
                         help='show a list of available attributes and exit')
                         
         self.add_argument('-a', '--attributes', dest='foci', type=tools.csv,
-                            metavar='ATTR', default='all',
-                            help='the analyzed attributes (e.g. "expanded")')
+                            metavar='ATTR',
+                            help='the analyzed attributes (e.g. "expanded"). '
+                                'If omitted, use all found numerical attributes')
                         
                         
     def parse_args(self, *args, **kwargs):

@@ -39,6 +39,7 @@ class Checkout(object):
         self.part = part
         self.repo = repo
         self.rev = str(rev)
+        # Nickname for the checkout (used for reports and checkout directory)
         self.name = name
 
         if not os.path.isabs(checkout_dir):
@@ -94,17 +95,18 @@ class HgCheckout(Checkout):
     DEFAULT_URL = BASE_DIR # 'ssh://downward'
     DEFAULT_REV = 'WORK'
 
-    def __init__(self, part, repo, rev):
+    def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, name=''):
         rev_nick = str(rev).upper()
         # Find proper absolute revision
         rev_abs = self.get_rev_abs(repo, rev)
 
-        name = part + '-' + rev_nick
-
         if rev_nick == 'WORK':
             checkout_dir = os.path.join(SCRIPTS_DIR, '../')
         else:
-            checkout_dir = rev_abs
+            checkout_dir = name if name else rev_abs
+
+        if not name:
+            name = part + '-' + rev_nick
 
         Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
         self.parent = None
@@ -147,16 +149,16 @@ class HgCheckout(Checkout):
 
 
 class TranslatorHgCheckout(HgCheckout):
-    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
-        HgCheckout.__init__(self, 'translate', repo, rev)
+    def __init__(self, *args, **kwargs):
+        HgCheckout.__init__(self, 'translate', *args, **kwargs)
 
 class PreprocessorHgCheckout(HgCheckout):
-    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
-        HgCheckout.__init__(self, 'preprocess', repo, rev)
+    def __init__(self, *args, **kwargs):
+        HgCheckout.__init__(self, 'preprocess', *args, **kwargs)
 
 class PlannerHgCheckout(HgCheckout):
-    def __init__(self, repo=HgCheckout.DEFAULT_URL, rev=HgCheckout.DEFAULT_REV):
-        HgCheckout.__init__(self, 'search', repo, rev)
+    def __init__(self, *args, **kwargs):
+        HgCheckout.__init__(self, 'search', *args, **kwargs)
 
 
 
