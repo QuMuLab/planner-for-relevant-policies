@@ -76,7 +76,7 @@ class ExpArgParser(tools.ArgParser):
         tools.ArgParser.__init__(self, *args, parents=[exp_type_parser], **kwargs)
 
         self.add_argument('name',
-                    help='name of the experiment (e.g. <initials>-<descriptive name>)')
+            help='name of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
             '-t', '--timeout', type=int, default=1800,
             help='timeout per task in seconds')

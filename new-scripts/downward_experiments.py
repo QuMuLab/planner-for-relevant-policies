@@ -582,13 +582,14 @@ def test():
 
 
 def build_experiment(combinations):
-    parser = experiments.ExpArgParser()
+    parser = experiments.ExpArgParser(add_help=False)
     parser.add_argument('-p', '--preprocess', action='store_true', default=False,
                         help='build preprocessing experiment')
     parser.add_argument('--complete', action='store_true', default=False,
                         help='build complete experiment (overrides -p)')
 
     known_args, remaining_args = parser.parse_known_args()
+    parser.set_help_active()
 
     preprocess = known_args.preprocess
     logging.info('Preprocess exp: %s' % preprocess)
