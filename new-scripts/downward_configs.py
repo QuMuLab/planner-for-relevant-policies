@@ -62,6 +62,11 @@ oa200000 = """\
 --search "astar(mas(max_states=200000))"\
 """
 
+pdb = """\
+--search "astar(pdb())"\
+"""
+
+
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]
     
