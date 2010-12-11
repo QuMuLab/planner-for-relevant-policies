@@ -12,8 +12,8 @@ import downward_suites
 
 
 HELP = """\
-Configurations can be specified in the following ways: \
-ou, astar_searches, myconfigfile:yY, myconfigfile:lama_configs
+Comma separated list of configurations. They can be specified in the following \
+ways: ou, astar_searches, myconfigfile:yY, myconfigfile:lama_configs.
 The python modules have to live in the scripts dir.
 """
 
@@ -61,6 +61,11 @@ oa50000 = """\
 oa200000 = """\
 --search "astar(mas(max_states=200000))"\
 """
+
+pdb = """\
+--search "astar(pdb())"\
+"""
+
 
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]

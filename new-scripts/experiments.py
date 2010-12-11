@@ -76,7 +76,7 @@ class ExpArgParser(tools.ArgParser):
         tools.ArgParser.__init__(self, *args, parents=[exp_type_parser], **kwargs)
 
         self.add_argument('name',
-                    help='name of the experiment (e.g. <initials>-<descriptive name>)')
+            help='name of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
             '-t', '--timeout', type=int, default=1800,
             help='timeout per task in seconds')
@@ -309,7 +309,7 @@ class GkiGridExperiment(Experiment):
         job_params = {
             'logfile': os.path.join(current_dir, self.name, self.name + '.log'),
             'errfile': os.path.join(current_dir, self.name, self.name + '.err'),
-            'driver_timeout': self.timeout + 30,
+            'driver_timeout': self.timeout * self.runs_per_task + 30,
             'num_tasks': num_tasks,
             'queue': self.queue,
             'priority': self.priority,
@@ -585,7 +585,7 @@ def build_experiment(parser=ExpArgParser()):
     type = known_args.exp_type
     logging.info('Experiment type: %s' % type)
 
-    parser.epilog = 'Note: The help output depends on the selected experiment type'
+    parser.epilog = 'Note: The available options depend on the selected experiment type'
 
     if type == 'local':
         exp = LocalExperiment(parser)

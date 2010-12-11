@@ -12,9 +12,9 @@ from downward_experiments import TranslatorHgCheckout, PreprocessorHgCheckout, \
 
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
-    parser.add_argument('-s', '--suite', default=[], nargs='+', 
+    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], nargs='+', 
+    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
                             required=True, help=downward_configs.HELP)
                             
     exp = experiments.build_experiment(parser)
@@ -109,7 +109,7 @@ def build_makefile_experiment(settings, planner_rev='tip'):
         new_make = makefile
         planner_name = 'downward-' + name
         for orig, replacement in replacements:
-            new_make = makefile.replace(orig, replacement)
+            new_make = new_make.replace(orig, replacement)
         old_target = 'TARGET  = downward\n'
         new_target = 'TARGET  = ' + planner_name + '\n'
         new_make = new_make.replace(old_target, new_target)
