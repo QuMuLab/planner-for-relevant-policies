@@ -1,0 +1,13 @@
+#!/bin/bash
+# Use this script to turn a run into the baseline
+# $1 - directory to run on
+
+
+# change from WORK to BASELINE in properties files
+for p in `find $1/exp -name properties`
+do
+    mv $p $p.old
+    sed -e 's/WORK/BASELINE/g' $p.old > $p
+done
+
+mv $1 `dirname $1`/baseline
