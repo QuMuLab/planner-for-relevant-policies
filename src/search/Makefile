@@ -85,6 +85,10 @@ HEADERS += learning/AODE.h \
            learning/state_space_sample.h \
            learning/state_vars_feature_extractor.h
 
+HEADERS += pdb_heuristic.h \
+           abstract_state_iterator.h \
+           pdb_collection_heuristic.h
+
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET  = downward
 
@@ -151,7 +155,7 @@ POSTLINKOPT_PROFILE  =
 ## Define the default target up here so that the LP stuff below
 ## doesn't define a default target.
 
-default: release
+default: debug
 
 ifeq ($(USE_LP),1)
 
