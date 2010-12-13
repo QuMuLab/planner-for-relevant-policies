@@ -80,25 +80,24 @@ def get_old_and_new_greedy(pairs):
         config.replace('lazy_greedy', 'old_greedy')) for nick, config in pairs]
 
 
-def issue158a():
+def issue154a():
     return get_old_and_new_greedy([
         ('lg_blind', '--search "lazy_greedy(blind())"'),
         ('lg_ff', '--search "lazy_greedy(ff())"'),
         ('lg_cea', '--search "lazy_greedy(cea())"'),
         ('lg_ff_cea', '--search "lazy_greedy(ff(), cea())"'),])
 
-def issue158b():
+def issue154b():
     return get_old_and_new_greedy([
-        ('lg_hff', '--heuristic hff=ff() '
+        ('lg_hff', '--heuristic "hff=ff()" '
             '--search "lazy_greedy(hff, preferred=(hff))"'),
         ('lg_hcea', '--heuristic "hcea=cea()" '
             '--search "lazy_greedy(hcea, preferred=(hcea))"'),
         ('lg_hff_hcea', '--heuristic "hff=ff()" --heuristic "hcea=cea()" '
             '--search "lazy_greedy(hff, hcea, preferred=(hff, hcea))"'),
-        ('lg_hlm_hff', '--heuristic "hlm=lm_ff_syn(lm_rhw())" '
-            '--heuristic "hff=ff()" '
-            '--search "lazy_greedy(hlm, hff, preferred=(hlm, hff))"'),])
-
+        ('lg_hlm_hff', '--heuristic "hlm,hff=lm_ff_syn(lm_rhw())" '
+            '--search "lazy_greedy(hlm, hff, preferred=(hlm, hff))"'
+),])
 
 
 
