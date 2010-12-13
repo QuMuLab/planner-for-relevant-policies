@@ -283,10 +283,10 @@ def _get_configs(planner_rev, config_list):
         configs = zip(config_list, config_list)
     return configs
 
-def _get_preprocess_cmd(translator, preprocessor_name, domain, problem):
+def _get_preprocess_cmd(translator, preprocessor_name):
     translator = os.path.abspath(translator)
-    translate_cmd = '%s %s %s' % (translator, domain, problem)
-    preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
+    translate_cmd = '%s $DOMAIN $PROBLEM' % translator
+    preprocess_cmd = '$%s < output.sas' % preprocessor_name
     return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
 
 
@@ -361,8 +361,7 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
             run.add_resource("DOMAIN", domain_file, "domain.pddl")
             run.add_resource("PROBLEM", problem_file, "problem.pddl")
 
-            pre_cmd = _get_preprocess_cmd(translator, preprocessor_name, \
-                                        domain_file, problem_file)
+            pre_cmd = _get_preprocess_cmd(translator, preprocessor_name)
 
             # We can use the main command here, because preprocessing uses
             # a separate directory
@@ -518,8 +517,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 run.add_resource("DOMAIN", domain_file, "domain.pddl")
                 run.add_resource("PROBLEM", problem_file, "problem.pddl")
 
-                pre_cmd = _get_preprocess_cmd(translator, preprocessor_name, \
-                                        domain_file, problem_file)
+                pre_cmd = _get_preprocess_cmd(translator, preprocessor_name)
                 run.set_preprocess(pre_cmd)
 
                 run.set_command("$%s %s < output" % (planner_name, config))
