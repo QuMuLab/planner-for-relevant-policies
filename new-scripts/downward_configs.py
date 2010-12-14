@@ -67,63 +67,63 @@ pdb1000 = """\
 """
 
 pdb2500 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=2500))"\
 """
 
 pdb5000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=5000))"\
 """
 
 pdb10000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=10000))"\
 """
 
 pdb25000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=25000))"\
 """
 
 pdb50000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=50000))"\
 """
 
 pdb100000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=100000))"\
 """
 
 pdb250000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=250000))"\
 """
 
 pdb500000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=500000))"\
 """
 
 pdb1000000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=1000000))"\
 """
 
 pdb2500000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=2500000))"\
 """
 
 pdb5000000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=5000000))"\
 """
 
 pdb10000000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=10000000))"\
 """
 
 pdb25000000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=25000000))"\
 """
 
 pdb50000000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=50000000))"\
 """
 
 pdb100000000 = """\
---search "astar(pdb(max_states=1000))"\
+--search "astar(pdb(max_states=100000000))"\
 """
 
 
