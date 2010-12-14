@@ -75,7 +75,7 @@ class Checkout(object):
 
     def get_executable(self):
         """ Returns the path to the python module or a binary """
-        names = ['translate.py', 'preprocess',
+        names = ['translate.py', 'preprocess', 'downward-debug'
                 'downward', 'release-search', 'search']
         for name in names:
             planner = os.path.join(self.exe_dir, name)
