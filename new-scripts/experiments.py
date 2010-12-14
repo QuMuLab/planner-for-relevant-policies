@@ -63,7 +63,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(m
 
 import tools
 
-
+HELP = """\
+Base module for creating fast downward experiments.
+PLEASE NOTE: The available options depend on the selected experiment type.
+You can set the experiment type with the "--exp-type" option.
+"""
 
 # Create a parser only for parsing the experiment type
 exp_type_parser = tools.ArgParser(add_help=False)
@@ -583,9 +587,9 @@ def build_experiment(parser=ExpArgParser()):
     known_args, remaining_args = exp_type_parser.parse_known_args()
 
     type = known_args.exp_type
-    logging.info('Experiment type: %s' % type)
+    logging.info('Experiment type: %s (Change with "--exp-type")' % type)
 
-    parser.epilog = 'Note: The available options depend on the selected experiment type'
+    parser.description = HELP
 
     if type == 'local':
         exp = LocalExperiment(parser)
