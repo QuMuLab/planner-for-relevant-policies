@@ -30,7 +30,7 @@ BASE_DIR = os.path.abspath(os.path.join(SCRIPTS_DIR, '../'))
 
 
 ABS_REV_CACHE = {}
-
+_sentinel = object()
 
 
 class Checkout(object):
@@ -74,12 +74,12 @@ class Checkout(object):
         if self.part == 'translate':
             return
 
-        if self.rev == 'WORK' or not self.get_executable(must_exist=False):
+        if self.rev == 'WORK' or self.get_executable(default=None) is None:
             os.chdir(self.exe_dir)
             subprocess.call(['make'])
             os.chdir(SCRIPTS_DIR)
 
-    def get_executable(self, must_exist=True):
+    def get_executable(self, default=_sentinel):
         """ Returns the path to the python module or a binary """
         names = ['translate.py', 'preprocess',
                 'downward', 'release-search', 'search',
@@ -88,11 +88,11 @@ class Checkout(object):
             planner = os.path.join(self.exe_dir, name)
             if os.path.exists(planner):
                 return planner
-        if must_exist:
+        if default is _sentinel:
             logging.error('%s executable could not be found in %s' %
                             (self.part, self.exe_dir))
             sys.exit(1)
-        return None
+        return default
 
     @property
     def parent_rev(self):
@@ -573,8 +573,8 @@ def test():
 
 def build_experiment(combinations):
     parser = tools.ArgParser(add_help=False)
-    parser.add_argument('-p', '--preprocess', action='store_true', default=False,
-                        help='build preprocessing experiment')
+    parser.add_argument('-p', '--preprocess', action='store_true',
+                        default=False, help='build preprocessing experiment')
     parser.add_argument('--complete', action='store_true', default=False,
                         help='build complete experiment (overrides -p)')
 
