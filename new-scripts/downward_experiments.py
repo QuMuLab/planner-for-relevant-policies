@@ -74,8 +74,7 @@ class Checkout(object):
         if self.part == 'translate':
             return
 
-        executable = self.get_executable(must_exist=False)
-        if not os.path.exists(executable) or self.rev == 'WORK':
+        if self.rev == 'WORK' or not self.get_executable(must_exist=False):
             os.chdir(self.exe_dir)
             subprocess.call(['make'])
             os.chdir(SCRIPTS_DIR)
@@ -93,7 +92,7 @@ class Checkout(object):
             logging.error('%s executable could not be found in %s' %
                             (self.part, self.exe_dir))
             sys.exit(1)
-        return ''
+        return None
 
     @property
     def parent_rev(self):
