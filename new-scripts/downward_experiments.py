@@ -30,7 +30,7 @@ BASE_DIR = os.path.abspath(os.path.join(SCRIPTS_DIR, '../'))
 
 
 ABS_REV_CACHE = {}
-
+_sentinel = object()
 
 
 class Checkout(object):
@@ -44,7 +44,7 @@ class Checkout(object):
 
         if not os.path.isabs(checkout_dir):
             checkout_dir = os.path.join(CHECKOUTS_DIR, checkout_dir)
-        self.checkout_dir = checkout_dir
+        self.checkout_dir = os.path.abspath(checkout_dir)
 
     def checkout(self):
         # We don't need to check out the working copy
@@ -65,28 +65,42 @@ class Checkout(object):
 
     def compile(self):
         """
+        We need to compile the code if the executable does not exist.
+        Additionally we want to compile it, when we run an experiment with
+        the working copy to make sure the executable is based on the latest
+        version of the code. Obviously we don't need no compile the
+        translator code.
         """
-        # Needs compiling?
-        executable = self.get_executable()
-        if executable is None or not os.path.exists(executable):
+        if self.part == 'translate':
+            return
+
+        if self.rev == 'WORK' or self.get_executable(default=None) is None:
             os.chdir(self.exe_dir)
             subprocess.call(['make'])
             os.chdir(SCRIPTS_DIR)
 
-    def get_executable(self):
+    def get_executable(self, default=_sentinel):
         """ Returns the path to the python module or a binary """
-        names = ['translate.py', 'preprocess', 'downward-debug'
-                'downward', 'release-search', 'search']
+        names = ['translate.py', 'preprocess',
+                'downward', 'release-search', 'search',
+                'downward-debug', 'downward-profile']
         for name in names:
             planner = os.path.join(self.exe_dir, name)
             if os.path.exists(planner):
                 return planner
-        return ''
-        
+        if default is _sentinel:
+            logging.error('%s executable could not be found in %s' %
+                            (self.part, self.exe_dir))
+            sys.exit(1)
+        return default
+
     @property
     def parent_rev(self):
         raise Exception('Not implemented')
 
+    @property
+    def exe_dir(self):
+        raise Exception('Not implemented')
 
 
 # ---------- Mercurial ---------------------------------------------------------
@@ -140,7 +154,7 @@ class HgCheckout(Checkout):
 
     @property
     def exe_dir(self):
-        assert os.path.exists(self.checkout_dir)
+        assert os.path.exists(self.checkout_dir), self.checkout_dir
         exe_dir = os.path.join(self.checkout_dir, 'downward', self.part)
         # "downward" dir has been renamed to "src"
         if not os.path.exists(exe_dir):
@@ -283,10 +297,10 @@ def _get_configs(planner_rev, config_list):
         configs = zip(config_list, config_list)
     return configs
 
-def _get_preprocess_cmd(translator, preprocessor_name, domain, problem):
+def _get_preprocess_cmd(translator, preprocessor_name):
     translator = os.path.abspath(translator)
-    translate_cmd = '%s %s %s' % (translator, domain, problem)
-    preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
+    translate_cmd = '%s $DOMAIN $PROBLEM' % translator
+    preprocess_cmd = '$%s < output.sas' % preprocessor_name
     return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
 
 
@@ -345,10 +359,8 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
         translator_co, preprocessor_co = combo[:2]
 
         translator = translator_co.get_executable()
-        assert os.path.exists(translator), translator
 
         preprocessor = preprocessor_co.get_executable()
-        assert os.path.exists(preprocessor)
         preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
         exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
 
@@ -361,8 +373,7 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
             run.add_resource("DOMAIN", domain_file, "domain.pddl")
             run.add_resource("PROBLEM", problem_file, "problem.pddl")
 
-            pre_cmd = _get_preprocess_cmd(translator, preprocessor_name, \
-                                        domain_file, problem_file)
+            pre_cmd = _get_preprocess_cmd(translator, preprocessor_name)
 
             # We can use the main command here, because preprocessing uses
             # a separate directory
@@ -424,7 +435,6 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
     for translator_co, preprocessor_co, planner_co in experiment_combos:
 
         planner = planner_co.get_executable()
-        assert os.path.exists(planner)
         planner_name = "PLANNER_%s" % planner_co.rev
         exp.add_resource(planner_name, planner, planner_co.name)
 
@@ -493,15 +503,12 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
     for translator_co, preprocessor_co, planner_co in combinations:
 
         translator = translator_co.get_executable()
-        assert os.path.exists(translator), translator
 
         preprocessor = preprocessor_co.get_executable()
-        assert os.path.exists(preprocessor)
         preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
         exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
 
         planner = planner_co.get_executable()
-        assert os.path.exists(planner), planner
         planner_name = "PLANNER_%s" % planner_co.rev
         exp.add_resource(planner_name, planner, planner_co.name)
 
@@ -518,8 +525,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 run.add_resource("DOMAIN", domain_file, "domain.pddl")
                 run.add_resource("PROBLEM", problem_file, "problem.pddl")
 
-                pre_cmd = _get_preprocess_cmd(translator, preprocessor_name, \
-                                        domain_file, problem_file)
+                pre_cmd = _get_preprocess_cmd(translator, preprocessor_name)
                 run.set_preprocess(pre_cmd)
 
                 run.set_command("$%s %s < output" % (planner_name, config))
@@ -567,8 +573,8 @@ def test():
 
 def build_experiment(combinations):
     parser = tools.ArgParser(add_help=False)
-    parser.add_argument('-p', '--preprocess', action='store_true', default=False,
-                        help='build preprocessing experiment')
+    parser.add_argument('-p', '--preprocess', action='store_true',
+                        default=False, help='build preprocessing experiment')
     parser.add_argument('--complete', action='store_true', default=False,
                         help='build complete experiment (overrides -p)')
 
