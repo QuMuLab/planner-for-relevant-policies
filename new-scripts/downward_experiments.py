@@ -208,24 +208,36 @@ class SvnCheckout(Checkout):
             return 'WORK'
         elif rev.upper() == 'HEAD':
             # We want the HEAD revision number
-            env = {'LANG': 'C'}
-            cmd = 'svn info %s' % repo
-            if cmd in ABS_REV_CACHE:
-                return ABS_REV_CACHE[cmd]
-            output = tools.run_command(cmd, env=env)
-            match = self.REV_REGEX.search(output)
-            if not match:
-                logging.error('Unable to get HEAD revision number')
-                sys.exit()
-            rev_number = match.group(1)
-            ABS_REV_CACHE[cmd] = rev_number
-            return rev_number
+            return self._get_rev(repo)
         else:
             logging.error('Invalid SVN revision specified: %s' % rev)
             sys.exit()
 
+    def _get_rev(self, repo):
+        """
+        Returns the revision for the given repo. If the repo is a remote URL,
+        the HEAD revision is returned. If the repo is a local path, the
+        working copy's version is returned.
+        """
+        env = {'LANG': 'C'}
+        cmd = 'svn info %s' % repo
+        if cmd in ABS_REV_CACHE:
+            return ABS_REV_CACHE[cmd]
+        output = tools.run_command(cmd, env=env)
+        match = self.REV_REGEX.search(output)
+        if not match:
+            logging.error('Unable to get HEAD revision number')
+            sys.exit()
+        rev_number = match.group(1)
+        ABS_REV_CACHE[cmd] = rev_number
+        return rev_number
+
     def get_checkout_cmd(self):
         return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
+
+    @property
+    def parent_rev(self):
+        return self._get_rev(self.checkout_dir)
 
     @property
     def exe_dir(self):
