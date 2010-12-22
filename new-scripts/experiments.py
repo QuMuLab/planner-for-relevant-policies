@@ -313,10 +313,10 @@ class GkiGridExperiment(Experiment):
         Generates the main script
         """
         num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
-        current_dir = os.path.dirname(os.path.abspath(__file__))
+        #current_dir = os.path.dirname(os.path.abspath(__file__))
         job_params = {
-            'logfile': os.path.join(current_dir, self.name, self.name + '.log'),
-            'errfile': os.path.join(current_dir, self.name, self.name + '.err'),
+            'logfile': os.path.join(self.base_dir, self.name + '.log'),
+            'errfile': os.path.join(self.base_dir, self.name + '.err'),
             'driver_timeout': self.timeout * self.runs_per_task + 30,
             'num_tasks': num_tasks,
             'queue': self.queue,
