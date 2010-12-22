@@ -38,7 +38,7 @@ def add_property(name, value):
 
 def save_returncode(command_name, value):
     os.environ['%s_RETURNCODE' % command_name.upper()] = str(value)
-    add_property('%s_returncode' % command_name.lower(), str(value))
+    add_property('%s_returncode' % command_name.lower(), value)
     # TODO: Do we want to mark errors here already?
     # TODO: Would it be better to save just one "fatal_error" for each run?
     error = 0 if value <= 0 else 1
