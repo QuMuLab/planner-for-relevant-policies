@@ -33,10 +33,10 @@ def preprocessor_executable():
     return joinpath(SRC_DIR, "preprocess", "preprocess")
     
 def planner_executable():
-    return joinpath(SRC_DIR, "search", "src")
+    return joinpath(SRC_DIR, "search", "downward")
 
 def planner_debug_executable():
-    return joinpath(SRC_DIR, "search", "src-debug")
+    return joinpath(SRC_DIR, "search", "downward-debug")
 
 
 def do_translate(problem, generate_relaxed_problem=False):
