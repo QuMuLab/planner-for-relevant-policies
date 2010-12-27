@@ -51,35 +51,35 @@ class ReportArgParser(tools.ArgParser):
         tools.ArgParser.__init__(self, *args, add_help=True, **kwargs)
       
         self.add_argument('source', help='path to results directory', 
-                            type=self.directory)
+                    type=self.directory)
         
         self.add_argument('-d', '--dest', dest='report_dir', default='reports',
-                            help='path to report directory')
+                    help='path to report directory')
                         
         self.add_argument('--format', dest='output_format', default='html',
-                            help='format of the output file',
-                            choices=sorted(txt2tags.TARGETS))
+                    help='format of the output file',
+                    choices=sorted(txt2tags.TARGETS))
                             
         self.add_argument('--group-func', default='sum',
-                        help='the function used to cumulate the values of a group')
+                    help='the function used to cumulate the values of a group')
                         
         self.add_argument('--hide-sum', dest='hide_sum_row',
-                        default=False, action='store_true',
-                        help='do not add a row that sums up each column')
+                    default=False, action='store_true',
+                    help='do not add a row that sums up each column')
                         
         self.add_argument('--dry', default=False, action='store_true',
-                        help='do not write anything to the filesystem')
+                    help='do not write anything to the filesystem')
                         
         self.add_argument('--reload', default=False, action='store_true',
-                        help='rescan the directory and reload the properties files')
+                    help='rescan the directory and reload the properties files')
                         
         self.add_argument('--show_attributes', default=False, action='store_true',
-                        help='show a list of available attributes and exit')
+                    help='show a list of available attributes and exit')
                         
         self.add_argument('-a', '--attributes', dest='foci', type=tools.csv,
-                            metavar='ATTR',
-                            help='the analyzed attributes (e.g. "expanded"). '
-                                'If omitted, use all found numerical attributes')
+                    metavar='ATTR',
+                    help='the analyzed attributes (e.g. "expanded"). '
+                    'If omitted, use all found numerical attributes')
                         
                         
     def parse_args(self, *args, **kwargs):
