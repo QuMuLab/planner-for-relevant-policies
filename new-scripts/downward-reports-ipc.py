@@ -88,13 +88,6 @@ class IpcReport(Report):
             self.print_report()
             sys.stdout = sys.__stdout__
         logging.info('Wrote file %s' % self.output_file)
-        if self.open_report:
-            import subprocess
-            dir, filename = os.path.split(self.output_file)
-            os.chdir(dir)
-            subprocess.call(['pdflatex', filename])
-            subprocess.call(['xdg-open', filename.replace('tex', 'pdf')])
-
 
     def print_report(self):
         self.print_header()
@@ -258,3 +251,4 @@ if __name__ == "__main__":
     report.report_type = report_type
 
     report.write()
+    report.open()

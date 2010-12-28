@@ -478,6 +478,7 @@ if __name__ == "__main__":
 
     #report.build()
     report.write()
+    report.open()
 
     #report.add_filter(domain='gripper')
     #report.add_filter(lambda item: item['expanded'] == '21')
