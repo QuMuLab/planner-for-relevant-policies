@@ -185,12 +185,12 @@ def get_status(content, old_props):
         new_props['status'] = 'unsolved'
     return new_props
 
-def solved(content, old_props):
+def coverage(content, old_props):
     new_props = {}
     if 'plan_length' in old_props:
-        new_props['solved'] = 1
+        new_props['coverage'] = 1
     else:
-        new_props['solved'] = 0
+        new_props['coverage'] = 0
     return new_props
 
 
@@ -356,7 +356,7 @@ def add_search_parsing(eval):
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
     eval.add_function(get_status)
-    eval.add_function(solved)
+    eval.add_function(coverage)
     eval.add_function(scores)
 
 
