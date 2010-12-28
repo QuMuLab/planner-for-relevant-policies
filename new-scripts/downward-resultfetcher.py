@@ -213,7 +213,9 @@ def scores(content, old_props):
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
         return round(score, 4)
 
-    return {'score_expanded': log_score(old_props.get('expanded'),
+    return {'score_expansions': log_score(old_props.get('expansions'),
+                    min_bound=100, max_bound=1000000, min_score=0.0),
+            'score_evaluations': log_score(old_props.get('evaluations'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
             'score_total_time': log_score(old_props.get('total_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
@@ -343,7 +345,8 @@ def add_search_parsing(eval):
     #eval.add_key_value_pattern('run_start_time')
     eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
     eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
-    eval.add_pattern('expanded', r'Expanded (\d+)', type=int, required=False)
+    eval.add_pattern('expansions', r'Expanded (\d+)', type=int, required=False)
+    eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int, required=False)
     eval.add_pattern('generated', r'Generated (\d+) state', type=int, required=False)
     eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False, flags='I')
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)

@@ -8,7 +8,7 @@ import logging
 
 from reports import Report, ReportArgParser, existing
 
-SCORES = ['expanded', 'search_time', 'total_time']
+SCORES = ['expansions', 'evaluations', 'search_time', 'total_time']
 
 class Options(object):
     def __init__(self):
