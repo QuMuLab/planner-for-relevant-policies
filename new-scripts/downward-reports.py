@@ -68,10 +68,15 @@ class PlanningReport(Report):
             help=downward_suites.HELP)
         parser.add_argument('--res', default='domain', dest='resolution',
             help='resolution of the report', choices=['suite', 'domain', 'problem'])
-
         parser.add_argument('--filter', type=tools.csv, default=[],
-                            help='filters will be applied as follows: ' \
-                                'expanded:lt:100 -> only process if run[expanded] < 100')
+            help='filters will be applied as follows: ' \
+                'expanded:lt:100 -> only process if run[expanded] < 100')
+        parser.add_argument('--missing', default='auto',
+            dest='handle_missing_attrs', choices=['include', 'ignore', 'auto'],
+            help='for an attribute include or ignore problems for which not ' \
+                'all configs have this attribute. "auto" includes those ' \
+                'problems in the detailed view and ignores them in the ' \
+                'domain-summary reports')
 
         Report.__init__(self, parser)
 
@@ -79,8 +84,8 @@ class PlanningReport(Report):
         self.output = ''
 
         # For some attributes only compare commonly solved tasks
-        self.commonly_solved_foci = ['cost', 'expanded', 'generated', 'memory',
-                                    'plan_length', 'search_time', 'total_time']
+        self.commonly_solved_foci = ['cost', 'expanded', 'expansions', 
+                'generated', 'memory', 'plan_length', 'search_time', 'total_time']
         info = 'Report only commonly solved problems for the following attributes: %s'
         info %= ', '.join(self.commonly_solved_foci)
         self.add_info(info)
@@ -171,7 +176,10 @@ class PlanningReport(Report):
         Returns an empty table. Used and filled by subclasses.
         '''
         # For some reports only compare commonly solved tasks
-        if self.focus in self.commonly_solved_foci:
+        if self.focus in self.commonly_solved_foci and not \
+                    (self.handle_missing_attrs == 'auto' and 
+                        self.resolution == 'problem'):
+            logging.info('Filtering problems with missing attributes for runs')
             self.set_grouping('domain', 'problem')
             for (domain, problem), group in self.group_dict.items():
                 all_solved = all(group['solved'])
@@ -230,8 +238,7 @@ class AnyAttributeReport(PlanningReport):
             group.sort(self.focus)
             for time_limit in xrange(min_value, max_value + step, step):
                 table.add_cell(str(time_limit), config,
-                               len(group.filtered(lambda di: di[self.focus] <= time_limit))
-                               )
+                    len(group.filtered(lambda di: di[self.focus] <= time_limit)))
 
         return table
 
