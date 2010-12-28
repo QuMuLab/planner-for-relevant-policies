@@ -82,13 +82,13 @@ class DataSet(Bunch):
         else:
             return [item.get(key, missing) for item in self.items]
 
-    def get(self, key, default=None):
+    def get(self, key, default=missing):
         if key in self:
             return [Bunch.__getitem__(self, key)]
         else:
             return [item.get(key, default) for item in self.items]
     
-    def get_single_value(self, key, default=None):
+    def get_single_value(self, key, default=missing):
         """
         Convenience method for a dataset with only one entry
         """

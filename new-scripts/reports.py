@@ -79,6 +79,10 @@ class ReportArgParser(tools.ArgParser):
                         
         self.add_argument('--show_attributes', default=False, action='store_true',
                     help='show a list of available attributes and exit')
+                    
+        self.add_argument('--open', default=False, action='store_true',
+                    dest='open_report',
+                    help='open the report file after writing it')
                         
         self.add_argument('-a', '--attributes', dest='foci', type=tools.csv,
                     metavar='ATTR',
@@ -257,8 +261,14 @@ class Report(object):
             with open(self.output_file, 'w') as file:
                 logging.info('Writing output to "%s"' % self.output_file)
                 file.write(self.output)
-        
-        logging.info('Finished writing report')
+            if self.open_report:
+                import subprocess
+                dir, filename = os.path.split(self.output_file)
+                os.chdir(dir)
+                if self.output_format == 'tex':
+                    subprocess.call(['pdflatex', filename])
+                    filename = filename.replace('tex', 'pdf')
+                subprocess.call(['xdg-open', filename])
         
         
     def __str__(self):

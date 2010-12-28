@@ -8,7 +8,10 @@ import logging
 
 from reports import Report, ReportArgParser, existing
 
-SCORES = ['expansions', 'evaluations', 'search_time', 'total_time']
+SCORES = ['expansions', 'evaluations', 'search_time', 'total_time',
+            'coverage',
+            #'quality'
+        ]
 
 def get_date_and_time():
     return r"\today\ \thistime"
@@ -30,7 +33,15 @@ class IpcReport(Report):
                             dest='best_value_column',
                             help='Do not add a column with the best known score')
         Report.__init__(self, parser)
+        self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
+        self.focus_name = self.focus
         self.score = 'score_' + self.focus
+        if self.focus == 'coverage':
+            self.focus = 'plan_length'
+            self.score = 'coverage'
+        elif self.focus == 'quality':
+            self.focus = 'plan_length'
+            self.score = 'quality'
         logging.info('Using score attribute "%s"' % self.score)
         logging.info('Adding column with best value: %s' % self.best_value_column)
         # Get set of configs
@@ -51,6 +62,9 @@ class IpcReport(Report):
         else:
             return ""
 
+    def escape(self, text):
+        return text.replace('_', r'\_')
+
     def _compute_total_scores(self):
         total_scores = {}
         domain_dict = self.data.group_dict('domain')
@@ -69,12 +83,18 @@ class IpcReport(Report):
             self.print_report()
             return
 
-        self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
-
         with open(self.output_file, 'w') as file:
             sys.stdout = file
             self.print_report()
             sys.stdout = sys.__stdout__
+        logging.info('Wrote file %s' % self.output_file)
+        if self.open_report:
+            import subprocess
+            dir, filename = os.path.split(self.output_file)
+            os.chdir(dir)
+            subprocess.call(['pdflatex', filename])
+            subprocess.call(['xdg-open', filename.replace('tex', 'pdf')])
+
 
     def print_report(self):
         self.print_header()
@@ -126,7 +146,7 @@ class IpcReport(Report):
         problems = ['']
 
         print r"\section*{%s %s --- %s}" % (
-            self.focus, domain, get_date_and_time())
+            self.escape(self.focus_name), domain, get_date_and_time())
         print r"\tablehead{\hline"
         print r"\textbf{prob}"
         for config in self.configs:
@@ -142,15 +162,32 @@ class IpcReport(Report):
 
         for problem, probgroup in sorted(runs.group_dict('problem').items()):
             print r"\textbf{%s}" % problem.replace('.pddl', '')
+            scores = []
+            # Compute best value if we are comparing quality
+            if self.score == 'quality':
+                # self.focus is "plan_length"
+                lengths = probgroup.get(self.focus)
+                lengths = filter(existing, lengths)
+                best_length = max(lengths) if lengths else None
             config_dict = probgroup.group_dict('config')
             for config in self.configs:
                 run = config_dict.get(config)
                 assert len(run) == 1, run
+                if self.score == 'quality':
+                    length = run.get_single_value('plan_length')
+                    quality = None
+                    if length and best_length and not length == 0:
+                        quality = float(best_length) / length
+                    run['quality'] = quality
+                    scores.append(quality)
                 print r"& %s" % self._format_result(run)
             if self.best_value_column:
-                values = probgroup.get(self.score)
-                values = filter(existing, values)
-                best = max(values) if values else None
+                if self.score == 'quality':
+                    best = max(scores) if scores else None
+                else:
+                    values = probgroup.get(self.score)
+                    values = filter(existing, values)
+                    best = max(values) if values else None
                 print r"& %s" % ("---" if best is None else best)
             print r"\\"
         print r"\hline"
@@ -176,7 +213,7 @@ class IpcReport(Report):
         overall = defaultdict(float)
 
         print r"\section*{%s %s --- %s}" % (
-            self.focus, title, get_date_and_time())
+            self.escape(self.focus_name), title, get_date_and_time())
         print r"\begin{tabular}{|l|%s|}" % ("r" * len(self.configs))
         print r"\hline"
         print r"\textbf{domain}"
