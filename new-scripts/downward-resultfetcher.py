@@ -182,7 +182,7 @@ def get_status(content, old_props):
     elif 'completely_explored' in old_props:
         new_props['status'] = 'failure'
     else:
-        new_props['status'] = 'not_ok'
+        new_props['status'] = 'unsolved'
     return new_props
 
 def solved(content, old_props):
@@ -213,7 +213,7 @@ def scores(content, old_props):
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
         return round(score, 4)
 
-    return {'score_expansions': log_score(old_props.get('expanded'),
+    return {'score_expanded': log_score(old_props.get('expanded'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
             'score_total_time': log_score(old_props.get('total_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
@@ -352,7 +352,7 @@ def add_search_parsing(eval):
 
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
-    #eval.add_function(get_status)
+    eval.add_function(get_status)
     eval.add_function(solved)
     eval.add_function(scores)
 
