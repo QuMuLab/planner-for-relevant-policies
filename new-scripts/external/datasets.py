@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import operator
+import logging
 
 
 def uniq(seq):
@@ -17,8 +18,6 @@ def uniq(seq):
 
 
 def normalize_tuple(atuple):
-    ##
-    return atuple
     if len(atuple) == 1:
         return atuple[0]
     else:
@@ -82,6 +81,27 @@ class DataSet(Bunch):
             return [Bunch.__getitem__(self, key)]
         else:
             return [item.get(key, missing) for item in self.items]
+
+    def get(self, key, default=None):
+        if key in self:
+            return [Bunch.__getitem__(self, key)]
+        else:
+            return [item.get(key, default) for item in self.items]
+    
+    def get_single_value(self, key, default=None):
+        """
+        Convenience method for a dataset with only one entry
+        """
+        if key in self:
+            return Bunch.__getitem__(self, key)
+        else:
+            values = [item.get(key, default) for item in self.items]
+            assert len(values) <= 1, 'More than one value found for %s in %s' % \
+                                        (key, self)
+            if len(values) == 0:
+                logging.warning('No value found for %s in %s' % (key, self))
+                return default
+            return values[0]
 
     def keys(self, *attrs, **kwargs):
         default = kwargs.pop("default", None)

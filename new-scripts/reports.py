@@ -22,7 +22,7 @@ import cPickle
 import tools
 from markup import Document
 from external.configobj import ConfigObj
-from external.datasets import DataSet
+from external.datasets import DataSet, MissingType
 from external import txt2tags
 from external import argparse
 
@@ -34,8 +34,8 @@ def avg(values):
     40.0
     """
     return round(sum(values, 0.0) / len(values), 4)
-    
-    
+
+
 def gm(values):
     """Computes the geometric mean of a list of numbers.
 
@@ -44,6 +44,10 @@ def gm(values):
     """
     assert len(values) >= 1
     return round(tools.prod(values) ** (1/len(values)), 4)
+
+
+def existing(val):
+    return not type(val) == MissingType
 
 
 class ReportArgParser(tools.ArgParser):
@@ -125,17 +129,17 @@ class Report(object):
         
         self.data = None
         self.orig_data = self._get_data()
-        
-        if not self.foci or self.foci == 'all':
-            self.foci = sorted(self.orig_data.get_attributes())
-        
-        logging.info('Attributes: %s' % self.foci)
+        self.data = self.orig_data.copy()
         
         if self.show_attributes:
             print
             print 'Available attributes:'
             print self.orig_data.get_attributes()
             sys.exit()
+        
+        if not self.foci or self.foci == 'all':
+            self.foci = sorted(self.orig_data.get_attributes())
+        logging.info('Attributes: %s' % self.foci)
         
         self.filter_funcs = []
         self.filter_pairs = {}
@@ -249,10 +253,9 @@ class Report(object):
             
         if not self.dry:
             ext = 'html' if self.output_format == 'xhtml' else self.output_format
-            #date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-            output_file = os.path.join(self.report_dir, self.name() + '.' + ext)
-            with open(output_file, 'w') as file:
-                logging.info('Writing output to "%s"' % output_file)
+            self.output_file = os.path.join(self.report_dir, self.name() + '.' + ext)
+            with open(self.output_file, 'w') as file:
+                logging.info('Writing output to "%s"' % self.output_file)
                 file.write(self.output)
         
         logging.info('Finished writing report')
