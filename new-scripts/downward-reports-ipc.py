@@ -10,13 +10,6 @@ from reports import Report, ReportArgParser, existing
 
 SCORES = ['expansions', 'evaluations', 'search_time', 'total_time']
 
-class Options(object):
-    def __init__(self):
-        self.ref_value_column = False # Not implemented
-        self.best_value_column = False # Not implemented
-options = Options()
-
-
 def get_date_and_time():
     return r"\today\ \thistime"
 
@@ -33,9 +26,13 @@ class IpcReport(Report):
                             help='Add a summary table with normalized values')
         parser.add_argument('--squeeze', action='store_true',
                             help='Use small fonts to fit in more data')
+        parser.add_argument('--no-best', action='store_false',
+                            dest='best_value_column',
+                            help='Do not add a column with the best known score')
         Report.__init__(self, parser)
         self.score = 'score_' + self.focus
         logging.info('Using score attribute "%s"' % self.score)
+        logging.info('Adding column with best value: %s' % self.best_value_column)
         # Get set of configs
         self.configs = sorted(self.data.group_dict('config').keys())
         self.total_scores = self._compute_total_scores()
@@ -45,7 +42,7 @@ class IpcReport(Report):
         eval_dir = os.path.basename(self.eval_dir)
         name += eval_dir.replace('-', '')
         name = name.replace('eval', '')
-        name += '-' + self.focus
+        name += '-ipc-' + self.focus
         return name
 
     def _tiny_if_squeeze(self):
@@ -134,40 +131,33 @@ class IpcReport(Report):
         print r"\textbf{prob}"
         for config in self.configs:
             print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
-        if options.ref_value_column:
-            print r"& %s\textbf{REF}" % self._tiny_if_squeeze()
-        if options.best_value_column:
+        if self.best_value_column:
             print r"& %s\textbf{BEST}" % self._tiny_if_squeeze()
         print r"\\ \hline}"
         print r"\tabletail{\hline}"
         column_desc = "|l|%s|" % ("r" * len(self.configs))
-        if options.ref_value_column:
-            column_desc += "r|"
-        if options.best_value_column:
+        if self.best_value_column:
             column_desc += "r|"
         print r"\begin{supertabular}{%s}" % column_desc
 
         for problem, probgroup in sorted(runs.group_dict('problem').items()):
-            print r"\textbf{%s}" % problem
+            print r"\textbf{%s}" % problem.replace('.pddl', '')
             config_dict = probgroup.group_dict('config')
             for config in self.configs:
                 run = config_dict.get(config)
                 assert len(run) == 1, run
                 print r"& %s" % self._format_result(run)
-            if options.ref_value_column:
-                ref_quality = results.reference_quality(instance)
-                print r"& %s" % ("---" if ref_quality is None else ref_quality)
-            if options.best_value_column:
-                best_known_quality = results.best_known_quality(instance)
-                print r"& %s" % ("---" if best_known_quality is None else best_known_quality)
+            if self.best_value_column:
+                values = probgroup.get(self.score)
+                values = filter(existing, values)
+                best = max(values) if values else None
+                print r"& %s" % ("---" if best is None else best)
             print r"\\"
         print r"\hline"
         print r"\textbf{total}"
         for config in self.configs:
             print r"& \textbf{%.2f}" % self.total_scores[config, domain]
-        if options.ref_value_column:
-            print r"&"
-        if options.best_value_column:
+        if self.best_value_column:
             print r"&"
         print r"\\"
         print r"\end{supertabular}"
