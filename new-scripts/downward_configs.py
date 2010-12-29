@@ -41,8 +41,8 @@ fFyY = """\
 """
 
 lama = """\
---heuristic "hff=ff()" --heuristic "hlm=lmcount()" --search \
-"iterated(lazy_wastar(hff,hlm,preferred=(hff,hlm),w=10),\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm)),\
 lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5),\
 lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3),\
 lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2),\
