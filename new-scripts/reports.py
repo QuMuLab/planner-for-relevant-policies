@@ -204,27 +204,18 @@ class Report(object):
 
     def _get_data(self):
         """
-        The data is reloaded for every attribute
+        The data is reloaded for every attribute, but read only once from disk
         """
-        dump_path = os.path.join(self.eval_dir, 'data_dump')
-
-        dump_exists = os.path.exists(dump_path)
-        # Reload when the user requested it or when no dump exists
-        if self.reload or not dump_exists:
-            data = DataSet()
-            logging.info('Started collecting data')
-            for base, dir, files in os.walk(self.eval_dir):
-                for file in files:
-                    if file == 'properties':
-                        file = os.path.join(base, file)
-                        props = tools.Properties(file)
-                        data.append(**props)
-            # Pickle data for faster future use
-            cPickle.dump(data, open(dump_path, 'w'))
-            logging.info('Wrote data dump')
-            logging.info('Finished collecting data')
-        else:
-            data = cPickle.load(open(dump_path))
+        combined_props_file = os.path.join(self.eval_dir, 'properties')
+        if not os.path.exists(combined_props_file):
+            logging.error('Properties file not found at %s' % combined_props_file)
+            sys.exit(1)
+        data = DataSet()
+        logging.info('Started collecting data')
+        combined_props = tools.Properties(combined_props_file)
+        for run_id, run in sorted(combined_props.items()):
+            data.append(**run)
+        logging.info('Finished collecting data')
         return data
 
 
