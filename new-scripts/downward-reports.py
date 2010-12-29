@@ -177,21 +177,24 @@ class PlanningReport(Report):
         '''
         # For some reports only compare commonly solved tasks
         if self.focus in self.commonly_solved_foci and not \
-                    (self.handle_missing_attrs == 'auto' and 
-                        self.resolution == 'problem'):
+                        (self.handle_missing_attrs == 'auto' and 
+                            self.resolution == 'problem') \
+                        and not self.handle_missing_attrs == 'include':
             logging.info('Filtering problems with missing attributes for runs')
-            self.set_grouping('domain', 'problem')
-            for (domain, problem), group in self.group_dict.items():
-                all_solved = all(group['solved'])
-                logging.debug('SOLVED %s %s:%s %s, %s' % \
-                    (self.focus, domain, problem, group['solved'], all_solved))
-                if not all_solved:
-                    def delete_not_commonly_solved(run):
+            for (domain, problem), group in self.data.group_dict('domain', 'problem').items():
+                values = group[self.focus]
+                def missing(value):
+                    return type(value) == datasets.MissingType
+                any_missing = any(map(missing, values))
+                logging.debug('MISSING %s %s:%s %s, %s' % \
+                    (self.focus, domain, problem, group[self.focus], any_missing))
+                if any_missing:
+                    def delete_runs_with_missing_attributes(run):
                         if run['domain'] == domain and run['problem'] == problem:
                             return False
                         return True
 
-                    self.data.filter(delete_not_commonly_solved)
+                    self.data.filter(delete_runs_with_missing_attributes)
 
         # Decide on a group function
         if 'score' in self.focus:
