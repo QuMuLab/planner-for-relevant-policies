@@ -213,6 +213,7 @@ class Report(object):
         data = DataSet()
         logging.info('Started collecting data')
         combined_props = tools.Properties(combined_props_file)
+        logging.info('Finished reading props file')
         for run_id, run in sorted(combined_props.items()):
             data.append(**run)
         logging.info('Finished collecting data')
@@ -396,11 +397,16 @@ class Table(collections.defaultdict):
 
         only_one_value = len(set(values)) == 1
 
-        min_value = min(values)
-        max_value = max(values)
+        # Filter out None values
+        real_values = filter(bool, values)
+
+        if values:
+            min_value = min(real_values)
+            max_value = max(real_values)
+        else:
+            min_value = max_value = 'undefined'
 
         min_wins = self.min_wins
-        max_wins = not min_wins
 
         text = ''
         if self.numeric_rows:
@@ -412,7 +418,8 @@ class Table(collections.defaultdict):
             is_max = (value == max_value)
             if self.highlight and only_one_value:
                 value_text = '{{%s|color:Gray}}' % value
-            elif self.highlight and (min_wins and is_min or max_wins and is_max):
+            elif self.highlight and (min_wins and is_min or
+                                        not min_wins and is_max):
                 value_text = '**%s**' % value
             else:
                 value_text = str(value)
