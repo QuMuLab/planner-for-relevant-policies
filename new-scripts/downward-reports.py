@@ -169,32 +169,44 @@ class PlanningReport(Report):
         if self.configs:
             return self.configs
         return list(set([run['config'] for run in self.orig_data]))
+        
+        
+    def _filter_common_attributes(self):
+        """
+        for an attribute include or ignore problems for which not
+        all configs have this attribute. --missing=auto includes those
+        problems in the detailed view and ignores them in the
+        domain-summary reports
+        """
+        # For some reports include all runs
+        if (self.focus not in self.commonly_solved_foci or
+                self.handle_missing_attrs == 'include' or
+                (self.handle_missing_attrs == 'auto' and
+                    self.resolution == 'problem')):
+            return
+        
+        logging.info('Filtering problems with missing attributes for runs')
+        for (domain, problem), group in self.data.group_dict('domain', 'problem').items():
+            values = group[self.focus]
+            def missing(value):
+                return type(value) == datasets.MissingType
+            any_missing = any(map(missing, values))
+            logging.debug('MISSING %s %s:%s %s, %s' % \
+                (self.focus, domain, problem, group[self.focus], any_missing))
+            if any_missing:
+                def delete_runs_with_missing_attributes(run):
+                    if run['domain'] == domain and run['problem'] == problem:
+                        return False
+                    return True
+
+                self.data.filter(delete_runs_with_missing_attributes)
 
 
     def _get_table(self):
         '''
         Returns an empty table. Used and filled by subclasses.
         '''
-        # For some reports only compare commonly solved tasks
-        if self.focus in self.commonly_solved_foci and not \
-                        (self.handle_missing_attrs == 'auto' and 
-                            self.resolution == 'problem') \
-                        and not self.handle_missing_attrs == 'include':
-            logging.info('Filtering problems with missing attributes for runs')
-            for (domain, problem), group in self.data.group_dict('domain', 'problem').items():
-                values = group[self.focus]
-                def missing(value):
-                    return type(value) == datasets.MissingType
-                any_missing = any(map(missing, values))
-                logging.debug('MISSING %s %s:%s %s, %s' % \
-                    (self.focus, domain, problem, group[self.focus], any_missing))
-                if any_missing:
-                    def delete_runs_with_missing_attributes(run):
-                        if run['domain'] == domain and run['problem'] == problem:
-                            return False
-                        return True
-
-                    self.data.filter(delete_runs_with_missing_attributes)
+        self._filter_common_attributes()
 
         # Decide on a group function
         if 'score' in self.focus:
