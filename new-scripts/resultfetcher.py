@@ -43,10 +43,6 @@ class FetchOptionParser(tools.ArgParser):
                 help='copy all files from run dirs to new directory tree, '
                     'not only the properties files')
 
-        self.add_argument('--force-tree', default=False, action='store_true',
-                help='write property files into a directory tree instead of ' \
-                    'a single file if "copy-all" is not set')
-
 
     def parse_args(self, *args, **kwargs):
         # args is the populated namespace, i.e. the Fetcher instance
@@ -262,7 +258,6 @@ class Fetcher(object):
     def fetch(self):
         total_dirs = len(self.run_dirs)
 
-        use_single_props_file = not self.force_tree or self.copy_all
         combined_props = tools.Properties()
 
         for index, run_dir in enumerate(self.run_dirs, 1):
@@ -271,9 +266,8 @@ class Fetcher(object):
 
             id = props.get('id')
             dest_dir = os.path.join(self.eval_dir, *id)
-            if not use_single_props_file:
-                tools.makedirs(dest_dir)
             if self.copy_all:
+                tools.makedirs(dest_dir)
                 tools.fast_updatetree(run_dir, dest_dir)
 
             props['run_dir'] = run_dir
@@ -283,9 +277,8 @@ class Fetcher(object):
                 file_parser.load_file(filename)
                 props.update(file_parser.parse())
 
-            if use_single_props_file:
-                combined_props['-'.join(id)] = props.dict()
-            else:
+            combined_props['-'.join(id)] = props.dict()
+            if self.copy_all:
                 # Write new properties file
                 props.filename = os.path.join(dest_dir, 'properties')
                 props.write()
@@ -300,10 +293,10 @@ class Fetcher(object):
                     props.write(sys.stdout)
                     print '*' * 60
             logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
-        if use_single_props_file:
-            tools.makedirs(self.eval_dir)
-            combined_props.filename = os.path.join(self.eval_dir, 'properties')
-            combined_props.write()
+
+        tools.makedirs(self.eval_dir)
+        combined_props.filename = os.path.join(self.eval_dir, 'properties')
+        combined_props.write()
 
 
 
