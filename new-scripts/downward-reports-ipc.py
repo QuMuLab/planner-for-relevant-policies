@@ -35,6 +35,7 @@ class IpcReport(Report):
         Report.__init__(self, parser)
         self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
         self.focus_name = self.focus
+
         self.score = 'score_' + self.focus
         if self.focus == 'coverage':
             self.focus = 'plan_length'
@@ -42,6 +43,7 @@ class IpcReport(Report):
         elif self.focus == 'quality':
             self.focus = 'plan_length'
             self.score = 'quality'
+
         logging.info('Using score attribute "%s"' % self.score)
         logging.info('Adding column with best value: %s' % self.best_value_column)
         # Get set of configs
@@ -135,9 +137,6 @@ class IpcReport(Report):
             return SHORTHANDS.get(status, status)
 
     def print_domain(self, domain, runs):
-        # Get set of problems
-        problems = ['']
-
         print r"\section*{%s %s --- %s}" % (
             self.escape(self.focus_name), domain, get_date_and_time())
         print r"\tablehead{\hline"
