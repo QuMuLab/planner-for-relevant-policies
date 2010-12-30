@@ -179,7 +179,7 @@ class IpcReport(Report):
                 if self.score == 'quality':
                     best = max(scores) if scores else None
                 else:
-                    values = probgroup.get(self.score)
+                    values = probgroup.get(self.focus)
                     values = filter(existing, values)
                     best = max(values) if values else None
                 print r"& %s" % ("---" if best is None else best)
