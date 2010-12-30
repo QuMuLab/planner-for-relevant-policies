@@ -204,27 +204,19 @@ class Report(object):
 
     def _get_data(self):
         """
-        The data is reloaded for every attribute
+        The data is reloaded for every attribute, but read only once from disk
         """
-        dump_path = os.path.join(self.eval_dir, 'data_dump')
-
-        dump_exists = os.path.exists(dump_path)
-        # Reload when the user requested it or when no dump exists
-        if self.reload or not dump_exists:
-            data = DataSet()
-            logging.info('Started collecting data')
-            for base, dir, files in os.walk(self.eval_dir):
-                for file in files:
-                    if file == 'properties':
-                        file = os.path.join(base, file)
-                        props = tools.Properties(file)
-                        data.append(**props)
-            # Pickle data for faster future use
-            cPickle.dump(data, open(dump_path, 'w'))
-            logging.info('Wrote data dump')
-            logging.info('Finished collecting data')
-        else:
-            data = cPickle.load(open(dump_path))
+        combined_props_file = os.path.join(self.eval_dir, 'properties')
+        if not os.path.exists(combined_props_file):
+            logging.error('Properties file not found at %s' % combined_props_file)
+            sys.exit(1)
+        data = DataSet()
+        logging.info('Started collecting data')
+        combined_props = tools.Properties(combined_props_file)
+        logging.info('Finished reading props file')
+        for run_id, run in sorted(combined_props.items()):
+            data.append(**run)
+        logging.info('Finished collecting data')
         return data
 
 
@@ -405,11 +397,16 @@ class Table(collections.defaultdict):
 
         only_one_value = len(set(values)) == 1
 
-        min_value = min(values)
-        max_value = max(values)
+        # Filter out None values
+        real_values = filter(bool, values)
+
+        if values:
+            min_value = min(real_values)
+            max_value = max(real_values)
+        else:
+            min_value = max_value = 'undefined'
 
         min_wins = self.min_wins
-        max_wins = not min_wins
 
         text = ''
         if self.numeric_rows:
@@ -421,7 +418,8 @@ class Table(collections.defaultdict):
             is_max = (value == max_value)
             if self.highlight and only_one_value:
                 value_text = '{{%s|color:Gray}}' % value
-            elif self.highlight and (min_wins and is_min or max_wins and is_max):
+            elif self.highlight and (min_wins and is_min or
+                                        not min_wins and is_max):
                 value_text = '**%s**' % value
             else:
                 value_text = str(value)

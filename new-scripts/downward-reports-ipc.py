@@ -74,6 +74,8 @@ class IpcReport(Report):
             config_dict = runs.group_dict('config')
             for config in self.configs:
                 config_group = config_dict.get(config)
+                assert config_group, 'Config %s was not found in dict %s' % (
+                        config, config_dict)
                 scores = config_group[self.score]
                 scores = filter(existing, scores)
                 total_score = sum(scores)
