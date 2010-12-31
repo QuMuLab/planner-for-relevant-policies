@@ -7,9 +7,8 @@ static SynergyPlugin lama_ff_synergy_plugin(
     "lm_ff_syn", LamaFFSynergy::create_heuristics);
 
 
-LamaFFSynergy::HeuristicProxy::HeuristicProxy(LamaFFSynergy *synergy_):
-    Heuristic(g_default_heuristic_options)
-{
+LamaFFSynergy::HeuristicProxy::HeuristicProxy(LamaFFSynergy *synergy_)
+    : Heuristic(g_default_heuristic_options) {
     synergy = synergy_;
     is_first_proxy = false;
 }
@@ -21,7 +20,7 @@ void LamaFFSynergy::HeuristicProxy::initialize() {
     }
 }
 
-LamaFFSynergy::LamaFFSynergy(HeuristicOptions &options,
+LamaFFSynergy::LamaFFSynergy(const HeuristicOptions &options,
                              LandmarksGraph &lm_graph,
                              bool lm_pref_, bool lm_admissible_, bool lm_optimal_,
                              bool use_action_landmarks_)
@@ -119,9 +118,9 @@ LamaFFSynergy::create_heuristics(const std::vector<string> &config,
                           // does not make sense to use the synergy without
                           // using lm preferred operators
     LamaFFSynergy *lama_ff_synergy = new LamaFFSynergy(
-            common_options, *lm_graph,
-            lm_pref_, lm_admissible_,
-            lm_optimal_, use_action_landmarks_);
+        common_options, *lm_graph,
+        lm_pref_, lm_admissible_,
+        lm_optimal_, use_action_landmarks_);
 
     heuristics.push_back(lama_ff_synergy->get_lama_heuristic_proxy());
     heuristics.push_back(lama_ff_synergy->get_ff_heuristic_proxy());

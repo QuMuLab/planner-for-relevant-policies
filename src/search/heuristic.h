@@ -41,7 +41,7 @@ protected:
     void set_preferred(const Operator *op);
     int get_adjusted_cost(const Operator &op) const;
 public:
-    Heuristic(HeuristicOptions &options);
+    Heuristic(const HeuristicOptions &options);
     virtual ~Heuristic();
 
     void evaluate(const State &state);
@@ -60,7 +60,7 @@ public:
     void set_evaluator_value(int val);
     void get_involved_heuristics(std::set<Heuristic *> &hset) {hset.insert(this); }
     virtual void reset() {}
-    OperatorCost get_cost_type() const {return cost_type;}
+    OperatorCost get_cost_type() const {return cost_type; }
 };
 
 #endif

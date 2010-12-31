@@ -1,6 +1,5 @@
 #include "heuristic.h"
 #include "operator.h"
-#include "globals.h"
 #include "option_parser.h"
 #include "operator_cost.h"
 
@@ -9,7 +8,7 @@
 
 using namespace std;
 
-Heuristic::Heuristic(HeuristicOptions &options) {
+Heuristic::Heuristic(const HeuristicOptions &options) {
     heuristic = NOT_INITIALIZED;
 
     if (options.cost_type < 0 || options.cost_type >= MAX_OPERATOR_COST) {
@@ -75,12 +74,8 @@ void Heuristic::get_preferred_operators(std::vector<const Operator *> &result) {
                   preferred_operators.end());
 }
 
-bool Heuristic::reach_state(const State &parent_state,
-                            const Operator &op, const State &state) {
-    // todo: just for warning
-    if ((parent_state.hash() == state.hash()) && (op.get_cost() == 0))
-        cout << "weird" << endl;
-
+bool Heuristic::reach_state(const State &/*parent_state*/,
+                            const Operator &/*op*/, const State &/*state*/) {
     return false;
 }
 
@@ -108,12 +103,11 @@ int Heuristic::get_adjusted_cost(const Operator &op) const {
 
 
 HeuristicOptions::HeuristicOptions()
-    : cost_type(static_cast<int>(NORMAL))
-{
+    : cost_type(NORMAL) {
 }
 
 void HeuristicOptions::add_option_to_parser(NamedOptionParser &option_parser) {
     option_parser.add_int_option("cost_type",
-                                  &cost_type,
-                                  "operator cost adjustment type");
+                                 &cost_type,
+                                 "operator cost adjustment type");
 }

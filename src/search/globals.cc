@@ -6,6 +6,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <sstream>
 using namespace std;
 
 #include "axioms.h"
@@ -26,10 +27,16 @@ bool test_goal(const State &state) {
     return true;
 }
 
-int save_plan(const vector<const Operator *> &plan) {
+int save_plan(const vector<const Operator *> &plan, int iter) {
     ofstream outfile;
     int plan_cost = 0;
-    outfile.open("sas_plan", ios::out);
+    if (iter == 0) {
+        outfile.open(g_plan_filename.c_str(), ios::out);
+    } else {
+        ostringstream out;
+        out << g_plan_filename << "." << iter;
+        outfile.open(out.str().c_str(), ios::out);
+    }
     for (int i = 0; i < plan.size(); i++) {
         cout << plan[i]->get_name() << " (" << plan[i]->get_cost() << ")" << endl;
         outfile << "(" << plan[i]->get_name() << ")" << endl;
@@ -181,3 +188,4 @@ CausalGraph *g_causal_graph;
 HeuristicOptions g_default_heuristic_options;
 
 Timer g_timer;
+string g_plan_filename = "sas_plan";

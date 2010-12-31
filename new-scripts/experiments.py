@@ -63,6 +63,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(m
 
 import tools
 
+SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
+DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
+
 HELP = """\
 Base module for creating fast downward experiments.
 PLEASE NOTE: The available options depend on the selected experiment type.
@@ -114,8 +117,9 @@ class Experiment(object):
         if self.root_dir:
             self.base_dir = os.path.join(self.root_dir, self.name)
         else:
-            module_dir = os.path.dirname(__file__)
-            self.base_dir = os.path.join(module_dir, self.name)
+            #module_dir = os.path.dirname(__file__)
+            #self.base_dir = os.path.join(module_dir, self.name)
+            self.base_dir = self.name
         self.base_dir = os.path.abspath(self.base_dir)
         logging.info('Base Dir: "%s"' % self.base_dir)
 
@@ -266,7 +270,7 @@ class LocalExperiment(Experiment):
                         'PROCESSES': str(self.processes),
                         }
 
-        script = open('data/local-job-template.py').read()
+        script = open(os.path.join(DATA_DIR, 'local-job-template.py')).read()
         for orig, new in replacements.items():
             script = script.replace('***'+orig+'***', new)
 
@@ -309,16 +313,16 @@ class GkiGridExperiment(Experiment):
         Generates the main script
         """
         num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
-        current_dir = os.path.dirname(os.path.abspath(__file__))
+        #current_dir = os.path.dirname(os.path.abspath(__file__))
         job_params = {
-            'logfile': os.path.join(current_dir, self.name, self.name + '.log'),
-            'errfile': os.path.join(current_dir, self.name, self.name + '.err'),
+            'logfile': os.path.join(self.base_dir, self.name + '.log'),
+            'errfile': os.path.join(self.base_dir, self.name + '.err'),
             'driver_timeout': self.timeout * self.runs_per_task + 30,
             'num_tasks': num_tasks,
             'queue': self.queue,
             'priority': self.priority,
         }
-        script_template = open('data/gkigrid-job-header-template').read()
+        script_template = open(os.path.join(DATA_DIR, 'gkigrid-job-header-template')).read()
         script = script_template % job_params
 
         script += '\n'
@@ -506,7 +510,7 @@ class Run(object):
         else:
             env_vars_text = '"Here you would find the declaration of environment variables"'
 
-        run_script = open('data/run-template.py').read()
+        run_script = open(os.path.join(DATA_DIR, 'run-template.py')).read()
         replacements = {'ENVIRONMENT_VARIABLES': env_vars_text,
                         'RUN_COMMAND' : self.command,
                         'PREPROCESS_COMMAND': self.preprocess_command,
