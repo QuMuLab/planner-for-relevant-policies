@@ -258,14 +258,16 @@ class Fetcher(object):
     def fetch(self):
         total_dirs = len(self.run_dirs)
 
+        combined_props = tools.Properties()
+
         for index, run_dir in enumerate(self.run_dirs, 1):
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
 
             id = props.get('id')
             dest_dir = os.path.join(self.eval_dir, *id)
-            tools.makedirs(dest_dir)
             if self.copy_all:
+                tools.makedirs(dest_dir)
                 tools.fast_updatetree(run_dir, dest_dir)
 
             props['run_dir'] = run_dir
@@ -275,9 +277,11 @@ class Fetcher(object):
                 file_parser.load_file(filename)
                 props.update(file_parser.parse())
 
-            # Write new properties file
-            props.filename = os.path.join(dest_dir, 'properties')
-            props.write()
+            combined_props['-'.join(id)] = props.dict()
+            if self.copy_all:
+                # Write new properties file
+                props.filename = os.path.join(dest_dir, 'properties')
+                props.write()
 
             if self.check:
                 try:
@@ -289,6 +293,10 @@ class Fetcher(object):
                     props.write(sys.stdout)
                     print '*' * 60
             logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
+
+        tools.makedirs(self.eval_dir)
+        combined_props.filename = os.path.join(self.eval_dir, 'properties')
+        combined_props.write()
 
 
 
