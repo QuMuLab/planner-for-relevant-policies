@@ -4,7 +4,7 @@ from downward_experiments import *
 import experiments
 
 old_rev = '213202a44ebe'
-new_rev = '7bc6764d4116'
+new_rev = '4dc3a033242a'
 
 old_translator = TranslatorHgCheckout(rev=old_rev)
 new_translator = TranslatorHgCheckout(rev=new_rev)
@@ -16,5 +16,5 @@ combinations = [
     (old_translator, preprocessor, planner),
     (new_translator, preprocessor, planner),
                ]
-               
+
 build_experiment(combinations)
