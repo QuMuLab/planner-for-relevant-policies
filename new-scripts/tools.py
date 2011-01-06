@@ -230,23 +230,24 @@ def csv(string):
 
 
 class ArgParser(argparse.ArgumentParser):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, add_log_option=True, *args, **kwargs):
         argparse.ArgumentParser.__init__(self, *args, #add_help=False,
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
-                
-        # The option may have already been added by a parent
-        try:
-            self.add_argument('-l', '--log-level', choices=['DEBUG', 'INFO', 'WARNING'],
-                            dest='log_level', default='INFO')
-        except argparse.ArgumentError:
-            pass
+
+        if add_log_option:
+            try:
+                self.add_argument('-l', '--log-level', choices=['DEBUG', 'INFO', 'WARNING'],
+                                dest='log_level', default='INFO')
+            except argparse.ArgumentError:
+                # The option may have already been added by a parent
+                pass
             
     def parse_known_args(self, *args, **kwargs):
         args, remaining = argparse.ArgumentParser.parse_known_args(self, *args, **kwargs)
         
         global LOG_LEVEL
         # Set log level only once (May have already been deleted from sys.argv)
-        if not LOG_LEVEL:
+        if getattr(args, 'log_level', None) and not LOG_LEVEL:
             # Python adds a default handler if some log is generated before here
             # Remove all handlers that have been added automatically
             root_logger = logging.getLogger('')
