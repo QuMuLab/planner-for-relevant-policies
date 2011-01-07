@@ -74,6 +74,12 @@ lmopt_hm1 = """\
 --search "astar(lmcount(lm_hm(m=1),admissible=true),mpd=true)"\
 """
 
+iter_ff = """\
+--heuristic "h=ff(cost_type=1)" \
+--search "iterated(lazy_greedy(h, preferred=(h)), repeat_last=true)"\
+"""
+
+
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]
 

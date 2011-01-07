@@ -76,7 +76,7 @@ class Checkout(object):
         if self.part == 'translate':
             return
 
-        if self.rev == 'WORK' or self.get_executable(default=None) is None:
+        if self.rev == 'WORK' or self._get_executable(default=None) is None:
             os.chdir(self.exe_dir)
             subprocess.call(['make'])
             os.chdir(SCRIPTS_DIR)
