@@ -106,7 +106,7 @@ class Checkout(object):
 # ---------- Mercurial ---------------------------------------------------------
 
 class HgCheckout(Checkout):
-    DEFAULT_URL = BASE_DIR # 'ssh://downward'
+    DEFAULT_URL = BASE_DIR # was 'ssh://downward'
     DEFAULT_REV = 'WORK'
 
     def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, name=''):
@@ -316,6 +316,70 @@ def _get_preprocess_cmd(translator, preprocessor_name):
     return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
 
 
+def _prepare_preprocess_run(run, problem, translator_co, translator,
+                            preprocessor_co, preprocessor_name):
+    """
+    This method adds the necessary preprocessing information to a run.
+    Nothing is returned, all changes to the run are side effects
+    """
+    run.require_resource(preprocessor_name)
+
+    domain_file = problem.domain_file()
+    problem_file = problem.problem_file()
+    run.add_resource("DOMAIN", domain_file, "domain.pddl")
+    run.add_resource("PROBLEM", problem_file, "problem.pddl")
+
+    pre_cmd = _get_preprocess_cmd(translator, preprocessor_name)
+
+    run.set_preprocess(pre_cmd)
+    # Use empty command here, it may be overwritten later
+    run.set_command(' ')
+
+    run.declare_optional_output("*.groups")
+    run.declare_optional_output("output.sas")
+    run.declare_optional_output("output")
+
+    ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
+
+    run.set_property('translator', translator_co.rev)
+    run.set_property('preprocessor', preprocessor_co.rev)
+
+    run.set_property('translator_parent', translator_co.parent_rev)
+    run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
+
+    run.set_property('config', ext_config)
+    run.set_property('domain', problem.domain)
+    run.set_property('problem', problem.problem)
+    run.set_property('id', [ext_config, problem.domain, problem.problem])
+
+
+def _prepare_search_run(run, problem, translator_co, preprocessor_co,
+                        planner_co, planner_name,
+                        config, config_name):
+    run.require_resource(planner_name)
+
+    run.set_command("$%s %s < $OUTPUT" % (planner_name, config))
+
+    run.declare_optional_output("sas_plan")
+
+    ext_config = '-'.join([translator_co.rev, preprocessor_co.rev,
+                            planner_co.rev, config_name])
+
+    run.set_property('translator', translator_co.rev)
+    run.set_property('preprocessor', preprocessor_co.rev)
+    run.set_property('planner', planner_co.rev)
+
+    run.set_property('translator_parent', translator_co.parent_rev)
+    run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
+    run.set_property('planner_parent', planner_co.parent_rev)
+
+    run.set_property('commandline_config', config)
+
+    run.set_property('config', ext_config)
+    run.set_property('domain', problem.domain)
+    run.set_property('problem', problem.problem)
+    run.set_property('id', [ext_config, problem.domain, problem.problem])
+
 
 def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
     """
@@ -378,36 +442,8 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
 
         for problem in problems:
             run = exp.add_run()
-            run.require_resource(preprocessor_name)
-
-            domain_file = problem.domain_file()
-            problem_file = problem.problem_file()
-            run.add_resource("DOMAIN", domain_file, "domain.pddl")
-            run.add_resource("PROBLEM", problem_file, "problem.pddl")
-
-            pre_cmd = _get_preprocess_cmd(translator, preprocessor_name)
-
-            # We can use the main command here, because preprocessing uses
-            # a separate directory
-            run.set_command(pre_cmd)
-
-            run.declare_optional_output("*.groups")
-            run.declare_optional_output("output.sas")
-            run.declare_optional_output("output")
-
-            ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
-
-            run.set_property('translator', translator_co.rev)
-            run.set_property('preprocessor', preprocessor_co.rev)
-            
-            run.set_property('translator_parent', translator_co.parent_rev)
-            run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
-
-            run.set_property('config', ext_config)
-            run.set_property('domain', problem.domain)
-            run.set_property('problem', problem.problem)
-            run.set_property('id', [ext_config, problem.domain, problem.problem])
-
+            _prepare_preprocess_run(run, problem, translator_co, translator,
+                                    preprocessor_co, preprocessor_name)
     exp.build()
 
 
@@ -455,7 +491,9 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
         for config_name, config in configs:
             for problem in problems:
                 run = exp.add_run()
-                run.require_resource(planner_name)
+                _prepare_search_run(run, problem, translator_co, preprocessor_co,
+                                planner_co, planner_name,
+                                config, config_name)
 
                 tasks_dir = PREPROCESSED_TASKS_DIR
                 preprocess_version = translator_co.rev+'-'+preprocessor_co.rev
@@ -479,29 +517,6 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                 run.add_resource('OUTPUT_SAS', output_sas, 'output.sas')
                 run.add_resource('RUN_LOG', run_log, 'run.log')
                 run.add_resource('RUN_ERR', run_err, 'run.err')
-
-                run.set_command("$%s %s < $OUTPUT" % (planner_name, config))
-
-                run.declare_optional_output("sas_plan")
-
-                ext_config = '-'.join([translator_co.rev, preprocessor_co.rev,
-                                        planner_co.rev, config_name])
-
-                run.set_property('translator', translator_co.rev)
-                run.set_property('preprocessor', preprocessor_co.rev)
-                run.set_property('planner', planner_co.rev)
-                
-                run.set_property('translator_parent', translator_co.parent_rev)
-                run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
-                run.set_property('planner_parent', planner_co.parent_rev)
-
-                run.set_property('commandline_config', config)
-
-                run.set_property('config', ext_config)
-                run.set_property('domain', problem.domain)
-                run.set_property('problem', problem.problem)
-                run.set_property('id', [ext_config, problem.domain,
-                                        problem.problem])
     exp.build()
 
 
@@ -529,42 +544,12 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
         for config_name, config in configs:
             for problem in problems:
                 run = exp.add_run()
-                run.require_resource(preprocessor_name)
-                run.require_resource(planner_name)
-
-                domain_file = problem.domain_file()
-                problem_file = problem.problem_file()
-                run.add_resource("DOMAIN", domain_file, "domain.pddl")
-                run.add_resource("PROBLEM", problem_file, "problem.pddl")
-
-                pre_cmd = _get_preprocess_cmd(translator, preprocessor_name)
-                run.set_preprocess(pre_cmd)
-
+                _prepare_preprocess_run(run, problem, translator_co, translator,
+                                    preprocessor_co, preprocessor_name)
+                _prepare_search_run(run, problem, translator_co, preprocessor_co,
+                                planner_co, planner_name,
+                                config, config_name)
                 run.set_command("$%s %s < output" % (planner_name, config))
-
-                run.declare_optional_output("*.groups")
-                run.declare_optional_output("output")
-                run.declare_optional_output("output.sas")
-                run.declare_optional_output("sas_plan")
-
-                ext_config = '-'.join([translator_co.rev, preprocessor_co.rev,
-                                        planner_co.rev, config_name])
-
-                run.set_property('translator', translator_co.rev)
-                run.set_property('preprocessor', preprocessor_co.rev)
-                run.set_property('planner', planner_co.rev)
-                
-                run.set_property('translator_parent', translator_co.parent_rev)
-                run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
-                run.set_property('planner_parent', planner_co.parent_rev)
-
-                run.set_property('commandline_config', config)
-
-                run.set_property('config', ext_config)
-                run.set_property('domain', problem.domain)
-                run.set_property('problem', problem.problem)
-                run.set_property('id', [ext_config, problem.domain,
-                                        problem.problem])
     exp.build()
     return exp
 
