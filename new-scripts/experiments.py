@@ -73,14 +73,15 @@ You can set the experiment type with the "--exp-type" option.
 """
 
 # Create a parser only for parsing the experiment type
-exp_type_parser = tools.ArgParser(add_help=False)
+exp_type_parser = tools.ArgParser(add_help=False, add_log_option=True)
 exp_type_parser.add_argument('-e', '--exp-type', choices=['local', 'gkigrid', 'argo'],
                                 default='local', help='Select an experiment type')
 
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, parents=[exp_type_parser], **kwargs)
+        parents = kwargs.pop('parents', []) + [exp_type_parser]
+        tools.ArgParser.__init__(self, *args, parents=parents, **kwargs)
 
         self.add_argument('name',
             help='name of the experiment (e.g. <initials>-<descriptive name>)')
@@ -95,7 +96,7 @@ class ExpArgParser(tools.ArgParser):
             help='how many tasks to group into one top-level directory')
         self.add_argument(
             '--root-dir',
-            help='directory where this experiment should be located (default is this folder). ' \
+            help='directory where this experiment should be located (default is this folder). '
                     'The new experiment will reside in <root-dir>/<name>')
 
 

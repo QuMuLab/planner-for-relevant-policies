@@ -66,6 +66,13 @@ pdb = """\
 --search "astar(pdb())"\
 """
 
+lmopt_rhw = """\
+--search "astar(lmcount(lm_rhw(),admissible=true),mpd=true)"\
+"""
+
+lmopt_hm1 = """\
+--search "astar(lmcount(lm_hm(m=1),admissible=true),mpd=true)"\
+"""
 
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]

@@ -400,7 +400,7 @@ class Table(collections.defaultdict):
         # Filter out None values
         real_values = filter(bool, values)
 
-        if values:
+        if real_values:
             min_value = min(real_values)
             max_value = max(real_values)
         else:
