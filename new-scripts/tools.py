@@ -222,8 +222,27 @@ def fast_updatetree(src, dst):
     #    errors.extend((src, dst, str(why)))
     if errors:
         raise Error(errors)
+
+
+def copy(src, dest):
+    """
+    Copies a file or directory to another file or directory
+    """
+    if os.path.isfile(src) and os.path.isdir(dest):
+        makedirs(dest)
+        dest = os.path.join(dest, os.path.basename(src))
+        shutil.copy2(src, dest)
+    elif os.path.isfile(src):
+        makedirs(os.path.dirname(dest))
+        shutil.copy2(src, dest)
+    elif os.path.isdir(src):
+        fast_updatetree(src, dest)
+    else:
+        logging.error('Cannot copy %s to %s' % (src, dest))
+        sys.exit()
+    logging.debug('Copied %s to %s' % (src, dest))
         
-        
+
 def csv(string):
     string = string.strip(', ')
     return string.split(',')

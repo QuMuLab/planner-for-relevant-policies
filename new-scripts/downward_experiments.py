@@ -437,8 +437,9 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
         translator = translator_co.get_executable()
 
         preprocessor = preprocessor_co.get_executable()
-        preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
-        exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
+        preprocessor_name = 'PREPROCESSOR_%s' % preprocessor_co.rev
+        preprocessor_dest = 'code-%s/preprocess' % preprocessor_co.rev
+        exp.add_resource(preprocessor_name, preprocessor, preprocessor_dest)
 
         for problem in problems:
             run = exp.add_run()

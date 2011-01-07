@@ -229,7 +229,7 @@ class Experiment(object):
         for source, dest in self.resources:
             logging.debug('Copying %s to %s' % (source, dest))
             try:
-                shutil.copy2(source, dest)
+                tools.copy(source, dest)
             except IOError, err:
                 raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
@@ -563,7 +563,7 @@ class Run(object):
             dest = self._get_abs_path(dest)
             logging.debug('Copying %s to %s' % (source, dest))
             try:
-                shutil.copy2(source, dest)
+                tools.copy(source, dest)
             except IOError, err:
                 logging.error('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
