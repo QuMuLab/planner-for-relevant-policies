@@ -348,7 +348,7 @@ def add_search_parsing(eval):
     eval.add_pattern('expansions', r'Expanded (\d+)', type=int, required=False)
     eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int, required=False)
     eval.add_pattern('generated', r'Generated (\d+) state', type=int, required=False)
-    eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False, flags='I')
+    eval.add_pattern('search_time', r'^Search time: (.+)s', type=float, required=False, flags='MI')
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int, required=False)
     eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
