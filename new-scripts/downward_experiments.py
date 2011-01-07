@@ -398,6 +398,17 @@ def _prepare_search_run(run, problem, translator, preprocessor,
     run.set_property('id', [ext_config, problem.domain, problem.problem])
 
 
+def _prepare_search_exp(exp, translator, preprocessor, planner):
+    _require_checkout(exp, planner)
+    for bin in ['downward-1', 'downward-2', 'downward-4', 'dispatch']:
+        src_path = os.path.join(planner.exe_dir, bin)
+        if not os.path.isfile(src_path):
+            continue
+        code_subdir = os.path.dirname(planner.rel_dest)
+        exp.add_resource('DOWNWARD1', src_path,
+                        os.path.join(code_subdir, bin))
+
+
 def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
     """
     When the option --preprocess is passed on the commandline this method
@@ -492,7 +503,7 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
         experiment_combos.append((translator, preprocessor, planner))
 
     for translator, preprocessor, planner in experiment_combos:
-        _require_checkout(exp, planner)
+        _prepare_search_exp(exp, translator, preprocessor, planner)
 
         configs = _get_configs(planner.rev, exp.configs)
 
@@ -536,7 +547,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
 
     for translator, preprocessor, planner in combinations:
         _require_checkout(exp, preprocessor)
-        _require_checkout(exp, planner)
+        _prepare_search_exp(exp, translator, preprocessor, planner)
 
         configs = _get_configs(planner.rev, exp.configs)
 
