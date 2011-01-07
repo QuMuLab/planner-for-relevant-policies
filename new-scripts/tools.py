@@ -237,6 +237,9 @@ def copy(src, dest):
         shutil.copy2(src, dest)
     elif os.path.isdir(src):
         fast_updatetree(src, dest)
+    elif not os.path.exists(src):
+        logging.error('Path does not exist: %s' % src)
+        sys.exit()
     else:
         logging.error('Cannot copy %s to %s' % (src, dest))
         sys.exit()
