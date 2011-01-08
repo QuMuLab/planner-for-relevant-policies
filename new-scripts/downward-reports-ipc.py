@@ -212,12 +212,13 @@ class IpcReport(Report):
 
         print r"\section*{%s %s --- %s}" % (
             self.escape(self.focus_name), title, get_date_and_time())
-        print r"\begin{tabular}{|l|%s|}" % ("r" * len(self.configs))
-        print r"\hline"
+        print r"\tablehead{\hline"
         print r"\textbf{domain}"
         for config in self.configs:
             print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
-        print r"\\ \hline"
+        print r"\\ \hline}"
+        print r"\tabletail{\hline}"
+        print r"\begin{supertabular}{|l|%s|}" % ("r" * len(self.configs))
         domain_dict = self.data.group_dict('domain')
         for domain, group in sorted(domain_dict.items()):
             print r"\textbf{%s}" % domain
@@ -239,7 +240,7 @@ class IpcReport(Report):
                 overall_score = float(overall_score) / num_domains
             print r"& \textbf{%.2f}" % overall_score
         print r"\\ \hline"
-        print r"\end{tabular}"
+        print r"\end{supertabular}"
 
     def print_footer(self):
         print r"\end{document}"
