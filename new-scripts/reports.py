@@ -206,17 +206,27 @@ class Report(object):
         """
         The data is reloaded for every attribute, but read only once from disk
         """
-        combined_props_file = os.path.join(self.eval_dir, 'properties')
-        if not os.path.exists(combined_props_file):
-            logging.error('Properties file not found at %s' % combined_props_file)
-            sys.exit(1)
-        data = DataSet()
-        logging.info('Started collecting data')
-        combined_props = tools.Properties(combined_props_file)
-        logging.info('Finished reading props file')
-        for run_id, run in sorted(combined_props.items()):
-            data.append(**run)
-        logging.info('Finished collecting data')
+        dump_path = os.path.join(self.eval_dir, 'data_dump')
+        # Reload when the user requested it or when no dump exists
+        if self.reload or not os.path.exists(dump_path):
+            combined_props_file = os.path.join(self.eval_dir, 'properties')
+            if not os.path.exists(combined_props_file):
+                logging.error('Properties file not found at %s' % combined_props_file)
+                sys.exit(1)
+            data = DataSet()
+            logging.info('Started collecting data')
+            combined_props = tools.Properties(combined_props_file)
+            logging.info('Finished reading props file')
+            for run_id, run in sorted(combined_props.items()):
+                data.append(**run)
+            logging.info('Finished collecting data')
+
+            # Pickle data for faster future use
+            cPickle.dump(data, open(dump_path, 'w'))
+            logging.info('Wrote data dump')
+        else:
+            data = cPickle.load(open(dump_path))
+            logging.info('Read data dump (Reload with --reload)')
         return data
 
 
