@@ -17,8 +17,6 @@ import datetime
 import collections
 import cPickle
 
-
-
 import tools
 from markup import Document
 from external.configobj import ConfigObj
@@ -216,9 +214,7 @@ class Report(object):
 
 
     def name(self):
-        name = ''
-        eval_dir = os.path.basename(self.eval_dir)
-        name += eval_dir.replace('-', '')
+        name = os.path.basename(self.eval_dir)
         if len(self.foci) == 1:
             name += '-' + self.foci[0]
         return name

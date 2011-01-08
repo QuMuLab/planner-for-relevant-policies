@@ -54,7 +54,6 @@ function build-all {
 }
 
 if [[ "$PHASE" == 1 ]]; then
-    build-all ## TODO: Shouldn't the scripts ensure that for us?
     ./downward_experiments.py --preprocess -s $SUITE $EXPTYPEOPT $EXPNAME
 elif [[ "$PHASE" == 2 ]]; then
     if [[ "$EXPTYPE" == gkigrid ]]; then
@@ -65,10 +64,7 @@ elif [[ "$PHASE" == 2 ]]; then
 elif [[ "$PHASE" == 3 ]]; then
     ./resultfetcher.py $EXPNAME-p
 elif [[ "$PHASE" == 4 ]]; then
-    build-all ## TODO: Shouldn't the scripts ensure that for us?
     ./downward_experiments.py -s $SUITE -c $CONFIGS $EXPTYPEOPT $EXPNAME
-    # TODO/HACK! See issue195.
-    cp ../src/search/{dispatch,downward-{1,2,4}} $EXPNAME/
 elif [[ "$PHASE" == 5 ]]; then
     if [[ "$EXPTYPE" == gkigrid ]]; then
         qsub ./$EXPNAME/$EXPNAME.q
@@ -78,8 +74,6 @@ elif [[ "$PHASE" == 5 ]]; then
 elif [[ "$PHASE" == 6 ]]; then
     ./downward-resultfetcher.py $EXPNAME
 elif [[ "$PHASE" == 7 ]]; then
-    ## TODO: The report script strip dashes out of the filename,
-    ##       so exp-name-eval => expnameeval. Why?
     ./downward-reports.py $EXPNAME-eval
     ./downward-reports.py --res=problem $EXPNAME-eval
 elif [[ "$PHASE" == 8 ]]; then
@@ -90,10 +84,7 @@ elif [[ "$PHASE" == 8 ]]; then
         BASEDIR=~
     fi
     echo "copying reports to .public_html -- to view, run:"
-     ## TODO: we strip dashes, see above. We use sed since there
-    ##        might be multiple occurrences.
-    MODEXPNAME="$(echo "$EXPNAME" | sed -e 's/-//g')"
-    for REPORT in "$MODEXPNAME"eval-{d,p}-abs.html; do
+    for REPORT in "$EXPNAME"-eval-{d,p}-abs.html; do
         cp "reports/$REPORT" "$BASEDIR/.public_html/"
         echo "firefox $BASEURL/$REPORT &"
     done
