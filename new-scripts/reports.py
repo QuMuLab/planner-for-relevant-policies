@@ -225,8 +225,9 @@ class Report(object):
             cPickle.dump(data, open(dump_path, 'w'))
             logging.info('Wrote data dump')
         else:
+            logging.info('Started reading data dump (Reload properties with --reload)')
             data = cPickle.load(open(dump_path))
-            logging.info('Read data dump (Reload with --reload)')
+            logging.info('Finished reading data dump (Reload properties with --reload)')
         return data
 
 
