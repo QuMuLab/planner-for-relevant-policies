@@ -15,6 +15,18 @@ function usage() {
     exit 2
 }
 
+if [[ "$(basename "$0")" == experiment.sh ]]; then
+    echo "$(basename "$0") is supposed to be called from another script."
+    echo "Are you running it as a main script?"
+    exit 2
+fi
+
+if [[ "$#" != 1 ]]; then
+    usage
+fi
+
+PHASE=$1
+
 ## You can set EXPNAME manually or it will be derived from the
 ## basename of the script that called this one.
 
@@ -22,20 +34,12 @@ if [[ -z $EXPNAME ]]; then
     EXPNAME="exp-$(basename "$0" .sh)"
 fi
 
-if [[ "$(basename "$0")" == experiment.sh ]]; then
-    echo "$(basename "$0") is supposed to be called from another script."
-    echo "Are you running it as a main script?"
-    exit 2
-fi
-
-PHASE=$1
-
-if [[ "$#" != 1 ]]; then
-    usage
-fi
-
 EXPTYPEOPT="--exp-type $EXPTYPE"
 if [[ "$EXPTYPE" == gkigrid ]]; then
+    if [[ -z "$QUEUE" ]]; then
+        echo error: must specify QUEUE
+        exit 2
+    fi
     EXPTYPEOPT="$EXPTYPEOPT --queue $QUEUE"
 elif [[ "$EXPTYPE" != local ]]; then
     echo unknown EXPTYPE: $EXPTYPE
