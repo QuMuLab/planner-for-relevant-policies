@@ -289,6 +289,10 @@ def suite_lmcut_domains():
 def suite_strips():
     return suite_lmcut_domains() + suite_ipc08_all_strips()
 
+def suite_strips_ipc12345():
+    ipc08 = set(suite_ipc08_all())
+    return [domain for domain in suite_strips() if domain not in ipc08]
+
 def suite_optimal():
     return suite_lmcut_domains() + suite_ipc08_opt_strips()
 
