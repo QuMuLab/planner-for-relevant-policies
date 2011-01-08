@@ -214,12 +214,12 @@ class Report(object):
                 logging.error('Properties file not found at %s' % combined_props_file)
                 sys.exit(1)
             data = DataSet()
-            logging.info('Started collecting data')
+            logging.info('Started reading properties file')
             combined_props = tools.Properties(combined_props_file)
-            logging.info('Finished reading props file')
+            logging.info('Finished reading properties file')
             for run_id, run in sorted(combined_props.items()):
                 data.append(**run)
-            logging.info('Finished collecting data')
+            logging.info('Finished turning properties into dataset')
 
             # Pickle data for faster future use
             cPickle.dump(data, open(dump_path, 'w'))
