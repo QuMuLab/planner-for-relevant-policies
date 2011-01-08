@@ -32,6 +32,9 @@ class IpcReport(Report):
         parser.add_argument('--no-best', action='store_false',
                             dest='best_value_column',
                             help='Do not add a column with the best known score')
+        parser.add_argument('--page-size', choices=['a2', 'a3', 'a4'],
+                            default='a4',
+                            help='Set the page size for the latex report')
         Report.__init__(self, parser)
         self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
         self.focus_name = self.focus
@@ -111,7 +114,8 @@ class IpcReport(Report):
             margin = "0.5cm"
         else:
             margin = "2.5cm"
-        print r"\usepackage[a4paper,landscape,margin=%s]{geometry}" % margin
+        print r"\usepackage[%spaper,landscape,margin=%s]{geometry}" % \
+                (self.page_size, margin)
         print r"\usepackage{supertabular}"
         print r"\usepackage{scrtime}"
         print r"\begin{document}"
