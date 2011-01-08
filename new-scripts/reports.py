@@ -110,12 +110,6 @@ class ReportArgParser(tools.ArgParser):
         # Turn e.g. the string 'max' into the function max()
         args.group_func = eval(args.group_func)
 
-        #if not args.report_dir:
-        #    parent_dir = os.path.dirname(args.eval_dir)
-        #    dir_name = os.path.basename(args.eval_dir)
-        #    args.report_dir = os.path.join(parent_dir, dir_name + '-report')
-        #    logging.info('Report dir: "%s"' % args.report_dir)
-
         return args
 
 
@@ -125,9 +119,6 @@ class Report(object):
     Base class for all reports
     """
     def __init__(self, parser=ReportArgParser()):
-        #Define which attribute the report should be about
-        #self.focus = None
-
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
 
@@ -187,18 +178,11 @@ class Report(object):
         if not self.order:
             self.order = ['id']
         data.sort(*self.order)
-        #print 'SORTED'
-        #data.dump()
 
         if self.filter_funcs or self.filter_pairs:
             data = data.filtered(*self.filter_funcs, **self.filter_pairs)
-            #print 'FILTERED'
-            #data.dump()
 
         group_dict = data.group_dict(*self.grouping)
-        #print 'GROUPED'
-        #print group_dict
-
         return group_dict
 
 

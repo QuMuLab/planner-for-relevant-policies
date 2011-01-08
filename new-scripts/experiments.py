@@ -1,54 +1,6 @@
 #! /usr/bin/env python
 """
-Todo:
-X OptionParser class
-X optional/required outputs (warnings if more output)
-X Inherit experiment classes from Experiment
-X Put invoke code into run
-X Write planner script
-  X Suites
-X LocalExperiment
-X CL option for queue
-
-X Try argparse in reports.py
-X Convert code to use argparse
-X Integrate txt2tags
-X Use datasets
-X Write AbsolutePlannerReport
-X Write table to txt2tags function
-X Group by domain, problem, suite
-X Comparative reports
-X Relative reports
-O Detailed reports
-
-X Let user define wanted type for regexes
-X Use double-quotes for multiline strings
-
-X Vergleiche Ausgabe (v.a. expansions) des Translators, Prep., Search (Verwende athlon, opteron (mit core), schnell: amd, ausprobieren: xeon)
-X lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domains, cea (yY), ff (fF), oa10000 (M&S)
-  suites: ALL, lm-cut-domains
-  configs:
-    - ou, ob, oa10000 (LMCUT)
-    - yY, fF (ALL)
-X #Operatoren, #Variablen, #Unterschiedliche Werte (Summe aller Werte) in properties file
-X Anzahl Axiome in properties
-X Anzahl Kanten im Causal Graph
-X Schreibe queue in properties file
-X Derived Vars in properties
-X Write high-level documentation
-
-X Report multiple attributes at once
-X Colors for txt2tags
-X Grey out rows that have equal numbers
-
-X Add priority option for gkigrid experiments
-
-X Unify evaluations
-X Add copy-all parameter
-X Only compare those problems that have been solved by all configs
-O Handle iterative planner results
-X Ask about DataSet dict access method returning lists or values
-X Global experiment properties file
+Main module for experiment creation
 """
 
 from __future__ import with_statement
@@ -118,8 +70,6 @@ class Experiment(object):
         if self.root_dir:
             self.base_dir = os.path.join(self.root_dir, self.name)
         else:
-            #module_dir = os.path.dirname(__file__)
-            #self.base_dir = os.path.join(module_dir, self.name)
             self.base_dir = self.name
         self.base_dir = os.path.abspath(self.base_dir)
         logging.info('Base Dir: "%s"' % self.base_dir)
@@ -314,7 +264,6 @@ class GkiGridExperiment(Experiment):
         Generates the main script
         """
         num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
-        #current_dir = os.path.dirname(os.path.abspath(__file__))
         job_params = {
             'logfile': os.path.join(self.base_dir, self.name + '.log'),
             'errfile': os.path.join(self.base_dir, self.name + '.err'),
@@ -583,12 +532,13 @@ class Run(object):
         return os.path.join(self.dir, rel_path)
 
 
-
-## Factory for experiments.
-##
-## Parses cmd-line options to decide whether this is a gkigrid
-## experiment, a local experiment or whatever.
 def build_experiment(parser=ExpArgParser()):
+    """
+    Factory for experiments.
+
+    Parses cmd-line options to decide whether this is a gkigrid
+    experiment, a local experiment or whatever.
+    """
     known_args, remaining_args = exp_type_parser.parse_known_args()
 
     type = known_args.exp_type

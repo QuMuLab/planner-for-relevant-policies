@@ -43,7 +43,6 @@ class FetchOptionParser(tools.ArgParser):
                 help='copy all files from run dirs to new directory tree, '
                     'not only the properties files')
 
-
     def parse_args(self, *args, **kwargs):
         # args is the populated namespace, i.e. the Fetcher instance
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
@@ -67,8 +66,6 @@ class FetchOptionParser(tools.ArgParser):
                 args.eval_dir = exp_props['eval_dir']
             if 'copy_all' in exp_props:
                 args.copy_all = exp_props['copy_all']
-            #args.__dict__.update(exp_props)
-            #args.eval_dir = exp_props.get('eval_dir', None)
 
         if not args.eval_dir or not os.path.isabs(args.eval_dir):
             dir_name = os.path.basename(args.exp_dir)
@@ -169,14 +166,12 @@ class _FileParser(object):
         props.update(self._apply_functions(props))
         return props
 
-
     def _search_patterns(self):
         found_props = {}
 
         for pattern in self.patterns:
             found_props.update(pattern.search(self.content, self.filename))
         return found_props
-
 
     def _apply_functions(self, props):
         for function in self.functions:
