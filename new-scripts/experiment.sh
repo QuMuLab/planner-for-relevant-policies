@@ -78,6 +78,8 @@ elif [[ "$PHASE" == 5 ]]; then
 elif [[ "$PHASE" == 6 ]]; then
     ./downward-resultfetcher.py $EXPNAME
 elif [[ "$PHASE" == 7 ]]; then
+    ## TODO: The report script strip dashes out of the filename,
+    ##       so exp-name-eval => expnameeval. Why?
     ./downward-reports.py $EXPNAME-eval
     ./downward-reports.py --res=problem $EXPNAME-eval
 elif [[ "$PHASE" == 8 ]]; then
@@ -88,7 +90,9 @@ elif [[ "$PHASE" == 8 ]]; then
         BASEDIR=~
     fi
     echo "copying reports to .public_html -- to view, run:"
-    for REPORT in "$EXPNAME"eval-{d,p}-abs.html; do
+     ## TODO: we strip dashes, see above
+    MODEXPNAME="${EXPNAME/-/}"
+    for REPORT in "$MODEXPNAME"eval-{d,p}-abs.html; do
         cp "reports/$REPORT" "$BASEDIR/.public_html/"
         echo "firefox $BASEURL/$REPORT &"
     done
