@@ -204,11 +204,11 @@ class Report(object):
             logging.info('Finished turning properties into dataset')
 
             # Pickle data for faster future use
-            cPickle.dump(data, open(dump_path, 'w'))
+            cPickle.dump(data, open(dump_path, 'wb'), cPickle.HIGHEST_PROTOCOL)
             logging.info('Wrote data dump')
         else:
             logging.info('Started reading data dump (Reload properties with --reload)')
-            data = cPickle.load(open(dump_path))
+            data = cPickle.load(open(dump_path, 'rb'))
             logging.info('Finished reading data dump (Reload properties with --reload)')
         return data
 
