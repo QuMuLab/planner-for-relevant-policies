@@ -48,7 +48,7 @@ class FetchOptionParser(tools.ArgParser):
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
 
         args.exp_dir = os.path.normpath(os.path.abspath(args.exp_dir))
-        logging.info('Exp dir: "%s"' % args.exp_dir)
+        logging.info('Exp dir:  "%s"' % args.exp_dir)
 
         if args.exp_dir.endswith('eval'):
             answer = raw_input('The source directory seems to be an evaluation '
