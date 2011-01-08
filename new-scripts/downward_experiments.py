@@ -58,7 +58,7 @@ class Checkout(object):
             else:
                 cmd = self.get_checkout_cmd()
                 print cmd
-                ret = subprocess.call(cmd.split())
+                ret = subprocess.call(cmd, shell=True)
             assert os.path.exists(path), \
                     'Could not checkout to "%s"' % path
 
@@ -155,7 +155,12 @@ class HgCheckout(Checkout):
         return abs_rev
 
     def get_checkout_cmd(self):
-        return 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
+        cwd = os.getcwd()
+        clone = 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
+        cd_to_repo_dir = 'cd %s' % self.checkout_dir
+        update = 'hg update -r %s' % self.rev
+        cd_back = 'cd %s' % cwd
+        return '; '.join([clone, cd_to_repo_dir, update, cd_back])
 
     @property
     def parent_rev(self):
