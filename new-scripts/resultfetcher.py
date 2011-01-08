@@ -253,7 +253,8 @@ class Fetcher(object):
     def fetch(self):
         total_dirs = len(self.run_dirs)
 
-        combined_props = tools.Properties()
+        combined_props_filename = os.path.join(self.eval_dir, 'properties')
+        combined_props = tools.Properties(combined_props_filename)
 
         for index, run_dir in enumerate(self.run_dirs, 1):
             prop_file = os.path.join(run_dir, 'properties')
@@ -290,7 +291,6 @@ class Fetcher(object):
             logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
 
         tools.makedirs(self.eval_dir)
-        combined_props.filename = os.path.join(self.eval_dir, 'properties')
         combined_props.write()
 
 
