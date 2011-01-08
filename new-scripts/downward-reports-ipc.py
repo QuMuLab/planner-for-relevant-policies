@@ -54,10 +54,7 @@ class IpcReport(Report):
         self.total_scores = self._compute_total_scores()
 
     def name(self):
-        name = ''
-        eval_dir = os.path.basename(self.eval_dir)
-        name += eval_dir.replace('-', '')
-        name = name.replace('eval', '')
+        name = os.path.basename(self.eval_dir)
         name += '-ipc-' + self.focus
         return name
 
