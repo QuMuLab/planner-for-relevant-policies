@@ -16,6 +16,7 @@ import logging
 import datetime
 import collections
 import cPickle
+import hashlib
 
 import tools
 from markup import Document
@@ -71,9 +72,6 @@ class ReportArgParser(tools.ArgParser):
 
         self.add_argument('--dry', default=False, action='store_true',
                     help='do not write anything to the filesystem')
-
-        self.add_argument('--reload', default=False, action='store_true',
-                    help='rescan the directory and reload the properties files')
 
         self.add_argument('--show_attributes', default=False, action='store_true',
                     help='show a list of available attributes and exit')
@@ -188,28 +186,35 @@ class Report(object):
         """
         The data is reloaded for every attribute, but read only once from disk
         """
+        combined_props_file = os.path.join(self.eval_dir, 'properties')
+        if not os.path.exists(combined_props_file):
+            logging.error('Properties file not found at %s' % combined_props_file)
+            sys.exit(1)
         dump_path = os.path.join(self.eval_dir, 'data_dump')
-        # Reload when the user requested it or when no dump exists
-        if self.reload or not os.path.exists(dump_path):
-            combined_props_file = os.path.join(self.eval_dir, 'properties')
-            if not os.path.exists(combined_props_file):
-                logging.error('Properties file not found at %s' % combined_props_file)
-                sys.exit(1)
+        logging.info('Reading properties file without parsing')
+        properties_contents = open(combined_props_file).read()
+        logging.info('Calculating properties hash')
+        new_checksum = hashlib.md5(properties_contents).digest()
+        # Reload when the properties file changed or when no dump exists
+        reload = True
+        if os.path.exists(dump_path):
+            logging.info('Reading data dump')
+            old_checksum, data = cPickle.load(open(dump_path, 'rb'))
+            logging.info('Reading data dump finished')
+            reload = (not old_checksum == new_checksum)
+            logging.info('Reloading: %s' % reload)
+        if reload:
             data = DataSet()
-            logging.info('Started reading properties file')
+            logging.info('Reading properties file')
             combined_props = tools.Properties(combined_props_file)
-            logging.info('Finished reading properties file')
+            logging.info('Reading properties file finished')
             for run_id, run in sorted(combined_props.items()):
                 data.append(**run)
             logging.info('Finished turning properties into dataset')
-
             # Pickle data for faster future use
-            cPickle.dump(data, open(dump_path, 'wb'), cPickle.HIGHEST_PROTOCOL)
+            cPickle.dump((new_checksum, data), open(dump_path, 'wb'),
+                         cPickle.HIGHEST_PROTOCOL)
             logging.info('Wrote data dump')
-        else:
-            logging.info('Started reading data dump (Reload properties with --reload)')
-            data = cPickle.load(open(dump_path, 'rb'))
-            logging.info('Finished reading data dump (Reload properties with --reload)')
         return data
 
 
