@@ -332,14 +332,9 @@ def _get_configs(planner_rev, config_list):
         configs = zip(config_list, config_list)
     return configs
 
+
 def _require_checkout(exp, part):
     exp.add_resource(part.shell_name, part.binary, part.rel_dest)
-
-def _get_preprocess_cmd(translator, preprocessor_name):
-    translator = os.path.abspath(translator)
-    translate_cmd = '%s $DOMAIN $PROBLEM' % translator
-    preprocess_cmd = '$%s < output.sas' % preprocessor_name
-    return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
 
 
 def _prepare_preprocess_run(run, problem, translator, preprocessor):
@@ -354,9 +349,9 @@ def _prepare_preprocess_run(run, problem, translator, preprocessor):
     run.add_resource("DOMAIN", domain_file, "domain.pddl")
     run.add_resource("PROBLEM", problem_file, "problem.pddl")
 
-    pre_cmd = _get_preprocess_cmd(translator.binary, preprocessor.shell_name)
-
-    run.set_preprocess(pre_cmd)
+    translate_cmd = '$%s $DOMAIN $PROBLEM' % translator.shell_name
+    preprocess_cmd = '$%s < output.sas' % preprocessor.shell_name
+    run.set_preprocess('set -e; %s; %s' % (translate_cmd, preprocess_cmd))
     # Use empty command here, it may be overwritten later
     run.set_command(' ')
 
@@ -403,6 +398,17 @@ def _prepare_search_run(run, problem, translator, preprocessor,
     run.set_property('domain', problem.domain)
     run.set_property('problem', problem.problem)
     run.set_property('id', [ext_config, problem.domain, problem.problem])
+
+
+def _prepare_preprocess_exp(exp, translator, preprocessor):
+    # Copy the whole translate directory
+    exp.add_resource(translator.shell_name + '_DIR', translator.exe_dir,
+                     translator.rel_dest)
+    # In order to set an environment variable, overwrite the executable
+    exp.add_resource(translator.shell_name,
+                     os.path.join(translator.exe_dir, 'translate.py'),
+                     os.path.join(translator.rel_dest, 'translate.py'))
+    _require_checkout(exp, preprocessor)
 
 
 def _prepare_search_exp(exp, translator, preprocessor, planner):
@@ -468,7 +474,7 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
         # Omit a possible search checkout
         translator, preprocessor = combo[:2]
 
-        _require_checkout(exp, preprocessor)
+        _prepare_preprocess_exp(exp, translator, preprocessor)
 
         for problem in problems:
             run = exp.add_run()
@@ -553,7 +559,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
     problems = downward_suites.build_suite(exp.suite)
 
     for translator, preprocessor, planner in combinations:
-        _require_checkout(exp, preprocessor)
+        _prepare_preprocess_exp(exp, translator, preprocessor)
         _prepare_search_exp(exp, translator, preprocessor, planner)
 
         configs = _get_configs(planner.rev, exp.configs)
@@ -564,6 +570,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 _prepare_preprocess_run(run, problem, translator, preprocessor)
                 _prepare_search_run(run, problem, translator, preprocessor,
                                     planner, config, config_name)
+                # There is no $OUTPUT variable in a "complete" experiment
                 run.set_command("$%s %s < output" % (planner.shell_name, config))
     exp.build()
     return exp
@@ -618,5 +625,3 @@ if __name__ == '__main__':
                     PlannerHgCheckout(rev='WORK'))]
 
     build_experiment(combinations)
-
-

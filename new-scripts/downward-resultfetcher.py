@@ -242,8 +242,7 @@ def add_preprocess_parsing(eval):
     """
     Add some preprocess specific parsing:
 
-    TODO:
-     * translator time
+    TODO: translator time
     """
     #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
     #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
