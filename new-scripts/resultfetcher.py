@@ -117,7 +117,7 @@ class _MultiPattern(object):
                     msg %= (attribute_name, self, filename)
                     logging.error(msg)
         elif self.required:
-            logging.error('_Pattern "%s" not present in file "%s"' % \
+            logging.error('Pattern "%s" not present in file "%s"' % \
                                                             (self, filename))
         return found_props
 
@@ -168,9 +168,10 @@ class _FileParser(object):
 
     def _search_patterns(self):
         found_props = {}
+        reversed_content = '\n'.join(reversed(self.content.splitlines()))
 
         for pattern in self.patterns:
-            found_props.update(pattern.search(self.content, self.filename))
+            found_props.update(pattern.search(reversed_content, self.filename))
         return found_props
 
     def _apply_functions(self, props):

@@ -261,7 +261,9 @@ def add_preprocess_parsing(eval):
 
     # Number of invariant groups (second line in the "all.groups" file)
     # The file starts with "begin_groups\n7\ngroup"
-    eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
+    #eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
+    #                    file='all.groups', type=int, flags='MS')
+    eval.add_pattern('translator_invariant_groups', r'group\n(\d+)\nbegin_groups',
                         file='all.groups', type=int, flags='MS')
 
     # number of variables
