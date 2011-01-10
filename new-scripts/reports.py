@@ -250,6 +250,7 @@ class Report(object):
                 logging.info('Writing output to "%s"' % self.output_file)
                 file.write(self.output)
 
+
     def open(self):
         """
         If the --open parameter is set, tries to open the report
@@ -265,6 +266,14 @@ class Report(object):
             filename = filename.replace('tex', 'pdf')
         subprocess.call(['xdg-open', filename])
 
+        # Remove unnecessary files
+        extensions = ['aux', 'log']
+        filename_prefix, old_ext = os.path.splitext(os.path.basename(filename))
+        for ext in extensions:
+            try:
+                os.remove(filename_prefix + '.' + ext)
+            except OSError:
+                pass
 
     def __str__(self):
         res = ''
