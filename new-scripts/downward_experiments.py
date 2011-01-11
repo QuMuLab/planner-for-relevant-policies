@@ -543,6 +543,8 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                 output_sas = os.path.join(preprocess_dir, 'output.sas')
                 run_log = os.path.join(preprocess_dir, 'run.log')
                 run_err = os.path.join(preprocess_dir, 'run.err')
+                domain_file = os.path.join(preprocess_dir, 'domain.pddl')
+                problem_file = os.path.join(preprocess_dir, 'problem.pddl')
                 #if not os.path.exists(output):
                 #    msg = 'Preprocessed file not found at "%s". ' % output
                 #    msg += 'Have you run the preprocessing experiment '
@@ -557,6 +559,8 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                                  required=False)
                 run.add_resource('RUN_LOG', run_log, 'run.log')
                 run.add_resource('RUN_ERR', run_err, 'run.err')
+                run.add_resource('DOMAIN', domain_file, 'domain.pddl')
+                run.add_resource('PROBLEM', problem_file, 'problem.pddl')
     exp.build()
 
 
