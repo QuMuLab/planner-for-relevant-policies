@@ -547,6 +547,7 @@ void analysePlansForRobustness(int & argc,char * argv[],int & argcount,TypeCheck
 //main 
 int main(int argc,char * argv[])
 {
+  report->precision(10);
   try {
 	if(argc < 2)
 	{
