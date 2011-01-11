@@ -16,6 +16,9 @@ SCORES = ['expansions', 'evaluations', 'search_time', 'total_time',
 def get_date_and_time():
     return r"\today\ \thistime"
 
+def escape(text):
+    return text.replace('_', r'\_')
+
 
 class IpcReport(Report):
     """
@@ -63,9 +66,6 @@ class IpcReport(Report):
             return r"\tiny"
         else:
             return ""
-
-    def escape(self, text):
-        return text.replace('_', r'\_')
 
     def _compute_total_scores(self):
         total_scores = {}
@@ -141,11 +141,11 @@ class IpcReport(Report):
 
     def print_domain(self, domain, runs):
         print r"\section*{%s %s --- %s}" % (
-            self.escape(self.focus_name), domain, get_date_and_time())
+            escape(self.focus_name), escape(domain), get_date_and_time())
         print r"\tablehead{\hline"
         print r"\textbf{prob}"
         for config in self.configs:
-            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
+            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), escape(config))
         if self.best_value_column:
             print r"& %s\textbf{BEST}" % self._tiny_if_squeeze()
         print r"\\ \hline}"
@@ -208,11 +208,11 @@ class IpcReport(Report):
         overall = defaultdict(float)
 
         print r"\section*{%s %s --- %s}" % (
-            self.escape(self.focus_name), title, get_date_and_time())
+            escape(self.focus_name), escape(title), get_date_and_time())
         print r"\tablehead{\hline"
         print r"\textbf{domain}"
         for config in self.configs:
-            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
+            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), escape(config))
         print r"\\ \hline}"
         print r"\tabletail{\hline}"
         print r"\begin{supertabular}{|l|%s|}" % ("r" * len(self.configs))
