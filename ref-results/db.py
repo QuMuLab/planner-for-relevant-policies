@@ -61,6 +61,13 @@ def _insert_row(conn, row_id, domain_name, problem_name, quality):
 
 def update_reference_quality(domain_name, domain_text,
                              problem_name, problem_text, quality):
+    ## TODO: We should certainly save *the plan*, which right now we
+    ##       don't even pass in here.
+    ##
+    ## TODO: We should keep a permanent record of the various updates.
+    ##       One idea would be to use a hg repository for the domains,
+    ##       problems and plans, maybe with one directory per hash
+    ##       key. This would then obviate the need for a separate log.
     conn = _get_db_connection()
     with conn:
         row_id = _hash_id(domain_text, problem_text)
