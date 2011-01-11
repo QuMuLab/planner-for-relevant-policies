@@ -224,27 +224,33 @@ def fast_updatetree(src, dst):
         raise Error(errors)
 
 
-def copy(src, dest):
+def copy(src, dest, required=True):
     """
     Copies a file or directory to another file or directory
     """
     if os.path.isfile(src) and os.path.isdir(dest):
         makedirs(dest)
         dest = os.path.join(dest, os.path.basename(src))
-        shutil.copy2(src, dest)
+        func = shutil.copy2
     elif os.path.isfile(src):
         makedirs(os.path.dirname(dest))
-        shutil.copy2(src, dest)
+        func = shutil.copy2
     elif os.path.isdir(src):
-        fast_updatetree(src, dest)
-    elif not os.path.exists(src):
-        logging.error('Path does not exist: %s' % src)
-        sys.exit()
+        func = fast_updatetree
+    elif required:
+        logging.error('Required path %s cannot be copied to %s' % (src, dest))
+        sys.exit(1)
     else:
-        logging.error('Cannot copy %s to %s' % (src, dest))
-        sys.exit()
-    logging.debug('Copied %s to %s' % (src, dest))
-        
+        logging.warning('Optional path %s cannot be copied to %s' % (src, dest))
+        return
+    try:
+        func(src, dest)
+    except IOError, err:
+        logging.error('Error: The file "%s" could not be copied to "%s": %s' % \
+                        (source, dest, err))
+        if required:
+            sys.exit(1)
+
 
 def csv(string):
     string = string.strip(', ')

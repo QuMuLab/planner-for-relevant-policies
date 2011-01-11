@@ -537,15 +537,18 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                 output_sas = os.path.join(preprocess_dir, 'output.sas')
                 run_log = os.path.join(preprocess_dir, 'run.log')
                 run_err = os.path.join(preprocess_dir, 'run.err')
-                if not os.path.exists(output):
-                    msg = 'Preprocessed file not found at "%s". ' % output
-                    msg += 'Have you run the preprocessing experiment '
-                    msg += 'and ./resultfetcher.py ?'
-                    logging.warning(msg)
-                run.add_resource('OUTPUT', output, 'output')
-                run.add_resource('TEST_GROUPS', test_groups, 'test.groups')
-                run.add_resource('ALL_GROUPS', all_groups, 'all.groups')
-                run.add_resource('OUTPUT_SAS', output_sas, 'output.sas')
+                #if not os.path.exists(output):
+                #    msg = 'Preprocessed file not found at "%s". ' % output
+                #    msg += 'Have you run the preprocessing experiment '
+                #    msg += 'and ./resultfetcher.py ?'
+                #    logging.warning(msg)
+                run.add_resource('OUTPUT', output, 'output', required=False)
+                run.add_resource('TEST_GROUPS', test_groups, 'test.groups',
+                                 required=False)
+                run.add_resource('ALL_GROUPS', all_groups, 'all.groups',
+                                 required=False)
+                run.add_resource('OUTPUT_SAS', output_sas, 'output.sas',
+                                 required=False)
                 run.add_resource('RUN_LOG', run_log, 'run.log')
                 run.add_resource('RUN_ERR', run_err, 'run.err')
     exp.build()
