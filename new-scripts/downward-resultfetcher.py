@@ -242,8 +242,7 @@ def add_preprocess_parsing(eval):
     """
     Add some preprocess specific parsing:
 
-    TODO:
-     * translator time
+    TODO: translator time
     """
     #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
     #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
@@ -261,7 +260,9 @@ def add_preprocess_parsing(eval):
 
     # Number of invariant groups (second line in the "all.groups" file)
     # The file starts with "begin_groups\n7\ngroup"
-    eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
+    #eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
+    #                    file='all.groups', type=int, flags='MS')
+    eval.add_pattern('translator_invariant_groups', r'group\n(\d+)\nbegin_groups',
                         file='all.groups', type=int, flags='MS')
 
     # number of variables
@@ -348,7 +349,7 @@ def add_search_parsing(eval):
     eval.add_pattern('expansions', r'Expanded (\d+)', type=int, required=False)
     eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int, required=False)
     eval.add_pattern('generated', r'Generated (\d+) state', type=int, required=False)
-    eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False, flags='I')
+    eval.add_pattern('search_time', r'^Search time: (.+)s', type=float, required=False, flags='MI')
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int, required=False)
     eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)

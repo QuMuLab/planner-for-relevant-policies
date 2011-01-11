@@ -280,7 +280,6 @@ class AbsolutePlanningReport(PlanningReport):
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, self.focus)
-            #msg += 'Are you sure you typed it in correctly?'
             logging.error(msg)
 
 
@@ -289,7 +288,6 @@ class AbsolutePlanningReport(PlanningReport):
             for (config, domain), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
                 if not values:
-                    #print 'NO values', config, domain, group[self.focus]
                     show_missing_attribute_msg(config+'-'+domain)
                     continue
                 table.add_cell(domain, config, func(values))
@@ -492,19 +490,12 @@ if __name__ == "__main__":
     elif report_type == 'suite':
         report = SuiteReport()
 
-
     # Copy the report type
     report.report_type = report_type
 
-    #report.add_filter(lambda item: item['expanded'] < 10)
-
-    #report.build()
     report.write()
     report.open()
 
     #report.add_filter(domain='gripper')
     #report.add_filter(lambda item: item['expanded'] == '21')
-
-    #report.set_grouping('config', 'domain', 'problem')
-    #report.write()
-    #print report_text
+    #report.add_filter(lambda item: item['expanded'] < 10)

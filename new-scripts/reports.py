@@ -16,8 +16,7 @@ import logging
 import datetime
 import collections
 import cPickle
-
-
+import hashlib
 
 import tools
 from markup import Document
@@ -74,9 +73,6 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--dry', default=False, action='store_true',
                     help='do not write anything to the filesystem')
 
-        self.add_argument('--reload', default=False, action='store_true',
-                    help='rescan the directory and reload the properties files')
-
         self.add_argument('--show_attributes', default=False, action='store_true',
                     help='show a list of available attributes and exit')
 
@@ -110,12 +106,6 @@ class ReportArgParser(tools.ArgParser):
         # Turn e.g. the string 'max' into the function max()
         args.group_func = eval(args.group_func)
 
-        #if not args.report_dir:
-        #    parent_dir = os.path.dirname(args.eval_dir)
-        #    dir_name = os.path.basename(args.eval_dir)
-        #    args.report_dir = os.path.join(parent_dir, dir_name + '-report')
-        #    logging.info('Report dir: "%s"' % args.report_dir)
-
         return args
 
 
@@ -125,9 +115,6 @@ class Report(object):
     Base class for all reports
     """
     def __init__(self, parser=ReportArgParser()):
-        #Define which attribute the report should be about
-        #self.focus = None
-
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
 
@@ -187,18 +174,11 @@ class Report(object):
         if not self.order:
             self.order = ['id']
         data.sort(*self.order)
-        #print 'SORTED'
-        #data.dump()
 
         if self.filter_funcs or self.filter_pairs:
             data = data.filtered(*self.filter_funcs, **self.filter_pairs)
-            #print 'FILTERED'
-            #data.dump()
 
         group_dict = data.group_dict(*self.grouping)
-        #print 'GROUPED'
-        #print group_dict
-
         return group_dict
 
 
@@ -210,20 +190,36 @@ class Report(object):
         if not os.path.exists(combined_props_file):
             logging.error('Properties file not found at %s' % combined_props_file)
             sys.exit(1)
-        data = DataSet()
-        logging.info('Started collecting data')
-        combined_props = tools.Properties(combined_props_file)
-        logging.info('Finished reading props file')
-        for run_id, run in sorted(combined_props.items()):
-            data.append(**run)
-        logging.info('Finished collecting data')
+        dump_path = os.path.join(self.eval_dir, 'data_dump')
+        logging.info('Reading properties file without parsing')
+        properties_contents = open(combined_props_file).read()
+        logging.info('Calculating properties hash')
+        new_checksum = hashlib.md5(properties_contents).digest()
+        # Reload when the properties file changed or when no dump exists
+        reload = True
+        if os.path.exists(dump_path):
+            logging.info('Reading data dump')
+            old_checksum, data = cPickle.load(open(dump_path, 'rb'))
+            logging.info('Reading data dump finished')
+            reload = (not old_checksum == new_checksum)
+            logging.info('Reloading: %s' % reload)
+        if reload:
+            data = DataSet()
+            logging.info('Reading properties file')
+            combined_props = tools.Properties(combined_props_file)
+            logging.info('Reading properties file finished')
+            for run_id, run in sorted(combined_props.items()):
+                data.append(**run)
+            logging.info('Finished turning properties into dataset')
+            # Pickle data for faster future use
+            cPickle.dump((new_checksum, data), open(dump_path, 'wb'),
+                         cPickle.HIGHEST_PROTOCOL)
+            logging.info('Wrote data dump')
         return data
 
 
     def name(self):
-        name = ''
-        eval_dir = os.path.basename(self.eval_dir)
-        name += eval_dir.replace('-', '')
+        name = os.path.basename(self.eval_dir)
         if len(self.foci) == 1:
             name += '-' + self.foci[0]
         return name

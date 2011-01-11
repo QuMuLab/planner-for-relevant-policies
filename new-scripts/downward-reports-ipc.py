@@ -32,6 +32,9 @@ class IpcReport(Report):
         parser.add_argument('--no-best', action='store_false',
                             dest='best_value_column',
                             help='Do not add a column with the best known score')
+        parser.add_argument('--page-size', choices=['a2', 'a3', 'a4'],
+                            default='a4',
+                            help='Set the page size for the latex report')
         Report.__init__(self, parser)
         self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
         self.focus_name = self.focus
@@ -51,10 +54,7 @@ class IpcReport(Report):
         self.total_scores = self._compute_total_scores()
 
     def name(self):
-        name = ''
-        eval_dir = os.path.basename(self.eval_dir)
-        name += eval_dir.replace('-', '')
-        name = name.replace('eval', '')
+        name = os.path.basename(self.eval_dir)
         name += '-ipc-' + self.focus
         return name
 
@@ -111,7 +111,8 @@ class IpcReport(Report):
             margin = "0.5cm"
         else:
             margin = "2.5cm"
-        print r"\usepackage[a4paper,landscape,margin=%s]{geometry}" % margin
+        print r"\usepackage[%spaper,landscape,margin=%s]{geometry}" % \
+                (self.page_size, margin)
         print r"\usepackage{supertabular}"
         print r"\usepackage{scrtime}"
         print r"\begin{document}"
@@ -208,12 +209,13 @@ class IpcReport(Report):
 
         print r"\section*{%s %s --- %s}" % (
             self.escape(self.focus_name), title, get_date_and_time())
-        print r"\begin{tabular}{|l|%s|}" % ("r" * len(self.configs))
-        print r"\hline"
+        print r"\tablehead{\hline"
         print r"\textbf{domain}"
         for config in self.configs:
             print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
-        print r"\\ \hline"
+        print r"\\ \hline}"
+        print r"\tabletail{\hline}"
+        print r"\begin{supertabular}{|l|%s|}" % ("r" * len(self.configs))
         domain_dict = self.data.group_dict('domain')
         for domain, group in sorted(domain_dict.items()):
             print r"\textbf{%s}" % domain
@@ -235,7 +237,7 @@ class IpcReport(Report):
                 overall_score = float(overall_score) / num_domains
             print r"& \textbf{%.2f}" % overall_score
         print r"\\ \hline"
-        print r"\end{tabular}"
+        print r"\end{supertabular}"
 
     def print_footer(self):
         print r"\end{document}"
