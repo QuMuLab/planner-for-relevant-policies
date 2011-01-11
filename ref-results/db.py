@@ -11,7 +11,7 @@ import sqlite3
 ##       anyway for now so that they're available for debugging.
 
 
-def get_db_connection():
+def _get_db_connection():
     dirname = os.path.dirname(os.path.abspath(__file__))
     dbfile = os.path.join(dirname, "ref-results.db")
     conn = sqlite3.connect(dbfile)
@@ -27,7 +27,7 @@ def get_db_connection():
     return conn
 
 
-def hash_id(domain_text, problem_text):
+def _hash_id(domain_text, problem_text):
     # We add the length strings to the hash at the start so that
     # different (domain, problem) pairs that concatenate to the same
     # text can be distinguished. This is a bit paranoid, but better
@@ -39,27 +39,39 @@ def hash_id(domain_text, problem_text):
     return sha1.hexdigest()
 
 
-def update_reference_quality(
-    domain_name, domain_text, problem_name, problem_text, quality):
-    conn = get_db_connection()
+def _lookup_reference_quality(conn, row_id):
+    for row in conn.execute(
+        "SELECT quality FROM ref_results WHERE id = ?", (row_id,)):
+        return row[0]
+    else:
+        return None
+
+
+def _update_row(conn, row_id, new_quality):
+    conn.execute("UPDATE ref_results SET quality = ? WHERE id = ?",
+                 (new_quality, row_id))
+
+
+def _insert_row(conn, row_id, domain_name, problem_name, quality):
+    conn.execute("""INSERT INTO ref_results(
+                        id, domain_name, problem_name, quality)
+                        VALUES (?, ?, ?, ?)""",
+                 (row_id, domain_name, problem_name, quality))
+
+
+def update_reference_quality(domain_name, domain_text,
+                             problem_name, problem_text, quality):
+    conn = _get_db_connection()
     with conn:
-        row_id = hash_id(domain_text, problem_text)
-        for row in conn.execute(
-            "SELECT quality FROM ref_results WHERE id = ?", (row_id,)):
-            previous_best = row[0]
-            print "previous best quality: %d" % previous_best
-            if quality < previous_best:
-                # Lower is better, since our "qualities" are actually costs.
-                print "improvement: update best known quality"
-                conn.execute("""UPDATE ref_results
-                                SET quality = ?
-                                WHERE id = ?""", (quality, row_id))
-            else:
-                print "no improvement -- do not update"
-            break
+        row_id = _hash_id(domain_text, problem_text)
+        previous_best = _lookup_reference_quality(conn, row_id)
+        print "previous best quality: %s" % previous_best
+        if previous_best is None:
+            print "insert new entry"
+            _insert_row(conn, row_id, domain_name, problem_name, quality)
+        elif quality < previous_best:
+            # Lower is better, since our "qualities" are actually costs.
+            print "update with improved value"
+            _update_row(conn, row_id, quality)
         else:
-            print "previously unknown problem -- insert"
-            conn.execute("""INSERT INTO ref_results(
-                                id, domain_name, problem_name, quality)
-                                VALUES (?, ?, ?, ?)""",
-                         (row_id, domain_name, problem_name, quality))
+            print "no improvement"
