@@ -337,6 +337,12 @@ def _require_checkout(exp, part):
     exp.add_resource(part.shell_name, part.binary, part.rel_dest)
 
 
+def _get_preprocess_cmd(translator, preprocessor):
+    translate_cmd = '$%s $DOMAIN $PROBLEM' % translator.shell_name
+    preprocess_cmd = '$%s < output.sas' % preprocessor.shell_name
+    return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
+
+
 def _prepare_preprocess_run(run, problem, translator, preprocessor):
     """
     This method adds the necessary preprocessing information to a run.
@@ -349,11 +355,7 @@ def _prepare_preprocess_run(run, problem, translator, preprocessor):
     run.add_resource("DOMAIN", domain_file, "domain.pddl")
     run.add_resource("PROBLEM", problem_file, "problem.pddl")
 
-    translate_cmd = '$%s $DOMAIN $PROBLEM' % translator.shell_name
-    preprocess_cmd = '$%s < output.sas' % preprocessor.shell_name
-    run.set_preprocess('set -e; %s; %s' % (translate_cmd, preprocess_cmd))
-    # Use empty command here, it may be overwritten later
-    run.set_command(' ')
+    run.set_command(_get_preprocess_cmd(translator, preprocessor))
 
     run.declare_optional_output("*.groups")
     run.declare_optional_output("output.sas")
@@ -570,8 +572,12 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 _prepare_preprocess_run(run, problem, translator, preprocessor)
                 _prepare_search_run(run, problem, translator, preprocessor,
                                     planner, config, config_name)
+                # We want to do the whole experiment in one step
+                run.set_preprocess('')
+                preprocess_cmd = _get_preprocess_cmd(translator, preprocessor)
                 # There is no $OUTPUT variable in a "complete" experiment
-                run.set_command("$%s %s < output" % (planner.shell_name, config))
+                search_cmd = "$%s %s < output" % (planner.shell_name, config)
+                run.set_command(search_cmd + '; ' + preprocess_cmd)
     exp.build()
     return exp
 
