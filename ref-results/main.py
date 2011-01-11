@@ -4,6 +4,7 @@
 import argparse
 import os.path
 
+import db
 import util
 import validator
 
@@ -35,13 +36,16 @@ def main():
     except validator.Error as e:
         print e
     else:
-        hash_id = util.hash_id(args.domain, args.problem)
+        ## TODO: In most cases, the basenames are not actually very
+        ##       interesting. What to do about that? Store the full
+        ##       text?
         domain_name = os.path.basename(args.domain)
         problem_name = os.path.basename(args.problem)
-        print "ID:", hash_id
-        print "Domain:", domain_name
-        print "Problem:", problem_name
-        print "Plan quality:", quality
+        print "domain:", domain_name
+        print "problem:", problem_name
+        print "plan quality:", quality
+        db.update_reference_quality(
+            domain_name, domain_text, problem_name, problem_text, quality)
 
 
 if __name__ == "__main__":
