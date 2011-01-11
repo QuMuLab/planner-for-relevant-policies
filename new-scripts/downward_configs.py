@@ -106,6 +106,27 @@ lmopt_hm1 = """\
 --search "astar(lmcount(lm_hm(m=1),admissible=true),mpd=true)"\
 """
 
+lmopt_zg = """\
+--search "astar(lmcount(lm_zg(),admissible=true),mpd=true)"\
+"""
+
+lmopt_rhw_hm1 = """\
+--search "astar(lmcount(lm_merged(lm_rhw(),lm_hm(m=1)),admissible=true),mpd=true)"\
+"""
+
+lmopt_rhw_zg = """\
+--search "astar(lmcount(lm_merged(lm_rhw(),lm_zg()),admissible=true),mpd=true)"\
+"""
+
+lmopt_hm1_zg = """\
+--search "astar(lmcount(lm_merged(lm_zg(),lm_hm(m=1)),admissible=true),mpd=true)"\
+"""
+
+lmopt_rhw_hm1_zg = """\
+--search "astar(lmcount(lm_merged(lm_rhw(),lm_zg(),lm_hm(m=1)),admissible=true),mpd=true)"\
+"""
+
+
 iter_ff = """\
 --heuristic "h=ff(cost_type=1)" \
 --search "iterated(lazy_greedy(h, preferred=(h)), repeat_last=true)"\
