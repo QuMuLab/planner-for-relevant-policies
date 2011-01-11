@@ -383,8 +383,12 @@ def _prepare_search_run(run, problem, translator, preprocessor,
 
     run.declare_optional_output("sas_plan")
 
-    ext_config = '-'.join([translator.rev, preprocessor.rev, planner.rev,
-                            config_name])
+    # If all three parts have the same revision don't clutter the reports
+    if translator.rev == preprocessor.rev and translator.rev == planner.rev:
+        revs = [translator.rev]
+    else:
+        revs = [translator.rev, preprocessor.rev, planner.rev]
+    ext_config = '-'.join(revs + [config_name])
 
     run.set_property('translator', translator.rev)
     run.set_property('preprocessor', preprocessor.rev)
@@ -539,6 +543,8 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                 output_sas = os.path.join(preprocess_dir, 'output.sas')
                 run_log = os.path.join(preprocess_dir, 'run.log')
                 run_err = os.path.join(preprocess_dir, 'run.err')
+                domain_file = os.path.join(preprocess_dir, 'domain.pddl')
+                problem_file = os.path.join(preprocess_dir, 'problem.pddl')
                 #if not os.path.exists(output):
                 #    msg = 'Preprocessed file not found at "%s". ' % output
                 #    msg += 'Have you run the preprocessing experiment '
@@ -553,6 +559,8 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                                  required=False)
                 run.add_resource('RUN_LOG', run_log, 'run.log')
                 run.add_resource('RUN_ERR', run_err, 'run.err')
+                run.add_resource('DOMAIN', domain_file, 'domain.pddl')
+                run.add_resource('PROBLEM', problem_file, 'problem.pddl')
     exp.build()
 
 
@@ -603,7 +611,8 @@ def build_experiment(combinations):
     exp_type_parser = tools.ArgParser(add_help=False, add_log_option=False)
     exp_type_parser.add_argument('-p', '--preprocess', action='store_true',
                         default=False, help='build preprocessing experiment')
-    exp_type_parser.add_argument('--complete', action='store_true', default=False,
+    exp_type_parser.add_argument('--complete', action='store_true',
+                        default=False,
                         help='build complete experiment (overrides -p)')
 
     known_args, remaining_args = exp_type_parser.parse_known_args()

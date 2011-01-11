@@ -86,7 +86,11 @@ class PlanningReport(Report):
         # For some attributes only compare commonly solved tasks
         self.commonly_solved_foci = ['cost', 'expanded', 'expansions', 
                 'generated', 'memory', 'plan_length', 'search_time', 'total_time']
-        info = 'Report only commonly solved problems for the following attributes: %s'
+        info = ('The attributes %s are handled as follows:\n'
+                'If in a group of configs not all configs have a value for '
+                'the attribute, the concerning runs are only evaluated if '
+                '"``--missing``" is set to "include" or if "``--missing``" is '
+                'set to "auto" (default) and the resolution is "problem"')
         info %= ', '.join(self.commonly_solved_foci)
         self.add_info(info)
 
