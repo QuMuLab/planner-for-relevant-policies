@@ -182,7 +182,7 @@ class IpcReport(Report):
                 else:
                     values = probgroup.get(self.focus)
                     values = filter(existing, values)
-                    best = max(values) if values else None
+                    best = min(values) if values else None
                 print r"& %s" % ("---" if best is None else best)
             print r"\\"
         print r"\hline"
