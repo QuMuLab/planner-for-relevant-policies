@@ -15,6 +15,9 @@ def get_db_connection():
     dirname = os.path.dirname(os.path.abspath(__file__))
     dbfile = os.path.join(dirname, "ref-results.db")
     conn = sqlite3.connect(dbfile)
+    ## TODO: It's probably not a good idea to create a new table
+    ##       silently. If the table doesn't exist yet, that's
+    ##       interesting to know and the user should hear about it.
     with conn:
         conn.execute("""CREATE TABLE IF NOT EXISTS ref_results (
                             id TEXT PRIMARY KEY,
