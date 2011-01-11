@@ -383,8 +383,12 @@ def _prepare_search_run(run, problem, translator, preprocessor,
 
     run.declare_optional_output("sas_plan")
 
-    ext_config = '-'.join([translator.rev, preprocessor.rev, planner.rev,
-                            config_name])
+    # If all three parts have the same revision don't clutter the reports
+    if translator.rev == preprocessor.rev and translator.rev == planner.rev:
+        revs = [translator.rev]
+    else:
+        revs = [translator.rev, preprocessor.rev, planner.rev]
+    ext_config = '-'.join(revs + [config_name])
 
     run.set_property('translator', translator.rev)
     run.set_property('preprocessor', preprocessor.rev)
@@ -603,7 +607,8 @@ def build_experiment(combinations):
     exp_type_parser = tools.ArgParser(add_help=False, add_log_option=False)
     exp_type_parser.add_argument('-p', '--preprocess', action='store_true',
                         default=False, help='build preprocessing experiment')
-    exp_type_parser.add_argument('--complete', action='store_true', default=False,
+    exp_type_parser.add_argument('--complete', action='store_true',
+                        default=False,
                         help='build complete experiment (overrides -p)')
 
     known_args, remaining_args = exp_type_parser.parse_known_args()
