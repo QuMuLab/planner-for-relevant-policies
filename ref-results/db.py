@@ -41,8 +41,8 @@ class Result(object):
                 "domain.pddl": self.domain_text,
                 "problem.pddl": self.problem_text,
                 "plan.soln": self.plan_text,
-                "plan.quality": str(self.plan_quality),
-                "plan.comment": self.plan_comment,
+                "plan.quality": "%d\n" % self.plan_quality,
+                "plan.comment": self.plan_comment + "\n",
                 })
         else:
             previous_best = int(previous_best)
@@ -50,8 +50,8 @@ class Result(object):
                 print "new best quality: %d" % self.plan_quality
                 db.update(self.hash_id, {
                     "plan.soln": self.plan_text,
-                    "plan.quality": str(self.plan_quality),
-                    "plan.comment": self.plan_comment,
+                    "plan.quality": "%d\n" % self.plan_quality,
+                    "plan.comment": self.plan_comment + "\n",
                     })
             else:
                 print "no improvement"
