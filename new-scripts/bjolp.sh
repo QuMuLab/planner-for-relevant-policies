@@ -10,3 +10,5 @@ QUEUE=opteron_core.q
 ## For the real experiment, use this:
 SUITE=OPTIMAL
 EXPTYPE=gkigrid
+
+source experiment.sh
