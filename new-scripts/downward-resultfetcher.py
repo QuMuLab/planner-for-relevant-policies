@@ -344,7 +344,7 @@ def add_preprocess_functions(eval):
 
 def add_search_parsing(eval):
     #eval.add_key_value_pattern('run_start_time')
-    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
+    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)\.', type=int, required=False)
     eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
     eval.add_pattern('expansions', r'Expanded (\d+)', type=int, required=False)
     eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int, required=False)

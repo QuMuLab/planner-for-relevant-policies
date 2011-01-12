@@ -142,7 +142,7 @@ public:
 				else
 				{
 					cout << "Error: could not find parameter "<<dynamic_cast<const var_symbol*>(*i)->getName()<<"\n";
-					exit(0);
+					exit(-1);
 				};
 			}
 			else

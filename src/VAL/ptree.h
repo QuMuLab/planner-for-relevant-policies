@@ -178,7 +178,7 @@ enum pddl_req_attr { E_EQUALITY              =    1,
 		     E_EXT_PRECS             =   16,
 		     E_UNIV_PRECS            =   32,
 		     E_COND_EFFS             =   64,
-		     E_FLUENTS               =  128,
+		     E_NFLUENTS               =  128,
 		     E_DURATIVE_ACTIONS      =  256,
 		     E_TIME                  =  512,    // Obsolete?
 		     E_DURATION_INEQUALITIES = 1024,
@@ -187,7 +187,9 @@ enum pddl_req_attr { E_EQUALITY              =    1,
 		     E_DERIVED_PREDICATES    = 8192,
 		     E_TIMED_INITIAL_LITERALS= 16384,
 		     E_PREFERENCES           = 32768,
-		     E_CONSTRAINTS           = 65536
+		     E_CONSTRAINTS           = 65536,
+		     E_OFLUENTS              = 131072,
+		     E_ACTIONCOSTS           = 262144
 		     
 // Attributes which are defined as combinations of others 
 // are expanded by parser, and don't need to be included here.
