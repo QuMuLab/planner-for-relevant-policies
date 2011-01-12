@@ -72,7 +72,7 @@ public:
 		if(qg->getQuantifier() == E_EXISTS) 
 		{
 			std::cerr << "Existentially quantified preference or constraint!\n";
-			exit(0);
+			exit(-1);
 		};
 		if(isPref) 
 		{

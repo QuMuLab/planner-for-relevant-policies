@@ -81,7 +81,7 @@ analysis an_analysis;
 analysis* current_analysis;
 
 yyFlexLexer* yfl;
-bool Silent;
+int Silent;
 int errorCount;
 bool Verbose;
 bool ContinueAnyway;
@@ -127,6 +127,7 @@ void usage()
  		     << "    -e         -- Produce error report for the full plan, and try to repair it.\n"
 		     << "    -i         -- Warn if invariants with continuous effects cannot be checked.\n"
 	     <<         "    -s         -- Silent mode: output is generated only when errors occur\n"
+	     << "    -S         -- Silent mode with values: outputs only plan values in order (failed for bad plan)\n"
 			 << "    -m         -- Use makespan as metric for temporal plans (overrides any other metric).\n"
 			 << "    -f <file>  -- LaTeX report will be stored in file 'file.tex'\n" 
 		     << "Multiple plan file arguments can be appended for checking.\n\n";
@@ -163,7 +164,8 @@ plan * getPlan(int & argc,char * argv[],int & argcount,TypeChecker & tc,vector<s
 	    {
 	    	failed.push_back(name);
 
-	    	*report << "Bad plan description!\n";
+	    	if(Silent < 2) *report << "Bad plan description!\n";
+	    	if(Silent > 1) *report << "failed\n";
 	    	delete the_plan;
 	    	the_plan = 0; return the_plan;       
 	    };
@@ -280,6 +282,10 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 		    			if(!Silent && !LaTeX) *report << "Plan valid\n";
 		    			if(LaTeX) *report << "\\\\\n";
 		    			if(!Silent && !LaTeX) *report << "Final value: " << pr.getValidator().finalValue() << "\n";
+		    			if(Silent > 1) 
+		    			{
+		    				*report << pr.getValidator().finalValue() << "\n";
+		    			}
 		    		}
 		    		else
 		    		{
@@ -287,6 +293,10 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 		    			if(!Silent && !LaTeX) *report << "Plan valid (subject to further invariant checks)\n";
 		    			if(LaTeX) *report << "\\\\\n";
 		    			if(!Silent && !LaTeX) *report << "Final value: " << pr.getValidator().finalValue();
+						if(Silent > 1)
+						{
+							*report << "failed\n";
+						}
 		          };
 		          	if(Verbose)
 		          	{
@@ -296,10 +306,11 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 		    	else
 		    	{
 		    		failed.push_back(name);
-		    		*report << "Goal not satisfied\n";
+		    		if(Silent < 2) *report << "Goal not satisfied\n";
+		    		if(Silent > 1) *report << "failed\n";
 
 		    		if(LaTeX) *report << "\\\\\n";
-		    		*report << "Plan invalid\n";
+		    		if(Silent < 2) *report << "Plan invalid\n";
 				++errorCount;
 			};
 
@@ -311,14 +322,19 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
          		    	if(ContinueAnyway)
                   {
                      if(LaTeX) *report << "\nPlan failed to execute - checking goal\\\\\n";
-                     else cout << "\nPlan failed to execute - checking goal\n";
-
+                     else 
+                     {
+                     	if(Silent < 2) *report << "\nPlan failed to execute - checking goal\n";
+						if(Silent > 1) *report << "failed\n";
+					}
                      if(!pr.getValidator().checkGoal(an_analysis.the_problem->the_goal)) *report << "\nGoal not satisfied\n";
 
          		    }
 
-                 else *report << "\nPlan failed to execute\n";
-
+                 else {
+                 	if(Silent < 2) *report << "\nPlan failed to execute\n";
+					if(Silent > 1) *report << "failed\n";
+				}
 
         };
 
@@ -327,7 +343,7 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 						if(LaTeX)
 							*report << "\\\\\n\\\\\n";
 						else
-							cout << "\n\n";
+							if(Silent < 2) *report << "\n\n";
 
 
 		    			*report << "This plan has the following further condition(s) to check:";
@@ -335,7 +351,7 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 						if(LaTeX)
 							*report << "\\\\\n\\\\\n";
 						else
-							cout << "\n\n";
+							if(Silent < 2) *report << "\n\n";
 
 						pr.getValidator().displayInvariantWarnings();
 		    		};
@@ -351,7 +367,7 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 				*report << "Error occurred in validation attempt:\\\\\n  " << e.what() << "\n";
 			}
 			else
-				cout << "Error occurred in validation attempt:\n  " << e.what() << "\n";
+				if(Silent < 2) *report << "Error occurred in validation attempt:\n  " << e.what() << "\n";
 
 			queries.push_back(name);
 
@@ -425,7 +441,7 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 
 
 
-		*report << "\n";
+		if(!Silent) *report << "\n";
 	};
 
 	if(!rnkInv.empty())
@@ -468,7 +484,7 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 
 
 
-		*report << "\n";
+		if(!Silent) *report << "\n";
 	};
 
 	if(!failed.empty())
@@ -479,16 +495,16 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 
 		}
 		else
-			cout << "\n\nFailed plans:\n ";
+			if(Silent < 2) *report << "\n\nFailed plans:\n ";
 
 		if(LaTeX)
 			displayFailedLaTeXList(failed);
 		else
-			copy(failed.begin(),failed.end(),ostream_iterator<string>(cout," "));
+			if(Silent < 2) copy(failed.begin(),failed.end(),ostream_iterator<string>(*report," "));
 
 
 
-		*report << "\n";
+		if(Silent < 2) *report << "\n";
 	};
 
 	if(!queries.empty())
@@ -499,16 +515,16 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 
 		}
 		else
-			cout << "\n\nQueries (validator failed):\n ";
+			if(Silent < 2) *report << "\n\nQueries (validator failed):\n ";
 
 		if(LaTeX)
 			displayFailedLaTeXList(queries);
 		else
-			copy(queries.begin(),queries.end(),ostream_iterator<string>(cout," "));
+			if(Silent < 2) copy(queries.begin(),queries.end(),ostream_iterator<string>(*report," "));
 
 
 
-		*report << "\n";
+		if(Silent < 2) *report << "\n";
 	};
 
 };
@@ -547,7 +563,7 @@ void analysePlansForRobustness(int & argc,char * argv[],int & argcount,TypeCheck
 //main 
 int main(int argc,char * argv[])
 {
-  report->precision(10);
+	report->precision(10);
   try {
 	if(argc < 2)
 	{
@@ -557,7 +573,7 @@ int main(int argc,char * argv[])
 
   current_analysis= &an_analysis;
   //an_analysis.const_tab.symbol_put(""); //for events - undefined symbol
-  Silent = false;
+  Silent = 0;
   errorCount = 0;
 	Verbose = false;
 	ContinueAnyway = false;
@@ -671,9 +687,13 @@ int main(int argc,char * argv[])
 	    		break;       
 		case 's':
 
-		  Silent = true;
+		  Silent = 1;
 		  ++argcount;
                   break;
+        case 'S':
+        	Silent = 2;
+        	++argcount;
+        	break;
 
 	    	case 'j':
 
@@ -782,7 +802,7 @@ int main(int argc,char * argv[])
 	    		break;
 	    	default:
 	    		cout << "Unrecognised command line switch: " << argv[argcount] << "\n";
-	    		exit(0);
+	    		exit(-1);
 		};
     };
 
@@ -805,7 +825,7 @@ int main(int argc,char * argv[])
     {
     	cerr << "Bad domain file!\n";
     	if(LaTeX) *report << "\\section{Error!} Bad domain file! \n \\end{document}\n";
-    	exit(1);
+    	exit(-1);
     };
     
     yfl= new yyFlexLexer(&domainFile,&cout);
@@ -818,7 +838,7 @@ int main(int argc,char * argv[])
     {
     	cerr << "Problem in domain definition!\n";
     	if(LaTeX) *report << "\\section{Error!} Problem in domain definition! \n \\end{document}\n";
-    	exit(1);
+    	exit(-1);
     };   
     
     TypeChecker tc(current_analysis);
@@ -840,7 +860,7 @@ int main(int argc,char * argv[])
     	};
     	
 
-    	exit(1);
+    	exit(-1);
     };
 
 	if(argcount>=argc) 
@@ -853,7 +873,7 @@ int main(int argc,char * argv[])
     {
     	cerr << "Bad problem file!\n";
     	if(LaTeX) *report << "\\section{Error!} Bad problem file! \n \\end{document}\n";
-    	exit(1);
+    	exit(-1);
     };
     
     yfl = new yyFlexLexer(&problemFile,&cout);
@@ -864,7 +884,7 @@ int main(int argc,char * argv[])
 	{
 		cerr << "Type problem in problem specification!\n";
 		if(LaTeX) *report << "\\section{Error!} Type problem in problem specification!\n \\end{document}\n";
-		exit(1);
+		exit(-1);
 	};
 
 	
@@ -880,7 +900,7 @@ int main(int argc,char * argv[])
 	if(CheckDPs && !derivRules->checkDerivedPredicates())
 	{
 		if(LaTeX) latex.LaTeXEnd();
-		exit(1);
+		exit(-1);
 
 	};
       
@@ -900,7 +920,7 @@ int main(int argc,char * argv[])
   {
   	cerr << "Error: " << e.what() << "\n";
   	an_analysis.error_list.report();
-  	return 2;
+  	return -1;
   };
 
     return errorCount;
