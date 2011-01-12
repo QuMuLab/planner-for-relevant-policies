@@ -1,6 +1,6 @@
 #! /bin/bash
 
-CONFIGS=downward_configs.py:lmopt_rhw,downward_configs.py:lmopt_hm1
+CONFIGS=downward_configs.py:ipc_optimal
 QUEUE=opteron_core.q
 
 ## For testing, use this:
@@ -8,7 +8,7 @@ QUEUE=opteron_core.q
 #EXPTYPE=local
 
 ## For the real experiment, use this:
-SUITE=OPTIMAL
+SUITE=STRIPS_IPC12345
 EXPTYPE=gkigrid
 
 source experiment.sh
