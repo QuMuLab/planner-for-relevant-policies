@@ -218,11 +218,11 @@ class IpcReport(Report):
         print r"\begin{supertabular}{|l|%s|}" % ("r" * len(self.configs))
         domain_dict = self.data.group_dict('domain')
         for domain, group in sorted(domain_dict.items()):
-            print r"\textbf{%s}" % domain
+            num_instances = len(group.group_dict('problem'))
+            print r"\textbf{%s} {\scriptsize(%s)}" % (domain, num_instances)
             for config in self.configs:
                 score = self.total_scores[config, domain]
                 if normalize:
-                    num_instances = len(group.group_dict('problem'))
                     score = float(score) * 100 / num_instances
                 overall[config] += score
                 entry = "%.2f" % score
