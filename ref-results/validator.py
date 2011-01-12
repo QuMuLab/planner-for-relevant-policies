@@ -6,6 +6,8 @@ import shutil
 import subprocess
 import tempfile
 
+import util
+
 
 class Error(Exception):
     pass
@@ -30,8 +32,7 @@ def validate(domain_text, problem_text, plan_text):
     tempdir = tempfile.mkdtemp(prefix="tmp-ref-results-")
     def make_temp_file(filename, contents):
         filepath = os.path.join(tempdir, filename)
-        with open(filepath, "w") as file:
-            file.write(contents)
+        util.write_file(filepath, contents)
         return filepath
     try:
         return validate_files(

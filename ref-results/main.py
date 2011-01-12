@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import os.path
 
 import db
 import util
@@ -21,9 +20,6 @@ def parse_args():
 def main():
     args = parse_args()
 
-    domain_filename = os.path.basename(args.domain)
-    problem_filename = os.path.basename(args.problem)
-
     # We read all these upfront to avoid race conditions where VAL
     # sees a different domain/problem/plan than what we compute the
     # hash ID for.
@@ -36,17 +32,16 @@ def main():
     except validator.Error as e:
         print e
     else:
-        ## TODO: In most cases, the basenames are not actually very
-        ##       interesting. What to do about that? Store the full
-        ##       text?
-        domain_name = os.path.basename(args.domain)
-        problem_name = os.path.basename(args.problem)
-        print "domain:", domain_name
-        print "problem:", problem_name
-        print "plan quality:", quality
-        db.update_reference_quality(
-            domain_name, domain_text, problem_name, problem_text, quality)
+        result = db.Result(
+            domain_text=domain_text,
+            problem_text=problem_text,
+            plan_text=plan_text,
+            plan_comment="<no comment for this plan>",
+            plan_quality=quality)
+        result.update_db()
 
 
 if __name__ == "__main__":
+    ## TODO: We should be able to set the plan_comment
+    ##       (e.g. to the planner revision and option string).
     main()
