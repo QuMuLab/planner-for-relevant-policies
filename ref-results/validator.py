@@ -11,16 +11,6 @@ class Error(Exception):
     pass
 
 
-expected_output = re.compile(r"""^Checking plan: (.*)
-Plan executed successfully - checking goal
-Plan valid
-Final value: (\d+)
-
-Successful plans:
-Value: (\d+)
- (.*)$""")
-
-
 def fail(reason, stream_name, stream_text):
     dashes = "-" * 72
     errmsg = "".join(["%s -- treating as failed.\n" % reason,
@@ -54,22 +44,13 @@ def validate(domain_text, problem_text, plan_text):
 
 def validate_files(domain_file, problem_file, plan_file):
     validator = subprocess.Popen(
-        ["validate", domain_file, problem_file, plan_file],
+        ["validate", "-S", domain_file, problem_file, plan_file],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = validator.communicate()
-    retcode = validator.returncode
-    stdout = stdout.strip()
-    stderr = stderr.strip()
-
-    if stderr:
+    if stderr.strip():
         fail("Validator wrote to stderr", "stderr", stderr)
-    if retcode:
-        fail("Validator returned %d" % retcode, "stdout", stdout)
-    match = expected_output.match(stdout)
-    if not match:
-        fail("Validator output did not match regexp", "stdout", stdout)
-    plan_name, quality, quality_copy, plan_name_copy = match.groups()
-    if (plan_name != plan_name_copy or quality != quality_copy or
-        plan_name != plan_file):
-        fail("Validator output looks unexpected", "stdout", stdout)
-    return int(quality)
+    if validator.returncode != 0:
+        fail("Validator returned %d" % validator.returncode, "stdout", stdout)
+    if not stdout.strip().isdigit():
+        fail("Validator output does not look as expected", "stdout", stdout)
+    return int(stdout)
