@@ -39,6 +39,9 @@ at_time "at"{whitespace}{float}
 ":quantified-preconditions" {return QUANT_PRECS;}
 ":conditional-effects" {return COND_EFFS;}
 ":fluents" {return FLUENTS;}
+":numeric-fluents" {return NUMERICFLUENTS;}
+":object-fluents" {return OBJECTFLUENTS;}
+":action-costs" {return ACTIONCOSTS;}
 ":time" {return TIME;}
 ":preferences" {return PREFERENCES;}
 ":constraints" {return CONSTRAINTS;}
@@ -97,6 +100,7 @@ at_time "at"{whitespace}{float}
 "duration" {return DURATION_VAR;}
 "total-time" {return TOTAL_TIME;}
 ^"time" {return TIME;}
+"number" {return NUMBER;}
 "increase"   {return INCREASE;}
 "decrease"   {return DECREASE;}
 "scale-up"   {return SCALE_UP;}

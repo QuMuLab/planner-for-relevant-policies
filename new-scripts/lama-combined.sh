@@ -1,14 +1,14 @@
 #! /bin/bash
 
-CONFIGS=downward_configs.py:lmopt_rhw,downward_configs.py:lmopt_hm1
-QUEUE=opteron_core.q
+CONFIGS=DUMMY
+QUEUE=DUMMY
 
 ## For testing, use this:
 #SUITE=gripper:prob01.pddl,gripper:prob02.pddl
 #EXPTYPE=local
 
 ## For the real experiment, use this:
-SUITE=OPTIMAL
+SUITE=DUMMY
 EXPTYPE=gkigrid
 
 source experiment.sh
