@@ -99,7 +99,7 @@ class IpcReport(Report):
         # Group by domain
         self.data.sort('domain', 'problem', 'config')
         domain_dict = self.data.group_dict('domain')
-        for index, (domain, group) in enumerate(domain_dict.items()):
+        for index, (domain, group) in enumerate(sorted(domain_dict.items())):
             if index:
                 self.print_between_domains()
             self.print_domain(domain, group)
