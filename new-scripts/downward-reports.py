@@ -63,7 +63,7 @@ class PlanningReport(Report):
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
         parser.add_argument('-c', '--configs', type=tools.csv, default=[],
-            help='planner configurations (if none specified, use all found configs)')
+            help='only use specified configurations (if none specified, use all found configs)')
         parser.add_argument('-s', '--suite', type=tools.csv, default=[],
             help=downward_suites.HELP)
         parser.add_argument('--res', default='domain', dest='resolution',
@@ -101,8 +101,6 @@ class PlanningReport(Report):
             If suite is set, only process problems from the suite,
             otherwise process all problems
             """
-            if not self.problems:
-                return True
             for problem in self.problems:
                 if problem.domain == run['domain'] and problem.problem == run['problem']:
                     return True
@@ -112,14 +110,15 @@ class PlanningReport(Report):
             """
             If configs is set, only process those configs, otherwise process all configs
             """
-            if not self.configs:
-                return True
             for config in self.configs:
                 if config == run['config']:
                     return True
             return False
 
-        self.add_filter(filter_by_problem, filter_by_config)
+        if self.configs:
+            self.add_filter(filter_by_config)
+        if self.problems:
+            self.add_filter(filter_by_problem)
 
         self.parse_filters()
 
