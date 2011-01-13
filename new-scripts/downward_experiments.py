@@ -588,7 +588,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 preprocess_cmd = _get_preprocess_cmd(translator, preprocessor)
                 # There is no $OUTPUT variable in a "complete" experiment
                 search_cmd = "$%s %s < output" % (planner.shell_name, config)
-                run.set_command(search_cmd + '; ' + preprocess_cmd)
+                run.set_command(preprocess_cmd + '; ' + search_cmd)
     exp.build()
     return exp
 
