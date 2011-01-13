@@ -62,13 +62,13 @@ class PlanningReport(Report):
     """
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
-        parser.add_argument('-c', '--configs', type=tools.csv, default=[],
+        parser.add_argument('-c', '--configs', type=tools.csv,
             help='only use specified configurations (if none specified, use all found configs)')
-        parser.add_argument('-s', '--suite', type=tools.csv, default=[],
+        parser.add_argument('-s', '--suite', type=tools.csv,
             help=downward_suites.HELP)
         parser.add_argument('--res', default='domain', dest='resolution',
             help='resolution of the report', choices=['suite', 'domain', 'problem'])
-        parser.add_argument('--filter', type=tools.csv, default=[],
+        parser.add_argument('--filter', type=tools.csv,
             help='filters will be applied as follows: ' \
                 'expanded:lt:100 -> only process if run[expanded] < 100')
         parser.add_argument('--missing', default='auto',
@@ -94,7 +94,10 @@ class PlanningReport(Report):
         info %= ', '.join(self.commonly_solved_foci)
         self.add_info(info)
 
-        self.problems = downward_suites.build_suite(self.suite)
+        if self.suite:
+            self.problems = downward_suites.build_suite(self.suite)
+        else:
+            self.problems = []
 
         def filter_by_problem(run):
             """
@@ -120,7 +123,8 @@ class PlanningReport(Report):
         if self.problems:
             self.add_filter(filter_by_problem)
 
-        self.parse_filters()
+        if self.filter:
+            self.parse_filters()
 
 
     def name(self):
