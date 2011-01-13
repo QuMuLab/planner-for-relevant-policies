@@ -63,7 +63,8 @@ class PlanningReport(Report):
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
         parser.add_argument('-c', '--configs', type=tools.csv,
-            help='only use specified configurations (if none specified, use all found configs)')
+            help='only use specified configurations '
+                '(e.g. WORK-ou,WORK-yY). If none specified, use all found configs')
         parser.add_argument('-s', '--suite', type=tools.csv,
             help=downward_suites.HELP)
         parser.add_argument('--res', default='domain', dest='resolution',
