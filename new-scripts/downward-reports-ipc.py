@@ -28,8 +28,8 @@ class IpcReport(Report):
         parser.add_argument('focus', choices=SCORES,# metavar='FOCUS',
                     help='the analyzed attribute (e.g. "expanded"). '
                         'The "attributes" parameter is ignored')
-        parser.add_argument('--no-normalize', action='store_true',
-                            help='Do not add a summary table with normalized values')
+        #parser.add_argument('--no-normalize', action='store_true',
+        #                    help='Do not add a summary table with normalized values')
         parser.add_argument('--squeeze', action='store_true',
                             help='Use small fonts to fit in more data')
         parser.add_argument('--no-best', action='store_false',
@@ -41,7 +41,7 @@ class IpcReport(Report):
         Report.__init__(self, parser)
         self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
         self.focus_name = self.focus
-        self.normalize = not self.no_normalize
+        self.normalize = True #not self.no_normalize
 
         self.score = 'score_' + self.focus
         if self.focus == 'coverage':
