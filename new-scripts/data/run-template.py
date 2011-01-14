@@ -38,10 +38,10 @@ def add_property(name, value):
 
 def save_returncode(command_name, value):
     os.environ['%s_RETURNCODE' % command_name.upper()] = str(value)
-    add_property('%s_returncode' % command_name.lower(), str(value))
+    add_property('%s_returncode' % command_name.lower(), value)
     # TODO: Do we want to mark errors here already?
     # TODO: Would it be better to save just one "fatal_error" for each run?
-    error = 0 if value <= 0 else 1
+    error = 0 if value == 0 else 1
     add_property('%s_error' % command_name.lower(), error)
 
 def run_command(command, name):
@@ -59,12 +59,12 @@ def run_command(command, name):
         returncode = subprocess.call(command, shell=True, **redirects)
     except MemoryError:
         redirects['stderr'].write('Error: MemoryError %s\n' % name)
-        # TODO: what is a good memory error returncode?
-        returncode = 888
+        # Use normal error code (1) since a MemoryError is an expected error
+        returncode = 1
     except KeyboardInterrupt:
         redirects['stdout'].write('%s interrupted\n' % name)
-        # TODO: what is a good keyboard interrupt returncode?
-        returncode = 999
+        # Set returncode to SIGINT, this is what Ctrl-C generates
+        returncode = -2
 
     end_times = os.times()
     time = end_times[2] + end_times[3] - start_times[2] - start_times[3]

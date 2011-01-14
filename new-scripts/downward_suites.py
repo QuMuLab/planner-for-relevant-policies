@@ -157,19 +157,74 @@ def suite_ipc_one_to_five():
         "schedule", "storage", "tpp", "trucks", "zenotravel",
         ]
 
-def suite_ipc08_opt():
+def suite_ipc08_common():
     return [
-        'openstacks-opt08-strips', 'woodworking-opt08-strips',
-        'transport-opt08-strips', 'elevators-opt08-strips',
-        'sokoban-opt08-strips', 'openstacks-opt08-adl',
+        "parcprinter-08-strips",
+        "pegsol-08-strips",
+        "scanalyzer-08-strips",
         ]
 
-def suite_ipc08_sat():
+def suite_ipc08_opt_only():
     return [
-        'woodworking-sat08-strips', 'openstacks-sat08-strips',
-        'openstacks-sat08-adl', 'elevators-sat08-strips',
-        'transport-sat08-strips', 'sokoban-sat08-strips',
+        'elevators-opt08-strips',
+        'openstacks-opt08-adl',
+        'openstacks-opt08-strips',
+        'sokoban-opt08-strips',
+        'transport-opt08-strips',
+        'woodworking-opt08-strips',
         ]
+
+def suite_ipc08_opt_only_strips():
+    return [
+        'elevators-opt08-strips',
+        'openstacks-opt08-strips',
+        'sokoban-opt08-strips',
+        'transport-opt08-strips',
+        'woodworking-opt08-strips',
+        ]
+
+def suite_ipc08_sat_only():
+    return [
+        'elevators-sat08-strips',
+        'openstacks-sat08-strips',
+        'openstacks-sat08-adl',
+        'sokoban-sat08-strips',
+        'transport-sat08-strips',
+        'woodworking-sat08-strips',
+        # TODO: cyber-security is missing
+        ]
+
+def suite_ipc08_sat_only_strips():
+    return [
+        'elevators-sat08-strips',
+        'openstacks-sat08-strips',
+        'sokoban-sat08-strips',
+        'transport-sat08-strips',
+        'woodworking-sat08-strips',
+        # TODO: cyber-security is missing
+        ]
+
+def suite_ipc08_opt():
+    return suite_ipc08_common() + suite_ipc08_opt_only()
+
+def suite_ipc08_opt_strips():
+    return suite_ipc08_common() + suite_ipc08_opt_only_strips()
+
+def suite_ipc08_sat():
+    return suite_ipc08_common() + suite_ipc08_sat_only()
+
+def suite_ipc08_sat_strips():
+    return suite_ipc08_common() + suite_ipc08_sat_only_strips()
+
+def suite_ipc08_all():
+    return (suite_ipc08_common() +
+            suite_ipc08_opt_only() +
+            suite_ipc08_sat_only())
+
+def suite_ipc08_all_strips():
+    return (suite_ipc08_common() +
+            suite_ipc08_opt_only_strips() +
+            suite_ipc08_sat_only_strips())
 
 def suite_interesting():
     # A domain is boring if all planners solve all tasks in < 1 sec.
@@ -231,36 +286,19 @@ def suite_lmcut_domains():
             "zenotravel",
             ]
 
-
 def suite_strips():
-    # like suite_lmcut_domains, but without openstacks-strips (which has
-    # many translator timeouts).
-    return ["airport",
-            "blocks",
-            "depot",
-            "driverlog",
-            "freecell",
-            "grid",
-            "gripper",
-            "logistics00",
-            "logistics98",
-            "miconic",
-            "mprime",
-            "mystery",
-            "pathways-noneg",
-            "pipesworld-notankage",
-            "pipesworld-tankage",
-            "psr-small",
-            "rovers",
-            "satellite",
-            "tpp",
-            "trucks-strips",
-            "zenotravel",
-            ]
+    return suite_lmcut_domains() + suite_ipc08_all_strips()
+
+def suite_strips_ipc12345():
+    ipc08 = set(suite_ipc08_all())
+    return [domain for domain in suite_strips() if domain not in ipc08]
+
+def suite_optimal():
+    return suite_lmcut_domains() + suite_ipc08_opt_strips()
 
 def suite_all():
     domains = suite_ipc_one_to_five() + suite_lmcut_domains()
-    domains += suite_ipc08_opt() + suite_ipc08_sat()
+    domains += suite_ipc08_all()
     return list(sorted(set(domains)))
 
 

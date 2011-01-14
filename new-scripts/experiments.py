@@ -1,54 +1,6 @@
 #! /usr/bin/env python
 """
-Todo:
-X OptionParser class
-X optional/required outputs (warnings if more output)
-X Inherit experiment classes from Experiment
-X Put invoke code into run
-X Write planner script
-  X Suites
-X LocalExperiment
-X CL option for queue
-
-X Try argparse in reports.py
-X Convert code to use argparse
-X Integrate txt2tags
-X Use datasets
-X Write AbsolutePlannerReport
-X Write table to txt2tags function
-X Group by domain, problem, suite
-X Comparative reports
-X Relative reports
-O Detailed reports
-
-X Let user define wanted type for regexes
-X Use double-quotes for multiline strings
-
-X Vergleiche Ausgabe (v.a. expansions) des Translators, Prep., Search (Verwende athlon, opteron (mit core), schnell: amd, ausprobieren: xeon)
-X lm-cut mit A* (ou), ob (LM blind), nicht nur STRIPS Domains, cea (yY), ff (fF), oa10000 (M&S)
-  suites: ALL, lm-cut-domains
-  configs:
-    - ou, ob, oa10000 (LMCUT)
-    - yY, fF (ALL)
-X #Operatoren, #Variablen, #Unterschiedliche Werte (Summe aller Werte) in properties file
-X Anzahl Axiome in properties
-X Anzahl Kanten im Causal Graph
-X Schreibe queue in properties file
-X Derived Vars in properties
-X Write high-level documentation
-
-X Report multiple attributes at once
-X Colors for txt2tags
-X Grey out rows that have equal numbers
-
-X Add priority option for gkigrid experiments
-
-X Unify evaluations
-X Add copy-all parameter
-X Only compare those problems that have been solved by all configs
-O Handle iterative planner results
-X Ask about DataSet dict access method returning lists or values
-X Global experiment properties file
+Main module for experiment creation
 """
 
 from __future__ import with_statement
@@ -63,6 +15,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(m
 
 import tools
 
+SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
+DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
+
 HELP = """\
 Base module for creating fast downward experiments.
 PLEASE NOTE: The available options depend on the selected experiment type.
@@ -70,14 +25,15 @@ You can set the experiment type with the "--exp-type" option.
 """
 
 # Create a parser only for parsing the experiment type
-exp_type_parser = tools.ArgParser(add_help=False)
+exp_type_parser = tools.ArgParser(add_help=False, add_log_option=True)
 exp_type_parser.add_argument('-e', '--exp-type', choices=['local', 'gkigrid', 'argo'],
                                 default='local', help='Select an experiment type')
 
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, parents=[exp_type_parser], **kwargs)
+        parents = kwargs.pop('parents', []) + [exp_type_parser]
+        tools.ArgParser.__init__(self, *args, parents=parents, **kwargs)
 
         self.add_argument('name',
             help='name of the experiment (e.g. <initials>-<descriptive name>)')
@@ -92,7 +48,7 @@ class ExpArgParser(tools.ArgParser):
             help='how many tasks to group into one top-level directory')
         self.add_argument(
             '--root-dir',
-            help='directory where this experiment should be located (default is this folder). ' \
+            help='directory where this experiment should be located (default is this folder). '
                     'The new experiment will reside in <root-dir>/<name>')
 
 
@@ -114,8 +70,7 @@ class Experiment(object):
         if self.root_dir:
             self.base_dir = os.path.join(self.root_dir, self.name)
         else:
-            module_dir = os.path.dirname(__file__)
-            self.base_dir = os.path.join(module_dir, self.name)
+            self.base_dir = self.name
         self.base_dir = os.path.abspath(self.base_dir)
         logging.info('Base Dir: "%s"' % self.base_dir)
 
@@ -133,7 +88,7 @@ class Experiment(object):
             value = map(str, value)
         self.properties[name] = value
 
-    def add_resource(self, resource_name, source, dest):
+    def add_resource(self, resource_name, source, dest, required=True):
         """
         Example:
         >>> experiment.add_resource('PLANNER', '../downward/search/release-search',
@@ -146,7 +101,7 @@ class Experiment(object):
         """
         dest = self._get_abs_path(dest)
         if not (source, dest) in self.resources:
-            self.resources.append((source, dest))
+            self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
 
     def add_run(self):
@@ -221,10 +176,10 @@ class Experiment(object):
 
 
     def _build_resources(self):
-        for source, dest in self.resources:
+        for source, dest, required in self.resources:
             logging.debug('Copying %s to %s' % (source, dest))
             try:
-                shutil.copy2(source, dest)
+                tools.copy(source, dest, required)
             except IOError, err:
                 raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
@@ -266,7 +221,7 @@ class LocalExperiment(Experiment):
                         'PROCESSES': str(self.processes),
                         }
 
-        script = open('data/local-job-template.py').read()
+        script = open(os.path.join(DATA_DIR, 'local-job-template.py')).read()
         for orig, new in replacements.items():
             script = script.replace('***'+orig+'***', new)
 
@@ -309,16 +264,15 @@ class GkiGridExperiment(Experiment):
         Generates the main script
         """
         num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
-        current_dir = os.path.dirname(os.path.abspath(__file__))
         job_params = {
-            'logfile': os.path.join(current_dir, self.name, self.name + '.log'),
-            'errfile': os.path.join(current_dir, self.name, self.name + '.err'),
+            'logfile': os.path.join(self.base_dir, self.name + '.log'),
+            'errfile': os.path.join(self.base_dir, self.name + '.err'),
             'driver_timeout': self.timeout * self.runs_per_task + 30,
             'num_tasks': num_tasks,
             'queue': self.queue,
             'priority': self.priority,
         }
-        script_template = open('data/gkigrid-job-header-template').read()
+        script_template = open(os.path.join(DATA_DIR, 'gkigrid-job-header-template')).read()
         script = script_template % job_params
 
         script += '\n'
@@ -402,7 +356,7 @@ class Run(object):
         self.linked_resources.append(resource_name)
 
 
-    def add_resource(self, resource_name, source, dest):
+    def add_resource(self, resource_name, source, dest, required=True):
         """
         Example:
         >>> run.add_resource('DOMAIN', '../benchmarks/gripper/domain.pddl',
@@ -412,7 +366,7 @@ class Run(object):
         directory under name "domain.pddl" and make it available as
         resource "DOMAIN" (usable as environment variable $DOMAIN).
         """
-        self.resources.append((source, dest))
+        self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
 
 
@@ -506,7 +460,7 @@ class Run(object):
         else:
             env_vars_text = '"Here you would find the declaration of environment variables"'
 
-        run_script = open('data/run-template.py').read()
+        run_script = open(os.path.join(DATA_DIR, 'run-template.py')).read()
         replacements = {'ENVIRONMENT_VARIABLES': env_vars_text,
                         'RUN_COMMAND' : self.command,
                         'PREPROCESS_COMMAND': self.preprocess_command,
@@ -515,7 +469,7 @@ class Run(object):
                         'MEMORY': str(self.experiment.memory),
                         'OPTIONAL_OUTPUT': str(self.optional_output),
                         'REQUIRED_OUTPUT': str(self.required_output),
-                        'RESOURCES': str([filename for var, filename in self.resources])
+                        'RESOURCES': str([filename for var, filename, req in self.resources])
                         }
         for orig, new in replacements.items():
             run_script = run_script.replace('***'+orig+'***', new)
@@ -554,11 +508,11 @@ class Run(object):
                     # Make run script executable
                     os.chmod(filename, 0755)
 
-        for source, dest in self.resources:
+        for source, dest, required in self.resources:
             dest = self._get_abs_path(dest)
             logging.debug('Copying %s to %s' % (source, dest))
             try:
-                shutil.copy2(source, dest)
+                tools.copy(source, dest, required)
             except IOError, err:
                 logging.error('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
@@ -578,12 +532,13 @@ class Run(object):
         return os.path.join(self.dir, rel_path)
 
 
-
-## Factory for experiments.
-##
-## Parses cmd-line options to decide whether this is a gkigrid
-## experiment, a local experiment or whatever.
 def build_experiment(parser=ExpArgParser()):
+    """
+    Factory for experiments.
+
+    Parses cmd-line options to decide whether this is a gkigrid
+    experiment, a local experiment or whatever.
+    """
     known_args, remaining_args = exp_type_parser.parse_known_args()
 
     type = known_args.exp_type

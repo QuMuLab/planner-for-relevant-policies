@@ -182,15 +182,15 @@ def get_status(content, old_props):
     elif 'completely_explored' in old_props:
         new_props['status'] = 'failure'
     else:
-        new_props['status'] = 'not_ok'
+        new_props['status'] = 'unsolved'
     return new_props
 
-def solved(content, old_props):
+def coverage(content, old_props):
     new_props = {}
     if 'plan_length' in old_props:
-        new_props['solved'] = 1
+        new_props['coverage'] = 1
     else:
-        new_props['solved'] = 0
+        new_props['coverage'] = 0
     return new_props
 
 
@@ -213,7 +213,9 @@ def scores(content, old_props):
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
         return round(score, 4)
 
-    return {'score_expansions': log_score(old_props.get('expanded'),
+    return {'score_expansions': log_score(old_props.get('expansions'),
+                    min_bound=100, max_bound=1000000, min_score=0.0),
+            'score_evaluations': log_score(old_props.get('evaluations'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
             'score_total_time': log_score(old_props.get('total_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
@@ -240,8 +242,7 @@ def add_preprocess_parsing(eval):
     """
     Add some preprocess specific parsing:
 
-    TODO:
-     * translator time
+    TODO: translator time
     """
     #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
     #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
@@ -259,7 +260,9 @@ def add_preprocess_parsing(eval):
 
     # Number of invariant groups (second line in the "all.groups" file)
     # The file starts with "begin_groups\n7\ngroup"
-    eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
+    #eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
+    #                    file='all.groups', type=int, flags='MS')
+    eval.add_pattern('translator_invariant_groups', r'group\n(\d+)\nbegin_groups',
                         file='all.groups', type=int, flags='MS')
 
     # number of variables
@@ -341,19 +344,20 @@ def add_preprocess_functions(eval):
 
 def add_search_parsing(eval):
     #eval.add_key_value_pattern('run_start_time')
-    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)', type=int, required=False)
+    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)\.', type=int, required=False)
     eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
-    eval.add_pattern('expanded', r'Expanded (\d+)', type=int, required=False)
+    eval.add_pattern('expansions', r'Expanded (\d+)', type=int, required=False)
+    eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int, required=False)
     eval.add_pattern('generated', r'Generated (\d+) state', type=int, required=False)
-    eval.add_pattern('search_time', r'Search time: (.+)s', type=float, required=False, flags='I')
+    eval.add_pattern('search_time', r'^Search time: (.+)s', type=float, required=False, flags='MI')
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int, required=False)
     eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
 
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
-    #eval.add_function(get_status)
-    eval.add_function(solved)
+    eval.add_function(get_status)
+    eval.add_function(coverage)
     eval.add_function(scores)
 
 

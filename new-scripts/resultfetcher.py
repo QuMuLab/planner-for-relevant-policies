@@ -43,13 +43,12 @@ class FetchOptionParser(tools.ArgParser):
                 help='copy all files from run dirs to new directory tree, '
                     'not only the properties files')
 
-
     def parse_args(self, *args, **kwargs):
         # args is the populated namespace, i.e. the Fetcher instance
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
 
         args.exp_dir = os.path.normpath(os.path.abspath(args.exp_dir))
-        logging.info('Exp dir: "%s"' % args.exp_dir)
+        logging.info('Exp dir:  "%s"' % args.exp_dir)
 
         if args.exp_dir.endswith('eval'):
             answer = raw_input('The source directory seems to be an evaluation '
@@ -67,8 +66,6 @@ class FetchOptionParser(tools.ArgParser):
                 args.eval_dir = exp_props['eval_dir']
             if 'copy_all' in exp_props:
                 args.copy_all = exp_props['copy_all']
-            #args.__dict__.update(exp_props)
-            #args.eval_dir = exp_props.get('eval_dir', None)
 
         if not args.eval_dir or not os.path.isabs(args.eval_dir):
             dir_name = os.path.basename(args.exp_dir)
@@ -120,7 +117,7 @@ class _MultiPattern(object):
                     msg %= (attribute_name, self, filename)
                     logging.error(msg)
         elif self.required:
-            logging.error('_Pattern "%s" not present in file "%s"' % \
+            logging.error('Pattern "%s" not present in file "%s"' % \
                                                             (self, filename))
         return found_props
 
@@ -169,14 +166,13 @@ class _FileParser(object):
         props.update(self._apply_functions(props))
         return props
 
-
     def _search_patterns(self):
         found_props = {}
+        reversed_content = '\n'.join(reversed(self.content.splitlines()))
 
         for pattern in self.patterns:
-            found_props.update(pattern.search(self.content, self.filename))
+            found_props.update(pattern.search(reversed_content, self.filename))
         return found_props
-
 
     def _apply_functions(self, props):
         for function in self.functions:
@@ -258,14 +254,17 @@ class Fetcher(object):
     def fetch(self):
         total_dirs = len(self.run_dirs)
 
+        combined_props_filename = os.path.join(self.eval_dir, 'properties')
+        combined_props = tools.Properties(combined_props_filename)
+
         for index, run_dir in enumerate(self.run_dirs, 1):
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
 
             id = props.get('id')
             dest_dir = os.path.join(self.eval_dir, *id)
-            tools.makedirs(dest_dir)
             if self.copy_all:
+                tools.makedirs(dest_dir)
                 tools.fast_updatetree(run_dir, dest_dir)
 
             props['run_dir'] = run_dir
@@ -275,9 +274,11 @@ class Fetcher(object):
                 file_parser.load_file(filename)
                 props.update(file_parser.parse())
 
-            # Write new properties file
-            props.filename = os.path.join(dest_dir, 'properties')
-            props.write()
+            combined_props['-'.join(id)] = props.dict()
+            if self.copy_all:
+                # Write new properties file
+                props.filename = os.path.join(dest_dir, 'properties')
+                props.write()
 
             if self.check:
                 try:
@@ -289,6 +290,9 @@ class Fetcher(object):
                     props.write(sys.stdout)
                     print '*' * 60
             logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
+
+        tools.makedirs(self.eval_dir)
+        combined_props.write()
 
 
 
