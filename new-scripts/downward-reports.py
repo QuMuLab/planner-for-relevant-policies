@@ -62,13 +62,14 @@ class PlanningReport(Report):
     """
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
-        parser.add_argument('-c', '--configs', type=tools.csv, default=[],
-            help='planner configurations (if none specified, use all found configs)')
-        parser.add_argument('-s', '--suite', type=tools.csv, default=[],
+        parser.add_argument('-c', '--configs', type=tools.csv,
+            help='only use specified configurations '
+                '(e.g. WORK-ou,WORK-yY). If none specified, use all found configs')
+        parser.add_argument('-s', '--suite', type=tools.csv,
             help=downward_suites.HELP)
         parser.add_argument('--res', default='domain', dest='resolution',
             help='resolution of the report', choices=['suite', 'domain', 'problem'])
-        parser.add_argument('--filter', type=tools.csv, default=[],
+        parser.add_argument('--filter', type=tools.csv,
             help='filters will be applied as follows: ' \
                 'expanded:lt:100 -> only process if run[expanded] < 100')
         parser.add_argument('--missing', default='auto',
@@ -86,19 +87,24 @@ class PlanningReport(Report):
         # For some attributes only compare commonly solved tasks
         self.commonly_solved_foci = ['cost', 'expanded', 'expansions', 
                 'generated', 'memory', 'plan_length', 'search_time', 'total_time']
-        info = 'Report only commonly solved problems for the following attributes: %s'
+        info = ('The attributes %s are handled as follows:\n'
+                'If in a group of configs not all configs have a value for '
+                'the attribute, the concerning runs are only evaluated if '
+                '"``--missing``" is set to "include" or if "``--missing``" is '
+                'set to "auto" (default) and the resolution is "problem"')
         info %= ', '.join(self.commonly_solved_foci)
         self.add_info(info)
 
-        self.problems = downward_suites.build_suite(self.suite)
+        if self.suite:
+            self.problems = downward_suites.build_suite(self.suite)
+        else:
+            self.problems = []
 
         def filter_by_problem(run):
             """
             If suite is set, only process problems from the suite,
             otherwise process all problems
             """
-            if not self.problems:
-                return True
             for problem in self.problems:
                 if problem.domain == run['domain'] and problem.problem == run['problem']:
                     return True
@@ -108,16 +114,18 @@ class PlanningReport(Report):
             """
             If configs is set, only process those configs, otherwise process all configs
             """
-            if not self.configs:
-                return True
             for config in self.configs:
                 if config == run['config']:
                     return True
             return False
 
-        self.add_filter(filter_by_problem, filter_by_config)
+        if self.configs:
+            self.add_filter(filter_by_config)
+        if self.problems:
+            self.add_filter(filter_by_problem)
 
-        self.parse_filters()
+        if self.filter:
+            self.parse_filters()
 
 
     def name(self):

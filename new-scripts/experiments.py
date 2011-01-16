@@ -88,7 +88,7 @@ class Experiment(object):
             value = map(str, value)
         self.properties[name] = value
 
-    def add_resource(self, resource_name, source, dest):
+    def add_resource(self, resource_name, source, dest, required=True):
         """
         Example:
         >>> experiment.add_resource('PLANNER', '../downward/search/release-search',
@@ -101,7 +101,7 @@ class Experiment(object):
         """
         dest = self._get_abs_path(dest)
         if not (source, dest) in self.resources:
-            self.resources.append((source, dest))
+            self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
 
     def add_run(self):
@@ -176,10 +176,10 @@ class Experiment(object):
 
 
     def _build_resources(self):
-        for source, dest in self.resources:
+        for source, dest, required in self.resources:
             logging.debug('Copying %s to %s' % (source, dest))
             try:
-                tools.copy(source, dest)
+                tools.copy(source, dest, required)
             except IOError, err:
                 raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))
@@ -356,7 +356,7 @@ class Run(object):
         self.linked_resources.append(resource_name)
 
 
-    def add_resource(self, resource_name, source, dest):
+    def add_resource(self, resource_name, source, dest, required=True):
         """
         Example:
         >>> run.add_resource('DOMAIN', '../benchmarks/gripper/domain.pddl',
@@ -366,7 +366,7 @@ class Run(object):
         directory under name "domain.pddl" and make it available as
         resource "DOMAIN" (usable as environment variable $DOMAIN).
         """
-        self.resources.append((source, dest))
+        self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
 
 
@@ -469,7 +469,7 @@ class Run(object):
                         'MEMORY': str(self.experiment.memory),
                         'OPTIONAL_OUTPUT': str(self.optional_output),
                         'REQUIRED_OUTPUT': str(self.required_output),
-                        'RESOURCES': str([filename for var, filename in self.resources])
+                        'RESOURCES': str([filename for var, filename, req in self.resources])
                         }
         for orig, new in replacements.items():
             run_script = run_script.replace('***'+orig+'***', new)
@@ -508,11 +508,11 @@ class Run(object):
                     # Make run script executable
                     os.chmod(filename, 0755)
 
-        for source, dest in self.resources:
+        for source, dest, required in self.resources:
             dest = self._get_abs_path(dest)
             logging.debug('Copying %s to %s' % (source, dest))
             try:
-                tools.copy(source, dest)
+                tools.copy(source, dest, required)
             except IOError, err:
                 logging.error('Error: The file "%s" could not be copied to "%s": %s' % \
                                 (source, dest, err))

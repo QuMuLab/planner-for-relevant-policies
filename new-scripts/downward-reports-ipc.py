@@ -16,6 +16,9 @@ SCORES = ['expansions', 'evaluations', 'search_time', 'total_time',
 def get_date_and_time():
     return r"\today\ \thistime"
 
+def escape(text):
+    return text.replace('_', r'\_')
+
 
 class IpcReport(Report):
     """
@@ -25,8 +28,8 @@ class IpcReport(Report):
         parser.add_argument('focus', choices=SCORES,# metavar='FOCUS',
                     help='the analyzed attribute (e.g. "expanded"). '
                         'The "attributes" parameter is ignored')
-        parser.add_argument('--normalize', action='store_true',
-                            help='Add a summary table with normalized values')
+        #parser.add_argument('--no-normalize', action='store_true',
+        #                    help='Do not add a summary table with normalized values')
         parser.add_argument('--squeeze', action='store_true',
                             help='Use small fonts to fit in more data')
         parser.add_argument('--no-best', action='store_false',
@@ -38,6 +41,7 @@ class IpcReport(Report):
         Report.__init__(self, parser)
         self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
         self.focus_name = self.focus
+        self.normalize = True #not self.no_normalize
 
         self.score = 'score_' + self.focus
         if self.focus == 'coverage':
@@ -63,9 +67,6 @@ class IpcReport(Report):
             return r"\tiny"
         else:
             return ""
-
-    def escape(self, text):
-        return text.replace('_', r'\_')
 
     def _compute_total_scores(self):
         total_scores = {}
@@ -98,7 +99,7 @@ class IpcReport(Report):
         # Group by domain
         self.data.sort('domain', 'problem', 'config')
         domain_dict = self.data.group_dict('domain')
-        for index, (domain, group) in enumerate(domain_dict.items()):
+        for index, (domain, group) in enumerate(sorted(domain_dict.items())):
             if index:
                 self.print_between_domains()
             self.print_domain(domain, group)
@@ -141,11 +142,11 @@ class IpcReport(Report):
 
     def print_domain(self, domain, runs):
         print r"\section*{%s %s --- %s}" % (
-            self.escape(self.focus_name), domain, get_date_and_time())
+            escape(self.focus_name), escape(domain), get_date_and_time())
         print r"\tablehead{\hline"
         print r"\textbf{prob}"
         for config in self.configs:
-            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
+            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), escape(config))
         if self.best_value_column:
             print r"& %s\textbf{BEST}" % self._tiny_if_squeeze()
         print r"\\ \hline}"
@@ -182,7 +183,7 @@ class IpcReport(Report):
                 else:
                     values = probgroup.get(self.focus)
                     values = filter(existing, values)
-                    best = max(values) if values else None
+                    best = min(values) if values else None
                 print r"& %s" % ("---" if best is None else best)
             print r"\\"
         print r"\hline"
@@ -208,21 +209,21 @@ class IpcReport(Report):
         overall = defaultdict(float)
 
         print r"\section*{%s %s --- %s}" % (
-            self.escape(self.focus_name), title, get_date_and_time())
+            escape(self.focus_name), escape(title), get_date_and_time())
         print r"\tablehead{\hline"
         print r"\textbf{domain}"
         for config in self.configs:
-            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
+            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), escape(config))
         print r"\\ \hline}"
         print r"\tabletail{\hline}"
         print r"\begin{supertabular}{|l|%s|}" % ("r" * len(self.configs))
         domain_dict = self.data.group_dict('domain')
         for domain, group in sorted(domain_dict.items()):
-            print r"\textbf{%s}" % domain
+            num_instances = len(group.group_dict('problem'))
+            print r"\textbf{%s} {\scriptsize(%s)}" % (domain, num_instances)
             for config in self.configs:
                 score = self.total_scores[config, domain]
                 if normalize:
-                    num_instances = len(group.group_dict('problem'))
                     score = float(score) * 100 / num_instances
                 overall[config] += score
                 entry = "%.2f" % score

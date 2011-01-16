@@ -60,6 +60,16 @@ lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1),\
 repeat_last=true)"\
 """
 
+lama_unit = """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=1,cost_type=1))" \
+--search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm),cost_type=1),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5,cost_type=1),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3,cost_type=1),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2,cost_type=1),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1,cost_type=1),\
+repeat_last=true)"\
+"""
+
 lama_noreas_unit = """\
 --heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=false,lm_cost_type=1,cost_type=1))" \
 --search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm),cost_type=1),\
@@ -67,6 +77,18 @@ lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5,cost_type=1),\
 lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3,cost_type=1),\
 lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2,cost_type=1),\
 lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1,cost_type=1),\
+repeat_last=true)"\
+"""
+
+lama_newhybrid = """\
+--heuristic "hlm1,hff1=lm_ff_syn(lm_rhw(reasonable_orders=false,lm_cost_type=1,cost_type=1))" \
+--heuristic "hlm2,hff2=lm_ff_syn(lm_rhw(reasonable_orders=false,lm_cost_type=2,cost_type=2))" \
+--search "iterated(lazy_greedy(hff1,hlm1,preferred=(hff1,hlm1),cost_type=1),\
+lazy_greedy(hff2,hlm2,preferred=(hff2,hlm2)),\
+lazy_wastar(hff2,hlm2,preferred=(hff2,hlm2),w=5),\
+lazy_wastar(hff2,hlm2,preferred=(hff2,hlm2),w=3),\
+lazy_wastar(hff2,hlm2,preferred=(hff2,hlm2),w=2),\
+lazy_wastar(hff2,hlm2,preferred=(hff2,hlm2),w=1),\
 repeat_last=true)"\
 """
 
@@ -105,6 +127,27 @@ lmopt_rhw = """\
 lmopt_hm1 = """\
 --search "astar(lmcount(lm_hm(m=1),admissible=true),mpd=true)"\
 """
+
+lmopt_zg = """\
+--search "astar(lmcount(lm_zg(),admissible=true),mpd=true)"\
+"""
+
+lmopt_rhw_hm1 = """\
+--search "astar(lmcount(lm_merged(lm_rhw(),lm_hm(m=1)),admissible=true),mpd=true)"\
+"""
+
+lmopt_rhw_zg = """\
+--search "astar(lmcount(lm_merged(lm_rhw(),lm_zg()),admissible=true),mpd=true)"\
+"""
+
+lmopt_hm1_zg = """\
+--search "astar(lmcount(lm_merged(lm_zg(),lm_hm(m=1)),admissible=true),mpd=true)"\
+"""
+
+lmopt_rhw_hm1_zg = """\
+--search "astar(lmcount(lm_merged(lm_rhw(),lm_zg(),lm_hm(m=1)),admissible=true),mpd=true)"\
+"""
+
 
 iter_ff = """\
 --heuristic "h=ff(cost_type=1)" \

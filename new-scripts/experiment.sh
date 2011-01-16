@@ -54,7 +54,8 @@ function build-all {
 }
 
 if [[ "$PHASE" == 1 ]]; then
-    ./downward_experiments.py --preprocess -s $SUITE $EXPTYPEOPT $EXPNAME
+    ./downward_experiments.py --preprocess --timeout 7200 --memory 3072 \
+        -s $SUITE $EXPTYPEOPT $EXPNAME
 elif [[ "$PHASE" == 2 ]]; then
     if [[ "$EXPTYPE" == gkigrid ]]; then
         qsub ./$EXPNAME-p/$EXPNAME.q
