@@ -175,7 +175,7 @@ def _build_satisficing_configs(cost_types):
                     name = "%s_%s_%s_%s" % (search_type, alg, h, cost_type)
                     args = [
                         "--heuristic",
-                        "'h=%s(cost_type=1)'" % h,
+                        "'h=%s(cost_type=%d)'" % (h, cost_type),
                         "--search",
                         ]
                     if (search_type, realalg) == ("eager", "wastar"):

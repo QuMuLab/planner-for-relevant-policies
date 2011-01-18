@@ -15,7 +15,6 @@ import downward_suites
 import downward_configs
 import tools
 
-# e.g. issue69.py -> issue69-checkouts
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
 CHECKOUTS_DIRNAME = 'checkouts'
 CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
@@ -343,6 +342,20 @@ def _get_preprocess_cmd(translator, preprocessor):
     return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
 
 
+def _prepare_run(exp, run, problem, translator, preprocessor):
+    run.set_property('translator', translator.rev)
+    run.set_property('preprocessor', preprocessor.rev)
+
+    run.set_property('translator_parent', translator.parent_rev)
+    run.set_property('preprocessor_parent', preprocessor.parent_rev)
+
+    run.set_property('domain', problem.domain)
+    run.set_property('problem', problem.problem)
+
+    # Set memory limit in KB
+    run.set_property('memory_limit', exp.memory * 1024)
+
+
 def _prepare_preprocess_run(run, problem, translator, preprocessor):
     """
     This method adds the necessary preprocessing information to a run.
@@ -363,15 +376,7 @@ def _prepare_preprocess_run(run, problem, translator, preprocessor):
 
     ext_config = '-'.join([translator.rev, preprocessor.rev])
 
-    run.set_property('translator', translator.rev)
-    run.set_property('preprocessor', preprocessor.rev)
-
-    run.set_property('translator_parent', translator.parent_rev)
-    run.set_property('preprocessor_parent', preprocessor.parent_rev)
-
     run.set_property('config', ext_config)
-    run.set_property('domain', problem.domain)
-    run.set_property('problem', problem.problem)
     run.set_property('id', [ext_config, problem.domain, problem.problem])
 
 
@@ -390,19 +395,12 @@ def _prepare_search_run(run, problem, translator, preprocessor,
         revs = [translator.rev, preprocessor.rev, planner.rev]
     ext_config = '-'.join(revs + [config_name])
 
-    run.set_property('translator', translator.rev)
-    run.set_property('preprocessor', preprocessor.rev)
     run.set_property('planner', planner.rev)
-
-    run.set_property('translator_parent', translator.parent_rev)
-    run.set_property('preprocessor_parent', preprocessor.parent_rev)
     run.set_property('planner_parent', planner.parent_rev)
 
     run.set_property('commandline_config', config)
 
     run.set_property('config', ext_config)
-    run.set_property('domain', problem.domain)
-    run.set_property('problem', problem.problem)
     run.set_property('id', [ext_config, problem.domain, problem.problem])
 
 
@@ -484,6 +482,7 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
 
         for problem in problems:
             run = exp.add_run()
+            _prepare_run(exp, run, problem, translator, preprocessor)
             _prepare_preprocess_run(run, problem, translator, preprocessor)
     exp.build()
 
@@ -529,6 +528,7 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
         for config_name, config in configs:
             for problem in problems:
                 run = exp.add_run()
+                _prepare_run(exp, run, problem, translator, preprocessor)
                 _prepare_search_run(run, problem, translator, preprocessor,
                                 planner, config, config_name)
 
@@ -580,6 +580,7 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
         for config_name, config in configs:
             for problem in problems:
                 run = exp.add_run()
+                _prepare_run(exp, run, problem, translator, preprocessor)
                 _prepare_preprocess_run(run, problem, translator, preprocessor)
                 _prepare_search_run(run, problem, translator, preprocessor,
                                     planner, config, config_name)
