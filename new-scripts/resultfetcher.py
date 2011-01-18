@@ -160,11 +160,11 @@ class _FileParser(object):
     def add_function(self, function):
         self.functions.append(function)
 
-    def parse(self):
+    def parse(self, orig_props):
         assert self.filename
-        props = self._search_patterns()
-        props.update(self._apply_functions(props))
-        return props
+        orig_props.update(self._search_patterns())
+        orig_props.update(self._apply_functions(orig_props))
+        return orig_props
 
     def _search_patterns(self):
         found_props = {}
@@ -272,7 +272,7 @@ class Fetcher(object):
             for filename, file_parser in self.file_parsers.items():
                 filename = os.path.join(run_dir, filename)
                 file_parser.load_file(filename)
-                props.update(file_parser.parse())
+                props = file_parser.parse(props)
 
             combined_props['-'.join(id)] = props.dict()
             if self.copy_all:

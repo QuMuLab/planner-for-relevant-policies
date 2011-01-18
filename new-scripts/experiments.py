@@ -104,12 +104,12 @@ class Experiment(object):
             self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
 
-    def add_run(self):
+    def add_run(self, run=None):
         """
         Factory for Runs
         Schedule this run to be part of the experiment.
         """
-        run = Run(self)
+        run = run or Run(self)
         self.runs.append(run)
         return run
 
