@@ -193,6 +193,16 @@ def coverage(content, old_props):
         new_props['coverage'] = 0
     return new_props
 
+def check_memory(content, old_props):
+    """
+    Set "memory" to the max value if it was exceeded and "-1 KB" was reported
+    """
+    new_props = {}
+    memory = old_props.get('memory')
+    memory_limit = old_props.get('memory_limit')
+    if memory == -1 and memory_limit:
+        new_props['memory'] = memory_limit
+    return new_props
 
 def scores(content, old_props):
     """
@@ -359,6 +369,7 @@ def add_search_functions(eval):
     eval.add_function(get_status)
     eval.add_function(coverage)
     eval.add_function(scores)
+    eval.add_function(check_memory)
 
 
 
