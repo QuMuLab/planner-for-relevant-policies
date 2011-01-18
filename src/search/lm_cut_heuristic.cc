@@ -132,6 +132,7 @@ void LandmarkCutHeuristic::setup_exploration_queue() {
         RelaxedOperator &op = relaxed_operators[i];
         op.unsatisfied_preconditions = op.precondition.size();
         op.h_max_supporter = 0;
+        op.h_max_supporter_cost = numeric_limits<int>::max();
     }
 }
 
@@ -144,6 +145,7 @@ void LandmarkCutHeuristic::setup_exploration_queue_state(const State &state) {
 }
 
 void LandmarkCutHeuristic::first_exploration(const State &state) {
+    assert(priority_queue.empty());
     setup_exploration_queue();
     setup_exploration_queue_state(state);
     while (!priority_queue.empty()) {
@@ -162,6 +164,7 @@ void LandmarkCutHeuristic::first_exploration(const State &state) {
             assert(relaxed_op->unsatisfied_preconditions >= 0);
             if (relaxed_op->unsatisfied_preconditions == 0) {
                 relaxed_op->h_max_supporter = prop;
+                relaxed_op->h_max_supporter_cost = prop_cost;
                 int target_cost = prop_cost + relaxed_op->cost;
                 for (int j = 0; j < relaxed_op->effects.size(); j++) {
                     RelaxedProposition *effect = relaxed_op->effects[j];
@@ -174,46 +177,39 @@ void LandmarkCutHeuristic::first_exploration(const State &state) {
 
 void LandmarkCutHeuristic::first_exploration_incremental(
     vector<RelaxedOperator *> &cut) {
-    // TODO: This implementation may not be very suitable for problems
-    //       with action costs because of potential reexpansions; might
-    //       use a priority queue instead. Needs testing.
-    // TODO: We could probably integrate the h_max test with the h_max supporter
-    //       update to avoid iterating through the operator preconditions too
-    //       often.
-    // TODO: Maybe it's worth storing h_max values in the actual operators.
-    //       Or maybe not.
-    vector<pair<int, RelaxedOperator *> > queue;
+    assert(priority_queue.empty());
     for (int i = 0; i < cut.size(); i++) {
-        RelaxedOperator *op = cut[i];
-        queue.push_back(make_pair(op->h_max_cost() + op->cost, op));
+        RelaxedOperator *relaxed_op = cut[i];
+        int cost = relaxed_op->h_max_supporter_cost + relaxed_op->cost;
+        for (int j = 0; j < relaxed_op->effects.size(); j++) {
+            RelaxedProposition *effect = relaxed_op->effects[j];
+            enqueue_if_necessary(effect, cost);
+        }
     }
-    while (!queue.empty()) {
-        int cost = queue.back().first;
-        RelaxedOperator *op = queue.back().second;
-        queue.pop_back();
-        for (int i = 0; i < op->effects.size(); i++) {
-            RelaxedProposition *prop = op->effects[i];
-            int old_prop_cost = prop->h_max_cost;
-            if (old_prop_cost > cost) {
-                prop->h_max_cost = cost;
-                /* Note: Instead of iterations over all operators of which
-                   prop is a precondition, we only really want to iterate
-                   over all operators of which prop is the h_max supporter.
-                   Iterating over all instead may give us asymptotically
-                   worse performence, but maintaining the extra data
-                   structures to keep track of the best supporter relationship
-                   is probably a waste of time in the common case of few
-                   preconditions per operator.
-                   TODO: Try this out. */
-                for (int j = 0; j < prop->precondition_of.size(); j++) {
-                    RelaxedOperator *next_op = prop->precondition_of[j];
-                    if (next_op->h_max_supporter == prop) {
-                        int next_op_cost = next_op->h_max_cost();
-                        next_op->update_h_max_supporter();
-                        if (next_op_cost < old_prop_cost) {
-                            queue.push_back(
-                                make_pair(next_op_cost + next_op->cost,
-                                          next_op));
+    while (!priority_queue.empty()) {
+        pair<int, RelaxedProposition *> top_pair = priority_queue.pop();
+        int popped_cost = top_pair.first;
+        RelaxedProposition *prop = top_pair.second;
+        int prop_cost = prop->h_max_cost;
+        assert(prop_cost <= popped_cost);
+        if (prop_cost < popped_cost)
+            continue;
+        const vector<RelaxedOperator *> &triggered_operators =
+            prop->precondition_of;
+        for (int i = 0; i < triggered_operators.size(); i++) {
+            RelaxedOperator *relaxed_op = triggered_operators[i];
+            if (relaxed_op->h_max_supporter == prop) {
+                int old_supp_cost = relaxed_op->h_max_supporter_cost;
+                if (old_supp_cost > prop_cost) {
+                    relaxed_op->update_h_max_supporter();
+                    int new_supp_cost = relaxed_op->h_max_supporter_cost;
+                    if (new_supp_cost != old_supp_cost) {
+                        // This operator has become cheaper.
+                        assert(new_supp_cost < old_supp_cost);
+                        int target_cost = new_supp_cost + relaxed_op->cost;
+                        for (int j = 0; j < relaxed_op->effects.size(); j++) {
+                            RelaxedProposition *effect = relaxed_op->effects[j];
+                            enqueue_if_necessary(effect, target_cost);
                         }
                     }
                 }
@@ -223,21 +219,22 @@ void LandmarkCutHeuristic::first_exploration_incremental(
 }
 
 void LandmarkCutHeuristic::second_exploration(
-    const State &state, vector<RelaxedProposition *> &queue, vector<RelaxedOperator *> &cut) {
-    assert(queue.empty());
+    const State &state, vector<RelaxedProposition *> &second_exploration_queue, vector<RelaxedOperator *> &cut) {
+    assert(second_exploration_queue.empty());
+    assert(cut.empty());
 
     artificial_precondition.status = BEFORE_GOAL_ZONE;
-    queue.push_back(&artificial_precondition);
+    second_exploration_queue.push_back(&artificial_precondition);
 
     for (int var = 0; var < propositions.size(); var++) {
         RelaxedProposition *init_prop = &propositions[var][state[var]];
         init_prop->status = BEFORE_GOAL_ZONE;
-        queue.push_back(init_prop);
+        second_exploration_queue.push_back(init_prop);
     }
 
-    while (!queue.empty()) {
-        RelaxedProposition *prop = queue.back();
-        queue.pop_back();
+    while (!second_exploration_queue.empty()) {
+        RelaxedProposition *prop = second_exploration_queue.back();
+        second_exploration_queue.pop_back();
         const vector<RelaxedOperator *> &triggered_operators =
             prop->precondition_of;
         for (int i = 0; i < triggered_operators.size(); i++) {
@@ -259,7 +256,7 @@ void LandmarkCutHeuristic::second_exploration(
                         if (effect->status != BEFORE_GOAL_ZONE) {
                             assert(effect->status == REACHED);
                             effect->status = BEFORE_GOAL_ZONE;
-                            queue.push_back(effect);
+                            second_exploration_queue.push_back(effect);
                         }
                     }
                 }
@@ -302,7 +299,8 @@ void LandmarkCutHeuristic::validate_h_max() const {
             assert(!op->h_max_supporter);
         } else {
             assert(op->h_max_supporter);
-            int h_max_cost = op->h_max_supporter->h_max_cost;
+            int h_max_cost = op->h_max_supporter_cost;
+            assert(h_max_cost == op->h_max_supporter->h_max_cost);
             for (int j = 0; j < prec.size(); j++) {
                 assert(prec[j]->status != UNREACHED);
                 assert(prec[j]->h_max_cost <= h_max_cost);
@@ -323,11 +321,11 @@ int LandmarkCutHeuristic::compute_heuristic(const State &state) {
     int total_cost = 0;
 
     // The following two variables could be declared inside the loop
-    // ("queue" even inside second_exploration), but having them here
-    // saves reallocations and hence provides a measurable speed
-    // boost.
+    // ("second_exploration_queue" even inside second_exploration),
+    // but having them here saves reallocations and hence provides a
+    // measurable speed boost.
     vector<RelaxedOperator *> cut;
-    vector<RelaxedProposition *> queue;
+    vector<RelaxedProposition *> second_exploration_queue;
     first_exploration(state);
     // validate_h_max();  // too expensive to use even in regular debug mode
     if (artificial_goal.status == UNREACHED)
@@ -340,20 +338,40 @@ int LandmarkCutHeuristic::compute_heuristic(const State &state) {
         //cout << "total_cost = " << total_cost << "..." << endl;
         mark_goal_plateau(&artificial_goal);
         assert(cut.empty());
-        second_exploration(state, queue, cut);
+        second_exploration(state, second_exploration_queue, cut);
         assert(!cut.empty());
         int cut_cost = numeric_limits<int>::max();
         for (int i = 0; i < cut.size(); i++) {
             cut_cost = min(cut_cost, cut[i]->cost);
-            // NOTE: The following line is only needed if COST_MULTIPLIER > 1
-            cut_cost = min(cut_cost, cut[i]->base_cost);
+            if (COST_MULTIPLIER > 1) {
+                /* We're using this "if" here because COST_MULTIPLIER
+                   is currently a global constant and usually 1, which
+                   allows the optimizer to get rid of this additional
+                   minimization (which is always correct, but not
+                   necessary if COST_MULTIPLIER == 1.
+
+                   If COST_MULTIPLIER turns into an option, this code
+                   should be changed. I would assume that the savings
+                   by the "if" are negligible anyway, but this should
+                   be tested.
+
+                   The whole cut cost computation could also be made
+                   more efficient in the unit-cost case, where all
+                   cuts have cost 1 and the cost decrement could be
+                   moved directly to the place where the actions for
+                   the cut are collected; indeed, we would not need to
+                   collect the cut in a vector at all. But again, I
+                   doubt this would have a huge impact, and it would
+                   only be applicable in the unit-cost (or zero- and
+                   unit-cost) case.
+                */
+                cut_cost = min(cut_cost, cut[i]->base_cost);
+            }
         }
         for (int i = 0; i < cut.size(); i++)
             cut[i]->cost -= cut_cost;
         //cout << "{" << cut_cost << "}" << flush;
         total_cost += cut_cost;
-
-
 
         first_exploration_incremental(cut);
         // validate_h_max();  // too expensive to use even in regular debug mode
