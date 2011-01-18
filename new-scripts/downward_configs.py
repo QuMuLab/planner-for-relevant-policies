@@ -154,6 +154,68 @@ iter_ff = """\
 --search "iterated(lazy_greedy(h, preferred=(h)), repeat_last=true)"\
 """
 
+def _build_satisficing_configs(cost_types):
+    result = []
+    for search_type in ["lazy", "eager"]:
+        for alg in ["greedy", "wa3"]:
+            if alg.startswith("wa"):
+                weight = int(alg[2:])
+                extra_alg_opts = "w=%d," % weight
+                realalg = "wastar"
+            else:
+                realalg = alg
+                extra_alg_opts = ""
+                
+            for h in ["add", "cea", "cg", "ff"]:
+                for cost_type in cost_types:
+                    if cost_type == 2:
+                        search_cost_type = 0
+                    else:
+                        search_cost_type = cost_type
+                    name = "%s_%s_%s_%s" % (search_type, alg, h, cost_type)
+                    args = [
+                        "--heuristic",
+                        "'h=%s(cost_type=1)'" % h,
+                        "--search",
+                        ]
+                    if (search_type, realalg) == ("eager", "wastar"):
+                        args.append("'eager(single(sum(g(),weight(h,%d))),preferred=(h),cost_type=%d)'" % (weight, search_cost_type))
+                    else:
+                        args.append("'%s_%s(h,%spreferred=(h),cost_type=%d)'" % (
+                                search_type, realalg, extra_alg_opts, search_cost_type))
+                    result.append((name, " ".join(args)))
+    return result
+
+
+def satisficing_configs():
+    return _build_satisficing_configs([0])
+
+def satisficing_configs_with_costs():
+    return _build_satisficing_configs([0, 1, 2])
+
+def _alternation_config(kind, heurs):
+    name = "alt_%s_%s" % (kind, "_".join(heurs))
+    args = []
+    for h in heurs:
+        args.append("--heuristic")
+        args.append("'h%s=%s(cost_type=1)'" % (h, h))
+    args.append("--search")
+    comma_string = ",".join("h%s" % h for h in heurs)
+    args.append("'%s_greedy(%s,preferred=(%s),cost_type=1)'" % (
+        kind, comma_string, comma_string))
+    return name, " ".join(args)
+
+def alternation_configs():
+    result = []
+    for kind in ["lazy", "eager"]:
+        for l1 in [[], ["ff"]]:
+            for l2 in [[], ["cea"]]:
+                for l3 in [[], ["add"]]:
+                    for l4 in [[], ["cg"]]:
+                        heurs = l1 + l2 + l3 + l4
+                        if len(heurs) >= 2:
+                            result.append(_alternation_config(kind, heurs))
+    return result
 
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]
