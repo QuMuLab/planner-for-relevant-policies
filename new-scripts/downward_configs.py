@@ -217,6 +217,171 @@ def alternation_configs():
                             result.append(_alternation_config(kind, heurs))
     return result
 
+def raz_ipc():
+    return [
+        ("mas-1", "--search 'astar(mas(max_states=1,merge_strategy=5,shrink_strategy=12))'"),
+        ("mas-2", "--search 'astar(mas(max_states=200000,merge_strategy=5,shrink_strategy=7))'"),
+        ]
+
+def lama11_unitcost():
+    return [
+        ("lama-unit-1", """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true))" \
+--search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm)),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1),\
+repeat_last=true,continue_on_fail=true)"\
+"""),
+
+        ("lama-unit-2", """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true))" \
+--search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm),reopen_closed=true),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1),\
+repeat_last=true)"\
+"""),
+        # Skip name lama-unit-3 to be consistent with lama-gen-X naming.
+        ("lama-unit-4", """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true))" \
+--search "iterated(
+             eager(alt(single(hff),
+                       single(hff,pref_only=true),
+                       single(hlm),
+                       single(hlm,pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff,5))),
+                       single(sum(g(),weight(hff,5)),pref_only=true),
+                       single(sum(g(),weight(hlm,5))),
+                       single(sum(g(),weight(hlm,5)),pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff,3))),
+                       single(sum(g(),weight(hff,3)),pref_only=true),
+                       single(sum(g(),weight(hlm,3))),
+                       single(sum(g(),weight(hlm,3)),pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff,2))),
+                       single(sum(g(),weight(hff,2)),pref_only=true),
+                       single(sum(g(),weight(hlm,2))),
+                       single(sum(g(),weight(hlm,2)),pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff,1))),
+                       single(sum(g(),weight(hff,1)),pref_only=true),
+                       single(sum(g(),weight(hlm,1))),
+                       single(sum(g(),weight(hlm,1)),pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             repeat_last=true)"\
+"""),
+        ]
+
+
+def lama11_generalcost():
+    return [
+        ("lama-gen-1", """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm)),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1),\
+repeat_last=true,continue_on_fail=true)"\
+"""),
+
+        ("lama-gen-2", """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm),reopen_closed=true),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1),\
+repeat_last=true)"\
+"""),
+
+        ("lama-gen-3", """\
+--heuristic "hlm1,hff1=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=1,cost_type=1))" \
+--heuristic "hlm2,hff2=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated(lazy_greedy(hff1,hlm1,preferred=(hff1,hlm1),cost_type=1,reopen_closed=true),\
+lazy_greedy(hff2,hlm2,preferred=(hff2,hlm2),reopen_closed=true),\
+lazy_wastar(hff2,hlm2,preferred=(hff2,hlm2),w=5),\
+lazy_wastar(hff2,hlm2,preferred=(hff2,hlm2),w=3),\
+lazy_wastar(hff2,hlm2,preferred=(hff2,hlm2),w=2),\
+lazy_wastar(hff2,hlm2,preferred=(hff2,hlm2),w=1),\
+repeat_last=true)"\
+"""),
+
+        ("lama-gen-4", """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated(
+             eager(alt(single(hff),
+                       single(hff,pref_only=true),
+                       single(hlm),
+                       single(hlm,pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff,5))),
+                       single(sum(g(),weight(hff,5)),pref_only=true),
+                       single(sum(g(),weight(hlm,5))),
+                       single(sum(g(),weight(hlm,5)),pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff,3))),
+                       single(sum(g(),weight(hff,3)),pref_only=true),
+                       single(sum(g(),weight(hlm,3))),
+                       single(sum(g(),weight(hlm,3)),pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff,2))),
+                       single(sum(g(),weight(hff,2)),pref_only=true),
+                       single(sum(g(),weight(hlm,2))),
+                       single(sum(g(),weight(hlm,2)),pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff,1))),
+                       single(sum(g(),weight(hff,1)),pref_only=true),
+                       single(sum(g(),weight(hlm,1))),
+                       single(sum(g(),weight(hlm,1)),pref_only=true)),
+                   preferred=(hff,hlm),reopen_closed=true),
+             repeat_last=true)"\
+"""),
+
+        ("lama-gen-5", """\
+--heuristic "hlm1,hff1=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=1,cost_type=1))" \
+--heuristic "hlm2,hff2=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated(
+             eager(alt(single(hff1),
+                       single(hff1,pref_only=true),
+                       single(hlm1),
+                       single(hlm1,pref_only=true)),
+                   preferred=(hff1,hlm1),cost_type=1,reopen_closed=true),
+             eager(alt(single(hff2),
+                       single(hff2,pref_only=true),
+                       single(hlm2),
+                       single(hlm2,pref_only=true)),
+                   preferred=(hff2,hlm2),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff2,5))),
+                       single(sum(g(),weight(hff2,5)),pref_only=true),
+                       single(sum(g(),weight(hlm2,5))),
+                       single(sum(g(),weight(hlm2,5)),pref_only=true)),
+                   preferred=(hff2,hlm2),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff2,3))),
+                       single(sum(g(),weight(hff2,3)),pref_only=true),
+                       single(sum(g(),weight(hlm2,3))),
+                       single(sum(g(),weight(hlm2,3)),pref_only=true)),
+                   preferred=(hff2,hlm2),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff2,2))),
+                       single(sum(g(),weight(hff2,2)),pref_only=true),
+                       single(sum(g(),weight(hlm2,2))),
+                       single(sum(g(),weight(hlm2,2)),pref_only=true)),
+                   preferred=(hff2,hlm2),reopen_closed=true),
+             eager(alt(single(sum(g(),weight(hff2,1))),
+                       single(sum(g(),weight(hff2,1)),pref_only=true),
+                       single(sum(g(),weight(hlm2,1))),
+                       single(sum(g(),weight(hlm2,1)),pref_only=true)),
+                   preferred=(hff2,hlm2),reopen_closed=true),
+             repeat_last=true)"\
+"""),
+        ]
+
+
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]
 
