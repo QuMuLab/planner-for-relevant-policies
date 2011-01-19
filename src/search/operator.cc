@@ -158,4 +158,3 @@ bool Operator::affect_a_common_variable(const Operator *other_op) const {
     }
     return false;
 }
-
