@@ -42,7 +42,10 @@ def gm(values):
     4.0
     """
     assert len(values) >= 1
-    return round(tools.prod(values) ** (1/len(values)), 4)
+    try:
+        return round(tools.prod(values) ** (1/len(values)), 4)
+    except OverflowError:
+        return "OVERFLOW"
 
 
 def existing(val):
