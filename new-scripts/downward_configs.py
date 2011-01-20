@@ -154,6 +154,8 @@ iter_ff = """\
 --search "iterated(lazy_greedy(h, preferred=(h)), repeat_last=true)"\
 """
 
+seq_opt_fdss_1 = "ipc seq-opt-fdss-1 --plan-file sas_plan"
+
 def _build_satisficing_configs(cost_types):
     result = []
     for search_type in ["lazy", "eager"]:
@@ -186,6 +188,19 @@ def _build_satisficing_configs(cost_types):
                     result.append((name, " ".join(args)))
     return result
 
+
+def ipc_optimal():
+    return [
+        ("blind", "--search 'astar(blind())'"),
+        ("hmax",  "--search 'astar(hmax())'"),
+        ("lmcut", "--search 'astar(lmcut())'"),
+        ("bjolp", lmopt_rhw_hm1),
+        ("lmopt_rhw", lmopt_rhw),
+        ("lmopt_hm1", lmopt_hm1),
+        ("mas10000", "--search 'astar(mas(max_states=10000))'"),
+        ("mas50000", "--search 'astar(mas(max_states=50000))'"),
+        ("mas100000", "--search 'astar(mas(max_states=100000))'"),
+        ]
 
 def satisficing_configs():
     return _build_satisficing_configs([0])

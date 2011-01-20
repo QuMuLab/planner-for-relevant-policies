@@ -63,7 +63,7 @@ FFLAGS  =
 
 # C/C++/Eiffel/FORTRAN linker
 
-LINKER    := g++ -g 
+LINKER    := g++ -g -static -static-libgcc
 LDFLAGS    = 
 LOADLIBES := 
 
