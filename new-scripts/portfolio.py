@@ -24,6 +24,8 @@ class Results(object):
             entry = self._massage_entry(entry)
             config = entry["config"]
             problem = entry["problem"]
+            # if "freecell" in problem:  ## TEST
+            #    continue
             configs.add(config)
             problems.add(problem)
             data[config, problem] = (entry["time"], entry["cost"])
