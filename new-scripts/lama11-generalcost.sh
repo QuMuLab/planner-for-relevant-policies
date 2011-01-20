@@ -1,7 +1,7 @@
 #! /bin/bash
 
 CONFIGS=downward_configs.py:lama11_generalcost
-QUEUE=athlon.q
+QUEUE=athlon_core.q
 
 ## For testing, use this:
 #SUITE=blocks:probBLOCKS-6-0.pddl,elevators-sat08-strips:p01.pddl
