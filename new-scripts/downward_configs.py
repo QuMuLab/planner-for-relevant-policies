@@ -154,6 +154,8 @@ iter_ff = """\
 --search "iterated(lazy_greedy(h, preferred=(h)), repeat_last=true)"\
 """
 
+seq_opt_fdss_1 = "ipc seq-opt-fdss-1 --plan-file sas_plan"
+
 def _build_satisficing_configs(cost_types):
     result = []
     for search_type in ["lazy", "eager"]:
