@@ -153,7 +153,7 @@ class Portfolio(object):
         for config in self.configs:
             # Reduce timeout for this config until we hit zero or lose
             # a problem.
-            while self.timeouts[config] > granularity + EPSILON:
+            while self.timeouts[config] > granularity - EPSILON:
                 self.timeouts[config] -= granularity
                 if self.num_solved() < num_solved:
                     # Undo last change and stop reducing this timeout.
