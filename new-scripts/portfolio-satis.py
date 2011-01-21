@@ -28,6 +28,8 @@ class Results(object):
             problem = entry["problem"]
             cost = entry["cost"]
 
+            if "_wa" in config or "-alt" in config:
+                continue
             if "08" not in entry_["domain"]:
                 if config.endswith("_0"):
                     config = config[:-2] + "_1"
