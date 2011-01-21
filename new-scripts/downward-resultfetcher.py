@@ -353,7 +353,7 @@ def add_search_parsing(eval):
     eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
     eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int, required=False)
     eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
-    eval.add_pattern('pdb_time', r'PDB Creation time: (.+)s', type=float, required=False)
+    eval.add_pattern('pdb_time', r'PDB construction time: (.+)s', type=float, required=False)
 
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
