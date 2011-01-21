@@ -349,10 +349,6 @@ def _get_configs(planner_rev, config_list):
     return configs
 
 
-def _require_checkout(exp, part):
-    exp.add_resource(part.shell_name, part.binary, part.rel_dest)
-
-
 def _get_preprocess_cmd(translator, preprocessor):
     translate_cmd = '$%s $DOMAIN $PROBLEM' % translator.shell_name
     preprocess_cmd = '$%s < output.sas' % preprocessor.shell_name
@@ -390,8 +386,18 @@ class DownwardRun(experiments.Run):
         self.set_property('config', self.ext_config)
         self.set_property('id', [self.ext_config, domain, problem])
 
+    @property
+    def ext_config(self):
+        # If all three parts have the same revision don't clutter the reports
+        revs = [self.translator.rev, self.preprocessor.rev, self.planner.rev]
+        if len(revs) == len(set(revs)):
+            revs = [self.translator.rev]
+        return '-'.join(revs + [self.planner_config])
+
 
 class DownwardPreprocessRun(DownwardRun):
+    OUTPUT_FILES = ["*.groups", "output.sas", "output"]
+
     def __init__(self, exp, translator, preprocessor, planner, problem):
         DownwardRun.__init__(self, exp, translator, preprocessor, planner, problem)
 
@@ -402,13 +408,8 @@ class DownwardPreprocessRun(DownwardRun):
 
         self.set_command(_get_preprocess_cmd(self.translator, self.preprocessor))
 
-        self.declare_optional_output("*.groups")
-        self.declare_optional_output("output.sas")
-        self.declare_optional_output("output")
-
-    @property
-    def ext_config(self):
-        return '-'.join([self.translator.rev, self.preprocessor.rev])
+        for output_file in DownwardPreprocessRun.OUTPUT_FILES:
+            self.declare_optional_output(output_file)
 
 
 class DownwardSearchRun(DownwardRun):
@@ -423,24 +424,17 @@ class DownwardSearchRun(DownwardRun):
         self.set_command("$%s %s < $OUTPUT" % (planner.shell_name, planner_config))
         self.declare_optional_output("sas_plan")
 
+        # Validation
+        self.require_resource('VALIDATE')
+        self.set_postprocess('$VALIDATE $DOMAIN $PROBLEM sas_plan')
+
     def set_properties(self):
         DownwardRun.set_properties(self)
         self.set_property('commandline_config', self.planner_config)
 
-    @property
-    def ext_config(self):
-        # If all three parts have the same revision don't clutter the reports
-        revs = [self.translator.rev, self.preprocessor.rev, self.planner.rev]
-        if len(revs) == len(set(revs)):
-            revs = [self.translator.rev]
-        return '-'.join(revs + [self.planner_config])
 
-
-class DownwardCompleteRun(DownwardPreprocessRun, DownwardSearchRun):
-    def __init__(self, exp, translator, preprocessor, planner, problem, planner_config,
-                 config_nick):
-        DownwardSearchRun.__init__(self, exp, translator, preprocessor, planner, problem, planner_config, config_nick)
-        DownwardPreprocessRun.__init__(self, exp, translator, preprocessor, planner, problem)
+def _require_checkout(exp, part):
+    exp.add_resource(part.shell_name, part.binary, part.rel_dest)
 
 
 def _prepare_preprocess_exp(exp, translator, preprocessor):
@@ -462,8 +456,11 @@ def _prepare_search_exp(exp, translator, preprocessor, planner):
         if not os.path.isfile(src_path):
             continue
         code_subdir = os.path.dirname(planner.rel_dest)
-        exp.add_resource('DOWNWARD1', src_path,
+        exp.add_resource('UNUSEDNAME', src_path,
                         os.path.join(code_subdir, bin))
+    exp.add_resource('VALIDATE', os.path.join(planner.exe_dir, '..', 'validate'),
+                     'validate')
+
 
 
 def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
@@ -613,11 +610,19 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
 
         for config_name, config in configs:
             for problem in problems:
-                run = DownwardCompleteRun(exp, translator, preprocessor, planner,
+                run = DownwardSearchRun(exp, translator, preprocessor, planner,
                                           problem, config, config_name)
                 exp.add_run(run)
+
+                run.require_resource(preprocessor.shell_name)
+
+                run.add_resource("DOMAIN", problem.domain_file(), "domain.pddl")
+                run.add_resource("PROBLEM", problem.problem_file(), "problem.pddl")
+
+                for output_file in DownwardPreprocessRun.OUTPUT_FILES:
+                    run.declare_optional_output(output_file)
+
                 # We want to do the whole experiment in one step
-                run.set_preprocess('')
                 preprocess_cmd = _get_preprocess_cmd(translator, preprocessor)
                 # There is no $OUTPUT variable in a "complete" experiment
                 search_cmd = "$%s %s < output" % (planner.shell_name, config)
