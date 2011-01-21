@@ -25,9 +25,9 @@ class Results(object):
 #            if not (entry["domain"].endswith("08'") or
 #                entry["domain"].endswith("08-strips'")):
 #                continue
-            if (entry["domain"].endswith("08'") or
-                entry["domain"].endswith("08-strips'")):
-                continue
+#            if (entry["domain"].endswith("08'") or
+#                entry["domain"].endswith("08-strips'")):
+#                continue
 
             entry = self._massage_entry(entry)
             config = entry["config"]
@@ -274,8 +274,8 @@ class Portfolio(object):
 def compute_portfolio(results, granularity):
     portfolio = Portfolio(results, dict.fromkeys(results.configs, 0))
     while True:
-        # portfolio.dump()
-        # print
+        portfolio.dump()
+        print
         best_successor = None
         best_solved = -1
         for successor in portfolio.successors(granularity):
@@ -290,6 +290,8 @@ def compute_portfolio(results, granularity):
 def compute_portfolio_using_ipc_scores(results, granularity):
     portfolio = Portfolio(results, dict.fromkeys(results.configs, 0))
     while True:
+        portfolio.dump()
+        print
         best_successor = None
         best_score = -1
         for successor in portfolio.successors(granularity):
@@ -302,6 +304,8 @@ def compute_portfolio_using_ipc_scores(results, granularity):
         portfolio = best_successor
 
 def main():
+    if len(sys.argv) >= 3:
+        granularity = int(sys.argv[2])
     results = Results(open(sys.argv[1]))
     results.dump_statistics()
 #    print "Computing portfolio using coverage..."
@@ -321,7 +325,7 @@ def main():
 #    portfolio.dump_detailed_marginal_contributions(granularity=1)
 #    print
 #    print "Computing portfolio using IPC scores..."
-    portfolio = compute_portfolio_using_ipc_scores(results, granularity=120)
+    portfolio = compute_portfolio_using_ipc_scores(results, granularity=granularity)
     print
     portfolio.dump()
     # pprint.pprint(results.data)
