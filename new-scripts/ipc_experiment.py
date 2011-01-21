@@ -82,17 +82,17 @@ def build_experiment():
     problems = downward_suites.build_suite(exp.suite)
     planner_dir_from = None
     try:
-        planner_dir_from = prepare_planner(exp, compile_m32=True)
+        planner_dir_from = prepare_planner(exp, compile_m32=False)
+#        planner_dir_from = prepare_planner(exp, compile_m32=True)
 #        planner_dir_from = reuse_planner(exp)
     except Exception, err:
         raise SystemExit('Error: Could not prepare planner: %s' % err)
 
     planner_dir = exp.version
+    exp.add_resource('PLANNER_DIR', planner_dir_from, planner_dir)
     for problem in problems:
         run = exp.add_run()
-        run.add_resource(exp.version + '_DIR', planner_dir_from,
-                     planner_dir)
-        
+        run.require_resource(exp.version + '_DIR')
         # Set memory limit in KB
         run.set_property('memory_limit', exp.memory * 1024)
 
@@ -100,18 +100,15 @@ def build_experiment():
         problem_file = problem.problem_file()
         run.set_property('domain', problem.domain)
         run.set_property('problem', problem.problem)
-        run.add_resource("DOMAIN", domain_file, "%s/domain.pddl" % planner_dir)
-        run.add_resource("PROBLEM", problem_file, "%s/problem.pddl" % planner_dir)
+        run.add_resource("DOMAIN", domain_file, "domain.pddl")
+        run.add_resource("PROBLEM", problem_file, "problem.pddl")
 
         run.set_preprocess('')
-        cmd = 'cd %s && ./plan $DOMAIN $PROBLEM sas_plan' % planner_dir
+        cmd = '$PLANNER_DIR/plan $DOMAIN $PROBLEM sas_plan'
         run.set_command(cmd)
 
         run.set_property('config', exp.version)
         run.set_property('id', [exp.version, problem.domain, problem.problem])
-
-        postprocess = 'cp %s/*.groups %s/output.sas %s/output %s/sas_plan* .' % tuple(4*[planner_dir])
-        run.set_postprocess(postprocess)
 
     exp.build()
     return exp
