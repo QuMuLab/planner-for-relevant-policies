@@ -245,6 +245,19 @@ def check_min_values(content, old_props):
             new_props[time] = sec
     return new_props
 
+def validate(content, old_props):
+    """
+    "Negate" the returncode of the postprocess command
+    """
+    returncode = old_props.get("postprocess_returncode")
+    if returncode is None:
+        valid = 'not_validated'
+    elif returncode in [0, 1]:
+        valid = abs(returncode - 1)
+    else:
+        valid = 'unknown_returncode'
+    return {"plan_valid": valid}
+
 # ------------------------------------------------------------------------------
 
 
@@ -370,6 +383,7 @@ def add_search_functions(eval):
     eval.add_function(coverage)
     eval.add_function(scores)
     eval.add_function(check_memory)
+    eval.add_function(validate)
 
 
 
