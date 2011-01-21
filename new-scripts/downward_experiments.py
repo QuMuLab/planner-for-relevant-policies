@@ -458,8 +458,9 @@ def _prepare_search_exp(exp, translator, preprocessor, planner):
         code_subdir = os.path.dirname(planner.rel_dest)
         exp.add_resource('UNUSEDNAME', src_path,
                         os.path.join(code_subdir, bin))
-    exp.add_resource('VALIDATE', os.path.join(planner.exe_dir, '..', 'validate'),
-                     'validate')
+    validate = os.path.join(planner.exe_dir, '..', 'validate')
+    if os.path.exists(validate):
+        exp.add_resource('VALIDATE', validate, 'validate')
 
 
 
