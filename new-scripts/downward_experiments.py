@@ -257,6 +257,23 @@ class SvnCheckout(Checkout):
     def get_checkout_cmd(self):
         return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
 
+    def compile(self):
+        """
+        We need to compile the code if the executable does not exist.
+        Additionally we want to compile it, when we run an experiment with
+        the working copy to make sure the executable is based on the latest
+        version of the code. Obviously we don't need no compile the
+        translator code.
+        """
+        if self.part == 'translate':
+            return
+
+        if self.rev == 'WORK' or self._get_executable(default=None) is None:
+            cwd = os.getcwd()
+            os.chdir(self.exe_dir)
+            subprocess.call(['make'])
+            os.chdir(cwd)
+
     @property
     def parent_rev(self):
         return self._get_rev(self.checkout_dir)
