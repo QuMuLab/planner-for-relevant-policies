@@ -247,16 +247,11 @@ def check_min_values(content, old_props):
 
 def validate(content, old_props):
     """
-    "Negate" the returncode of the postprocess command
+    Scan the returncode of the postprocess command
+    Count everything that is not validated as invalid
     """
-    returncode = old_props.get("postprocess_returncode")
-    if returncode is None:
-        valid = 'not_validated'
-    elif returncode in [0, 1]:
-        valid = abs(returncode - 1)
-    else:
-        valid = 'unknown_returncode'
-    return {"plan_valid": valid}
+    returncode = old_props.get("postprocess_returncode", 1)
+    return {"plan_valid": returncode == 0}
 
 # ------------------------------------------------------------------------------
 
