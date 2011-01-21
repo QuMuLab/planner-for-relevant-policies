@@ -21,7 +21,20 @@ class Results(object):
         problems = set()
         data = {}
         best_costs = {}
-        for entry in self._parse(file):
+        for entry_ in self._parse(file):
+            entry = self._massage_entry(entry_)
+
+            config = entry["config"]
+            problem = entry["problem"]
+            cost = entry["cost"]
+
+            if "08" not in entry_["domain"]:
+                if config.endswith("_0"):
+                    config = config[:-2] + "_1"
+            else:
+                if config.endswith(("_0", "_2")):
+                    continue
+
 #            if not (entry["domain"].endswith("08'") or
 #                entry["domain"].endswith("08-strips'")):
 #                continue
@@ -29,12 +42,6 @@ class Results(object):
 #                entry["domain"].endswith("08-strips'")):
 #                continue
 
-            entry = self._massage_entry(entry)
-            config = entry["config"]
-            problem = entry["problem"]
-            cost = entry["cost"]
-            # if "freecell" in problem:  ## TEST
-            #    continue
             configs.add(config)
             problems.add(problem)
             if cost is not None:
