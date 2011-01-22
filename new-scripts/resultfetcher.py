@@ -268,7 +268,7 @@ class Fetcher(object):
                 tools.makedirs(dest_dir)
                 tools.fast_updatetree(run_dir, dest_dir)
 
-            props['run_dir'] = run_dir
+            props['run_dir'] = os.path.relpath(run_dir, self.exp_dir)
 
             for filename, file_parser in self.file_parsers.items():
                 filename = os.path.join(run_dir, filename)
