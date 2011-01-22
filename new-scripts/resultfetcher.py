@@ -28,6 +28,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(m
 
 import tools
 
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 class FetchOptionParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
@@ -68,10 +70,9 @@ class FetchOptionParser(tools.ArgParser):
                 args.copy_all = exp_props['copy_all']
 
         if not args.eval_dir or not os.path.isabs(args.eval_dir):
-            dir_name = os.path.basename(args.exp_dir)
-            name = args.eval_dir or dir_name + '-eval'
-            parent_dir = os.path.dirname(args.exp_dir)
-            args.eval_dir = os.path.join(parent_dir, name)
+            dirname = os.path.basename(args.exp_dir)
+            eval_dirname = args.eval_dir or dirname + '-eval'
+            args.eval_dir = os.path.abspath(eval_dirname)
 
         logging.info('Eval dir: "%s"' % args.eval_dir)
 
