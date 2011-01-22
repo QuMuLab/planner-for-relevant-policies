@@ -411,6 +411,10 @@ class DownwardPreprocessRun(DownwardRun):
         for output_file in DownwardPreprocessRun.OUTPUT_FILES:
             self.declare_optional_output(output_file)
 
+    @property
+    def ext_config(self):
+        return '-'.join([self.translator.rev, self.preprocessor.rev])
+
 
 class DownwardSearchRun(DownwardRun):
     def __init__(self, exp, translator, preprocessor, planner, problem, planner_config,
@@ -458,8 +462,9 @@ def _prepare_search_exp(exp, translator, preprocessor, planner):
         code_subdir = os.path.dirname(planner.rel_dest)
         exp.add_resource('UNUSEDNAME', src_path,
                         os.path.join(code_subdir, bin))
-    exp.add_resource('VALIDATE', os.path.join(planner.exe_dir, '..', 'validate'),
-                     'validate')
+    validate = os.path.join(planner.exe_dir, '..', 'validate')
+    if os.path.exists(validate):
+        exp.add_resource('VALIDATE', validate, 'validate')
 
 
 
@@ -502,7 +507,7 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
 
     # Set the eval directory already here, we don't want the results to land
     # in the default testname-eval
-    exp.set_property('eval_dir', PREPROCESSED_TASKS_DIR)
+    exp.set_property('eval_dir', os.path.relpath(PREPROCESSED_TASKS_DIR))
 
     # We need the "output" file, not only the properties file
     exp.set_property('copy_all', True)

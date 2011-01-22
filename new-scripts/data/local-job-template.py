@@ -1,9 +1,13 @@
 #! /usr/bin/env python
 
 import sys
+import os
 import multiprocessing
 import subprocess
 import time
+
+# make sure we're in the run directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
 def run_cmd(command):
