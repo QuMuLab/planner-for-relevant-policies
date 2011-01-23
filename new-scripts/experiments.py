@@ -283,6 +283,7 @@ class GkiGridExperiment(Experiment):
             script += 'if [[ $SGE_TASK_ID == %s ]]; then\n' % task_id
             for run in run_group:
                 # Change into the run dir
+                script += '  cd "$(dirname $(readlink -f $0))"\n'
                 script += '  cd %s\n' % os.path.relpath(run.dir, self.base_dir)
                 script += '  ./run\n'
             script += 'fi\n'
