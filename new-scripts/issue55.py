@@ -12,7 +12,7 @@ combinations = [
     #(TranslatorSvnCheckout(repo=branch, rev=3829), preprocessor, planner),
     #(TranslatorSvnCheckout(repo=branch, rev=3840), preprocessor, planner),
     #(TranslatorSvnCheckout(rev=4283), preprocessor, planner),
-    #(TranslatorSvnCheckout(rev=4703), preprocessor, planner),
+    (TranslatorSvnCheckout(rev=4703), preprocessor, planner),
     (TranslatorSvnCheckout(rev=4687), preprocessor, planner),
     ]
 
