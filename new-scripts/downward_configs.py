@@ -6,9 +6,7 @@ import sys
 import logging
 from collections import defaultdict
 
-import experiments
 import tools
-import downward_suites
 
 
 HELP = """\
@@ -167,7 +165,7 @@ def _build_satisficing_configs(cost_types):
             else:
                 realalg = alg
                 extra_alg_opts = ""
-                
+
             for h in ["add", "cea", "cg", "ff"]:
                 for cost_type in cost_types:
                     if cost_type == 2:

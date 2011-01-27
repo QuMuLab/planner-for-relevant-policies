@@ -18,13 +18,10 @@ from __future__ import with_statement
 
 import os
 import sys
-import shutil
 import re
 from glob import glob
 from collections import defaultdict
 import logging
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
 
 import tools
 

@@ -3,9 +3,11 @@ import sys
 import shutil
 import subprocess
 import re
-import logging
 import traceback
 from shutil import *
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
 
 from external import argparse
 from external.configobj import ConfigObj
