@@ -7,23 +7,16 @@ from __future__ import with_statement, division
 
 import os
 import sys
-import shutil
-import re
-from glob import glob
-from collections import defaultdict
 from itertools import combinations
 import logging
-import datetime
 import collections
 import cPickle
 import hashlib
 
 import tools
 from markup import Document
-from external.configobj import ConfigObj
 from external.datasets import DataSet, MissingType
 from external import txt2tags
-from external import argparse
 
 
 def avg(values):
@@ -227,7 +220,7 @@ class Report(object):
 
 
     def _get_table(self):
-        raise Error('Not implemented')
+        raise Exception('Not implemented')
 
 
     def write(self):
