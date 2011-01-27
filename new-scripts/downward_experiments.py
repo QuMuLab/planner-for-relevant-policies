@@ -85,8 +85,9 @@ class Checkout(object):
     def _get_executable(self, default=_sentinel):
         """ Returns the path to the python module or a binary """
         names = ['translate.py', 'preprocess',
+                'downward-debug',
                 'downward', 'release-search', 'search',
-                'downward-debug', 'downward-profile']
+                'downward-profile']
         for name in names:
             planner = os.path.join(self.exe_dir, name)
             if os.path.exists(planner):
