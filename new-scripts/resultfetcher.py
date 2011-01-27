@@ -28,6 +28,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(m
 
 import tools
 
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 class FetchOptionParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
@@ -68,10 +70,9 @@ class FetchOptionParser(tools.ArgParser):
                 args.copy_all = exp_props['copy_all']
 
         if not args.eval_dir or not os.path.isabs(args.eval_dir):
-            dir_name = os.path.basename(args.exp_dir)
-            name = args.eval_dir or dir_name + '-eval'
-            parent_dir = os.path.dirname(args.exp_dir)
-            args.eval_dir = os.path.join(parent_dir, name)
+            dirname = os.path.basename(args.exp_dir)
+            eval_dirname = args.eval_dir or dirname + '-eval'
+            args.eval_dir = os.path.abspath(eval_dirname)
 
         logging.info('Eval dir: "%s"' % args.eval_dir)
 
@@ -160,11 +161,11 @@ class _FileParser(object):
     def add_function(self, function):
         self.functions.append(function)
 
-    def parse(self):
+    def parse(self, orig_props):
         assert self.filename
-        props = self._search_patterns()
-        props.update(self._apply_functions(props))
-        return props
+        orig_props.update(self._search_patterns())
+        orig_props.update(self._apply_functions(orig_props))
+        return orig_props
 
     def _search_patterns(self):
         found_props = {}
@@ -267,12 +268,12 @@ class Fetcher(object):
                 tools.makedirs(dest_dir)
                 tools.fast_updatetree(run_dir, dest_dir)
 
-            props['run_dir'] = run_dir
+            props['run_dir'] = os.path.relpath(run_dir, self.exp_dir)
 
             for filename, file_parser in self.file_parsers.items():
                 filename = os.path.join(run_dir, filename)
                 file_parser.load_file(filename)
-                props.update(file_parser.parse())
+                props = file_parser.parse(props)
 
             combined_props['-'.join(id)] = props.dict()
             if self.copy_all:

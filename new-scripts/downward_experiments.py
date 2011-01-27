@@ -15,8 +15,7 @@ import downward_suites
 import downward_configs
 import tools
 
-# e.g. issue69.py -> issue69-checkouts
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 CHECKOUTS_DIRNAME = 'checkouts'
 CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
 if not os.path.exists(CHECKOUTS_DIR):
@@ -86,8 +85,9 @@ class Checkout(object):
     def _get_executable(self, default=_sentinel):
         """ Returns the path to the python module or a binary """
         names = ['translate.py', 'preprocess',
+                'downward-debug',
                 'downward', 'release-search', 'search',
-                'downward-debug', 'downward-profile']
+                'downward-profile']
         for name in names:
             planner = os.path.join(self.exe_dir, name)
             if os.path.exists(planner):
@@ -258,6 +258,23 @@ class SvnCheckout(Checkout):
     def get_checkout_cmd(self):
         return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
 
+    def compile(self):
+        """
+        We need to compile the code if the executable does not exist.
+        Additionally we want to compile it, when we run an experiment with
+        the working copy to make sure the executable is based on the latest
+        version of the code. Obviously we don't need no compile the
+        translator code.
+        """
+        if self.part == 'translate':
+            return
+
+        if self.rev == 'WORK' or self._get_executable(default=None) is None:
+            cwd = os.getcwd()
+            os.chdir(self.exe_dir)
+            subprocess.call(['make'])
+            os.chdir(cwd)
+
     @property
     def parent_rev(self):
         return self._get_rev(self.checkout_dir)
@@ -333,77 +350,96 @@ def _get_configs(planner_rev, config_list):
     return configs
 
 
-def _require_checkout(exp, part):
-    exp.add_resource(part.shell_name, part.binary, part.rel_dest)
-
-
 def _get_preprocess_cmd(translator, preprocessor):
     translate_cmd = '$%s $DOMAIN $PROBLEM' % translator.shell_name
     preprocess_cmd = '$%s < output.sas' % preprocessor.shell_name
     return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
 
 
-def _prepare_preprocess_run(run, problem, translator, preprocessor):
-    """
-    This method adds the necessary preprocessing information to a run.
-    Nothing is returned, all changes to the run are side effects
-    """
-    run.require_resource(preprocessor.shell_name)
+class DownwardRun(experiments.Run):
+    def __init__(self, exp, translator, preprocessor, planner, problem):
+        experiments.Run.__init__(self, exp)
+        self.translator = translator
+        self.preprocessor = preprocessor
+        self.planner = planner
+        self.problem = problem
 
-    domain_file = problem.domain_file()
-    problem_file = problem.problem_file()
-    run.add_resource("DOMAIN", domain_file, "domain.pddl")
-    run.add_resource("PROBLEM", problem_file, "problem.pddl")
+        self.set_properties()
 
-    run.set_command(_get_preprocess_cmd(translator, preprocessor))
+    def set_properties(self):
+        domain = self.problem.domain
+        problem = self.problem.problem
 
-    run.declare_optional_output("*.groups")
-    run.declare_optional_output("output.sas")
-    run.declare_optional_output("output")
+        self.set_property('translator', self.translator.rev)
+        self.set_property('preprocessor', self.preprocessor.rev)
+        self.set_property('planner', self.planner.rev)
 
-    ext_config = '-'.join([translator.rev, preprocessor.rev])
+        self.set_property('translator_parent', self.translator.parent_rev)
+        self.set_property('preprocessor_parent', self.preprocessor.parent_rev)
+        self.set_property('planner_parent', self.planner.parent_rev)
 
-    run.set_property('translator', translator.rev)
-    run.set_property('preprocessor', preprocessor.rev)
+        self.set_property('domain', domain)
+        self.set_property('problem', problem)
 
-    run.set_property('translator_parent', translator.parent_rev)
-    run.set_property('preprocessor_parent', preprocessor.parent_rev)
+        # Add memory limit information in KB
+        self.set_property('memory_limit', self.experiment.memory * 1024)
 
-    run.set_property('config', ext_config)
-    run.set_property('domain', problem.domain)
-    run.set_property('problem', problem.problem)
-    run.set_property('id', [ext_config, problem.domain, problem.problem])
+        self.set_property('config', self.ext_config)
+        self.set_property('id', [self.ext_config, domain, problem])
+
+    @property
+    def ext_config(self):
+        # If all three parts have the same revision don't clutter the reports
+        revs = [self.translator.rev, self.preprocessor.rev, self.planner.rev]
+        if len(revs) == len(set(revs)):
+            revs = [self.translator.rev]
+        return '-'.join(revs + [self.planner_config])
 
 
-def _prepare_search_run(run, problem, translator, preprocessor,
-                        planner, config, config_name):
-    run.require_resource(planner.shell_name)
+class DownwardPreprocessRun(DownwardRun):
+    OUTPUT_FILES = ["*.groups", "output.sas", "output"]
 
-    run.set_command("$%s %s < $OUTPUT" % (planner.shell_name, config))
+    def __init__(self, exp, translator, preprocessor, planner, problem):
+        DownwardRun.__init__(self, exp, translator, preprocessor, planner, problem)
 
-    run.declare_optional_output("sas_plan")
+        self.require_resource(self.preprocessor.shell_name)
 
-    # If all three parts have the same revision don't clutter the reports
-    if translator.rev == preprocessor.rev and translator.rev == planner.rev:
-        revs = [translator.rev]
-    else:
-        revs = [translator.rev, preprocessor.rev, planner.rev]
-    ext_config = '-'.join(revs + [config_name])
+        self.add_resource("DOMAIN", self.problem.domain_file(), "domain.pddl")
+        self.add_resource("PROBLEM", self.problem.problem_file(), "problem.pddl")
 
-    run.set_property('translator', translator.rev)
-    run.set_property('preprocessor', preprocessor.rev)
-    run.set_property('planner', planner.rev)
+        self.set_command(_get_preprocess_cmd(self.translator, self.preprocessor))
 
-    run.set_property('translator_parent', translator.parent_rev)
-    run.set_property('preprocessor_parent', preprocessor.parent_rev)
-    run.set_property('planner_parent', planner.parent_rev)
+        for output_file in DownwardPreprocessRun.OUTPUT_FILES:
+            self.declare_optional_output(output_file)
 
-    run.set_property('commandline_config', config)
+    @property
+    def ext_config(self):
+        return '-'.join([self.translator.rev, self.preprocessor.rev])
 
-    run.set_property('config', ext_config)
-    run.set_property('domain', problem.domain)
-    run.set_property('problem', problem.problem)
-    run.set_property('id', [ext_config, problem.domain, problem.problem])
+
+class DownwardSearchRun(DownwardRun):
+    def __init__(self, exp, translator, preprocessor, planner, problem, planner_config,
+                 config_nick):
+        self.planner_config = planner_config
+        self.config_nick = config_nick
+
+        DownwardRun.__init__(self, exp, translator, preprocessor, planner, problem)
+
+        self.require_resource(planner.shell_name)
+        self.set_command("$%s %s < $OUTPUT" % (planner.shell_name, planner_config))
+        self.declare_optional_output("sas_plan")
+
+        # Validation
+        self.require_resource('VALIDATE')
+        self.set_postprocess('$VALIDATE $DOMAIN $PROBLEM sas_plan')
+
+    def set_properties(self):
+        DownwardRun.set_properties(self)
+        self.set_property('commandline_config', self.planner_config)
+
+
+def _require_checkout(exp, part):
+    exp.add_resource(part.shell_name, part.binary, part.rel_dest)
 
 
 def _prepare_preprocess_exp(exp, translator, preprocessor):
@@ -419,13 +455,18 @@ def _prepare_preprocess_exp(exp, translator, preprocessor):
 
 def _prepare_search_exp(exp, translator, preprocessor, planner):
     _require_checkout(exp, planner)
-    for bin in ['downward-1', 'downward-2', 'downward-4', 'dispatch']:
+    for bin in ['downward-1', 'downward-2', 'downward-4', 'dispatch',
+                'downward-seq-opt-fdss-1.py']:
         src_path = os.path.join(planner.exe_dir, bin)
         if not os.path.isfile(src_path):
             continue
         code_subdir = os.path.dirname(planner.rel_dest)
-        exp.add_resource('DOWNWARD1', src_path,
+        exp.add_resource('UNUSEDNAME', src_path,
                         os.path.join(code_subdir, bin))
+    validate = os.path.join(planner.exe_dir, '..', 'validate')
+    if os.path.exists(validate):
+        exp.add_resource('VALIDATE', validate, 'validate')
+
 
 
 def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
@@ -467,7 +508,7 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
 
     # Set the eval directory already here, we don't want the results to land
     # in the default testname-eval
-    exp.set_property('eval_dir', PREPROCESSED_TASKS_DIR)
+    exp.set_property('eval_dir', os.path.relpath(PREPROCESSED_TASKS_DIR))
 
     # We need the "output" file, not only the properties file
     exp.set_property('copy_all', True)
@@ -477,14 +518,21 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
     problems = downward_suites.build_suite(exp.suite)
 
     for combo in combinations:
-        # Omit a possible search checkout
         translator, preprocessor = combo[:2]
+        if len(combo) == 3:
+            planner = combo[2]
+        else:
+            planner = PlannerHgCheckout(rev='WORK')
+
+        assert translator.part == 'translate'
+        assert preprocessor.part == 'preprocess'
+        assert planner.part == 'search'
 
         _prepare_preprocess_exp(exp, translator, preprocessor)
 
         for problem in problems:
-            run = exp.add_run()
-            _prepare_preprocess_run(run, problem, translator, preprocessor)
+            run = DownwardPreprocessRun(exp, translator, preprocessor, planner, problem)
+            exp.add_run(run)
     exp.build()
 
 
@@ -509,15 +557,14 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 
         if isinstance(combo, Checkout):
             planner = combo
-            assert planner.part == 'search'
             translator = TranslatorHgCheckout(rev='WORK')
             preprocessor = PreprocessorHgCheckout(rev='WORK')
         else:
-            assert len(combo) == 3
             translator, preprocessor, planner = combo
-            assert translator.part == 'translate'
-            assert preprocessor.part == 'preprocess'
-            assert planner.part == 'search'
+
+        assert translator.part == 'translate'
+        assert preprocessor.part == 'preprocess'
+        assert planner.part == 'search'
 
         experiment_combos.append((translator, preprocessor, planner))
 
@@ -528,39 +575,29 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 
         for config_name, config in configs:
             for problem in problems:
-                run = exp.add_run()
-                _prepare_search_run(run, problem, translator, preprocessor,
-                                planner, config, config_name)
+                run = DownwardSearchRun(exp, translator, preprocessor, planner,
+                                        problem, config, config_name)
+                exp.add_run(run)
 
-                tasks_dir = PREPROCESSED_TASKS_DIR
-                preprocess_version = translator.rev+'-'+preprocessor.rev
-                preprocess_dir = os.path.join(tasks_dir, preprocess_version,
+                preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
+                                    translator.rev + '-' + preprocessor.rev,
                                     problem.domain, problem.problem)
-                output = os.path.join(preprocess_dir, 'output')
+
+                def path(filename):
+                    return os.path.join(preprocess_dir, filename)
+
                 # Add the preprocess files for later parsing
-                test_groups = os.path.join(preprocess_dir, 'test.groups')
-                all_groups = os.path.join(preprocess_dir, 'all.groups')
-                output_sas = os.path.join(preprocess_dir, 'output.sas')
-                run_log = os.path.join(preprocess_dir, 'run.log')
-                run_err = os.path.join(preprocess_dir, 'run.err')
-                domain_file = os.path.join(preprocess_dir, 'domain.pddl')
-                problem_file = os.path.join(preprocess_dir, 'problem.pddl')
-                #if not os.path.exists(output):
-                #    msg = 'Preprocessed file not found at "%s". ' % output
-                #    msg += 'Have you run the preprocessing experiment '
-                #    msg += 'and ./resultfetcher.py ?'
-                #    logging.warning(msg)
-                run.add_resource('OUTPUT', output, 'output', required=False)
-                run.add_resource('TEST_GROUPS', test_groups, 'test.groups',
+                run.add_resource('OUTPUT', path('output'), 'output', required=False)
+                run.add_resource('TEST_GROUPS', path('test.groups'), 'test.groups',
                                  required=False)
-                run.add_resource('ALL_GROUPS', all_groups, 'all.groups',
+                run.add_resource('ALL_GROUPS', path('all.groups'), 'all.groups',
                                  required=False)
-                run.add_resource('OUTPUT_SAS', output_sas, 'output.sas',
+                run.add_resource('OUTPUT_SAS', path('output.sas'), 'output.sas',
                                  required=False)
-                run.add_resource('RUN_LOG', run_log, 'run.log')
-                run.add_resource('RUN_ERR', run_err, 'run.err')
-                run.add_resource('DOMAIN', domain_file, 'domain.pddl')
-                run.add_resource('PROBLEM', problem_file, 'problem.pddl')
+                run.add_resource('RUN_LOG', path('run.log'), 'run.log')
+                run.add_resource('RUN_ERR', path('run.err'), 'run.err')
+                run.add_resource('DOMAIN', path('domain.pddl'), 'domain.pddl')
+                run.add_resource('PROBLEM', path('problem.pddl'), 'problem.pddl')
     exp.build()
 
 
@@ -579,12 +616,19 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
 
         for config_name, config in configs:
             for problem in problems:
-                run = exp.add_run()
-                _prepare_preprocess_run(run, problem, translator, preprocessor)
-                _prepare_search_run(run, problem, translator, preprocessor,
-                                    planner, config, config_name)
+                run = DownwardSearchRun(exp, translator, preprocessor, planner,
+                                          problem, config, config_name)
+                exp.add_run(run)
+
+                run.require_resource(preprocessor.shell_name)
+
+                run.add_resource("DOMAIN", problem.domain_file(), "domain.pddl")
+                run.add_resource("PROBLEM", problem.problem_file(), "problem.pddl")
+
+                for output_file in DownwardPreprocessRun.OUTPUT_FILES:
+                    run.declare_optional_output(output_file)
+
                 # We want to do the whole experiment in one step
-                run.set_preprocess('')
                 preprocess_cmd = _get_preprocess_cmd(translator, preprocessor)
                 # There is no $OUTPUT variable in a "complete" experiment
                 search_cmd = "$%s %s < output" % (planner.shell_name, config)

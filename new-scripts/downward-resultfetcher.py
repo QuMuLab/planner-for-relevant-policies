@@ -193,6 +193,16 @@ def coverage(content, old_props):
         new_props['coverage'] = 0
     return new_props
 
+def check_memory(content, old_props):
+    """
+    Set "memory" to the max value if it was exceeded and "-1 KB" was reported
+    """
+    new_props = {}
+    memory = old_props.get('memory')
+    memory_limit = old_props.get('memory_limit')
+    if memory == -1 and memory_limit:
+        new_props['memory'] = memory_limit
+    return new_props
 
 def scores(content, old_props):
     """
@@ -234,6 +244,14 @@ def check_min_values(content, old_props):
             sec = max(sec, 0.1)
             new_props[time] = sec
     return new_props
+
+def validate(content, old_props):
+    """
+    Scan the returncode of the postprocess command
+    Count everything that is not validated as invalid
+    """
+    returncode = old_props.get("postprocess_returncode", 1)
+    return {"plan_valid": returncode == 0}
 
 # ------------------------------------------------------------------------------
 
@@ -360,6 +378,8 @@ def add_search_functions(eval):
     eval.add_function(get_status)
     eval.add_function(coverage)
     eval.add_function(scores)
+    eval.add_function(check_memory)
+    eval.add_function(validate)
 
 
 

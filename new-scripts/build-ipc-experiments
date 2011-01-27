@@ -1,0 +1,19 @@
+#! /bin/bash
+
+set -e
+
+# Set TARGET_DIR to the directory in which the experiment directories
+# will be located on the machine where qsub is run.
+
+TARGET_DIR=/home/helmert/tmp/downward-ipc/new-scripts
+DIRNAME="$(pwd)"
+
+for CONFIG in ~/tmp/downward/ipc/src/dist/seq-opt-*.tar.gz; do
+    echo "found optimization track config: $CONFIG"
+    CONFIGNAME=$(basename $CONFIG .tar.gz)
+    EXPNAME=pkg-$CONFIGNAME
+    echo "creating experiment $EXPNAME..."
+    ./ipc_experiment.py -e gkigrid --queue opteron_core.q -p $CONFIG -s STRIPS_IPC12345,IPC08_OPT_STRIPS $EXPNAME
+    echo "patching directory names in experiment $EXPNAME..."
+    sed -i -e "s|$DIRNAME|$TARGET_DIR|g" $EXPNAME/$EXPNAME.q $EXPNAME/runs-*/*/run
+done

@@ -104,12 +104,12 @@ class Experiment(object):
             self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
 
-    def add_run(self):
+    def add_run(self, run=None):
         """
         Factory for Runs
         Schedule this run to be part of the experiment.
         """
-        run = Run(self)
+        run = run or Run(self)
         self.runs.append(run)
         return run
 
@@ -216,7 +216,7 @@ class LocalExperiment(Experiment):
         """
         Generates the main script
         """
-        commands = ['"cd %s; ./run"' % run.dir for run in self.runs]
+        commands = ['"cd %s; ./run"' % os.path.relpath(run.dir, self.base_dir) for run in self.runs]
         replacements = {'COMMANDS': ',\n'.join(commands),
                         'PROCESSES': str(self.processes),
                         }
@@ -265,8 +265,8 @@ class GkiGridExperiment(Experiment):
         """
         num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
         job_params = {
-            'logfile': os.path.join(self.base_dir, self.name + '.log'),
-            'errfile': os.path.join(self.base_dir, self.name + '.err'),
+            'logfile': self.name + '.log',
+            'errfile': self.name + '.err',
             'driver_timeout': self.timeout * self.runs_per_task + 30,
             'num_tasks': num_tasks,
             'queue': self.queue,
@@ -283,7 +283,8 @@ class GkiGridExperiment(Experiment):
             script += 'if [[ $SGE_TASK_ID == %s ]]; then\n' % task_id
             for run in run_group:
                 # Change into the run dir
-                script += '  cd %s\n' % run.dir
+                #script += '  cd "$(dirname $(readlink -f $0))"\n'
+                script += '  cd %s\n' % os.path.relpath(run.dir, self.base_dir)
                 script += '  ./run\n'
             script += 'fi\n'
 
@@ -455,8 +456,9 @@ class Run(object):
         if self.env_vars:
             env_vars_text = ''
             for var, filename in sorted(self.env_vars.items()):
-                filename = self._get_abs_path(filename)
-                env_vars_text += 'os.environ["%s"] = "%s"\n' % (var, filename)
+                abs_filename = self._get_abs_path(filename)
+                rel_filename = os.path.relpath(abs_filename, self.dir)
+                env_vars_text += 'os.environ["%s"] = "%s"\n' % (var, rel_filename)
         else:
             env_vars_text = '"Here you would find the declaration of environment variables"'
 
@@ -472,7 +474,7 @@ class Run(object):
                         'RESOURCES': str([filename for var, filename, req in self.resources])
                         }
         for orig, new in replacements.items():
-            run_script = run_script.replace('***'+orig+'***', new)
+            run_script = run_script.replace('***' + orig + '***', new)
 
         self.new_files.append(('run', run_script))
 

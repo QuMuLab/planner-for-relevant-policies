@@ -5,12 +5,14 @@ import sys
 import os
 from operator import itemgetter
 import logging
+from collections import defaultdict
 
 from reports import Report, ReportArgParser, existing
+from external.datasets import missing
 
 SCORES = ['expansions', 'evaluations', 'search_time', 'total_time',
             'coverage',
-            #'quality'
+          'quality'
         ]
 
 def get_date_and_time():
@@ -45,10 +47,10 @@ class IpcReport(Report):
 
         self.score = 'score_' + self.focus
         if self.focus == 'coverage':
-            self.focus = 'plan_length'
+            self.focus = 'cost'
             self.score = 'coverage'
         elif self.focus == 'quality':
-            self.focus = 'plan_length'
+            self.focus = 'cost'
             self.score = 'quality'
 
         logging.info('Using score attribute "%s"' % self.score)
@@ -156,24 +158,31 @@ class IpcReport(Report):
             column_desc += "r|"
         print r"\begin{supertabular}{%s}" % column_desc
 
+        quality_total_scores = defaultdict(float)
+
         for problem, probgroup in sorted(runs.group_dict('problem').items()):
             print r"\textbf{%s}" % problem.replace('.pddl', '')
             scores = []
             # Compute best value if we are comparing quality
             if self.score == 'quality':
-                # self.focus is "plan_length"
+                # self.focus is "cost"
                 lengths = probgroup.get(self.focus)
                 lengths = filter(existing, lengths)
-                best_length = max(lengths) if lengths else None
+                best_length = min(lengths) if lengths else None
             config_dict = probgroup.group_dict('config')
             for config in self.configs:
                 run = config_dict.get(config)
                 assert len(run) == 1, run
                 if self.score == 'quality':
-                    length = run.get_single_value('plan_length')
+                    length = run.get_single_value('cost')
                     quality = None
-                    if length and best_length and not length == 0:
-                        quality = float(best_length) / length
+                    if length is not missing:
+                        if length == 0:
+                            assert best_length == 0
+                            quality = 1.0
+                        else:
+                            quality = float(best_length) / length
+                        quality_total_scores[config] += quality
                     run['quality'] = quality
                     scores.append(quality)
                 print r"& %s" % self._format_result(run)
@@ -189,6 +198,8 @@ class IpcReport(Report):
         print r"\hline"
         print r"\textbf{total}"
         for config in self.configs:
+            if self.score == 'quality':
+                self.total_scores[config, domain] = quality_total_scores[config]
             print r"& \textbf{%.2f}" % self.total_scores[config, domain]
         if self.best_value_column:
             print r"&"
