@@ -11,8 +11,6 @@ import shutil
 import logging
 import math
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
-
 import tools
 
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
@@ -26,8 +24,9 @@ You can set the experiment type with the "--exp-type" option.
 
 # Create a parser only for parsing the experiment type
 exp_type_parser = tools.ArgParser(add_help=False, add_log_option=True)
-exp_type_parser.add_argument('-e', '--exp-type', choices=['local', 'gkigrid', 'argo'],
-                                default='local', help='Select an experiment type')
+exp_type_parser.add_argument('-e', '--exp-type', default='local',
+                             choices=['local', 'gkigrid', 'argo'],
+                             help='Select an experiment type')
 
 
 class ExpArgParser(tools.ArgParser):
@@ -48,9 +47,9 @@ class ExpArgParser(tools.ArgParser):
             help='how many tasks to group into one top-level directory')
         self.add_argument(
             '--root-dir',
-            help='directory where this experiment should be located (default is this folder). '
-                    'The new experiment will reside in <root-dir>/<name>')
-
+            help='directory where this experiment should be located '
+                 '(default is this folder). '
+                 'The new experiment will reside in <root-dir>/<name>')
 
 
 class Experiment(object):
@@ -91,8 +90,8 @@ class Experiment(object):
     def add_resource(self, resource_name, source, dest, required=True):
         """
         Example:
-        >>> experiment.add_resource('PLANNER', '../downward/search/release-search',
-                                    'release-search')
+        >>> experiment.add_resource('PLANNER', '../downward/search/downward',
+                                    'downward')
 
         Includes a "global" file, i.e., one needed for all runs, into the
         experiment archive. In case of GkiGridExperiment, copies it to the
@@ -128,7 +127,6 @@ class Experiment(object):
         if self.end_instructions:
             logging.info(self.end_instructions)
 
-
     def _get_abs_path(self, rel_path):
         """
         Return absolute dir by applying rel_path to the experiment's base dir
@@ -139,34 +137,34 @@ class Experiment(object):
         """
         return os.path.join(self.base_dir, rel_path)
 
-
     def _set_run_dirs(self):
         """
         Sets the relative run directories as instance
         variables for all runs
         """
-        def get_run_number(number):
+        def run_number(number):
             return str(number).zfill(5)
 
         def get_shard_dir(shard_number):
             first_run = self.shard_size * (shard_number - 1) + 1
             last_run = self.shard_size * (shard_number)
-            return 'runs-%s-%s' % (get_run_number(first_run), get_run_number(last_run))
+            return 'runs-%s-%s' % (run_number(first_run), run_number(last_run))
 
         current_run = 0
 
         shards = tools.divide_list(self.runs, self.shard_size)
 
         for shard_number, shard in enumerate(shards, start=1):
-            shard_dir = os.path.join(self.base_dir, get_shard_dir(shard_number))
+            shard_dir = os.path.join(self.base_dir,
+                                     get_shard_dir(shard_number))
             tools.overwrite_dir(shard_dir)
 
             for run in shard:
                 current_run += 1
-                rel_dir = os.path.join(get_shard_dir(shard_number), get_run_number(current_run))
+                rel_dir = os.path.join(get_shard_dir(shard_number),
+                                       run_number(current_run))
                 abs_dir = os.path.join(self.base_dir, rel_dir)
                 run.dir = abs_dir
-
 
     def _build_main_script(self):
         """
@@ -174,16 +172,14 @@ class Experiment(object):
         """
         raise Exception('Not Implemented')
 
-
     def _build_resources(self):
         for source, dest, required in self.resources:
             logging.debug('Copying %s to %s' % (source, dest))
             try:
                 tools.copy(source, dest, required)
             except IOError, err:
-                raise SystemExit('Error: The file "%s" could not be copied to "%s": %s' % \
-                                (source, dest, err))
-
+                msg = 'Error: The file "%s" could not be copied to "%s": %s'
+                raise SystemExit(msg % (source, dest, err))
 
     def _build_runs(self):
         """
@@ -192,11 +188,9 @@ class Experiment(object):
         for run in self.runs:
             run.build()
 
-
     def _build_properties_file(self):
         self.properties.filename = self._get_abs_path('properties')
         self.properties.write()
-
 
 
 class LocalExperiment(Experiment):
@@ -204,26 +198,27 @@ class LocalExperiment(Experiment):
         import multiprocessing
         cores = multiprocessing.cpu_count()
         parser.add_argument(
-            '-j', '--processes', type=int, default=1, choices=xrange(1, cores+1),
+            '-j', '--processes', type=int, default=1,
+            choices=xrange(1, cores + 1),
             help='number of parallel processes to use (default: 1)')
         Experiment.__init__(self, parser=parser)
 
-        self.end_instructions = 'You can run the experiment now by calling ' \
-            '"./%(name)s/run"' % {'name': self.name}
-
+        self.end_instructions = ('You can run the experiment now by calling '
+            '"./%(name)s/run"' % {'name': self.name})
 
     def _build_main_script(self):
         """
         Generates the main script
         """
-        commands = ['"cd %s; ./run"' % os.path.relpath(run.dir, self.base_dir) for run in self.runs]
+        dirs = [os.path.relpath(run.dir, self.base_dir) for run in self.runs]
+        commands = ['"cd %s; ./run"' % dir for dir in dirs]
         replacements = {'COMMANDS': ',\n'.join(commands),
                         'PROCESSES': str(self.processes),
                         }
 
         script = open(os.path.join(DATA_DIR, 'local-job-template.py')).read()
         for orig, new in replacements.items():
-            script = script.replace('***'+orig+'***', new)
+            script = script.replace('***' + orig + '***', new)
 
         filename = self._get_abs_path('run')
 
@@ -233,11 +228,9 @@ class LocalExperiment(Experiment):
             os.chmod(filename, 0755)
 
 
-
 class ArgoExperiment(Experiment):
     def __init__(self, parser=ExpArgParser()):
         Experiment.__init__(self, parser=parser)
-
 
 
 class GkiGridExperiment(Experiment):
@@ -249,15 +242,17 @@ class GkiGridExperiment(Experiment):
             '--runs-per-task', type=int, default=1,
             help='how many runs to put into one task')
         parser.add_argument(
-            '--priority', type=int, default=0, choices=xrange(-1023, 1024+1),
+            '--priority', type=int, default=0, choices=xrange(-1023, 1024 + 1),
             metavar='NUM', help='priority of the job [-1023, 1024]')
 
         Experiment.__init__(self, parser=parser)
 
-        self.filename = self.name if self.name.endswith('.q') else self.name + '.q'
-        self.end_instructions = 'You can submit the experiment to the ' \
-            'queue now by calling "qsub ./%(name)s/%(filename)s"' % self.__dict__
-
+        self.filename = self.name
+        if not self.filename.endswith('.q'):
+            self.filename += '.q'
+        self.end_instructions = ('You can submit the experiment to the '
+                        'queue now by calling "qsub ./%(name)s/%(filename)s"' %
+                        self.__dict__)
 
     def _build_main_script(self):
         """
@@ -272,7 +267,8 @@ class GkiGridExperiment(Experiment):
             'queue': self.queue,
             'priority': self.priority,
         }
-        script_template = open(os.path.join(DATA_DIR, 'gkigrid-job-header-template')).read()
+        template_file = os.path.join(DATA_DIR, 'gkigrid-job-header-template')
+        script_template = open(template_file).read()
         script = script_template % job_params
 
         script += '\n'
@@ -292,7 +288,6 @@ class GkiGridExperiment(Experiment):
 
         with open(self.filename, 'w') as file:
             file.write(script)
-
 
 
 class Run(object):
@@ -322,7 +317,6 @@ class Run(object):
         if hasattr(experiment, 'queue'):
             self.set_property('queue', experiment.queue)
 
-
     def set_property(self, name, value):
         """
         Add a key-value property to a run. These can be used later for
@@ -336,7 +330,6 @@ class Run(object):
             assert type(value) == list
             value = map(str, value)
         self.properties[name] = value
-
 
     def require_resource(self, resource_name):
         """
@@ -356,7 +349,6 @@ class Run(object):
         """
         self.linked_resources.append(resource_name)
 
-
     def add_resource(self, resource_name, source, dest, required=True):
         """
         Example:
@@ -369,7 +361,6 @@ class Run(object):
         """
         self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
-
 
     def set_command(self, command):
         """
@@ -407,7 +398,6 @@ class Run(object):
         """
         self.postprocess_command = command
 
-
     def declare_optional_output(self, file_glob):
         """
         Example:
@@ -417,7 +407,6 @@ class Run(object):
         shell-style glob patterns) are part of the experiment output.
         """
         self.optional_output.append(file_glob)
-
 
     def declare_required_output(self, filename):
         """
@@ -429,7 +418,6 @@ class Run(object):
         """
         self.required_output.append(filename)
 
-
     def build(self):
         """
         After having made all the necessary adjustments with the methods above,
@@ -439,16 +427,17 @@ class Run(object):
 
         tools.overwrite_dir(self.dir)
         # We need to build the linked resources before the run script.
-        # Only this way we have all resources in self.resources (linked ones too)
+        # Only this way we have all resources in self.resources
+        # (linked ones too)
         self._build_linked_resources()
         self._build_run_script()
         self._build_resources()
         self._build_properties_file()
 
-
     def _build_run_script(self):
         if not self.command:
-            raise SystemExit('You have to specify a command via run.set_command()')
+            msg = 'You have to specify a command via run.set_command()'
+            raise SystemExit(msg)
 
         self.experiment.env_vars.update(self.env_vars)
         self.env_vars = self.experiment.env_vars.copy()
@@ -458,26 +447,27 @@ class Run(object):
             for var, filename in sorted(self.env_vars.items()):
                 abs_filename = self._get_abs_path(filename)
                 rel_filename = os.path.relpath(abs_filename, self.dir)
-                env_vars_text += 'os.environ["%s"] = "%s"\n' % (var, rel_filename)
+                env_vars_text += ('os.environ["%s"] = "%s"\n' %
+                                  (var, rel_filename))
         else:
-            env_vars_text = '"Here you would find the declaration of environment variables"'
+            env_vars_text = ('"Here you would find the declaration of '
+                             'environment variables"')
 
         run_script = open(os.path.join(DATA_DIR, 'run-template.py')).read()
+        resources = [filename for var, filename, req in self.resources]
         replacements = {'ENVIRONMENT_VARIABLES': env_vars_text,
-                        'RUN_COMMAND' : self.command,
+                        'RUN_COMMAND': self.command,
                         'PREPROCESS_COMMAND': self.preprocess_command,
                         'POSTPROCESS_COMMAND': self.postprocess_command,
                         'TIMEOUT': str(self.experiment.timeout),
                         'MEMORY': str(self.experiment.memory),
                         'OPTIONAL_OUTPUT': str(self.optional_output),
                         'REQUIRED_OUTPUT': str(self.required_output),
-                        'RESOURCES': str([filename for var, filename, req in self.resources])
-                        }
+                        'RESOURCES': str(resources)}
         for orig, new in replacements.items():
             run_script = run_script.replace('***' + orig + '***', new)
 
         self.new_files.append(('run', run_script))
-
 
     def _build_linked_resources(self):
         """
@@ -492,13 +482,12 @@ class Run(object):
             for resource_name in self.linked_resources:
                 source = self.experiment.env_vars.get(resource_name, None)
                 if not source:
-                    logging.error('If you require a resource you have to add it '
-                                    'to the experiment')
+                    logging.error('If you require a resource you have to add '
+                                  'it to the experiment')
                     sys.exit(1)
                 basename = os.path.basename(source)
                 dest = self._get_abs_path(basename)
                 self.resources.append((source, dest))
-
 
     def _build_resources(self):
         for name, content in self.new_files:
@@ -516,14 +505,12 @@ class Run(object):
             try:
                 tools.copy(source, dest, required)
             except IOError, err:
-                logging.error('Error: The file "%s" could not be copied to "%s": %s' % \
-                                (source, dest, err))
-
+                msg = 'Error: The file "%s" could not be copied to "%s": %s'
+                logging.error(msg % (source, dest, err))
 
     def _build_properties_file(self):
         self.properties.filename = self._get_abs_path('properties')
         self.properties.write()
-
 
     def _get_abs_path(self, rel_path):
         """
