@@ -4,7 +4,6 @@ import shutil
 import subprocess
 import re
 import traceback
-from shutil import *
 import logging
 
 logging.basicConfig(level=logging.INFO,
@@ -158,18 +157,18 @@ def fast_updatetree(src, dst):
         dstname = os.path.join(dst, name)
         try:
             if os.path.isdir(srcname):
-                copytree(srcname, dstname)
+                shutil.copytree(srcname, dstname)
             else:
-                copy2(srcname, dstname)
+                shutil.copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?
         except (IOError, os.error), why:
             errors.append((srcname, dstname, str(why)))
         # catch the Error from the recursive copytree so that we can
         # continue with other files
-        except Error, err:
-            errors.extend(err.args[0])
+        except Exception, err:
+            errors.append(err.args[0])
     if errors:
-        raise Error(errors)
+        raise Exception(errors)
 
 
 def copy(src, dest, required=True):
@@ -196,7 +195,7 @@ def copy(src, dest, required=True):
         func(src, dest)
     except IOError, err:
         logging.error('Error: The file "%s" could not be copied to "%s": %s' %
-                        (source, dest, err))
+                      (src, dest, err))
         if required:
             sys.exit(1)
 
