@@ -154,6 +154,7 @@ iter_ff = """\
 
 seq_opt_fdss_1 = "ipc seq-opt-fdss-1 --plan-file sas_plan"
 
+
 def _build_satisficing_configs(cost_types):
     result = []
     for search_type in ["lazy", "eager"]:
@@ -200,11 +201,14 @@ def ipc_optimal():
         ("mas100000", "--search 'astar(mas(max_states=100000))'"),
         ]
 
+
 def satisficing_configs():
     return _build_satisficing_configs([0])
 
+
 def satisficing_configs_with_costs():
     return _build_satisficing_configs([0, 1, 2])
+
 
 def _alternation_config(kind, heurs):
     name = "alt_%s_%s" % (kind, "_".join(heurs))
@@ -218,6 +222,7 @@ def _alternation_config(kind, heurs):
         kind, comma_string, comma_string))
     return name, " ".join(args)
 
+
 def alternation_configs():
     result = []
     for kind in ["lazy", "eager"]:
@@ -230,11 +235,13 @@ def alternation_configs():
                             result.append(_alternation_config(kind, heurs))
     return result
 
+
 def raz_ipc():
     return [
         ("mas-1", "--search 'astar(mas(max_states=1,merge_strategy=5,shrink_strategy=12))'"),
         ("mas-2", "--search 'astar(mas(max_states=200000,merge_strategy=5,shrink_strategy=7))'"),
         ]
+
 
 def lama11_unitcost():
     return [
@@ -398,6 +405,7 @@ repeat_last=true)"\
 def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]
 
+
 def arch_comp_configs():
     return [('blind', blind), ('oa200000', oa200000), ('yY', yY),
             ('yY_eager', yY_eager)]
@@ -413,7 +421,8 @@ def issue154a():
         ('lg_blind', '--search "lazy_greedy(blind())"'),
         ('lg_ff', '--search "lazy_greedy(ff())"'),
         ('lg_cea', '--search "lazy_greedy(cea())"'),
-        ('lg_ff_cea', '--search "lazy_greedy(ff(), cea())"'),])
+        ('lg_ff_cea', '--search "lazy_greedy(ff(), cea())"')])
+
 
 def issue154b():
     return get_old_and_new_greedy([
@@ -424,9 +433,7 @@ def issue154b():
         ('lg_hff_hcea', '--heuristic "hff=ff()" --heuristic "hcea=cea()" '
             '--search "lazy_greedy(hff, hcea, preferred=(hff, hcea))"'),
         ('lg_hlm_hff', '--heuristic "hlm,hff=lm_ff_syn(lm_rhw())" '
-            '--search "lazy_greedy(hlm, hff, preferred=(hlm, hff))"'
-),])
-
+            '--search "lazy_greedy(hlm, hff, preferred=(hlm, hff))"')])
 
 
 def get_configs(configs_strings):
@@ -455,8 +462,8 @@ def get_configs(configs_strings):
         for config_name in config_names:
             config_or_func = module_dict.get(config_name, None)
             if config_or_func is None:
-                msg = 'Config "%s" could not be found in "%s"' % (config_name, file)
-                logging.error(msg)
+                msg = 'Config "%s" could not be found in "%s"'
+                logging.error(msg % (config_name, file))
                 sys.exit()
             try:
                 config_list = config_or_func()
@@ -471,4 +478,3 @@ def get_configs(configs_strings):
 
 if __name__ == '__main__':
     get_configs(['blind', 'downward_configs:astar_searches'])
-

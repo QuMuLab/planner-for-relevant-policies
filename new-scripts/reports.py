@@ -67,7 +67,7 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--dry', default=False, action='store_true',
                     help='do not write anything to the filesystem')
 
-        self.add_argument('--show_attributes', default=False, action='store_true',
+        self.add_argument('--show_attributes', action='store_true',
                     help='show a list of available attributes and exit')
 
         self.add_argument('--open', default=False, action='store_true',
@@ -79,7 +79,6 @@ class ReportArgParser(tools.ArgParser):
                     help='the analyzed attributes (e.g. "expanded"). '
                     'If omitted, use all found numerical attributes')
 
-
     def parse_args(self, *args, **kwargs):
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
 
@@ -89,8 +88,9 @@ class ReportArgParser(tools.ArgParser):
         logging.info('Eval dir: "%s"' % args.eval_dir)
 
         if not args.eval_dir.endswith('eval'):
-            answer = raw_input('The source directory does not end with eval. '
-                        'Are you sure you this is an evaluation directory? (Y/N): ')
+            msg = ('The source directory does not end with eval. '
+                   'Are you sure you this is an evaluation directory? (Y/N): ')
+            answer = raw_input(msg)
             if not answer.upper() == 'Y':
                 sys.exit()
 
@@ -101,7 +101,6 @@ class ReportArgParser(tools.ArgParser):
         args.group_func = eval(args.group_func)
 
         return args
-
 
 
 class Report(object):
@@ -134,11 +133,9 @@ class Report(object):
 
         self.infos = []
 
-
     def add_filter(self, *filter_funcs, **filter_pairs):
         self.filter_funcs.extend(filter_funcs)
         self.filter_pairs.update(filter_pairs)
-
 
     def set_grouping(self, *grouping):
         """
@@ -150,7 +147,6 @@ class Report(object):
         """
         self.grouping = grouping
 
-
     def set_order(self, *order):
         self.order = order
 
@@ -159,7 +155,6 @@ class Report(object):
         Add strings of additional info to the report
         """
         self.infos.append(info)
-
 
     @property
     def group_dict(self):
@@ -175,14 +170,14 @@ class Report(object):
         group_dict = data.group_dict(*self.grouping)
         return group_dict
 
-
     def _get_data(self):
         """
         The data is reloaded for every attribute, but read only once from disk
         """
         combined_props_file = os.path.join(self.eval_dir, 'properties')
         if not os.path.exists(combined_props_file):
-            logging.error('Properties file not found at %s' % combined_props_file)
+            msg = 'Properties file not found at %s'
+            logging.error(msg % combined_props_file)
             sys.exit(1)
         dump_path = os.path.join(self.eval_dir, 'data_dump')
         logging.info('Reading properties file without parsing')
@@ -211,26 +206,23 @@ class Report(object):
             logging.info('Wrote data dump')
         return data
 
-
     def name(self):
         name = os.path.basename(self.eval_dir)
         if len(self.foci) == 1:
             name += '-' + self.foci[0]
         return name
 
-
     def _get_table(self):
         raise Exception('Not implemented')
-
 
     def write(self):
         doc = Document(title=self.name())
         string = str(self)
 
         if not string:
-            logging.info('No tables generated. ' \
-                        'This happens when no significant changes occured. ' \
-                        'Therefore no output file has been created')
+            logging.info('No tables generated. '
+                         'This happens when no significant changes occured. '
+                         'Therefore no output file has been created')
             return
 
         doc.add_text(string)
@@ -238,12 +230,12 @@ class Report(object):
         self.output = doc.render(self.output_format, {'toc': 1})
 
         if not self.dry:
-            ext = 'html' if self.output_format == 'xhtml' else self.output_format
-            self.output_file = os.path.join(self.report_dir, self.name() + '.' + ext)
+            ext = self.output_format.replace('xhtml', 'html')
+            basename = self.name() + '.' + ext
+            self.output_file = os.path.join(self.report_dir, basename)
             with open(self.output_file, 'w') as file:
                 logging.info('Writing output to "%s"' % self.output_file)
                 file.write(self.output)
-
 
     def open(self):
         """
@@ -300,10 +292,9 @@ class Report(object):
         return res
 
 
-
-
 class Table(collections.defaultdict):
-    def __init__(self, title='', highlight=True, min_wins=True, numeric_rows=False):
+    def __init__(self, title='', highlight=True, min_wins=True,
+                 numeric_rows=False):
         collections.defaultdict.__init__(self, dict)
 
         self.title = title
@@ -311,23 +302,26 @@ class Table(collections.defaultdict):
         self.min_wins = min_wins
         self.numeric_rows = numeric_rows
 
-
     def add_cell(self, row, col, value):
         self[row][col] = value
-
 
     @property
     def rows(self):
         special_rows = ['SUM', 'AVG', 'GM']
         rows = self.keys()
-        # Let the sum, etc. rows be the last ones
-        if self.numeric_rows:
-            key = lambda row: int(row)
-        else:
-            key = lambda row: 'zzz'+row.lower() if row.upper() in special_rows else row.lower()
-        rows = sorted(rows, key=key)
-        return rows
 
+        # Let the sum, etc. rows be the last ones
+        def sort(row):
+            if self.numeric_rows:
+                return int(row)
+            else:
+                if row.upper() in special_rows:
+                    return 'zzz' + row.lower()
+                else:
+                    return row.lower()
+
+        rows = sorted(rows, key=sort)
+        return rows
 
     @property
     def cols(self):
@@ -336,19 +330,24 @@ class Table(collections.defaultdict):
             for key in dict.keys():
                 if key not in cols:
                     cols.append(key)
-        # Put special columns at the end
-        key = lambda col: 'zzz'+col.lower() if col.lower() in ['quotient'] else col.lower()
-        return sorted(cols, key=key)
 
+        # Put special columns at the end
+        def sort(col):
+            if col.lower() in ['quotient']:
+                return 'zzz' + col.lower()
+            else:
+                return col.lower()
+
+        return sorted(cols, key=sort)
 
     def get_cells_in_row(self, row):
         return [self[row][col] for col in self.cols]
 
-
     def get_relative(self):
         """
-        Take the first value of each row and divide every value in the row by it
-        Returns a new table
+        Take the first value of each row and divide every value in the row
+        by it.
+        Returns a new table.
 
         Unused for now
         """
@@ -361,17 +360,17 @@ class Table(collections.defaultdict):
                 rel_table.add_cell(row, col, rel_value)
         return rel_table
 
-
     def get_comparison(self, comparator=cmp):
         """
-        || expanded                      | fF               | yY               |
-        | **prob01.pddl**                | 21               | 16               |
-        | **prob02.pddl**                | 38               | 24               |
-        | **prob03.pddl**                | 59               | 32               |
+        || expanded                      | fF               | yY              |
+        | **prob01.pddl**                | 21               | 16              |
+        | **prob02.pddl**                | 38               | 24              |
+        | **prob03.pddl**                | 59               | 32              |
         ==>
         returns ((fF, yY), (0, 0, 3)) [wins, draws, losses]
         """
-        assert len(self.cols) == 2, 'For comparative reports please specify 2 configs'
+        assert (len(self.cols) == 2,
+                'For comparative reports please specify 2 configs')
 
         sums = [0, 0, 0]
 
@@ -383,7 +382,6 @@ class Table(collections.defaultdict):
                 sums[cmp_value + 1] += 1
 
         return (self.cols, sums)
-
 
     def get_row(self, row, values=None):
         '''
@@ -411,7 +409,7 @@ class Table(collections.defaultdict):
         if self.numeric_rows:
             text += '| %-30s ' % (row)
         else:
-            text += '| %-30s ' % ('**'+row+'**')
+            text += '| %-30s ' % ('**' + row + '**')
         for value in values:
             is_min = (value == min_value)
             is_max = (value == max_value)
@@ -425,7 +423,6 @@ class Table(collections.defaultdict):
             text += '| %-16s ' % value_text
         text += '|\n'
         return text
-
 
     def __str__(self):
         """
@@ -444,7 +441,6 @@ class Table(collections.defaultdict):
         for row in rows:
             text += self.get_row(row)
         return text
-
 
 
 if __name__ == "__main__":
