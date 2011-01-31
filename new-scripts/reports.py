@@ -369,8 +369,7 @@ class Table(collections.defaultdict):
         ==>
         returns ((fF, yY), (0, 0, 3)) [wins, draws, losses]
         """
-        assert (len(self.cols) == 2,
-                'For comparative reports please specify 2 configs')
+        assert len(self.cols) == 2, 'Please specify 2 configs'
 
         sums = [0, 0, 0]
 

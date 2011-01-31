@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 from downward_experiments import *
-import experiments
 
 old_rev = '213202a44ebe'
 new_rev = '4dc3a033242a'

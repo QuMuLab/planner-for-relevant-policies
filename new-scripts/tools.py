@@ -7,7 +7,8 @@ import traceback
 from shutil import *
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)-s %(levelname)-8s %(message)s',)
 
 from external import argparse
 from external.configobj import ConfigObj
@@ -86,9 +87,13 @@ def find_file(basenames, dir='.'):
 
 def convert_to_correct_type(val):
     """
-    Safely evaluate an expression node or a string containing a Python expression.
-    The string or node provided may only consist of the following Python literal
-    structures: strings, numbers, tuples, lists, dicts, booleans, and None.
+    Safely evaluate an expression node or a string containing a Python
+    expression.
+    The string or node provided may only consist of the following Python
+    literal structures: strings, numbers, tuples, lists, dicts, booleans
+    and None.
+
+    Unused for now.
     """
     import ast
     try:
@@ -139,12 +144,13 @@ class Properties(ConfigObj):
 
 def updatetree(src, dst, symlinks=False, ignore=None):
     """
-    Copies the contents from src onto the tree at dst, overwrites files with the
-    same name
+    Copies the contents from src onto the tree at dst, overwrites files
+    with the same name
 
     Code taken and expanded from python docs
-    """
 
+    We use the faster fast_updatetree method
+    """
     names = os.listdir(src)
     if ignore is not None:
         ignored_names = ignore(src, names)
@@ -188,12 +194,11 @@ def updatetree(src, dst, symlinks=False, ignore=None):
 
 def fast_updatetree(src, dst):
     """
-    Copies the contents from src onto the tree at dst, overwrites files with the
-    same name
+    Copies the contents from src onto the tree at dst, overwrites files with
+    the same name
 
     Code taken and expanded from python docs
     """
-
     names = os.listdir(src)
 
     makedirs(dst)
@@ -242,12 +247,13 @@ def copy(src, dest, required=True):
         logging.error('Required path %s cannot be copied to %s' % (src, dest))
         sys.exit(1)
     else:
-        logging.warning('Optional path %s cannot be copied to %s' % (src, dest))
+        msg = 'Optional path %s cannot be copied to %s'
+        logging.warning(msg % (src, dest))
         return
     try:
         func(src, dest)
     except IOError, err:
-        logging.error('Error: The file "%s" could not be copied to "%s": %s' % \
+        logging.error('Error: The file "%s" could not be copied to "%s": %s' %
                         (source, dest, err))
         if required:
             sys.exit(1)
@@ -261,30 +267,32 @@ def csv(string):
 class ArgParser(argparse.ArgumentParser):
     def __init__(self, add_log_option=True, *args, **kwargs):
         argparse.ArgumentParser.__init__(self, *args, #add_help=False,
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
 
         if add_log_option:
             try:
-                self.add_argument('-l', '--log-level', choices=['DEBUG', 'INFO', 'WARNING'],
-                                dest='log_level', default='INFO')
+                self.add_argument('-l', '--log-level', dest='log_level',
+                        choices=['DEBUG', 'INFO', 'WARNING'], default='INFO')
             except argparse.ArgumentError:
                 # The option may have already been added by a parent
                 pass
 
     def parse_known_args(self, *args, **kwargs):
-        args, remaining = argparse.ArgumentParser.parse_known_args(self, *args, **kwargs)
+        args, remaining = argparse.ArgumentParser.parse_known_args(self, *args,
+                                                                   **kwargs)
 
         global LOG_LEVEL
         # Set log level only once (May have already been deleted from sys.argv)
         if getattr(args, 'log_level', None) and not LOG_LEVEL:
-            # Python adds a default handler if some log is generated before here
+            # Python adds a default handler if some log is written before now
             # Remove all handlers that have been added automatically
             root_logger = logging.getLogger('')
             for handler in root_logger.handlers:
                 root_logger.removeHandler(handler)
 
             LOG_LEVEL = getattr(logging, args.log_level.upper())
-            logging.basicConfig(level=LOG_LEVEL, format='%(asctime)-s %(levelname)-8s %(message)s',)
+            logging.basicConfig(level=LOG_LEVEL,
+                            format='%(asctime)-s %(levelname)-8s %(message)s',)
 
         return (args, remaining)
 
