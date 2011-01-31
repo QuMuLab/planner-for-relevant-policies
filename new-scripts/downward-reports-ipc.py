@@ -3,7 +3,6 @@
 
 import sys
 import os
-from operator import itemgetter
 import logging
 from collections import defaultdict
 

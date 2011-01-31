@@ -5,7 +5,6 @@ for IPC 2011. (does not suppprt zip)
 """
 import os
 import shutil
-import sys
 import subprocess
 import tarfile
 
@@ -48,8 +47,8 @@ def prepare_planner(exp, compile_m32=False):
         raise Exception, "did not find planner version %s" % exp.version
     # changing -m64 compiler option to -m32 for Fast Downward
     if compile_m32:
-        preprocess_change = 'sed -i -e "s/-m64/-m32/g" %s/src/preprocess/Makefile' % package_location 
-        search_change = 'sed -i -e "s/-m64/-m32/g" %s/src/search/Makefile' % package_location 
+        preprocess_change = 'sed -i -e "s/-m64/-m32/g" %s/src/preprocess/Makefile' % package_location
+        search_change = 'sed -i -e "s/-m64/-m32/g" %s/src/search/Makefile' % package_location
         print preprocess_change
         print search_change
         print os.path.abspath(os.curdir)

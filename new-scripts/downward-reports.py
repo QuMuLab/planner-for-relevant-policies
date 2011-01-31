@@ -8,14 +8,12 @@ from __future__ import with_statement, division
 import sys
 import os
 import logging
-import datetime
 import operator
 from collections import defaultdict
 
 import tools
 import downward_suites
 from external import datasets
-from markup import Document
 import reports
 from reports import Report, ReportArgParser, Table
 
@@ -85,7 +83,7 @@ class PlanningReport(Report):
         self.output = ''
 
         # For some attributes only compare commonly solved tasks
-        self.commonly_solved_foci = ['cost', 'expanded', 'expansions', 
+        self.commonly_solved_foci = ['cost', 'expanded', 'expansions',
                 'generated', 'memory', 'plan_length', 'search_time', 'total_time']
         info = ('The attributes %s are handled as follows:\n'
                 'If in a group of configs not all configs have a value for '
@@ -160,7 +158,7 @@ class PlanningReport(Report):
 
         try:
             op = getattr(operator, op.lower())
-        except AttributeError, e:
+        except AttributeError:
             logging.error('The operator module has no operator "%s"' % op)
             sys.exit()
 
@@ -177,8 +175,8 @@ class PlanningReport(Report):
         if self.configs:
             return self.configs
         return list(set([run['config'] for run in self.orig_data]))
-        
-        
+
+
     def _filter_common_attributes(self):
         """
         for an attribute include or ignore problems for which not
@@ -192,7 +190,7 @@ class PlanningReport(Report):
                 (self.handle_missing_attrs == 'auto' and
                     self.resolution == 'problem')):
             return
-        
+
         logging.info('Filtering problems with missing attributes for runs')
         for (domain, problem), group in self.data.group_dict('domain', 'problem').items():
             values = group[self.focus]

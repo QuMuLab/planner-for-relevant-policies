@@ -5,8 +5,6 @@ Regular expressions and functions for parsing planning experiments
 
 from __future__ import with_statement, division
 
-import sys
-import os
 import logging
 import re
 import math

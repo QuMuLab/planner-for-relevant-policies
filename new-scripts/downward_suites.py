@@ -111,7 +111,7 @@ def generate_problems(description):
         if suite_func is None:
             suite_func = module_dict.get("suite_%s" % suite_name.lower(), None)
         if not suite_func:
-            raise SystemExit("unknown suite: %s" % suite_funcname)
+            raise SystemExit("unknown suite: %s" % suite_name)
         for domain_name in suite_func():
             domain = Domain(domain_name)
             for problem in domain.problems[:number]:

@@ -57,9 +57,8 @@ class Checkout(object):
             else:
                 cmd = self.get_checkout_cmd()
                 print cmd
-                ret = subprocess.call(cmd, shell=True)
-            assert os.path.exists(path), \
-                    'Could not checkout to "%s"' % path
+                subprocess.call(cmd, shell=True)
+            assert os.path.exists(path), 'Could not checkout to "%s"' % path
 
     def get_checkout_cmd(self):
         raise Exception('Not implemented')
@@ -221,7 +220,8 @@ class SvnCheckout(Checkout):
 
     def get_rev_abs(self, repo, rev):
         try:
-            rev_number = int(rev)
+            # If we have a number string, return it
+            int(rev)
             return rev
         except ValueError:
             pass

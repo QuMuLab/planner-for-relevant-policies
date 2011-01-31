@@ -18,13 +18,10 @@ from __future__ import with_statement
 
 import os
 import sys
-import shutil
 import re
 from glob import glob
 from collections import defaultdict
 import logging
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
 
 import tools
 
@@ -41,7 +38,7 @@ class FetchOptionParser(tools.ArgParser):
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
                 help='path to evaluation directory (default: <exp_dir>-eval)')
 
-        self.add_argument('-c', '--copy-all', default=False, action='store_true',
+        self.add_argument('-c', '--copy-all', action='store_true',
                 help='copy all files from run dirs to new directory tree, '
                     'not only the properties files')
 
@@ -53,14 +50,14 @@ class FetchOptionParser(tools.ArgParser):
         logging.info('Exp dir:  "%s"' % args.exp_dir)
 
         if args.exp_dir.endswith('eval'):
-            answer = raw_input('The source directory seems to be an evaluation '
-                                'directory. Are you sure you this is an '
-                                'experiment directory? (Y/N): ')
+            msg = ('The source directory seems to be an evaluation directory. '
+                   'Are you sure you this is an experiment directory? (Y/N): ')
+            answer = raw_input(msg)
             if not answer.upper() == 'Y':
                 sys.exit()
 
-        # Update some args with the values from the experiment's properties file
-        # if the values have not been set on the commandline
+        # Update some args with the values from the experiment's
+        # properties file if the values have not been set on the commandline
         exp_props_file = os.path.join(args.exp_dir, 'properties')
         if os.path.exists(exp_props_file):
             exp_props = tools.Properties(exp_props_file)
@@ -114,12 +111,11 @@ class _MultiPattern(object):
                     value = type(value)
                     found_props[attribute_name] = value
                 except IndexError:
-                    msg = 'Atrribute "%s" not found for pattern "%s" in file "%s"'
+                    msg = 'Atrribute %s not found for pattern %s in file %s'
                     msg %= (attribute_name, self, filename)
                     logging.error(msg)
         elif self.required:
-            logging.error('Pattern "%s" not present in file "%s"' % \
-                                                            (self, filename))
+            logging.error('Pattern %s not found in %s' % (self, filename))
         return found_props
 
     def __str__(self):
@@ -130,7 +126,6 @@ class _Pattern(_MultiPattern):
     def __init__(self, name, regex, group, file, required, type, flags):
         groups = [(group, name, type)]
         _MultiPattern.__init__(self, groups, regex, file, required, flags)
-
 
 
 class _FileParser(object):
@@ -179,7 +174,6 @@ class _FileParser(object):
         for function in self.functions:
             props.update(function(self.content, props))
         return props
-
 
 
 class Fetcher(object):
@@ -294,7 +288,6 @@ class Fetcher(object):
 
         tools.makedirs(self.eval_dir)
         combined_props.write()
-
 
 
 if __name__ == "__main__":
