@@ -34,7 +34,7 @@ def divide_list(seq, size):
     >>> divide_list(range(10), 4)
     [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9]]
     """
-    return [seq[i:i+size] for i  in range(0, len(seq), size)]
+    return [seq[i:i + size] for i  in range(0, len(seq), size)]
 
 
 def makedirs(dir):
@@ -65,9 +65,11 @@ def natural_sort(alist):
             return int(text)
         else:
             return text
+
     def extract_numbers(text):
         parts = re.split("([0-9]+)", text)
         return map(to_int_if_number, parts)
+
     alist.sort(key=extract_numbers)
 
 
@@ -131,7 +133,6 @@ def run_command(cmd, env=None):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
     output = p.communicate()[0].strip()
     return output
-
 
 
 class Properties(ConfigObj):
@@ -207,7 +208,7 @@ def csv(string):
 
 class ArgParser(argparse.ArgumentParser):
     def __init__(self, add_log_option=True, *args, **kwargs):
-        argparse.ArgumentParser.__init__(self, *args, #add_help=False,
+        argparse.ArgumentParser.__init__(self, *args,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
 
         if add_log_option:
