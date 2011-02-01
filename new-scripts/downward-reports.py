@@ -20,11 +20,11 @@ from reports import Report, ReportArgParser, Table
 
 # Create a parser only for parsing the report type
 report_type_parser = tools.ArgParser(add_help=False)
-report_type_parser.epilog = 'Note: The help output may depend on the already selected options'
+report_type_parser.epilog = ('Note: The help output may depend on the already '
+                             'selected options')
 report_type_parser.add_argument('-r', '--report', default='abs',
-            choices=['abs', 'rel', 'cmp','any', 'suite'],
+            choices=['abs', 'rel', 'cmp', 'any', 'suite'],
             help='Select a report type')
-
 
 
 class PlanningTable(Table):
@@ -32,7 +32,6 @@ class PlanningTable(Table):
         Table.__init__(self, *args, **kwargs)
 
         self.focus = self.title
-
 
     def get_normalized_avg_row(self):
         """
@@ -48,7 +47,6 @@ class PlanningTable(Table):
         text = self.get_row('NORMALIZED AVG', averages)
         return text
 
-
     def __str__(self):
         text = Table.__str__(self)
         if 'score' in self.focus:
@@ -61,20 +59,21 @@ class PlanningReport(Report):
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
         parser.add_argument('-c', '--configs', type=tools.csv,
-            help='only use specified configurations '
-                '(e.g. WORK-ou,WORK-yY). If none specified, use all found configs')
+            help='only use specified configurations (e.g. WORK-ou,WORK-yY). '
+                 'If none specified, use all found configs')
         parser.add_argument('-s', '--suite', type=tools.csv,
             help=downward_suites.HELP)
         parser.add_argument('--res', default='domain', dest='resolution',
-            help='resolution of the report', choices=['suite', 'domain', 'problem'])
+            help='resolution of the report',
+            choices=['suite', 'domain', 'problem'])
         parser.add_argument('--filter', type=tools.csv,
-            help='filters will be applied as follows: ' \
+            help='filters will be applied as follows: '
                 'expanded:lt:100 -> only process if run[expanded] < 100')
         parser.add_argument('--missing', default='auto',
             dest='handle_missing_attrs', choices=['include', 'ignore', 'auto'],
-            help='for an attribute include or ignore problems for which not ' \
-                'all configs have this attribute. "auto" includes those ' \
-                'problems in the detailed view and ignores them in the ' \
+            help='for an attribute include or ignore problems for which not '
+                'all configs have this attribute. "auto" includes those '
+                'problems in the detailed view and ignores them in the '
                 'domain-summary reports')
 
         Report.__init__(self, parser)
@@ -83,8 +82,9 @@ class PlanningReport(Report):
         self.output = ''
 
         # For some attributes only compare commonly solved tasks
-        self.commonly_solved_foci = ['cost', 'expanded', 'expansions',
-                'generated', 'memory', 'plan_length', 'search_time', 'total_time']
+        self.commonly_solved_foci = [
+                'cost', 'expanded', 'expansions', 'generated', 'memory',
+                'plan_length', 'search_time', 'total_time']
         info = ('The attributes %s are handled as follows:\n'
                 'If in a group of configs not all configs have a value for '
                 'the attribute, the concerning runs are only evaluated if '
@@ -104,13 +104,15 @@ class PlanningReport(Report):
             otherwise process all problems
             """
             for problem in self.problems:
-                if problem.domain == run['domain'] and problem.problem == run['problem']:
+                if (problem.domain == run['domain'] and
+                    problem.problem == run['problem']):
                     return True
             return False
 
         def filter_by_config(run):
             """
-            If configs is set, only process those configs, otherwise process all configs
+            If configs is set, only process those configs, otherwise process
+            all configs
             """
             for config in self.configs:
                 if config == run['config']:
@@ -125,7 +127,6 @@ class PlanningReport(Report):
         if self.filter:
             self.parse_filters()
 
-
     def name(self):
         name = Report.name(self)
         if self.configs:
@@ -136,7 +137,6 @@ class PlanningReport(Report):
         name += '-' + self.report_type
         return name
 
-
     def parse_filters(self):
         '''
         Filter strings have the form e.g.
@@ -144,7 +144,6 @@ class PlanningReport(Report):
         '''
         for string in self.filter:
             self.parse_filter(string)
-
 
     def parse_filter(self, string):
         print string
@@ -164,7 +163,6 @@ class PlanningReport(Report):
 
         self.add_filter(lambda run: op(run[attribute], value))
 
-
     def get_configs(self):
         """
         Return the list of configs
@@ -175,7 +173,6 @@ class PlanningReport(Report):
         if self.configs:
             return self.configs
         return list(set([run['config'] for run in self.orig_data]))
-
 
     def _filter_common_attributes(self):
         """
@@ -194,8 +191,10 @@ class PlanningReport(Report):
         logging.info('Filtering problems with missing attributes for runs')
         for (domain, problem), group in self.data.group_dict('domain', 'problem').items():
             values = group[self.focus]
+
             def missing(value):
                 return type(value) == datasets.MissingType
+
             any_missing = any(map(missing, values))
             logging.debug('MISSING %s %s:%s %s, %s' % \
                 (self.focus, domain, problem, group[self.focus], any_missing))
@@ -206,7 +205,6 @@ class PlanningReport(Report):
                     return True
 
                 self.data.filter(delete_runs_with_missing_attributes)
-
 
     def _get_table(self):
         '''
@@ -246,7 +244,8 @@ class AnyAttributeReport(PlanningReport):
         table = PlanningTable(self.focus, highlight=False, numeric_rows=True)
 
         if len(self.foci) != 1:
-            logging.error("Please select exactly one attribute for an any-attribute report")
+            logging.error("Please select exactly one attribute for an "
+                          "any-attribute report")
             sys.exit(1)
 
         min_value = 0
@@ -260,9 +259,7 @@ class AnyAttributeReport(PlanningReport):
             for time_limit in xrange(min_value, max_value + step, step):
                 table.add_cell(str(time_limit), config,
                     len(group.filtered(lambda di: di[self.focus] <= time_limit)))
-
         return table
-
 
 
 class AbsolutePlanningReport(PlanningReport):
@@ -276,7 +273,6 @@ class AbsolutePlanningReport(PlanningReport):
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
 
-
     def _get_table(self):
         table = PlanningReport._get_table(self)
         func = self.group_func
@@ -288,13 +284,12 @@ class AbsolutePlanningReport(PlanningReport):
             msg = '%s: The attribute "%s" was not found. ' % (name, self.focus)
             logging.error(msg)
 
-
         if self.resolution == 'domain':
             self.set_grouping('config', 'domain')
             for (config, domain), group in self.group_dict.items():
                 values = filter(existing, group[self.focus])
                 if not values:
-                    show_missing_attribute_msg(config+'-'+domain)
+                    show_missing_attribute_msg(config + '-' + domain)
                     continue
                 table.add_cell(domain, config, func(values))
         elif self.resolution == 'problem':
@@ -322,9 +317,7 @@ class AbsolutePlanningReport(PlanningReport):
                     show_missing_attribute_msg(config)
                     continue
                 table.add_cell(row_name, config, func(values))
-
         return table
-
 
 
 class RelativePlanningReport(AbsolutePlanningReport):
@@ -337,16 +330,15 @@ class RelativePlanningReport(AbsolutePlanningReport):
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
         parser.add_argument('--change', default=0, type=int,
-            help='percentage that the value must have changed between two ' \
+            help='percentage that the value must have changed between two '
                 'configs to be appended to the result table')
 
         AbsolutePlanningReport.__init__(self, parser=parser)
 
         if not len(self.get_configs()) == 2:
-            msg = 'Relative reports can only be performed for 2 configs. ' \
-                    'Selected configs: "%s"' % self.get_configs()
+            msg = ('Relative reports can only be performed for 2 configs. '
+                    'Selected configs: "%s"' % self.get_configs())
             sys.exit(msg)
-
 
     def _get_table(self):
         absolute_table = AbsolutePlanningReport._get_table(self)
@@ -371,11 +363,10 @@ class RelativePlanningReport(AbsolutePlanningReport):
                 table.add_cell(row, 'Quotient', round(quotient, 4))
 
         if len(table) == 0:
-            logging.info('No changes above %d%% for "%s"' % (self.change, self.focus))
+            msg = 'No changes above %d%% for "%s"'
+            logging.info(msg % (self.change, self.focus))
             return None
-
         return table
-
 
 
 class ComparativePlanningReport(PlanningReport):
@@ -389,7 +380,6 @@ class ComparativePlanningReport(PlanningReport):
     """
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
-
 
     def _get_table(self):
         table = PlanningReport._get_table(self)
@@ -428,7 +418,6 @@ class ComparativePlanningReport(PlanningReport):
                 (config1, config2), sums = values.get_comparison()
                 table.add_cell(row_name, config1 + '/' + config2,
                                         '%d - %d - %d' % tuple(sums))
-
         return table
 
 
@@ -459,7 +448,8 @@ class SuiteReport(PlanningReport):
         # Sort and remove duplicates
         problems = sorted(set(problems))
         problems = ['        "%s",\n' % problem for problem in problems]
-        self.output = 'def suite():\n    return [\n' + ''.join(problems) + '    ]\n'
+        self.output = ('def suite():\n    return [\n%s    ]\n' %
+                       ''.join(problems))
         print '\nSUITE:'
         print self.output
 
@@ -467,7 +457,7 @@ class SuiteReport(PlanningReport):
             exp_name = os.path.basename(self.eval_dir).replace('-eval', '')
             filters = '_'.join(self.filter)
             filters = filters.replace(':', '')
-            filename = exp_name + '_suite_' + filters +  '.py'
+            filename = exp_name + '_suite_' + filters + '.py'
             output_file = os.path.join(self.report_dir, filename)
             with open(output_file, 'w') as file:
                 logging.info('Writing output to "%s"' % output_file)

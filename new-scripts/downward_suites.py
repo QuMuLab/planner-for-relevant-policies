@@ -310,22 +310,22 @@ def suite_five_per_domain():
 
 
 def select_evenly_spread(seq, num_items):
-   """Return num_items many items of seq, spread evenly.
-   If seq is shorter than num_items, include all items.
-   Otherwise, include first and last items and spread evenly in between.
-   (If num_items is 1, only include first item.)
+    """Return num_items many items of seq, spread evenly.
+    If seq is shorter than num_items, include all items.
+    Otherwise, include first and last items and spread evenly in between.
+    (If num_items is 1, only include first item.)
 
-   Example:
-   >>> select_evenly_spread("abcdef", 3)
-   ['a', 'd', 'f']
-   """
-   if len(seq) <= num_items:
-      return seq
-   if num_items == 1:
-      return [seq[0]]
-   step_size = (len(seq) - 1) / float(num_items - 1)
-   float_indices = [i * step_size for i in range(num_items)]
-   return [seq[int(round(index))] for index in float_indices]
+    Example:
+    >>> select_evenly_spread("abcdef", 3)
+    ['a', 'd', 'f']
+    """
+    if len(seq) <= num_items:
+        return seq
+    if num_items == 1:
+        return [seq[0]]
+    step_size = (len(seq) - 1) / float(num_items - 1)
+    float_indices = [i * step_size for i in range(num_items)]
+    return [seq[int(round(index))] for index in float_indices]
 
 
 if __name__ == '__main__':
