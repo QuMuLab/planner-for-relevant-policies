@@ -104,7 +104,7 @@ class Checkout(object):
         return '%s_%s' % (self.part.upper(), self.rev)
 
 
-# ---------- Mercurial ---------------------------------------------------------
+# ---------- Mercurial --------------------------------------------------------
 
 class HgCheckout(Checkout):
     DEFAULT_URL = BASE_DIR # was 'ssh://downward'
@@ -134,14 +134,15 @@ class HgCheckout(Checkout):
             return ABS_REV_CACHE[cmd]
         abs_rev = tools.run_command(cmd)
         if not abs_rev:
-            logging.error('Revision %s is not present in repo %s' % (rev, repo))
+            logging.error('Revision %s not present in repo %s' % (rev, repo))
             sys.exit(1)
         ABS_REV_CACHE[cmd] = abs_rev
         return abs_rev
 
     def get_checkout_cmd(self):
         cwd = os.getcwd()
-        clone = 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
+        clone = 'hg clone -r %s %s %s' % (self.rev, self.repo,
+                                          self.checkout_dir)
         cd_to_repo_dir = 'cd %s' % self.checkout_dir
         update = 'hg update -r %s' % self.rev
         cd_back = 'cd %s' % cwd
@@ -172,9 +173,11 @@ class TranslatorHgCheckout(HgCheckout):
     def __init__(self, *args, **kwargs):
         HgCheckout.__init__(self, 'translate', *args, **kwargs)
 
+
 class PreprocessorHgCheckout(HgCheckout):
     def __init__(self, *args, **kwargs):
         HgCheckout.__init__(self, 'preprocess', *args, **kwargs)
+
 
 class PlannerHgCheckout(HgCheckout):
     def __init__(self, *args, **kwargs):
@@ -182,7 +185,7 @@ class PlannerHgCheckout(HgCheckout):
 
 
 
-# ---------- Subversion --------------------------------------------------------
+# ---------- Subversion -------------------------------------------------------
 
 class SvnCheckout(Checkout):
     DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward'
@@ -290,7 +293,7 @@ class PlannerSvnCheckout(SvnCheckout):
     def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
         SvnCheckout.__init__(self, 'search', repo, rev)
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def make_checkouts(combinations):

@@ -92,14 +92,15 @@ class DownwardPreprocessRun(DownwardRun):
     OUTPUT_FILES = ["*.groups", "output.sas", "output"]
 
     def __init__(self, exp, translator, preprocessor, planner, problem):
-        DownwardRun.__init__(self, exp, translator, preprocessor, planner, problem)
+        DownwardRun.__init__(self, exp, translator, preprocessor, planner,
+                             problem)
 
         self.require_resource(self.preprocessor.shell_name)
 
-        self.add_resource("DOMAIN", self.problem.domain_file(), "domain.pddl")
-        self.add_resource("PROBLEM", self.problem.problem_file(), "problem.pddl")
+        self.add_resource("DOMAIN", problem.domain_file(), "domain.pddl")
+        self.add_resource("PROBLEM", problem.problem_file(), "problem.pddl")
 
-        self.set_command(_get_preprocess_cmd(self.translator, self.preprocessor))
+        self.set_command(_get_preprocess_cmd(translator, preprocessor))
 
         for output_file in DownwardPreprocessRun.OUTPUT_FILES:
             self.declare_optional_output(output_file)
@@ -110,15 +111,17 @@ class DownwardPreprocessRun(DownwardRun):
 
 
 class DownwardSearchRun(DownwardRun):
-    def __init__(self, exp, translator, preprocessor, planner, problem, planner_config,
-                 config_nick):
+    def __init__(self, exp, translator, preprocessor, planner, problem,
+                 planner_config, config_nick):
         self.planner_config = planner_config
         self.config_nick = config_nick
 
-        DownwardRun.__init__(self, exp, translator, preprocessor, planner, problem)
+        DownwardRun.__init__(self, exp, translator, preprocessor, planner,
+                             problem)
 
         self.require_resource(planner.shell_name)
-        self.set_command("$%s %s < $OUTPUT" % (planner.shell_name, planner_config))
+        cmd = "$%s %s < $OUTPUT"
+        self.set_command(cmd % (planner.shell_name, planner_config))
         self.declare_optional_output("sas_plan")
 
         # Validation
@@ -160,7 +163,6 @@ def _prepare_search_exp(exp, translator, preprocessor, planner):
         exp.add_resource('VALIDATE', validate, 'validate')
 
 
-
 def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
     """
     When the option --preprocess is passed on the commandline this method
@@ -189,14 +191,14 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
 
     # Add some instructions
     if type(exp) == experiments.LocalExperiment:
-        exp.end_instructions = 'Preprocess experiment has been created. ' \
-            'Before you can create the search experiment you have to run\n' \
-            './%(exp_name)s/run\n' \
-            './resultfetcher.py %(exp_name)s' % {'exp_name': exp.name}
+        exp.end_instructions = ('Preprocess experiment has been created. '
+            'Before you can create the search experiment you have to run\n'
+            './%(exp_name)s/run\n'
+            './resultfetcher.py %(exp_name)s' % {'exp_name': exp.name})
     elif type(exp) == experiments.GkiGridExperiment:
-        exp.end_instructions = 'You can submit the preprocessing ' \
-            'experiment to the queue now by calling ' \
-            '"qsub ./%(name)s/%(filename)s"' % exp.__dict__
+        exp.end_instructions = ('You can submit the preprocessing '
+            'experiment to the queue now by calling '
+            '"qsub ./%(name)s/%(filename)s"' % exp.__dict__)
 
     # Set the eval directory already here, we don't want the results to land
     # in the default testname-eval
@@ -223,10 +225,10 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
         _prepare_preprocess_exp(exp, translator, preprocessor)
 
         for problem in problems:
-            run = DownwardPreprocessRun(exp, translator, preprocessor, planner, problem)
+            run = DownwardPreprocessRun(exp, translator, preprocessor, planner,
+                                        problem)
             exp.add_run(run)
     exp.build()
-
 
 
 def build_search_exp(combinations, parser=experiments.ExpArgParser()):
@@ -279,17 +281,19 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
                     return os.path.join(preprocess_dir, filename)
 
                 # Add the preprocess files for later parsing
-                run.add_resource('OUTPUT', path('output'), 'output', required=False)
-                run.add_resource('TEST_GROUPS', path('test.groups'), 'test.groups',
+                run.add_resource('OUTPUT', path('output'), 'output',
                                  required=False)
-                run.add_resource('ALL_GROUPS', path('all.groups'), 'all.groups',
-                                 required=False)
-                run.add_resource('OUTPUT_SAS', path('output.sas'), 'output.sas',
-                                 required=False)
+                run.add_resource('TEST_GROUPS', path('test.groups'),
+                                 'test.groups', required=False)
+                run.add_resource('ALL_GROUPS', path('all.groups'),
+                                 'all.groups', required=False)
+                run.add_resource('OUTPUT_SAS', path('output.sas'),
+                                 'output.sas', required=False)
                 run.add_resource('RUN_LOG', path('run.log'), 'run.log')
                 run.add_resource('RUN_ERR', path('run.err'), 'run.err')
                 run.add_resource('DOMAIN', path('domain.pddl'), 'domain.pddl')
-                run.add_resource('PROBLEM', path('problem.pddl'), 'problem.pddl')
+                run.add_resource('PROBLEM', path('problem.pddl'),
+                                 'problem.pddl')
     exp.build()
 
 
@@ -314,8 +318,10 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
 
                 run.require_resource(preprocessor.shell_name)
 
-                run.add_resource("DOMAIN", problem.domain_file(), "domain.pddl")
-                run.add_resource("PROBLEM", problem.problem_file(), "problem.pddl")
+                run.add_resource("DOMAIN", problem.domain_file(),
+                                 "domain.pddl")
+                run.add_resource("PROBLEM", problem.problem_file(),
+                                 "problem.pddl")
 
                 for output_file in DownwardPreprocessRun.OUTPUT_FILES:
                     run.declare_optional_output(output_file)
