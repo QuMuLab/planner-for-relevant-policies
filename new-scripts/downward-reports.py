@@ -23,7 +23,7 @@ report_type_parser = tools.ArgParser(add_help=False)
 report_type_parser.epilog = ('Note: The help output may depend on the already '
                              'selected options')
 report_type_parser.add_argument('-r', '--report', default='abs',
-            choices=['abs', 'rel', 'cmp', 'any', 'suite'],
+            choices=['abs', 'cmp', 'any', 'suite'],
             help='Select a report type')
 
 
@@ -320,55 +320,6 @@ class AbsolutePlanningReport(PlanningReport):
         return table
 
 
-class RelativePlanningReport(AbsolutePlanningReport):
-    """
-    Write a relative report about the focus attribute, e.g.
-
-    || expanded        | fF               | yY               |
-    | **gripper     ** | 1.0              | 0.6102           |
-    | **zenotravel  ** | 1.0              | 0.8095           |
-    """
-    def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
-        parser.add_argument('--change', default=0, type=int,
-            help='percentage that the value must have changed between two '
-                'configs to be appended to the result table')
-
-        AbsolutePlanningReport.__init__(self, parser=parser)
-
-        if not len(self.get_configs()) == 2:
-            msg = ('Relative reports can only be performed for 2 configs. '
-                    'Selected configs: "%s"' % self.get_configs())
-            sys.exit(msg)
-
-    def _get_table(self):
-        absolute_table = AbsolutePlanningReport._get_table(self)
-
-        table = reports.Table(title=self.focus, highlight=False)
-
-        # Filter those rows which have no significant changes
-        for row in absolute_table.rows:
-            val1, val2 = absolute_table.get_cells_in_row(row)
-
-            # We can't divide by zero
-            if val1 == 0:
-                val1 = 0.1
-                val2 += 0.1
-
-            quotient = val2 / val1
-            percent_change = abs(quotient - 1.0) * 100
-
-            if percent_change >= self.change:
-                for col in absolute_table.cols:
-                    table.add_cell(row, col, absolute_table[row][col])
-                table.add_cell(row, 'Quotient', round(quotient, 4))
-
-        if len(table) == 0:
-            msg = 'No changes above %d%% for "%s"'
-            logging.info(msg % (self.change, self.focus))
-            return None
-        return table
-
-
 class ComparativePlanningReport(PlanningReport):
     """
     Write a comparative report about the focus attribute, e.g.
@@ -477,8 +428,6 @@ if __name__ == "__main__":
 
     if report_type == 'abs':
         report = AbsolutePlanningReport()
-    elif report_type == 'rel':
-        report = RelativePlanningReport()
     elif report_type == 'cmp':
         report = ComparativePlanningReport()
     elif report_type == 'any':

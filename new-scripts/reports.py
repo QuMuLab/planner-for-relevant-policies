@@ -343,23 +343,6 @@ class Table(collections.defaultdict):
     def get_cells_in_row(self, row):
         return [self[row][col] for col in self.cols]
 
-    def get_relative(self):
-        """
-        Take the first value of each row and divide every value in the row
-        by it.
-        Returns a new table.
-
-        Unused for now
-        """
-        rel_table = Table(self.title)
-        col1 = self.cols[0]
-        for row in self.rows:
-            val1 = self[row][col1]
-            for col, cell in self[row].iteritems():
-                rel_value = 0 if val1 == 0 else round(cell / val1, 4)
-                rel_table.add_cell(row, col, rel_value)
-        return rel_table
-
     def get_comparison(self, comparator=cmp):
         """
         || expanded                      | fF               | yY              |
