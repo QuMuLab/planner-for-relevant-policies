@@ -6,8 +6,8 @@ import experiments
 import downward_suites
 import downward_configs
 import tools
-from downward_experiments import TranslatorHgCheckout, PreprocessorHgCheckout, \
-                                PlannerHgCheckout, make_checkouts, _get_configs
+from downward_experiments import (TranslatorHgCheckout, PreprocessorHgCheckout,
+                               PlannerHgCheckout, make_checkouts, _get_configs)
 
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
@@ -88,8 +88,8 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
 
 
 def build_makefile_experiment(settings, planner_rev='tip'):
-    assert not planner_rev.upper() == 'WORK', \
-        'We have to use a real checkout for changing the makefiles'
+    msg = 'We have to use a real checkout for changing the makefiles'
+    assert not planner_rev.upper() == 'WORK', msg
 
     translator = TranslatorHgCheckout()
     preprocessor = PreprocessorHgCheckout()

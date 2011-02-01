@@ -107,7 +107,7 @@ class Checkout(object):
 # ---------- Mercurial --------------------------------------------------------
 
 class HgCheckout(Checkout):
-    DEFAULT_URL = BASE_DIR # was 'ssh://downward'
+    DEFAULT_URL = BASE_DIR
     DEFAULT_REV = 'WORK'
 
     def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, name=''):
@@ -182,7 +182,6 @@ class PreprocessorHgCheckout(HgCheckout):
 class PlannerHgCheckout(HgCheckout):
     def __init__(self, *args, **kwargs):
         HgCheckout.__init__(self, 'search', *args, **kwargs)
-
 
 
 # ---------- Subversion -------------------------------------------------------

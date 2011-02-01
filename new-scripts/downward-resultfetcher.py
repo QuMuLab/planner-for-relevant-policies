@@ -14,8 +14,8 @@ from resultfetcher import Fetcher, FetchOptionParser
 
 def check(props):
     if props.get('translator_error') == 1:
-        assert props.get('preprocessor_error') == 1, \
-                                'Translator error without preprocessor error'
+        msg = 'Translator error without preprocessor error'
+        assert props.get('preprocessor_error') == 1, msg
 
 
 # Preprocessing functions -----------------------------------------------------

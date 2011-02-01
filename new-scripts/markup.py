@@ -5,7 +5,6 @@ import logging
 from external import txt2tags
 
 
-
 def _get_config(target):
 
     config = {}
@@ -17,7 +16,6 @@ def _get_config(target):
     # [ [this, that], [foo, bar], [patt, replace] ]
     config['postproc'] = []
     config['preproc'] = []
-
 
     if target in ['xhtml', 'html']:
         config['encoding'] = 'UTF-8'       # document encoding
@@ -31,7 +29,8 @@ def _get_config(target):
         #config['postproc'].append([r'<td>', r'<td align="right">'])
 
         # {{Roter Text|color:red}} -> <span style="color:red">Roter Text</span>
-        config['postproc'].append([r'\{\{(.*?)\|color:(.+?)\}\}', r'<span style="color:\2">\1</span>'])
+        config['postproc'].append([r'\{\{(.*?)\|color:(.+?)\}\}',
+                                   r'<span style="color:\2">\1</span>'])
 
     elif target == 'tex':
         config['style'] = []
@@ -40,8 +39,8 @@ def _get_config(target):
         # Do not clear the title page
         config['postproc'].append([r'\\clearpage', r''])
 
-
-        config['postproc'].append([r'usepackage{color}', r'usepackage[usenames,dvipsnames]{color}'])
+        config['postproc'].append([r'usepackage{color}',
+                                   r'usepackage[usenames,dvipsnames]{color}'])
 
         config['encoding'] = 'utf8'
         config['preproc'].append(['€', 'Euro'])
@@ -53,21 +52,21 @@ def _get_config(target):
         config['preproc'].append([r'""\.', r'""".'])
 
         # For images we have to omit the file:// prefix
-        config['postproc'].append([r'includegraphics\{(.*)"file://', r'includegraphics{"\1'])
-        #config['postproc'].append([r'includegraphics\{"file://', r'includegraphics{"'])
+        config['postproc'].append([r'includegraphics\{(.*)"file://',
+                                   r'includegraphics{"\1'])
 
         # Allow line breaks, r'\\\\' are 2 \ for regexes
         config['postproc'].append([r'\$\\backslash\$\$\\backslash\$', r'\\\\'])
 
         # {{Roter Text|color:red}} -> \textcolor{red}{Roter Text}
-        config['postproc'].append([r'\\{\\{(.*?)\$\|\$color:(.+?)\\}\\}', r'\\textcolor{\2}{\1}'])
+        config['postproc'].append([r'\\{\\{(.*?)\$\|\$color:(.+?)\\}\\}',
+                                   r'\\textcolor{\2}{\1}'])
 
     elif target == 'txt':
         # Allow line breaks, r'\\\\' are 2 \ for regexes
         config['postproc'].append([r'\\\\', '\n'])
 
     return config
-
 
 
 class Document(object):
@@ -79,14 +78,11 @@ class Document(object):
 
         self.text = ''
 
-
     def add_text(self, text):
         self.text += text + '\n'
 
-
     def __str__(self):
         return self.text
-
 
     def render(self, target, options=None):
         #res = '\n'.join([self.title, self.author, self.date]) + '\n\n'
@@ -115,13 +111,13 @@ class Document(object):
 
         # Let's do the conversion
         try:
-            headers   = txt2tags.doHeader(headers, config)
+            headers = txt2tags.doHeader(headers, config)
             body, toc = txt2tags.convert(txt, config)
-            footer  = txt2tags.doFooter(config)
+            footer = txt2tags.doFooter(config)
             toc = txt2tags.toc_tagger(toc, config)
             toc = txt2tags.toc_formatter(toc, config)
-            full_doc  = headers + toc + body + footer
-            finished  = txt2tags.finish_him(full_doc, config)
+            full_doc = headers + toc + body + footer
+            finished = txt2tags.finish_him(full_doc, config)
             result = '\n'.join(finished)
 
         # Txt2tags error, show the messsage to the user

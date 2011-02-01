@@ -113,8 +113,8 @@ class IpcReport(Report):
             margin = "0.5cm"
         else:
             margin = "2.5cm"
-        print r"\usepackage[%spaper,landscape,margin=%s]{geometry}" % \
-                (self.page_size, margin)
+        print (r"\usepackage[%spaper,landscape,margin=%s]{geometry}" %
+                (self.page_size, margin))
         print r"\usepackage{supertabular}"
         print r"\usepackage{scrtime}"
         print r"\begin{document}"

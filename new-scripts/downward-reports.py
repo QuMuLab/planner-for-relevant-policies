@@ -196,7 +196,7 @@ class PlanningReport(Report):
                 return type(value) == datasets.MissingType
 
             any_missing = any(map(missing, values))
-            logging.debug('MISSING %s %s:%s %s, %s' % \
+            logging.debug('MISSING %s %s:%s %s, %s' %
                 (self.focus, domain, problem, group[self.focus], any_missing))
             if any_missing:
                 def delete_runs_with_missing_attributes(run):

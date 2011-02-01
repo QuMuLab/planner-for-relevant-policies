@@ -1,5 +1,5 @@
 """
-Example configurations taken from 
+Example configurations taken from
 http://alfons.informatik.uni-freiburg.de/downward/PlannerUsage
 """
 
@@ -28,4 +28,3 @@ blind = """\
 oa50000 = """\
 --search "astar(mas())"\
 """
-
