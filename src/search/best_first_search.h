@@ -10,6 +10,7 @@
 
 class Heuristic;
 class Operator;
+class Options;
 
 typedef pair<const State *, const Operator *> OpenListEntry;
 
@@ -46,13 +47,11 @@ protected:
     virtual void initialize();
     virtual int step();
 public:
-    BestFirstSearchEngine(const SearchEngineOptions &options);
+    BestFirstSearchEngine(const Options &opts);
     ~BestFirstSearchEngine();
     virtual void add_heuristic(Heuristic *heuristic, bool use_estimates,
                                bool use_preferred_operators);
     virtual void statistics() const;
-    static SearchEngine *create(const vector<string> &config,
-                                int start, int &end, bool dry_run);
 };
 
 #endif

@@ -1,14 +1,12 @@
 #include "h_m_landmarks.h"
 #include "../plugin.h"
 
-static LandmarkGraphPlugin h_m_landmarks_graph_plugin(
-    "lm_hm", HMLandmarks::create);
 
 std::ostream & operator<<(std::ostream &os, const Fluent &p) {
     return os << "(" << p.first << ", " << p.second << ")";
 }
 
-std::ostream & operator<<(std::ostream &os, const FluentSet &fs) {
+std::ostream &operator<<(std::ostream &os, const FluentSet &fs) {
     FluentSet::const_iterator it;
     os << "[";
     for (it = fs.begin(); it != fs.end(); ++it) {
@@ -19,7 +17,7 @@ std::ostream & operator<<(std::ostream &os, const FluentSet &fs) {
 }
 
 template<typename T>
-std::ostream & operator<<(std::ostream &os, const std::list<T> &alist) {
+std::ostream &operator<<(std::ostream &os, const std::list<T> &alist) {
     typename std::list<T>::const_iterator it;
 
     os << "(";
@@ -1017,37 +1015,29 @@ void HMLandmarks::generate_landmarks() {
     free_unneeded_memory();
 }
 
-
-
-LandmarksGraph *HMLandmarks::create(
-    const std::vector<string> &config, int start, int &end, bool dry_run) {
+static LandmarksGraph *_parse(OptionParser &parser) {
+	//TODO: change the way landmarks common_options are handled, see SearchEngine and Heuristic
     LandmarksGraph::LandmarkGraphOptions common_options;
+    common_options.add_option_to_parser(parser);
+    parser.add_option<int>("m", 2, "m (as in h^m)");
 
-    int m = 2;
+    Options opts = parser.parse();
+    if (parser.help_mode())
+        return 0;
 
-    if (config.size() > start + 2 && config[start + 1] == "(") {
-        end = start + 2;
-        if (config[end] != ")") {
-            NamedOptionParser option_parser;
-            common_options.add_option_to_parser(option_parser);
+    opts.set("expl", new Exploration);
 
-            option_parser.add_int_option("m", &m, "m (as in h^m)");
-
-            option_parser.parse_options(config, end, end, dry_run);
-            ++end;
-        }
-        if (config[end] != ")")
-            throw ParseError(end);
-    } else {
-        end = start;
-    }
-
-    if (dry_run) {
+    if (parser.dry_run()) {
         return 0;
     } else {
-        LandmarksGraph *graph = new HMLandmarks(common_options,
-                                                new Exploration(common_options.heuristic_options), m);
+        LandmarksGraph::LandmarkGraphOptions lmg_opts(opts);
+        LandmarksGraph *graph = new HMLandmarks(  //there was a problem with a reference to a temporary object in the HMLandmarks initialization list when trying to do this in the new 'normal' way, so I'll leave it like this for now.
+            lmg_opts,
+            opts.get<Exploration *>("expl"), opts.get<int>("m"));
         LandmarksGraph::build_lm_graph(graph);
         return graph;
     }
 }
+
+static LandmarkGraphPlugin _plugin(
+    "lm_hm", _parse);

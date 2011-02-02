@@ -3,25 +3,44 @@
 #include "globals.h"
 #include "heuristic.h"
 #include "successor_generator.h"
-#include "open_lists/standard_scalar_open_list.h"
-#include "open_lists/open_list_buckets.h"
+#include "plugin.h"
 
 
 #include <cassert>
 using namespace std;
 
-OpenListInfo::OpenListInfo(Heuristic *heur, bool only_pref)
-    : open(new BucketOpenList<OpenListEntry>(heur, false)) {
+OpenListInfo::OpenListInfo(Heuristic *heur, bool only_pref) {
+    Options opts;
+    opts.set("pref_only", false);
+    vector<ScalarEvaluator *> evals;
+    evals.push_back(heur);
+    opts.set("evals", evals);
+    open = new BucketOpenList<OpenListEntry>(opts);
     heuristic = heur;
     only_preferred_operators = only_pref;
     priority = 0;
 }
 
-BestFirstSearchEngine::BestFirstSearchEngine(const SearchEngineOptions &options)
-    : SearchEngine(options), current_state(*g_initial_state) {
+BestFirstSearchEngine::BestFirstSearchEngine(const Options &opts)
+    : SearchEngine(opts), current_state(*g_initial_state) {
     generated_states = 0;
     current_predecessor = 0;
     current_operator = 0;
+    set<Heuristic *> hset;
+    set<Heuristic *> pset;
+    vector<Heuristic *> evals = opts.get_list<Heuristic *>("heuristics");
+    vector<Heuristic *> preferred_list = opts.get_list<Heuristic *>("preferred");
+    hset.insert(evals.begin(), evals.end());
+    pset.insert(preferred_list.begin(), preferred_list.end());
+
+    for (unsigned int i = 0; i < evals.size(); i++) {
+        add_heuristic(evals[i], true, pset.count(evals[i]));
+    }
+    for (unsigned int i = 0; i < preferred_list.size(); i++) {
+        if (hset.count(preferred_list[0]) == 0) {
+            add_heuristic(evals[i], false, true);
+        }
+    }
 }
 
 BestFirstSearchEngine::~BestFirstSearchEngine() {
@@ -206,55 +225,24 @@ int BestFirstSearchEngine::fetch_next_state() {
     return IN_PROGRESS;
 }
 
-SearchEngine *BestFirstSearchEngine::create(const vector<string> &config,
-                                            int start, int &end, bool dry_run) {
-    if (config[start + 1] != "(")
-        throw ParseError(start + 1);
+static SearchEngine *_parse(OptionParser &parser) {
+    SearchEngine::add_options_to_parser(parser);
+    parser.add_list_option<Heuristic *>("heuristics");
+    parser.add_list_option<Heuristic *>("preferred", vector<Heuristic *>(), "use preferred operators of these heuristics");
+    Options opts = parser.parse();
+	if (parser.help_mode())
+		return 0;
 
-    SearchEngineOptions common_options;
-    vector<Heuristic *> evals;
-    OptionParser::instance()->parse_heuristic_list(config, start + 2,
-                                                   end, false, evals, dry_run);
-    if (evals.empty())
-        throw ParseError(end);
-    end++;
+	if (opts.get_list<Heuristic *>("heuristics").empty())
+		parser.error();
 
-    vector<Heuristic *> preferred_list;
-
-    if (config[end] != ")") {
-        end++;
-        NamedOptionParser option_parser;
-        common_options.add_options_to_parser(option_parser);
-
-        option_parser.add_heuristic_list_option("preferred",
-                                                &preferred_list, "use preferred operators of these heuristics");
-        option_parser.parse_options(config, end, end, dry_run);
-        end++;
-    }
-    if (config[end] != ")")
-        throw ParseError(end);
-
-    BestFirstSearchEngine *engine = 0;
-    if (!dry_run) {
-        engine = new BestFirstSearchEngine(common_options);
-
-        set<Heuristic *> hset;
-        set<Heuristic *> pset;
-        hset.insert(evals.begin(), evals.end());
-        pset.insert(preferred_list.begin(), preferred_list.end());
-
-        for (unsigned int i = 0; i < evals.size(); i++) {
-            engine->add_heuristic(evals[i], true, pset.count(evals[i]));
-        }
-        for (unsigned int i = 0; i < preferred_list.size(); i++) {
-            if (hset.count(preferred_list[0]) == 0) {
-                engine->add_heuristic(evals[i], false, true);
-            }
-        }
-    }
-
-    return engine;
+    if (parser.dry_run())
+        return 0;
+    else
+        return new BestFirstSearchEngine(opts);
 }
+
+static EnginePlugin _plugin("old_greedy", _parse);
 
 OpenListInfo *BestFirstSearchEngine::select_open_queue() {
     OpenListInfo *best = 0;

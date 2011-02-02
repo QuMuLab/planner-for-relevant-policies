@@ -20,25 +20,19 @@
 
 using namespace std;
 
-static ScalarEvaluatorPlugin landmark_count_heuristic_plugin(
-    "lmcount", LandmarkCountHeuristic::create);
-
-LandmarkCountHeuristic::LandmarkCountHeuristic(const HeuristicOptions &options,
-                                               LandmarksGraph &lm_graph,
-                                               bool preferred_ops,
-                                               bool admissible, bool optimal,
-                                               bool use_action_landmarks)
-    : Heuristic(options), lgraph(lm_graph),
-      exploration(lm_graph.get_exploration()),
+LandmarkCountHeuristic::LandmarkCountHeuristic(const Options &opts)
+    : Heuristic(options),
+	  lgraph(*opts.get<LandmarksGraph *>("lm_graph")),
+      exploration(lgraph.get_exploration()),
       lm_status_manager(lgraph) {
     cout << "Initializing landmarks count heuristic..." << endl;
-    use_preferred_operators = preferred_ops;
+    use_preferred_operators = opts.get<bool>("pref");
     lookahead = numeric_limits<int>::max();
     // When generating preferred operators, we plan towards
     // non-disjunctive landmarks only
     ff_search_disjunctive_lms = false;
 
-    if (admissible) {
+    if (opts.get<bool>("admissible")) {
         use_cost_sharing = true;
         if (lgraph.is_using_reasonable_orderings()) {
             cerr << "Reasonable orderings should not be used for admissible heuristics" << endl;
@@ -48,7 +42,7 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const HeuristicOptions &options,
             cerr << "cost partitioning does not support axioms" << endl;
             ::exit(1);
         }
-        if (optimal) {
+        if (opts.get<bool>("optimal")) {
 #ifdef USE_LP
             lm_cost_assignment = new LandmarkEfficientOptimalSharedCostAssignment(lgraph, cost_type);
 #else
@@ -307,56 +301,24 @@ void LandmarkCountHeuristic::convert_lms(LandmarkSet &lms_set,
 }
 
 
-ScalarEvaluator *LandmarkCountHeuristic::create(
-    const std::vector<string> &config, int start, int &end, bool dry_run) {
-    bool admissible_ = false;
-    bool optimal_ = false;
-    bool pref_ = false;
-    bool use_action_landmarks_ = true;
-    HeuristicOptions common_options;
+static ScalarEvaluator *_parse(OptionParser &parser) {
+	Heuristic::add_options_to_parser(parser);
+    parser.add_option<LandmarksGraph *>("lm_graph");
+    parser.add_option<bool>("admissible", false, "get admissible estimate");
+    parser.add_option<bool>("optimal", false, "optimal cost sharing");
+    parser.add_option<bool>("pref", false, "identify preferred operators");
+    parser.add_option<bool>("alm", true, "use action landmarks");
 
-    if (config[start + 1] != "(")
-        throw ParseError(start + 1);
+    Options opts = parser.parse();
 
-    LandmarksGraph *lm_graph = OptionParser::instance()->parse_lm_graph(config,
-                                                                        start + 2, end, dry_run);
-    ++end;
+    if (!parser.dry_run() && opts.get<LandmarksGraph *>("lm_graph") == 0)
+        parser.error("landmarks graph could not be constructed");
 
-    if (!dry_run && lm_graph == 0)
-        throw ParseError(start);
-
-    if (config[end] != ")") {
-        end++;
-        NamedOptionParser option_parser;
-
-        common_options.add_option_to_parser(option_parser);
-
-        option_parser.add_bool_option("admissible",
-                                      &admissible_,
-                                      "get admissible estimate");
-        option_parser.add_bool_option("optimal",
-                                      &optimal_,
-                                      "optimal cost sharing");
-        option_parser.add_bool_option("pref_ops",
-                                      &pref_,
-                                      "identify preferred operators");
-        option_parser.add_bool_option("action_landmarks",
-                                      &use_action_landmarks_,
-                                      "use action landmarks");
-        option_parser.parse_options(config, end, end, dry_run);
-        ++end;
-    }
-    if (config[end] != ")")
-        throw ParseError(end);
-
-    if (optimal_ && !admissible_) {
-        cerr << "Using optimal=true only makes sense with admissible=true" << endl;
-        throw ParseError(end);
-    }
-
-    if (dry_run)
+    if (parser.dry_run())
         return 0;
     else
-        return new LandmarkCountHeuristic(common_options, *lm_graph, pref_, admissible_, optimal_,
-                                          use_action_landmarks_);
+        return new LandmarkCountHeuristic(opts);
 }
+
+static ScalarEvaluatorPlugin landmark_count_heuristic_plugin(
+    "lmcount", _parse);

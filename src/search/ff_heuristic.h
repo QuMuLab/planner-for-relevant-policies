@@ -28,8 +28,6 @@ protected:
 public:
     FFHeuristic(const HeuristicOptions &options);
     ~FFHeuristic();
-    static ScalarEvaluator *create(const std::vector<std::string> &config,
-                                   int start, int &end, bool dry_run);
 };
 
 #endif

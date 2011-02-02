@@ -135,8 +135,9 @@ public:
         int lm_cost_type;
 
         LandmarkGraphOptions();
+        LandmarkGraphOptions(const Options &opts);
 
-        void add_option_to_parser(NamedOptionParser &option_parser);
+        void add_option_to_parser(OptionParser &parser);
     };
     struct Pddl_proposition {
         string predicate;

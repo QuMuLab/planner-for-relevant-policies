@@ -13,7 +13,7 @@
 
 class Heuristic;
 class Operator;
-
+class Options;
 
 typedef pair<state_var_t *, const Operator *> OpenListEntryLazy;
 
@@ -47,20 +47,10 @@ protected:
     void get_successor_operators(vector<const Operator *> &ops);
 public:
 
-    GeneralLazyBestFirstSearch(const SearchEngineOptions &options,
-                               OpenList<OpenListEntryLazy> *open,
-                               bool reopen_closed);
+    GeneralLazyBestFirstSearch(const Options &opts);
     virtual ~GeneralLazyBestFirstSearch();
 
     virtual void statistics() const;
-
-    static SearchEngine *create(const std::vector<std::string> &config,
-                                int start, int &end, bool dry_run);
-    static SearchEngine *create_greedy(const std::vector<std::string> &config,
-                                       int start, int &end, bool dry_run);
-    static SearchEngine *create_weighted_astar(
-        const std::vector<std::string> &config, int start, int &end,
-        bool dry_run);
 };
 
 #endif
