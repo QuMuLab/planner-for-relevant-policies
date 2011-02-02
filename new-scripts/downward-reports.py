@@ -65,7 +65,7 @@ class PlanningReport(Report):
         parser.add_argument('--res', default='domain', dest='resolution',
             help='resolution of the report',
             choices=['suite', 'domain', 'problem'])
-        parser.add_argument('--filter', type=tools.csv,
+        parser.add_argument('--filter', type=tools.csv, default=[],
             help='filters will be applied as follows: '
                 'expanded:lt:100 -> only process if run[expanded] < 100')
         parser.add_argument('--missing', default='auto',
@@ -398,7 +398,10 @@ class SuiteReport(PlanningReport):
             exp_name = os.path.basename(self.eval_dir).replace('-eval', '')
             filters = '_'.join(self.filter)
             filters = filters.replace(':', '')
-            filename = exp_name + '_suite_' + filters + '.py'
+            parts = [exp_name, 'suite']
+            if filters:
+                parts.append(filters)
+            filename = '_'.join(parts) + '.py'
             output_file = os.path.join(self.report_dir, filename)
             with open(output_file, 'w') as file:
                 logging.info('Writing output to "%s"' % output_file)
