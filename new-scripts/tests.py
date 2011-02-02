@@ -9,6 +9,8 @@ logging.basicConfig(level=logging.DEBUG,
 
 from tools import copy, prod
 from reports import gm
+import checkouts
+import downward_experiments
 
 base = os.path.join('/tmp', str(datetime.datetime.now()))
 os.mkdir(base)
@@ -59,6 +61,25 @@ def test_gm1():
     for l in lists:
         assert gm_old(l) == gm(l)
 
+def test_checkouts():
+    combinations = [
+        (checkouts.TranslatorHgCheckout(),
+         checkouts.PreprocessorHgCheckout(rev='TIP'),
+         checkouts.PlannerHgCheckout(rev='WORK')),
+        (checkouts.TranslatorSvnCheckout(rev='HEAD'),
+         checkouts.PreprocessorSvnCheckout(rev='head'),
+         checkouts.PlannerSvnCheckout(rev='HEAD')),
+        (checkouts.TranslatorSvnCheckout(rev=4321),
+         checkouts.PreprocessorHgCheckout(rev='tip'),
+         checkouts.PlannerSvnCheckout(rev='HEAD')),
+        (checkouts.TranslatorHgCheckout(rev='a640c9a9284c'),
+         checkouts.PreprocessorHgCheckout(rev='work'),
+         checkouts.PlannerHgCheckout(rev='623')),
+                   ]
+    import sys
+    sys.argv += ['try', '-s', 'MINITEST', '-c', 'yY']
+    downward_experiments.build_experiment(combinations)
+
 
 if __name__ == '__main__':
     test_copy_file_to_file()
@@ -66,3 +87,4 @@ if __name__ == '__main__':
     test_copy_file_to_not_ex_dir()
     test_copy_dir_to_dir()
     test_gm1()
+    test_checkouts()

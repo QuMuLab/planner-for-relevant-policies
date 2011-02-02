@@ -240,9 +240,7 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
     "Checkouts" that use the working copy code
     """
     exp = experiments.build_experiment(parser)
-
     checkouts.make_checkouts(combinations)
-
     problems = downward_suites.build_suite(exp.suite)
 
     experiment_combos = []
@@ -299,9 +297,7 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
     exp = experiments.build_experiment(parser)
-
     checkouts.make_checkouts(combinations)
-
     problems = downward_suites.build_suite(exp.suite)
 
     for translator, preprocessor, planner in combinations:
@@ -333,24 +329,6 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 run.set_command(preprocess_cmd + '; ' + search_cmd)
     exp.build()
     return exp
-
-
-def test():
-    combinations = [
-        (checkouts.TranslatorHgCheckout(),
-         checkouts.PreprocessorHgCheckout(rev='TIP'),
-         checkouts.PlannerHgCheckout(rev='WORK')),
-        (checkouts.TranslatorSvnCheckout(),
-         checkouts.PreprocessorSvnCheckout(rev='head'),
-         checkouts.PlannerSvnCheckout(rev='WORK')),
-        (checkouts.TranslatorSvnCheckout(rev=4321),
-         checkouts.PreprocessorHgCheckout(rev='tip'),
-         checkouts.PlannerSvnCheckout(rev='HEAD')),
-        (checkouts.TranslatorHgCheckout(rev='a640c9a9284c'),
-         checkouts.PreprocessorHgCheckout(rev='work'),
-         checkouts.PlannerHgCheckout(rev='623')),
-                   ]
-    build_experiment(combinations)
 
 
 def build_experiment(combinations):

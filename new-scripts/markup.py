@@ -26,8 +26,6 @@ def _get_config(target):
         # Allow line breaks, r'\\\\' are 2 \ for regexes
         config['postproc'].append([r'\\\\', r'<br />'])
 
-        #config['postproc'].append([r'<td>', r'<td align="right">'])
-
         # {{Roter Text|color:red}} -> <span style="color:red">Roter Text</span>
         config['postproc'].append([r'\{\{(.*?)\|color:(.+?)\}\}',
                                    r'<span style="color:\2">\1</span>'])
@@ -85,8 +83,6 @@ class Document(object):
         return self.text
 
     def render(self, target, options=None):
-        #res = '\n'.join([self.title, self.author, self.date]) + '\n\n'
-
         # We always want xhtml
         if target == 'html':
             target = 'xhtml'
