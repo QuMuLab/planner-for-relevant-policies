@@ -15,7 +15,7 @@ import hashlib
 
 import tools
 from markup import Document
-from external.datasets import DataSet, MissingType
+from external.datasets import DataSet
 from external import txt2tags
 
 
@@ -37,10 +37,6 @@ def gm(values):
     assert len(values) >= 1
     exp = 1.0 / len(values)
     return round(tools.prod([val ** exp for val in values]), 4)
-
-
-def existing(val):
-    return not type(val) == MissingType
 
 
 class ReportArgParser(tools.ArgParser):

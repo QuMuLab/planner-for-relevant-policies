@@ -14,6 +14,7 @@ from collections import defaultdict
 import tools
 import downward_suites
 from external import datasets
+from external.datasets import missing
 import reports
 from reports import Report, ReportArgParser, Table
 
@@ -187,12 +188,9 @@ class PlanningReport(Report):
         for (domain, problem), group in self.data.group_dict('domain', 'problem').items():
             values = group[focus]
 
-            def missing(value):
-                return type(value) == datasets.MissingType
-
-            any_missing = any(map(missing, values))
+            any_missing = any(map(lambda value: value is missing, values))
             logging.debug('MISSING %s %s:%s %s, %s' %
-                (focus, domain, problem, group[focus], any_missing))
+                    (focus, domain, problem, group[focus], any_missing))
             if any_missing:
                 def delete_runs_with_missing_attributes(run):
                     if run['domain'] == domain and run['problem'] == problem:
@@ -269,11 +267,8 @@ class AbsolutePlanningReport(PlanningReport):
         PlanningReport.__init__(self, *args, **kwargs)
 
     def _get_table(self, focus):
-        table = PlanningReport._get_table(self)
+        table = PlanningReport._get_table(self, focus)
         func = self.group_func
-
-        def existing(val):
-            return not type(val) == datasets.MissingType
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, focus)
@@ -282,7 +277,7 @@ class AbsolutePlanningReport(PlanningReport):
         if self.resolution == 'domain':
             self.set_grouping('config', 'domain')
             for (config, domain), group in self.group_dict.items():
-                values = filter(existing, group[focus])
+                values = filter(lambda val: val is not missing, group[focus])
                 if not values:
                     show_missing_attribute_msg(config + '-' + domain)
                     continue
@@ -290,7 +285,7 @@ class AbsolutePlanningReport(PlanningReport):
         elif self.resolution == 'problem':
             self.set_grouping('config', 'domain', 'problem')
             for (config, domain, problem), group in self.group_dict.items():
-                values = filter(existing, group[focus])
+                values = filter(lambda val: val is not missing, group[focus])
                 name = domain + ':' + problem
                 if not values:
                     show_missing_attribute_msg(name)
@@ -307,7 +302,7 @@ class AbsolutePlanningReport(PlanningReport):
             else:
                 row_name = func.__name__.upper()
             for config, group in self.group_dict.items():
-                values = filter(existing, group[focus])
+                values = filter(lambda val: val is not missing, group[focus])
                 if not values:
                     show_missing_attribute_msg(config)
                     continue
@@ -328,7 +323,7 @@ class ComparativePlanningReport(PlanningReport):
         PlanningReport.__init__(self, *args, **kwargs)
 
     def _get_table(self, focus):
-        table = PlanningReport._get_table(self)
+        table = PlanningReport._get_table(self, focus)
 
         if self.resolution == 'domain':
             self.set_grouping('domain')
