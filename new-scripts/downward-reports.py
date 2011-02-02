@@ -31,8 +31,6 @@ class PlanningTable(Table):
     def __init__(self, *args, **kwargs):
         Table.__init__(self, *args, **kwargs)
 
-        self.focus = self.title
-
     def get_normalized_avg_row(self):
         """
         When summarising score results from multiple domains we show
@@ -49,7 +47,7 @@ class PlanningTable(Table):
 
     def __str__(self):
         text = Table.__str__(self)
-        if 'score' in self.focus:
+        if 'score' in self.title:
             text += self.get_normalized_avg_row()
         return text
 
@@ -78,7 +76,6 @@ class PlanningReport(Report):
 
         Report.__init__(self, parser)
 
-        self.focus = None
         self.output = ''
 
         # For some attributes only compare commonly solved tasks
@@ -146,8 +143,6 @@ class PlanningReport(Report):
             self.parse_filter(string)
 
     def parse_filter(self, string):
-        print string
-
         attribute, op, value = string.split(':')
 
         try:
@@ -174,7 +169,7 @@ class PlanningReport(Report):
             return self.configs
         return list(set([run['config'] for run in self.orig_data]))
 
-    def _filter_common_attributes(self):
+    def _filter_common_attributes(self, focus):
         """
         for an attribute include or ignore problems for which not
         all configs have this attribute. --missing=auto includes those
@@ -182,7 +177,7 @@ class PlanningReport(Report):
         domain-summary reports
         """
         # For some reports include all runs
-        if (self.focus not in self.commonly_solved_foci or
+        if (focus not in self.commonly_solved_foci or
                 self.handle_missing_attrs == 'include' or
                 (self.handle_missing_attrs == 'auto' and
                     self.resolution == 'problem')):
@@ -190,14 +185,14 @@ class PlanningReport(Report):
 
         logging.info('Filtering problems with missing attributes for runs')
         for (domain, problem), group in self.data.group_dict('domain', 'problem').items():
-            values = group[self.focus]
+            values = group[focus]
 
             def missing(value):
                 return type(value) == datasets.MissingType
 
             any_missing = any(map(missing, values))
             logging.debug('MISSING %s %s:%s %s, %s' %
-                (self.focus, domain, problem, group[self.focus], any_missing))
+                (focus, domain, problem, group[focus], any_missing))
             if any_missing:
                 def delete_runs_with_missing_attributes(run):
                     if run['domain'] == domain and run['problem'] == problem:
@@ -206,16 +201,16 @@ class PlanningReport(Report):
 
                 self.data.filter(delete_runs_with_missing_attributes)
 
-    def _get_table(self):
+    def _get_table(self, focus):
         '''
         Returns an empty table. Used and filled by subclasses.
         '''
-        self._filter_common_attributes()
+        self._filter_common_attributes(focus)
 
         # Decide on a group function
-        if 'score' in self.focus:
+        if 'score' in focus:
             self.group_func = reports.avg
-        elif self.focus in ['search_time', 'total_time']:
+        elif focus in ['search_time', 'total_time']:
             self.group_func = reports.gm
         else:
             self.group_func = sum
@@ -223,10 +218,10 @@ class PlanningReport(Report):
         # Decide whether we want to highlight minima or maxima
         max_attributes = ['solved', 'score', 'initial_h_value']
         min_wins = True
-        for attr in max_attributes:
-            if attr in self.focus:
+        for attr_part in max_attributes:
+            if attr_part in focus:
                 min_wins = False
-        table = PlanningTable(self.focus, min_wins=min_wins)
+        table = PlanningTable(focus, min_wins=min_wins)
         return table
 
 
@@ -240,8 +235,8 @@ class AnyAttributeReport(PlanningReport):
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
 
-    def _get_table(self):
-        table = PlanningTable(self.focus, highlight=False, numeric_rows=True)
+    def _get_table(self, focus):
+        table = PlanningTable(focus, highlight=False, numeric_rows=True)
 
         if len(self.foci) != 1:
             logging.error("Please select exactly one attribute for an "
@@ -255,10 +250,10 @@ class AnyAttributeReport(PlanningReport):
         self.set_grouping('config')
         for config, group in self.group_dict.items():
             group.filter(solved=1)
-            group.sort(self.focus)
+            group.sort(focus)
             for time_limit in xrange(min_value, max_value + step, step):
                 table.add_cell(str(time_limit), config,
-                    len(group.filtered(lambda di: di[self.focus] <= time_limit)))
+                    len(group.filtered(lambda di: di[focus] <= time_limit)))
         return table
 
 
@@ -273,7 +268,7 @@ class AbsolutePlanningReport(PlanningReport):
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
 
-    def _get_table(self):
+    def _get_table(self, focus):
         table = PlanningReport._get_table(self)
         func = self.group_func
 
@@ -281,13 +276,13 @@ class AbsolutePlanningReport(PlanningReport):
             return not type(val) == datasets.MissingType
 
         def show_missing_attribute_msg(name):
-            msg = '%s: The attribute "%s" was not found. ' % (name, self.focus)
+            msg = '%s: The attribute "%s" was not found. ' % (name, focus)
             logging.error(msg)
 
         if self.resolution == 'domain':
             self.set_grouping('config', 'domain')
             for (config, domain), group in self.group_dict.items():
-                values = filter(existing, group[self.focus])
+                values = filter(existing, group[focus])
                 if not values:
                     show_missing_attribute_msg(config + '-' + domain)
                     continue
@@ -295,7 +290,7 @@ class AbsolutePlanningReport(PlanningReport):
         elif self.resolution == 'problem':
             self.set_grouping('config', 'domain', 'problem')
             for (config, domain, problem), group in self.group_dict.items():
-                values = filter(existing, group[self.focus])
+                values = filter(existing, group[focus])
                 name = domain + ':' + problem
                 if not values:
                     show_missing_attribute_msg(name)
@@ -312,7 +307,7 @@ class AbsolutePlanningReport(PlanningReport):
             else:
                 row_name = func.__name__.upper()
             for config, group in self.group_dict.items():
-                values = filter(existing, group[self.focus])
+                values = filter(existing, group[focus])
                 if not values:
                     show_missing_attribute_msg(config)
                     continue
@@ -332,7 +327,7 @@ class ComparativePlanningReport(PlanningReport):
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
 
-    def _get_table(self):
+    def _get_table(self, focus):
         table = PlanningReport._get_table(self)
 
         if self.resolution == 'domain':
@@ -341,7 +336,7 @@ class ComparativePlanningReport(PlanningReport):
                 values = Table()
                 config_prob_to_group = group.group_dict('config', 'problem')
                 for (config, problem), subgroup in config_prob_to_group.items():
-                    vals = subgroup[self.focus]
+                    vals = subgroup[focus]
                     assert len(vals) == 1
                     val = vals[0]
                     values.add_cell(problem, config, val)
@@ -362,13 +357,13 @@ class ComparativePlanningReport(PlanningReport):
                 values = Table()
                 config_prob_to_group = group.group_dict('config', 'domain', 'problem')
                 for (config, domain, problem), subgroup in config_prob_to_group.items():
-                    vals = subgroup[self.focus]
+                    vals = subgroup[focus]
                     assert len(vals) == 1
                     val = vals[0]
                     values.add_cell(domain + ':' + problem, config, val)
                 (config1, config2), sums = values.get_comparison()
                 table.add_cell(row_name, config1 + '/' + config2,
-                                        '%d - %d - %d' % tuple(sums))
+                               '%d - %d - %d' % tuple(sums))
         return table
 
 

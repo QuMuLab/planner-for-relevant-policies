@@ -115,14 +115,15 @@ class Report(object):
         self.orig_data = self._get_data()
         self.data = self.orig_data.copy()
 
+        attributes = sorted(self.orig_data.get_attributes())
+
         if self.show_attributes:
-            print
-            print 'Available attributes:'
-            print self.orig_data.get_attributes()
+            print '\nAvailable attributes: %s' % attributes
             sys.exit()
 
         if not self.foci or self.foci == 'all':
-            self.foci = sorted(self.orig_data.get_attributes())
+            self.foci = attributes
+        self.foci.sort()
         logging.info('Attributes: %s' % self.foci)
 
         self.filter_funcs = []
@@ -212,7 +213,7 @@ class Report(object):
             name += '-' + self.foci[0]
         return name
 
-    def _get_table(self):
+    def _get_table(self, focus):
         raise Exception('Not implemented')
 
     def write(self):
@@ -226,7 +227,6 @@ class Report(object):
             return
 
         doc.add_text(string)
-
         self.output = doc.render(self.output_format, {'toc': 1})
 
         if not self.dry:
@@ -268,25 +268,24 @@ class Report(object):
         if self.infos:
             res += '\n\n====================\n'
 
-        # maps from attribute to table
-        tables = {}
+        # list of (attribute, table) pairs
+        tables = []
 
         for focus in self.foci:
             self.data = self.orig_data.copy()
-            self.focus = focus
             try:
-                table = self._get_table()
+                table = self._get_table(focus)
                 if table:
                     # We return None for a table if we don't want to add it
                     print table
-                    tables[self.focus] = table
+                    tables.append((focus, table))
             except TypeError, err:
                 logging.info('Omitting attribute "%s" (%s)' % (focus, err))
 
         if not tables:
             return ''
 
-        for attribute, table in sorted(tables.iteritems()):
+        for attribute, table in tables:
             res += '+ %s +\n%s\n' % (attribute, table)
 
         return res
