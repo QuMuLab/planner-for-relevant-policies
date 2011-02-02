@@ -3,15 +3,8 @@
 Module that permits copying and parsing experiment files
 
 If called as the main script, it will only copy the files and do no parsing
-By default only the properties files are copied, with the "-c" parameter all
-files will be copied.
-
-Some timings (issue7-ou-lmcut):
-Copy-props No-regexes   No-functions   42s
-Copy-all   No-regexes   No-functions   17min
-Copy-props Regexes      Functions      67min
-Copy-props Regexes      No-Functions   7min
-Copy-props More-Regexes Less-Functions 9min
+By default only one properties file is written. With the "--copy-all" parameter
+all files will be copied.
 """
 
 from __future__ import with_statement
@@ -25,8 +18,6 @@ import logging
 
 import tools
 
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-
 
 class FetchOptionParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
@@ -38,7 +29,7 @@ class FetchOptionParser(tools.ArgParser):
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
                 help='path to evaluation directory (default: <exp_dir>-eval)')
 
-        self.add_argument('-c', '--copy-all', action='store_true',
+        self.add_argument('--copy-all', action='store_true',
                 help='copy all files from run dirs to new directory tree, '
                     'not only the properties files')
 
