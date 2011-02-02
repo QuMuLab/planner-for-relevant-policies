@@ -474,8 +474,7 @@ class Run(object):
         the resources list
         """
         # Determine if we should link (gkigrid) or copy (argo)
-        copy = type(self.experiment) == ArgoExperiment
-        if copy:
+        if type(self.experiment) == ArgoExperiment:
             # Copy into run dir by adding the linked resource to normal
             # resources list
             for resource_name in self.linked_resources:
