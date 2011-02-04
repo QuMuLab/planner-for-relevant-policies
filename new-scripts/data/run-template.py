@@ -8,6 +8,7 @@ import time
 import subprocess
 import glob
 import datetime
+import signal
 
 ***ENVIRONMENT_VARIABLES***
 
@@ -25,12 +26,163 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 redirects = {'stdout': open('run.log', 'a'), 'stderr': open('run.err', 'a')}
 properties_file = open('properties', 'a')
 
+
+#------------------------------------------------------------------------------
+
+JIFFIES_PER_SECOND = 100
+
+def partition(text, pattern):
+    pos = text.find(pattern)
+    if pos == -1:
+        return text, "", ""
+    else:
+        return text[:pos], pattern, text[pos + len(pattern):]
+
+def rpartition(text, pattern):
+    pos = text.rfind(pattern)
+    if pos == -1:
+        return "", "", text
+    else:
+        return text[:pos], pattern, text[pos + len(pattern):]
+
+
+class Process(object):
+    def __init__(self, pid):
+        stat = open("/proc/%d/stat" % pid).read()
+        cmdline = open("/proc/%d/cmdline" % pid).read()
+
+        # Don't use stat.split(): the command can contain spaces.
+        # Be careful which "()" to match: the command name can contain
+        # parentheses.
+        prefix, lparen, rest = partition(stat, "(")
+        command, rparen, suffix = rpartition(rest, ")")
+        parts = suffix.split()
+
+        self.pid = pid
+        self.ppid = int(parts[1])
+        self.pgrp = int(parts[2])
+        self.utime = int(parts[11])
+        self.stime = int(parts[12])
+        self.cutime = int(parts[13])
+        self.cstime = int(parts[14])
+        self.vsize = int(parts[20])
+        self.cmdline = cmdline.rstrip("\0\n").replace("\0", " ")
+
+    def total_time(self):
+        return self.utime + self.stime + self.cutime + self.cstime
+
+
+def read_processes():
+    for filename in os.listdir("/proc"):
+        if filename.isdigit():
+            pid = int(filename)
+            # Be careful about a race conditions here: The process
+            # may have disappeared after the os.listdir call.
+            try:
+                yield Process(pid)
+            except EnvironmentError:
+                pass
+
+
+class ProcessGroup(object):
+    def __init__(self, pgrp):
+        self.processes = [process for process in read_processes()
+                          if process.pgrp == pgrp]
+
+    def __nonzero__(self):
+        return bool(self.processes)
+
+    def pids(self):
+        return [p.pid for p in self.processes]
+
+    def total_time(self):
+        # Cumulated time for this process group, in seconds
+        total_jiffies = sum([p.total_time() for p in self.processes])
+        return total_jiffies / float(JIFFIES_PER_SECOND)
+
+    def total_vsize(self):
+        # Cumulated virtual memory for this process group, in MB
+        total_bytes = sum([p.vsize for p in self.processes])
+        return total_bytes / float(2 ** 20)
+
+#------------------------------------------------------------------------------
+
+def kill_pgrp(pgrp, sig):
+    try:
+        os.killpg(pgrp, sig)
+    except OSError:
+        pass
+
+def watch(child_pid):
+    term_attempted = False
+    real_time = 0
+    while True:
+        time.sleep(CHECK_INTERVAL)
+        real_time += CHECK_INTERVAL
+
+        group = ProcessGroup(child_pid)
+        ## Generate the children information before the waitpid call to
+        ## avoid a race condition. This way, we know that the child_pid
+        ## is a descendant.
+
+        if os.waitpid(child_pid, os.WNOHANG) != (0, 0):
+            break
+
+        total_time = group.total_time()
+        total_vsize = group.total_vsize()
+        print "[real-time %d] total_time: %.2f" % (real_time, total_time)
+        print "[real-time %d] total_vsize: %.2f" % (real_time, total_vsize)
+
+        try_term = (total_time >= timeout or
+                    real_time >= 1.5 * timeout)
+        try_kill = (total_time >= timeout + KILL_DELAY or
+                    real_time >= 1.5 * timeout + KILL_DELAY)
+
+        if try_term and not term_attempted:
+            print "aborting children with SIGTERM..."
+            print "children found: %s" % group.pids()
+            kill_pgrp(child_pid, signal.SIGTERM)
+            term_attempted = True
+        elif term_attempted and try_kill:
+            print "aborting children with SIGKILL..."
+            print "children found: %s" % group.pids()
+            kill_pgrp(child_pid, signal.SIGKILL)
+
+
+    # Even if we got here, there may be orphaned children or something
+    # we may have missed due to a race condition. Check for that and kill.
+
+    group = ProcessGroup(child_pid)
+    if group:
+        # If we have reason to suspect someone still lives, first try to
+        # kill them nicely and wait a bit.
+        print "aborting orphaned children with SIGTERM..."
+        print "children found: %s" % group.pids()
+        kill_pgrp(child_pid, signal.SIGTERM)
+        time.sleep(1)
+
+    # Either way, kill properly for good measure. Note that it's not clear
+    # if checking the ProcessGroup for emptiness is reliable, because
+    # reading the process table may not be atomic, so for this last blow,
+    # we don't do an emptiness test.
+    kill_pgrp(child_pid, signal.SIGKILL)
+
+#------------------------------------------------------------------------------
+
+
 def set_limit(kind, amount):
     try:
         resource.setrlimit(kind, (amount, amount))
     except (OSError, ValueError), e:
         redirects['stderr'].write('Error: %s\n' % e)
         sys.exit()
+
+def prepare_process():
+    os.setpgrp()
+    set_limit(resource.RLIMIT_CPU, timeout)
+    set_limit(resource.RLIMIT_AS, memory)
+    set_limit(resource.RLIMIT_CORE, 0)
+
 
 def add_property(name, value):
     properties_file.write('%s = %s\n' % (name, repr(value)))
@@ -44,6 +196,7 @@ def save_returncode(command_name, value):
     error = 0 if value == 0 else 1
     add_property('%s_error' % command_name.lower(), error)
 
+
 def run_command(command, name):
     """
     Calls the command with subprocess.call()
@@ -56,7 +209,10 @@ def run_command(command, name):
     add_property(name + '_start_time', str(datetime.datetime.now()))
 
     try:
-        returncode = subprocess.call(command, shell=True, **redirects)
+        process = subprocess.Popen(command, shell=True,
+                                   preexec_fn=prepare_process, **redirects)
+        watch(process.pid)
+        returncode = process.returncode
     except MemoryError:
         redirects['stderr'].write('Error: MemoryError %s\n' % name)
         # Use normal error code (1) since a MemoryError is an expected error
@@ -73,15 +229,6 @@ def run_command(command, name):
     save_returncode(name, returncode)
     return returncode
 
-
-preprocess_command = """***PREPROCESS_COMMAND***"""
-if preprocess_command:
-    run_command(preprocess_command, 'preprocess')
-
-# Limits can not be increased, so set them only once after the preprocessing
-set_limit(resource.RLIMIT_CPU, timeout)
-set_limit(resource.RLIMIT_AS, memory)
-set_limit(resource.RLIMIT_CORE, 0)
 
 command = """***RUN_COMMAND***"""
 returncode = run_command(command, 'command')
@@ -112,8 +259,3 @@ if returncode == 0:
             # We are missing a required file
             msg = 'Error: Required file missing "%s"\n' % required_file
             redirects['stderr'].write(msg)
-
-
-postprocess_command = """***POSTPROCESS_COMMAND***"""
-if postprocess_command:
-    run_command(postprocess_command, 'postprocess')
