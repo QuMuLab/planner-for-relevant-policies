@@ -107,9 +107,16 @@ class ProcessGroup(object):
 
 #------------------------------------------------------------------------------
 
+class KilledError(Exception):
+    def __init__(self, signal):
+        self.signal = signal
+    def __str__(self):
+        return repr('process killed with signal %s' % self.signal)
+
 def kill_pgrp(pgrp, sig):
     try:
         os.killpg(pgrp, sig)
+        raise KilledError(sig)
     except OSError:
         pass
 
@@ -125,7 +132,12 @@ def watch(child_pid):
         ## avoid a race condition. This way, we know that the child_pid
         ## is a descendant.
 
-        if os.waitpid(child_pid, os.WNOHANG) != (0, 0):
+        pid, exit_status = os.waitpid(child_pid, os.WNOHANG)
+        if (pid, exit_status) != (0, 0):
+            print 'process terminated', pid, exit_status
+            for func in [os.WIFSTOPPED, os.WIFSIGNALED, os.WSTOPSIG,
+                         os.WTERMSIG]:
+                print func.__name__, func(exit_status)
             break
 
         total_time = group.total_time()
@@ -147,7 +159,6 @@ def watch(child_pid):
             print "aborting children with SIGKILL..."
             print "children found: %s" % group.pids()
             kill_pgrp(child_pid, signal.SIGKILL)
-
 
     # Even if we got here, there may be orphaned children or something
     # we may have missed due to a race condition. Check for that and kill.
@@ -198,29 +209,34 @@ def save_returncode(command_name, value):
 
 
 def run_command(command, name):
-    """
-    Calls the command with subprocess.call()
-    The timeout does not have to be checked here since the subprocess is
-    automatically stopped when the timeout is reached. In that case returncode
-    gets the value 137 and the rest of the method is still executed.
-    """
+    """Calls the command with the subprocess module."""
+    # TODO: Handle segmentation faults (bad alloc)
+    stderr = redirects['stderr']
     start_times = os.times()
-
     add_property(name + '_start_time', str(datetime.datetime.now()))
 
     try:
         process = subprocess.Popen(command, shell=True,
                                    preexec_fn=prepare_process, **redirects)
         watch(process.pid)
-        returncode = process.returncode
+        # If no error occured we assume everything went fine
+        print 'RETCODE', process.poll()  # poll always returns None after watch
+        returncode = 0
     except MemoryError:
-        redirects['stderr'].write('Error: MemoryError %s\n' % name)
+        stderr.write('Error: %s MemoryError\n' % name)
         # Use normal error code (1) since a MemoryError is an expected error
         returncode = 1
     except KeyboardInterrupt:
-        redirects['stdout'].write('%s interrupted\n' % name)
+        stderr.write('Error: %s interrupted\n' % name)
         # Set returncode to SIGINT, this is what Ctrl-C generates
-        returncode = -2
+        returncode = 2
+    except KilledError as err:
+        stderr.write('Error: %s killed with signal %s\n' % (name, err.signal))
+        returncode = 3  # was 137
+    except Exception as err:
+        stderr.write('Error: %s "%s"\n' % (name, err))
+        # Set returncode to a special value
+        returncode = 999
 
     end_times = os.times()
     time = end_times[2] + end_times[3] - start_times[2] - start_times[3]
