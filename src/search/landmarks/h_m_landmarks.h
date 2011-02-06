@@ -2,7 +2,7 @@
 #define LANDMARKS_H_M_LANDMARKS_H
 
 #include "../globals.h"
-#include "landmarks_graph.h"
+#include "landmark_graph.h"
 
 typedef std::pair<int, int> Fluent;
 typedef std::vector<Fluent> FluentSet;
@@ -65,20 +65,23 @@ struct HMEntry {
 
 typedef std::map<FluentSet, int, FluentSetComparer> FluentSetToIntMap;
 
-class HMLandmarks : public LandmarksGraph {
+class HMLandmarks {
 public:
-    HMLandmarks(LandmarkGraphOptions &options, Exploration *expl, int m);
-    ~HMLandmarks() {
-    }
+    HMLandmarks(LandmarkGraph::Options &options, Exploration *expl, int m);
+    virtual ~HMLandmarks();
+    // TODO: get_lm_graph *must* be called to avoid memory leeks!
+    // returns a landmargraph created by HMLandmarks. take care to delete the pointer when you don't need it anymore!
+    LandmarkGraph *get_lm_graph();
 
-    virtual void generate_landmarks();
+    void generate_landmarks();
 
 // should be used together in a tuple?
     bool interesting(int var1, int val1, int var2, int val2);
-    static LandmarksGraph *create(const std::vector<std::string> &config, int start,
+
+    static LandmarkGraph *create(const std::vector<std::string> &config, int start,
                                   int &end, bool dry_run);
 
-protected:
+private:
 //  typedef std::set<std::pair<int,int> > TriggerSet;
     typedef __gnu_cxx::hash_map<int, std::set<int> > TriggerSet;
 
@@ -107,6 +110,7 @@ protected:
     void print_pm_op(const PMOp &op);
 
     int m_;
+    LandmarkGraph *lm_graph;
 
     std::map<int, LandmarkNode *> lm_node_table_;
 
