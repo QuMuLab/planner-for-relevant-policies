@@ -151,7 +151,7 @@ def _prepare_preprocess_exp(exp, translator, preprocessor):
 def _prepare_search_exp(exp, translator, preprocessor, planner):
     _require_checkout(exp, planner)
     for bin in ['downward-1', 'downward-2', 'downward-4', 'dispatch',
-                'downward-seq-opt-fdss-1.py']:
+                'downward-seq-opt-fdss-1.py', 'unitcost']:
         src_path = os.path.join(planner.exe_dir, bin)
         if not os.path.isfile(src_path):
             continue
