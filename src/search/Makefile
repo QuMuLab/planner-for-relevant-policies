@@ -25,6 +25,7 @@ HEADERS = \
           plugin.h \
           pref_evaluator.h \
           relaxation_heuristic.h \
+	  rng.h \
           search_engine.h \
           search_node_info.h \
           search_progress.h \
@@ -95,6 +96,12 @@ HEADERS += learning/AODE.h \
            learning/selective_max_heuristic.h \
            learning/state_space_sample.h \
            learning/state_vars_feature_extractor.h
+
+HEADERS += pdb_heuristic.h \
+           abstract_state_iterator.h \
+           pdb_collection_heuristic.h \
+           planning_utilities.h \
+           pattern_generation_haslum.h
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET  = downward
