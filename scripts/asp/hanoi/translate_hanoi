@@ -10,4 +10,8 @@ python translate_hanoi.py $1.nocomment > $1.pddl
 
 $DOWNWARD_SRC/translate/translate.py hanoi.pddl $1.pddl
 $DOWNWARD_SRC/preprocess/preprocess < output.sas
-$DOWNWARD_SRC/search/downward --heuristic "h=ff()" --search "lazy_greedy(h,preferred=(h),bound=$bound)" < output
+$DOWNWARD_SRC/search/downward --landmarks "lmg=lm_merged(lm_rhw(),lm_hm(m=1),reasonable_orders=true)" --heuristic "h1,h2=lm_ff_syn(lmg)" --heuristic "h3=cea()" --heuristic "h4=cg()" --heuristic "h5=add()" --search "lazy_greedy(h1,h2,h3,h4,h5,preferred=(h1,h2,h3,h4,h5),bound=$bound)" < output
+#$DOWNWARD_SRC/search/downward --search "astar(selmax(lmcut(),hmax(),alpha=4,training_set=10),  pathmax=true)" < output
+gawk '{disc = substr($2,2); to = substr($4,2) + 0; print "PUT(" NR-1 "," to "," disc ")";}' sas_plan > $1.soln
+
+cat $1.soln
