@@ -1,0 +1,13 @@
+#!/bin/sh
+# $1 - ASP encoding of HANOI problem 
+
+DOWNWARD_SRC=../../../src
+
+bound=`grep steps $1 | gawk 'BEGIN {FS="(";} {print $2 + 1;}'`
+
+gawk '{if (substr($1,1,1) != "%") print $0l}' $1 > $1.nocomment
+python translate_hanoi.py $1.nocomment > $1.pddl
+
+$DOWNWARD_SRC/translate/translate.py hanoi.pddl $1.pddl
+$DOWNWARD_SRC/preprocess/preprocess < output.sas
+$DOWNWARD_SRC/search/downward --heuristic "h=ff()" --search "lazy_greedy(h,preferred=(h),bound=$bound)" < output
