@@ -11,8 +11,8 @@ num_ops=`grep -c begin_operator $1.sas`
 gawk --assign=num_ops=$num_ops '{if ($0 == "NUM_OPS") print num_ops; else print $0;}' $1.sas > $1.sas.fixed
 
 $DOWNWARD_SRC/preprocess/preprocess < $1.sas.fixed
-$DOWNWARD_SRC/search/downward --heuristic "h1=ff()" --heuristic "h2=cea()" --heuristic "h3=cg()" --heuristic "h4=add()" --search "lazy_greedy(h1,h2,h3,h4,preferred=(h1,h2,h3,h4))" < output
-#$DOWNWARD_SRC/search/downward --search "astar(selmax(lmcut(),hmax(),alpha=4,training_set=10),  pathmax=true)" < output
+$DOWNWARD_SRC/search/downward --heuristic "h1=ff()" --search "lazy_greedy(h1,preferred=(h1))" < output
+#$DOWNWARD_SRC/search/downward --search "astar(selmax(lmcut(),hmax(),alpha=4,training_set=100),  pathmax=true)" < output
 
 gawk '{if ($1 == "(move") print "move(" $2+1 "," $3+1 "," $4+1 "," $5 +1 ").";}' sas_plan > $1.soln
 
