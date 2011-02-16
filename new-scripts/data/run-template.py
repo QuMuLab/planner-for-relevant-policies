@@ -10,6 +10,7 @@ import glob
 import datetime
 import signal
 
+
 ***ENVIRONMENT_VARIABLES***
 
 timeout = ***TIMEOUT***
@@ -31,20 +32,6 @@ properties_file = open('properties', 'a')
 
 JIFFIES_PER_SECOND = 100
 
-def partition(text, pattern):
-    pos = text.find(pattern)
-    if pos == -1:
-        return text, "", ""
-    else:
-        return text[:pos], pattern, text[pos + len(pattern):]
-
-def rpartition(text, pattern):
-    pos = text.rfind(pattern)
-    if pos == -1:
-        return "", "", text
-    else:
-        return text[:pos], pattern, text[pos + len(pattern):]
-
 
 class Process(object):
     def __init__(self, pid):
@@ -54,8 +41,8 @@ class Process(object):
         # Don't use stat.split(): the command can contain spaces.
         # Be careful which "()" to match: the command name can contain
         # parentheses.
-        prefix, lparen, rest = partition(stat, "(")
-        command, rparen, suffix = rpartition(rest, ")")
+        prefix, lparen, rest = stat.partition("(")
+        command, rparen, suffix = rest.rpartition(")")
         parts = suffix.split()
 
         self.pid = pid
@@ -116,9 +103,11 @@ class KilledError(Exception):
 def kill_pgrp(pgrp, sig):
     try:
         os.killpg(pgrp, sig)
-        raise KilledError(sig)
     except OSError:
+        #TODO: log error somewhere
         pass
+    else:
+        raise KilledError(sig)
 
 def watch(child_pid):
     term_attempted = False
@@ -146,9 +135,11 @@ def watch(child_pid):
         print "[real-time %d] total_vsize: %.2f" % (real_time, total_vsize)
 
         try_term = (total_time >= timeout or
-                    real_time >= 1.5 * timeout)
+                    real_time >= 1.5 * timeout or
+                    total_vsize > memory)
         try_kill = (total_time >= timeout + KILL_DELAY or
-                    real_time >= 1.5 * timeout + KILL_DELAY)
+                    real_time >= 1.5 * timeout + KILL_DELAY or
+                    total_vsize > 1.5 * memory)
 
         if try_term and not term_attempted:
             print "aborting children with SIGTERM..."
@@ -186,7 +177,7 @@ def set_limit(kind, amount):
         resource.setrlimit(kind, (amount, amount))
     except (OSError, ValueError), e:
         redirects['stderr'].write('Error: %s\n' % e)
-        sys.exit()
+        sys.exit(1)
 
 def prepare_process():
     os.setpgrp()
@@ -263,8 +254,8 @@ if returncode == 0:
     for file_glob in optional_output:
         detected_optional_files.extend(glob.glob(file_glob))
 
-    expected_files = resources + run_files + detected_optional_files + \
-                     required_output
+    expected_files = (resources + run_files + detected_optional_files +
+                      required_output)
 
     for file in found_files:
         if file not in expected_files:
