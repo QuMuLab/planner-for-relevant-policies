@@ -65,13 +65,12 @@ def convert_knight_instance(filename):
             print "begin_operator"
             print "start_at",x1,y1
             print 0
-            print 6
+            print 5
             print 0,0,0,1
             print 0,1,0,x1
             print 0,2,0,y1
             print 0,3,0,x1
             print 0,4,0,y1
-            print 0,visited[(x1,y1)],-1,1
             print 0
             print "end_operator"
             
@@ -104,7 +103,7 @@ def convert_knight_instance(filename):
                         print 3
                     print 0,1,x1,x2
                     print 0,2,y1,y2
-                    print 0,visited[(x2,y2)],-1,1
+                    print 0,visited[(x2,y2)],0,1
                     if (x1,y1,x2,y2) in given_moves:
                         print 0, did[(x1,y1,x2,y2)], -1, 1
                     print 0
