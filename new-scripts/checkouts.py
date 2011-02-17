@@ -32,6 +32,12 @@ class Checkout(object):
 
         self._executable = None
 
+    def __eq__(self, other):
+        return self.rev == other.rev
+
+    def __hash__(self):
+        return hash(self.rev)
+
     def checkout(self):
         # We don't need to check out the working copy
         if not self.rev == 'WORK':
@@ -102,6 +108,10 @@ class Checkout(object):
     @property
     def shell_name(self):
         return '%s_%s' % (self.part.upper(), self.rev)
+
+    @property
+    def src_dir(self):
+        return os.path.join(self.checkout_dir, 'src')
 
 
 # ---------- Mercurial --------------------------------------------------------

@@ -73,6 +73,11 @@ class Experiment(object):
         self.base_dir = os.path.abspath(self.base_dir)
         logging.info('Base Dir: "%s"' % self.base_dir)
 
+        # Include the experiment code
+        for module in ['processgroup.py', 'call.py', 'log.py']:
+            self.add_resource(module.upper(), os.path.join(DATA_DIR, module),
+                              os.path.join('processes', module))
+
     def set_property(self, name, value):
         """
         Add a key-value property to the experiment. These can be used later for

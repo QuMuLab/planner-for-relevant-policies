@@ -43,6 +43,13 @@ def _get_configs(planner_rev, config_list):
     return configs
 
 
+def require_src_dirs(exp, combinations):
+    import itertools
+    checkouts = set(itertools.chain(*combinations))
+    for checkout in checkouts:
+        exp.add_resource('SRC_%s' % checkout.rev, checkout.src_dir, 'CODE-%s' % checkout.rev)
+
+
 class DownwardRun(experiments.Run):
     def __init__(self, exp, translator, preprocessor, planner, problem):
         experiments.Run.__init__(self, exp)
@@ -297,6 +304,7 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
     exp = experiments.build_experiment(parser)
     checkouts.make_checkouts(combinations)
+    require_src_dirs(exp, combinations)
     problems = downward_suites.build_suite(exp.suite)
 
     for translator, preprocessor, planner in combinations:
