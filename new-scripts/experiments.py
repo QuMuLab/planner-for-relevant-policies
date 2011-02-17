@@ -430,14 +430,15 @@ class Run(object):
 
             # Support running globally installed binaries
             cmd_string = '[%s]' % ', '.join([arg if arg in self.env_vars else repr(arg) for arg in cmd])
-            #cmd_string = '[%s, %s]' % (exe, ', '.join(repr(arg) for arg in cmd[1:]))
-            #cmd_string = repr(cmd)
             kwargs_string = ', '.join('%s="%s"' % pair for pair in kwargs.items())
             parts = [cmd_string]
             if kwargs_string:
                 parts.append(kwargs_string)
             call = 'retcode = Call(%s, **redirects).wait()\nsave_returncode("%s", retcode)\n'
             return call % (', '.join(parts), name)
+
+        calls_text = '\n'.join(make_call(name, cmd, kwargs)
+                               for name, (cmd, kwargs) in self.commands.items())
 
         if self.env_vars:
             env_vars_text = ''
@@ -446,12 +447,11 @@ class Run(object):
                 rel_filename = os.path.relpath(abs_filename, self.dir)
                 env_vars_text += ('%s = "%s"\n' % (var, rel_filename))
         else:
-            env_vars_text = ('"Here you would find the declaration of '
-                             'environment variables"')
-        run_script = run_script.replace('***ENVIRONMENT_VARIABLES***', env_vars_text)
+            env_vars_text = '"Here you would find variable declarations"'
 
-        calls = [make_call(name, cmd, kwargs) for name, (cmd, kwargs) in self.commands.items()]
-        run_script += '\n' + '\n'.join(calls)
+        for old, new in [('VARIABLES', env_vars_text), ('CALLS', calls_text)]:
+            run_script = run_script.replace('"""%s"""' % old, new)
+
         self.new_files.append(('run', run_script))
         return
 

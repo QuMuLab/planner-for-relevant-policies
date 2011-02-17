@@ -88,40 +88,47 @@ class DownwardRun(experiments.Run):
 def _prepare_preprocess_run(exp, run):
     output_files = ["*.groups", "output.sas", "output"]
 
-    self = run
-    self.require_resource(self.preprocessor.shell_name)
+    run.require_resource(run.preprocessor.shell_name)
 
-    self.add_resource("DOMAIN", run.problem.domain_file(), "domain.pddl")
-    self.add_resource("PROBLEM", run.problem.problem_file(), "problem.pddl")
+    run.add_resource("DOMAIN", run.problem.domain_file(), "domain.pddl")
+    run.add_resource("PROBLEM", run.problem.problem_file(), "problem.pddl")
 
-    self.add_command('translate', [run.translator.shell_name, 'domain.pddl',
+    run.add_command('translate', [run.translator.shell_name, 'domain.pddl',
                                    'problem.pddl'])
-    self.add_command('preprocess', [run.preprocessor.shell_name],
+    run.add_command('preprocess', [run.preprocessor.shell_name],
                      {'stdin': 'output.sas'})
 
-    ext_config = '-'.join([self.translator.rev, self.preprocessor.rev])
+    ext_config = '-'.join([run.translator.rev, run.preprocessor.rev])
     run.set_property('config', ext_config)
-    run.set_property('id', [ext_config, self.domain_name, self.problem_name])
+    run.set_property('id', [ext_config, run.domain_name, run.problem_name])
 
     for output_file in output_files:
-        self.declare_optional_output(output_file)
+        run.declare_optional_output(output_file)
 
 
 def _prepare_search_run(exp, run, planner_config, config_nick):
-    self = run
-    self.planner_config = planner_config
-    self.config_nick = config_nick
+    run.planner_config = planner_config
+    run.config_nick = config_nick
 
-    self.require_resource(run.planner.shell_name)
-    self.add_command('search', [run.planner.shell_name] +
+    run.require_resource(run.planner.shell_name)
+    run.add_command('search', [run.planner.shell_name] +
                      shlex.split(run.planner_config), {'stdin': 'output'})
-    self.declare_optional_output("sas_plan")
+    run.declare_optional_output("sas_plan")
 
     # Validation
-    self.require_resource('VALIDATE')
-    self.add_command('validate', ['VALIDATE', 'DOMAIN', 'PROBLEM', 'sas_plan'])
+    run.require_resource('VALIDATE')
+    run.add_command('validate', ['VALIDATE', 'DOMAIN', 'PROBLEM', 'sas_plan'])
 
-    self.set_property('commandline_config', self.planner_config)
+    run.set_property('commandline_config', run.planner_config)
+
+    # If all three parts have the same revision don't clutter the reports
+    revs = [run.translator.rev, run.preprocessor.rev, run.planner.rev]
+    if len(revs) == len(set(revs)):
+        revs = [run.translator.rev]
+    ext_config = '-'.join(revs + [run.planner_config])
+
+    run.set_property('config', ext_config)
+    run.set_property('id', [ext_config, run.domain_name, run.problem_name])
 
 
 def _require_checkout(exp, part):
