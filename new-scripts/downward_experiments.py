@@ -84,6 +84,7 @@ class DownwardRun(experiments.Run):
             revs = [self.translator.rev]
         return '-'.join(revs + [self.planner_config])
 
+
 def _prepare_preprocess_run(exp, run):
     output_files = ["*.groups", "output.sas", "output"]
 
@@ -104,6 +105,7 @@ def _prepare_preprocess_run(exp, run):
 
     for output_file in output_files:
         self.declare_optional_output(output_file)
+
 
 def _prepare_search_run(exp, run, planner_config, config_nick):
     self = run
