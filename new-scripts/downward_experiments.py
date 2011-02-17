@@ -93,8 +93,10 @@ def _prepare_preprocess_run(exp, run):
     self.add_resource("DOMAIN", run.problem.domain_file(), "domain.pddl")
     self.add_resource("PROBLEM", run.problem.problem_file(), "problem.pddl")
 
-    self.add_command('translate', [run.translator.shell_name, 'domain.pddl', 'problem.pddl'])
-    self.add_command('preprocess', [run.preprocessor.shell_name], {'stdin': 'output.sas'})
+    self.add_command('translate', [run.translator.shell_name, 'domain.pddl',
+                                   'problem.pddl'])
+    self.add_command('preprocess', [run.preprocessor.shell_name],
+                     {'stdin': 'output.sas'})
 
     ext_config = '-'.join([self.translator.rev, self.preprocessor.rev])
     run.set_property('config', ext_config)

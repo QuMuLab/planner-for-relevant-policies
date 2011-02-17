@@ -304,10 +304,6 @@ class Run(object):
         self.env_vars = {}
         self.new_files = []
 
-        self.command = ''
-        self.preprocess_command = ''
-        self.postprocess_command = ''
-
         self.commands = OrderedDict()
 
         self.optional_output = []
@@ -365,46 +361,17 @@ class Run(object):
 
     def add_command(self, name, command, kwargs=None):
         """
+        Examples:
+        >>> run.add_command('translate', [run.translator.shell_name,
+                                          'domain.pddl', 'problem.pddl'])
+        >>> run.add_command('preprocess', [run.preprocessor.shell_name],
+                            {'stdin': 'output.sas'})
+        >>> run.add_command('validate', ['VALIDATE', 'DOMAIN', 'PROBLEM',
+                                         'sas_plan'])
         command has to be a list of strings
         kwargs is a dict that is passed to subprocess.Popen()
         """
         self.commands[name] = (command, kwargs or {})
-
-    def set_command(self, command):
-        """
-        Example:
-        >>> run.set_command('$PLANNER %s <$INFILE' % options)
-
-        A bash fragment that gives the code to be run when invoking
-        this job.
-        Optionally, can use run.set_preprocess() and
-        run.set_postprocess() to specify code that should be run
-        before the main command, i.e., outside the part for which we
-        restrict runtime and memory. For example, post-processing
-        could be used to rename result files or zipping them up. The
-        postprocessing code should have some way of finding out
-        whether the command succeeded or was aborted, e.g. via some
-        environment variable.
-        """
-        self.command = command
-
-    def set_preprocess(self, command):
-        """
-        Execute a command prior tu running the main command
-
-        Example:
-        >>> run.set_preprocess('ls -la')
-        """
-        self.preprocess_command = command
-
-    def set_postprocess(self, command):
-        """
-        Execute a command directly after the main command exited
-
-        Example:
-        >>> run.set_postprocess('echo Finished')
-        """
-        self.postprocess_command = command
 
     def declare_optional_output(self, file_glob):
         """
@@ -472,8 +439,6 @@ class Run(object):
             call = 'retcode = Call(%s, **redirects).wait()\nsave_returncode("%s", retcode)\n'
             return call % (', '.join(parts), name)
 
-
-
         if self.env_vars:
             env_vars_text = ''
             for var, filename in sorted(self.env_vars.items()):
@@ -489,25 +454,6 @@ class Run(object):
         run_script += '\n' + '\n'.join(calls)
         self.new_files.append(('run', run_script))
         return
-
-
-
-
-        run_script = open(os.path.join(DATA_DIR, 'run-template.py')).read()
-        resources = [filename for var, filename, req in self.resources]
-        replacements = {'ENVIRONMENT_VARIABLES': env_vars_text,
-                        'RUN_COMMAND': self.command,
-                        'PREPROCESS_COMMAND': self.preprocess_command,
-                        'POSTPROCESS_COMMAND': self.postprocess_command,
-                        'TIMEOUT': str(self.experiment.timeout),
-                        'MEMORY': str(self.experiment.memory),
-                        'OPTIONAL_OUTPUT': str(self.optional_output),
-                        'REQUIRED_OUTPUT': str(self.required_output),
-                        'RESOURCES': str(resources)}
-        for orig, new in replacements.items():
-            run_script = run_script.replace('***' + orig + '***', new)
-
-        self.new_files.append(('run', run_script))
 
     def _build_linked_resources(self):
         """
