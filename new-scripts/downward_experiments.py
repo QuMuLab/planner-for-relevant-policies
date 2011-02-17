@@ -106,9 +106,9 @@ def _prepare_preprocess_run(exp, run):
         run.declare_optional_output(output_file)
 
 
-def _prepare_search_run(exp, run, planner_config, config_nick):
-    run.planner_config = planner_config
+def _prepare_search_run(exp, run, config_nick, config):
     run.config_nick = config_nick
+    run.planner_config = config
 
     run.require_resource(run.planner.shell_name)
     run.add_command('search', [run.planner.shell_name] +
@@ -305,12 +305,12 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
 
         configs = _get_configs(planner.rev, exp.configs)
 
-        for config_name, config in configs:
+        for config_nick, config in configs:
             for problem in problems:
                 run = DownwardRun(exp, translator, preprocessor, planner,
                                   problem)
                 _prepare_preprocess_run(exp, run)
-                _prepare_search_run(exp, run, config, config_name)
+                _prepare_search_run(exp, run, config_nick, config)
                 exp.add_run(run)
     exp.build()
     return exp
