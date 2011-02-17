@@ -447,6 +447,9 @@ class Run(object):
             msg = 'Please add at least one command via run.add_command()'
             raise SystemExit(msg)
 
+        self.experiment.env_vars.update(self.env_vars)
+        self.env_vars = self.experiment.env_vars.copy()
+
         run_script = open(os.path.join(DATA_DIR, 'run-template.py')).read()
 
         def make_call(name, cmd, kwargs):
@@ -454,7 +457,15 @@ class Run(object):
                 logging.error('Commands have to be lists of strings. '
                               'The command <%s> is not a list.' % cmd)
                 sys.exit(1)
-            cmd_string = '[%s, %s]' % (cmd[0], ', '.join(repr(arg) for arg in cmd[1:]))
+            if not cmd:
+                logging.error('Command "%s" cannot be empty' % name)
+                sys.exit(1)
+
+            exe = cmd[0]
+            # Support running globally installed binaries
+            if exe not in self.env_vars:
+                exe = repr(exe)
+            cmd_string = '[%s, %s]' % (exe, ', '.join(repr(arg) for arg in cmd[1:]))
             kwargs_string = ', '.join('%s="%s"' % pair for pair in kwargs.items())
             parts = [cmd_string]
             if kwargs_string:
@@ -462,8 +473,7 @@ class Run(object):
             call = 'retcode = Call(%s, **redirects).wait()\nsave_returncode("%s", retcode)\n'
             return call % (', '.join(parts), name)
 
-        self.experiment.env_vars.update(self.env_vars)
-        self.env_vars = self.experiment.env_vars.copy()
+
 
         if self.env_vars:
             env_vars_text = ''

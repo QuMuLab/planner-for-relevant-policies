@@ -42,12 +42,6 @@ def _get_configs(planner_rev, config_list):
     return configs
 
 
-def _get_preprocess_cmd(translator, preprocessor):
-    translate_cmd = '$%s domain.pddl problem.pddl' % translator.shell_name
-    preprocess_cmd = '$%s < output.sas' % preprocessor.shell_name
-    return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
-
-
 class DownwardRun(experiments.Run):
     def __init__(self, exp, translator, preprocessor, planner, problem):
         experiments.Run.__init__(self, exp)
@@ -101,8 +95,7 @@ class DownwardPreprocessRun(DownwardRun):
         self.add_resource("PROBLEM", problem.problem_file(), "problem.pddl")
 
         self.add_command('translate', [translator.shell_name, 'domain.pddl', 'problem.pddl'])
-        self.add_command('preprocess', [preprocessor.shell_name], {'stdin':'output.sas'})
-        #self.set_command(_get_preprocess_cmd(translator, preprocessor))
+        self.add_command('preprocess', [preprocessor.shell_name], {'stdin': 'output.sas'})
 
         for output_file in DownwardPreprocessRun.OUTPUT_FILES:
             self.declare_optional_output(output_file)
@@ -122,8 +115,10 @@ class DownwardSearchRun(DownwardRun):
                              problem)
 
         self.require_resource(planner.shell_name)
-        cmd = "$%s %s < $OUTPUT"
-        self.set_command(cmd % (planner.shell_name, planner_config))
+        import shlex
+        self.add_command('search', [planner.shell_name] +
+                         shlex.split(planner_config), {'stdin': 'output'})
+        self.add_command('disc', ['du'])
         self.declare_optional_output("sas_plan")
 
         # Validation
