@@ -461,11 +461,10 @@ class Run(object):
                 logging.error('Command "%s" cannot be empty' % name)
                 sys.exit(1)
 
-            exe = cmd[0]
             # Support running globally installed binaries
-            if exe not in self.env_vars:
-                exe = repr(exe)
-            cmd_string = '[%s, %s]' % (exe, ', '.join(repr(arg) for arg in cmd[1:]))
+            cmd_string = '[%s]' % ', '.join([arg if arg in self.env_vars else repr(arg) for arg in cmd])
+            #cmd_string = '[%s, %s]' % (exe, ', '.join(repr(arg) for arg in cmd[1:]))
+            #cmd_string = repr(cmd)
             kwargs_string = ', '.join('%s="%s"' % pair for pair in kwargs.items())
             parts = [cmd_string]
             if kwargs_string:

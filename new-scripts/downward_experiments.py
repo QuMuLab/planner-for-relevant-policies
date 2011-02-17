@@ -85,6 +85,8 @@ class DownwardRun(experiments.Run):
         return '-'.join(revs + [self.planner_config])
 
 def _prepare_preprocess_run(exp, run):
+    output_files = ["*.groups", "output.sas", "output"]
+
     self = run
     self.require_resource(self.preprocessor.shell_name)
 
@@ -98,7 +100,7 @@ def _prepare_preprocess_run(exp, run):
     run.set_property('config', ext_config)
     run.set_property('id', [ext_config, self.domain_name, self.problem_name])
 
-    for output_file in DownwardPreprocessRun.OUTPUT_FILES:
+    for output_file in output_files:
         self.declare_optional_output(output_file)
 
 def _prepare_search_run(exp, run, planner_config, config_nick):
@@ -113,56 +115,9 @@ def _prepare_search_run(exp, run, planner_config, config_nick):
 
     # Validation
     self.require_resource('VALIDATE')
-    self.set_postprocess('$VALIDATE $DOMAIN $PROBLEM sas_plan')
+    self.add_command('validate', ['VALIDATE', 'DOMAIN', 'PROBLEM', 'sas_plan'])
 
     self.set_property('commandline_config', self.planner_config)
-
-
-
-class DownwardPreprocessRun(DownwardRun):
-    OUTPUT_FILES = ["*.groups", "output.sas", "output"]
-
-    def __init__(self, exp, translator, preprocessor, planner, problem):
-        DownwardRun.__init__(self, exp, translator, preprocessor, planner,
-                             problem)
-
-        self.require_resource(self.preprocessor.shell_name)
-
-        self.add_resource("DOMAIN", problem.domain_file(), "domain.pddl")
-        self.add_resource("PROBLEM", problem.problem_file(), "problem.pddl")
-
-        self.add_command('translate', [translator.shell_name, 'domain.pddl', 'problem.pddl'])
-        self.add_command('preprocess', [preprocessor.shell_name], {'stdin': 'output.sas'})
-
-        for output_file in DownwardPreprocessRun.OUTPUT_FILES:
-            self.declare_optional_output(output_file)
-
-    @property
-    def ext_config(self):
-        return '-'.join([self.translator.rev, self.preprocessor.rev])
-
-
-class DownwardSearchRun(DownwardRun):
-    def __init__(self, exp, translator, preprocessor, planner, problem,
-                 planner_config, config_nick):
-        self.planner_config = planner_config
-        self.config_nick = config_nick
-
-        DownwardRun.__init__(self, exp, translator, preprocessor, planner,
-                             problem)
-
-        self.require_resource(planner.shell_name)
-        self.add_command('search', [planner.shell_name] +
-                         shlex.split(planner_config), {'stdin': 'output'})
-        self.declare_optional_output("sas_plan")
-
-        # Validation
-        self.require_resource('VALIDATE')
-        self.set_postprocess('$VALIDATE $DOMAIN $PROBLEM sas_plan')
-
-    def set_properties(self):
-        DownwardRun.set_properties(self)
-        self.set_property('commandline_config', self.planner_config)
 
 
 def _require_checkout(exp, part):
@@ -257,8 +212,8 @@ def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
         _prepare_preprocess_exp(exp, translator, preprocessor)
 
         for problem in problems:
-            run = DownwardPreprocessRun(exp, translator, preprocessor, planner,
-                                        problem)
+            run = DownwardRun(exp, translator, preprocessor, planner, problem)
+            _prepare_preprocess_run(exp, run)
             exp.add_run(run)
     exp.build()
 
@@ -299,8 +254,9 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 
         for config_name, config in configs:
             for problem in problems:
-                run = DownwardSearchRun(exp, translator, preprocessor, planner,
-                                        problem, config, config_name)
+                run = DownwardRun(exp, translator, preprocessor, planner,
+                                  problem)
+                _prepare_search_run(exp, run, config, config_name)
                 exp.add_run(run)
 
                 preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
