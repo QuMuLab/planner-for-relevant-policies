@@ -7,6 +7,7 @@ experiments with them.
 import os
 import sys
 import logging
+import shlex
 
 import experiments
 import checkouts
@@ -45,16 +46,18 @@ def _get_configs(planner_rev, config_list):
 class DownwardRun(experiments.Run):
     def __init__(self, exp, translator, preprocessor, planner, problem):
         experiments.Run.__init__(self, exp)
+
         self.translator = translator
         self.preprocessor = preprocessor
         self.planner = planner
+
         self.problem = problem
 
         self.set_properties()
 
     def set_properties(self):
-        domain = self.problem.domain
-        problem = self.problem.problem
+        self.domain_name = self.problem.domain
+        self.problem_name = self.problem.problem
 
         self.set_property('translator', self.translator.rev)
         self.set_property('preprocessor', self.preprocessor.rev)
@@ -64,14 +67,14 @@ class DownwardRun(experiments.Run):
         self.set_property('preprocessor_parent', self.preprocessor.parent_rev)
         self.set_property('planner_parent', self.planner.parent_rev)
 
-        self.set_property('domain', domain)
-        self.set_property('problem', problem)
+        self.set_property('domain', self.domain_name)
+        self.set_property('problem', self.problem_name)
 
         # Add memory limit information in KB
         self.set_property('memory_limit', self.experiment.memory * 1024)
 
-        self.set_property('config', self.ext_config)
-        self.set_property('id', [self.ext_config, domain, problem])
+        #self.set_property('config', self.ext_config)
+        #self.set_property('id', [self.ext_config, domain, problem])
 
     @property
     def ext_config(self):
@@ -80,6 +83,40 @@ class DownwardRun(experiments.Run):
         if len(revs) == len(set(revs)):
             revs = [self.translator.rev]
         return '-'.join(revs + [self.planner_config])
+
+def _prepare_preprocess_run(exp, run):
+    self = run
+    self.require_resource(self.preprocessor.shell_name)
+
+    self.add_resource("DOMAIN", run.problem.domain_file(), "domain.pddl")
+    self.add_resource("PROBLEM", run.problem.problem_file(), "problem.pddl")
+
+    self.add_command('translate', [run.translator.shell_name, 'domain.pddl', 'problem.pddl'])
+    self.add_command('preprocess', [run.preprocessor.shell_name], {'stdin': 'output.sas'})
+
+    ext_config = '-'.join([self.translator.rev, self.preprocessor.rev])
+    run.set_property('config', ext_config)
+    run.set_property('id', [ext_config, self.domain_name, self.problem_name])
+
+    for output_file in DownwardPreprocessRun.OUTPUT_FILES:
+        self.declare_optional_output(output_file)
+
+def _prepare_search_run(exp, run, planner_config, config_nick):
+    self = run
+    self.planner_config = planner_config
+    self.config_nick = config_nick
+
+    self.require_resource(run.planner.shell_name)
+    self.add_command('search', [run.planner.shell_name] +
+                     shlex.split(run.planner_config), {'stdin': 'output'})
+    self.declare_optional_output("sas_plan")
+
+    # Validation
+    self.require_resource('VALIDATE')
+    self.set_postprocess('$VALIDATE $DOMAIN $PROBLEM sas_plan')
+
+    self.set_property('commandline_config', self.planner_config)
+
 
 
 class DownwardPreprocessRun(DownwardRun):
@@ -115,10 +152,8 @@ class DownwardSearchRun(DownwardRun):
                              problem)
 
         self.require_resource(planner.shell_name)
-        import shlex
         self.add_command('search', [planner.shell_name] +
                          shlex.split(planner_config), {'stdin': 'output'})
-        self.add_command('disc', ['du'])
         self.declare_optional_output("sas_plan")
 
         # Validation
@@ -305,27 +340,11 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
 
         for config_name, config in configs:
             for problem in problems:
-                run = DownwardSearchRun(exp, translator, preprocessor, planner,
-                                          problem, config, config_name)
+                run = DownwardRun(exp, translator, preprocessor, planner,
+                                  problem)
+                _prepare_preprocess_run(exp, run)
+                _prepare_search_run(exp, run, config, config_name)
                 exp.add_run(run)
-
-                run.require_resource(preprocessor.shell_name)
-
-                run.add_resource("DOMAIN", problem.domain_file(),
-                                 "domain.pddl")
-                run.add_resource("PROBLEM", problem.problem_file(),
-                                 "problem.pddl")
-
-                for output_file in DownwardPreprocessRun.OUTPUT_FILES:
-                    run.declare_optional_output(output_file)
-
-                # We want to do the whole experiment in one step
-                preprocess_cmd = _get_preprocess_cmd(translator, preprocessor)
-                # There is no $OUTPUT variable in a "complete" experiment
-                search_cmd = "$%s %s < output" % (planner.shell_name, config)
-                run.set_command(preprocess_cmd + '; ' + search_cmd)
-                run.add_command('list_dir', ['ls'])
-                run.add_command('size', ['du', '-sh'])
     exp.build()
     return exp
 
