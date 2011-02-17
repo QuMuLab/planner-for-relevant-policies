@@ -43,7 +43,7 @@ def _get_configs(planner_rev, config_list):
 
 
 def _get_preprocess_cmd(translator, preprocessor):
-    translate_cmd = '$%s $DOMAIN $PROBLEM' % translator.shell_name
+    translate_cmd = '$%s domain.pddl problem.pddl' % translator.shell_name
     preprocess_cmd = '$%s < output.sas' % preprocessor.shell_name
     return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
 
@@ -100,7 +100,9 @@ class DownwardPreprocessRun(DownwardRun):
         self.add_resource("DOMAIN", problem.domain_file(), "domain.pddl")
         self.add_resource("PROBLEM", problem.problem_file(), "problem.pddl")
 
-        self.set_command(_get_preprocess_cmd(translator, preprocessor))
+        self.add_command('translate', [translator.shell_name, 'domain.pddl', 'problem.pddl'])
+        self.add_command('preprocess', [preprocessor.shell_name], {'stdin':'output.sas'})
+        #self.set_command(_get_preprocess_cmd(translator, preprocessor))
 
         for output_file in DownwardPreprocessRun.OUTPUT_FILES:
             self.declare_optional_output(output_file)

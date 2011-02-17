@@ -41,6 +41,15 @@ class Call(subprocess.Popen):
         self.kill_delay = kill_delay
         self.check_interval = check_interval
 
+        stdin = kwargs.get('stdin')
+        if type(stdin) is str:
+            kwargs['stdin'] = open(stdin)
+
+        for stream_name in ['stdout', 'stderr']:
+            stream = kwargs.get(stream_name)
+            if type(stream) is str:
+                kwargs[stream_name] = open(stream, 'w')
+
         def prepare_call():
             os.setpgrp()
             set_limit(resource.RLIMIT_CPU, self.time_limit)

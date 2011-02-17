@@ -363,11 +363,12 @@ class Run(object):
         self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
 
-    def add_command(self, name, command, **kwargs):
+    def add_command(self, name, command, kwargs=None):
         """
         command has to be a list of strings
+        kwargs is a dict that is passed to subprocess.Popen()
         """
-        self.commands[name] = (command, kwargs)
+        self.commands[name] = (command, kwargs or {})
 
     def set_command(self, command):
         """
@@ -446,40 +447,20 @@ class Run(object):
             msg = 'Please add at least one command via run.add_command()'
             raise SystemExit(msg)
 
-        run_script = '''\
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
+        run_script = open(os.path.join(DATA_DIR, 'run-template.py')).read()
 
-import sys
-import os
-
-# make sure we're in the run directory
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-#TODO: Change
-#exp_code_dir = os.path.abspath("../../exp_code")
-exp_code_dir = "/home/jendrik/projects/Downward/downward/new-scripts/data"
-print exp_code_dir
-sys.path.insert(0, exp_code_dir)
-
-from call import Call
-'''
-        def make_call(cmd, kwargs):
+        def make_call(name, cmd, kwargs):
             if not type(cmd) is list:
                 logging.error('Commands have to be lists of strings. '
                               'The command <%s> is not a list.' % cmd)
                 sys.exit(1)
-            cmd_string = str(cmd)
-            print cmd_string
-            kwargs_string = ', '.join('%s=%s' % pair for pair in kwargs.items())
-            print kwargs_string
+            cmd_string = '[%s, %s]' % (cmd[0], ', '.join(repr(arg) for arg in cmd[1:]))
+            kwargs_string = ', '.join('%s="%s"' % pair for pair in kwargs.items())
             parts = [cmd_string]
             if kwargs_string:
                 parts.append(kwargs_string)
-            return 'Call(%s)' % ', '.join(parts)
-        run_script += '\n'.join(make_call(cmd, kwargs) for name, (cmd, kwargs) in self.commands.items())
-        self.new_files.append(('run', run_script))
-        return
+            call = 'retcode = Call(%s, **redirects).wait()\nsave_returncode("%s", retcode)\n'
+            return call % (', '.join(parts), name)
 
         self.experiment.env_vars.update(self.env_vars)
         self.env_vars = self.experiment.env_vars.copy()
@@ -489,11 +470,19 @@ from call import Call
             for var, filename in sorted(self.env_vars.items()):
                 abs_filename = self._get_abs_path(filename)
                 rel_filename = os.path.relpath(abs_filename, self.dir)
-                env_vars_text += ('os.environ["%s"] = "%s"\n' %
-                                  (var, rel_filename))
+                env_vars_text += ('%s = "%s"\n' % (var, rel_filename))
         else:
             env_vars_text = ('"Here you would find the declaration of '
                              'environment variables"')
+        run_script = run_script.replace('***ENVIRONMENT_VARIABLES***', env_vars_text)
+
+        calls = [make_call(name, cmd, kwargs) for name, (cmd, kwargs) in self.commands.items()]
+        run_script += '\n' + '\n'.join(calls)
+        self.new_files.append(('run', run_script))
+        return
+
+
+
 
         run_script = open(os.path.join(DATA_DIR, 'run-template.py')).read()
         resources = [filename for var, filename, req in self.resources]
