@@ -115,7 +115,8 @@ class Call(subprocess.Popen):
         return self.returncode
 
 
-call = Call(['gnome-calculator'], time_limit=3, wall_clock_time_limit=4)
-print 'PID', call.pid
-call.wait()
-print 'RETCODE', call.returncode
+if __name__ == "__main__":
+    call = Call(['gnome-calculator'], time_limit=3, wall_clock_time_limit=4)
+    print 'PID', call.pid
+    call.wait()
+    print 'RETCODE', call.returncode

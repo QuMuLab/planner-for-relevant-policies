@@ -11,6 +11,7 @@ import logging
 import math
 
 import tools
+from external.ordereddict import OrderedDict
 
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
 DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
@@ -307,6 +308,8 @@ class Run(object):
         self.preprocess_command = ''
         self.postprocess_command = ''
 
+        self.commands = OrderedDict()
+
         self.optional_output = []
         self.required_output = []
 
@@ -359,6 +362,12 @@ class Run(object):
         """
         self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
+
+    def add_command(self, name, command, **kwargs):
+        """
+        command has to be a list of strings
+        """
+        self.commands[name] = (command, kwargs)
 
     def set_command(self, command):
         """
@@ -433,9 +442,44 @@ class Run(object):
         self._build_properties_file()
 
     def _build_run_script(self):
-        if not self.command:
-            msg = 'You have to specify a command via run.set_command()'
+        if not self.commands:
+            msg = 'Please add at least one command via run.add_command()'
             raise SystemExit(msg)
+
+        run_script = '''\
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+import os
+
+# make sure we're in the run directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+#TODO: Change
+#exp_code_dir = os.path.abspath("../../exp_code")
+exp_code_dir = "/home/jendrik/projects/Downward/downward/new-scripts/data"
+print exp_code_dir
+sys.path.insert(0, exp_code_dir)
+
+from call import Call
+'''
+        def make_call(cmd, kwargs):
+            if not type(cmd) is list:
+                logging.error('Commands have to be lists of strings. '
+                              'The command <%s> is not a list.' % cmd)
+                sys.exit(1)
+            cmd_string = str(cmd)
+            print cmd_string
+            kwargs_string = ', '.join('%s=%s' % pair for pair in kwargs.items())
+            print kwargs_string
+            parts = [cmd_string]
+            if kwargs_string:
+                parts.append(kwargs_string)
+            return 'Call(%s)' % ', '.join(parts)
+        run_script += '\n'.join(make_call(cmd, kwargs) for name, (cmd, kwargs) in self.commands.items())
+        self.new_files.append(('run', run_script))
+        return
 
         self.experiment.env_vars.update(self.env_vars)
         self.env_vars = self.experiment.env_vars.copy()

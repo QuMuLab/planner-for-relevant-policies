@@ -327,6 +327,8 @@ def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
                 # There is no $OUTPUT variable in a "complete" experiment
                 search_cmd = "$%s %s < output" % (planner.shell_name, config)
                 run.set_command(preprocess_cmd + '; ' + search_cmd)
+                run.add_command('list_dir', ['ls'])
+                run.add_command('size', ['du', '-sh'])
     exp.build()
     return exp
 
