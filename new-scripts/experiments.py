@@ -15,6 +15,7 @@ from external.ordereddict import OrderedDict
 
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
 DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
+CALLS_DIR = os.path.join(SCRIPTS_DIR, 'calls')
 
 HELP = """\
 Base module for creating fast downward experiments.
@@ -74,9 +75,7 @@ class Experiment(object):
         logging.info('Base Dir: "%s"' % self.base_dir)
 
         # Include the experiment code
-        for module in ['processgroup.py', 'call.py', 'log.py']:
-            self.add_resource(module.upper(), os.path.join(DATA_DIR, module),
-                              os.path.join('processes', module))
+        self.add_resource('CALLS', CALLS_DIR, 'calls')
 
     def set_property(self, name, value):
         """

@@ -7,10 +7,7 @@ import os
 # make sure we're in the run directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-#TODO: Change
-#exp_code_dir = os.path.abspath("../../exp_code")
-exp_code_dir = "/home/jendrik/projects/Downward/downward/new-scripts/data"
-print exp_code_dir
+exp_code_dir = os.path.abspath("../../calls")
 sys.path.insert(0, exp_code_dir)
 
 from call import Call
