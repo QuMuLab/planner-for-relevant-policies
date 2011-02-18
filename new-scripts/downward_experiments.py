@@ -132,7 +132,7 @@ def _prepare_search_run(exp, run, config_nick, config):
     revs = [run.translator.rev, run.preprocessor.rev, run.planner.rev]
     if len(revs) == len(set(revs)):
         revs = [run.translator.rev]
-    ext_config = '-'.join(revs + [run.planner_config])
+    ext_config = '-'.join(revs + [config_nick])
 
     run.set_property('config', ext_config)
     run.set_property('id', [ext_config, run.domain_name, run.problem_name])
@@ -270,11 +270,11 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
 
         configs = _get_configs(planner.rev, exp.configs)
 
-        for config_name, config in configs:
+        for config_nick, config in configs:
             for problem in problems:
                 run = DownwardRun(exp, translator, preprocessor, planner,
                                   problem)
-                _prepare_search_run(exp, run, config, config_name)
+                _prepare_search_run(exp, run, config_nick, config)
                 exp.add_run(run)
 
                 preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
