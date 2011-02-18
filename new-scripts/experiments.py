@@ -102,7 +102,6 @@ class Experiment(object):
         main directory of the experiment. The name "PLANNER" is an ID for
         this resource that can also be used to refer to it in shell scripts.
         """
-        dest = self._get_abs_path(dest)
         if not (source, dest) in self.resources:
             self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
@@ -121,6 +120,10 @@ class Experiment(object):
         Apply all the actions to the filesystem
         """
         tools.overwrite_dir(self.base_dir)
+
+        # Make the variables absolute
+        self.env_vars = dict([(var, self._get_abs_path(path))
+                              for (var, path) in self.env_vars.items()])
 
         self._set_run_dirs()
         self._build_main_script()
@@ -178,6 +181,7 @@ class Experiment(object):
 
     def _build_resources(self):
         for source, dest, required in self.resources:
+            dest = self._get_abs_path(dest)
             logging.debug('Copying %s to %s' % (source, dest))
             try:
                 tools.copy(source, dest, required)
