@@ -80,17 +80,6 @@ class DownwardRun(experiments.Run):
         # Add memory limit information in KB
         self.set_property('memory_limit', self.experiment.memory * 1024)
 
-        #self.set_property('config', self.ext_config)
-        #self.set_property('id', [self.ext_config, domain, problem])
-
-    @property
-    def ext_config(self):
-        # If all three parts have the same revision don't clutter the reports
-        revs = [self.translator.rev, self.preprocessor.rev, self.planner.rev]
-        if len(revs) == len(set(revs)):
-            revs = [self.translator.rev]
-        return '-'.join(revs + [self.planner_config])
-
 
 def _prepare_preprocess_run(exp, run):
     output_files = ["*.groups", "output.sas", "output"]
