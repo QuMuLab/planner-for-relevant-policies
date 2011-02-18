@@ -1,4 +1,4 @@
-redirects = {'stdout': open('run.log', 'w'), 'stderr': open('run.err', 'w')}
+redirects = {'stdout': open('run.log', 'a'), 'stderr': open('run.err', 'a')}
 properties_file = open('properties', 'a')
 
 
