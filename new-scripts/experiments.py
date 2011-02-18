@@ -10,9 +10,11 @@ import sys
 import logging
 import math
 
+import environments
 import tools
 from external.ordereddict import OrderedDict
 
+#TODO: Move into tools.py
 SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
 DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
 CALLS_DIR = os.path.join(SCRIPTS_DIR, 'calls')
@@ -23,19 +25,12 @@ PLEASE NOTE: The available options depend on the selected experiment type.
 You can set the experiment type with the "--exp-type" option.
 """
 
-# Create a parser only for parsing the experiment type
-exp_type_parser = tools.ArgParser(add_help=False, add_log_option=True)
-exp_type_parser.add_argument('-e', '--exp-type', default='local',
-                             choices=['local', 'gkigrid', 'argo'],
-                             help='Select an experiment type')
-
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        parents = kwargs.pop('parents', []) + [exp_type_parser]
-        tools.ArgParser.__init__(self, *args, parents=parents, **kwargs)
+        tools.ArgParser.__init__(self, *args, **kwargs)
 
-        self.add_argument('name',
+        self.add_argument('--name', default='trial1',
             help='name of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
             '-t', '--timeout', type=int, default=1800,
@@ -54,16 +49,17 @@ class ExpArgParser(tools.ArgParser):
 
 
 class Experiment(object):
-    def __init__(self, parser=ExpArgParser()):
+    def __init__(self, parser=None):
+        self.environment = None
+
         # Give all the options to the experiment instance
-        parser.parse_args(namespace=self)
+        self.parser = parser or ExpArgParser()
+        self.parse_args()
+        assert self.environment
 
         self.runs = []
         self.resources = []
         self.env_vars = {}
-
-        # Print some instructions for further processing at the end
-        self.end_instructions = ''
 
         self.properties = tools.Properties()
 
@@ -76,6 +72,17 @@ class Experiment(object):
 
         # Include the experiment code
         self.add_resource('CALLS', CALLS_DIR, 'calls')
+
+    def parse_args(self):
+        subparsers = self.parser.add_subparsers(dest='environment_type')
+        for cls in [environments.GkiGridEnvironment]:
+            cls.add_subparser(subparsers)
+        self.parser.parse_args(namespace=self)
+        print self.environment_type
+        if self.environment_type == 'gkigrid':
+            self.environment = environments.GkiGridEnvironment()
+        else:
+            raise Exception
 
     def set_property(self, name, value):
         """
@@ -131,8 +138,10 @@ class Experiment(object):
         self._build_runs()
         self._build_properties_file()
 
-        if self.end_instructions:
-            logging.info(self.end_instructions)
+        # Print some instructions for further processing at the end
+        end_instructions = self.environment.get_end_instructions(self)
+        if end_instructions:
+            logging.info(end_instructions)
 
     def _get_abs_path(self, rel_path):
         """
@@ -177,7 +186,7 @@ class Experiment(object):
         """
         Generates the main script
         """
-        raise Exception('Not Implemented')
+        self.environment.write_main_script(self)
 
     def _build_resources(self):
         for source, dest, required in self.resources:
@@ -241,67 +250,10 @@ class ArgoExperiment(Experiment):
         Experiment.__init__(self, parser=parser)
 
 
-class GkiGridExperiment(Experiment):
-    def __init__(self, parser=ExpArgParser()):
-        parser.add_argument(
-            '-q', '--queue', default='athlon_core.q',
-            help='name of the queue to use for the experiment')
-        parser.add_argument(
-            '--runs-per-task', type=int, default=1,
-            help='how many runs to put into one task')
-        parser.add_argument(
-            '--priority', type=int, default=0, choices=xrange(-1023, 1024 + 1),
-            metavar='NUM', help='priority of the job [-1023, 1024]')
-
-        Experiment.__init__(self, parser=parser)
-
-        self.filename = self.name
-        if not self.filename.endswith('.q'):
-            self.filename += '.q'
-        self.end_instructions = ('You can submit the experiment to the '
-                        'queue now by calling "qsub ./%(name)s/%(filename)s"' %
-                        self.__dict__)
-
-    def _build_main_script(self):
-        """
-        Generates the main script
-        """
-        num_tasks = math.ceil(len(self.runs) / float(self.runs_per_task))
-        job_params = {
-            'logfile': self.name + '.log',
-            'errfile': self.name + '.err',
-            'driver_timeout': self.timeout * self.runs_per_task + 30,
-            'num_tasks': num_tasks,
-            'queue': self.queue,
-            'priority': self.priority,
-        }
-        template_file = os.path.join(DATA_DIR, 'gkigrid-job-header-template')
-        script_template = open(template_file).read()
-        script = script_template % job_params
-
-        script += '\n'
-
-        run_groups = tools.divide_list(self.runs, self.runs_per_task)
-
-        for task_id, run_group in enumerate(run_groups, start=1):
-            script += 'if [[ $SGE_TASK_ID == %s ]]; then\n' % task_id
-            for run in run_group:
-                # Change into the run dir
-                script += '  cd %s\n' % os.path.relpath(run.dir, self.base_dir)
-                script += '  ./run\n'
-            script += 'fi\n'
-
-        self.filename = self._get_abs_path(self.filename)
-
-        with open(self.filename, 'w') as file:
-            file.write(script)
-
-
 class Run(object):
     """
     A Task can consist of one or multiple Runs
     """
-
     def __init__(self, experiment):
         self.experiment = experiment
 
@@ -514,6 +466,9 @@ class Run(object):
         return os.path.join(self.dir, rel_path)
 
 
+
+
+
 def build_experiment(parser=ExpArgParser()):
     """
     Factory for experiments.
@@ -528,15 +483,18 @@ def build_experiment(parser=ExpArgParser()):
 
     parser.description = HELP
 
-    if type == 'local':
-        exp = LocalExperiment(parser)
-    elif type == 'gkigrid':
-        exp = GkiGridExperiment(parser)
-    elif type == 'argo':
-        exp = ArgoExperiment(parser)
+    environment = environments.GkiGridEnvironment()
+
+
+    #if type == 'local':
+    #    exp = LocalExperiment(parser)
+    #elif type == 'gkigrid':
+    #    exp = GkiGridExperiment(parser)
+    #elif type == 'argo':
+    #    exp = ArgoExperiment(parser)
     return exp
 
 
 if __name__ == '__main__':
-    exp = build_experiment()
+    exp = Experiment()
     exp.build()
