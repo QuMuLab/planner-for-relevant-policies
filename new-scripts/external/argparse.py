@@ -2215,12 +2215,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # converted value must be one of the choices (if specified)
         if action.choices is not None and value not in action.choices:
             ## Use a shorter error message for big choices
-            choices = action.choices
-            if type(choices[0]) in [int, float] and len(choices) > 20:
-                examples = (choices[0], choices[1], choices[-1])
-                tup = value, '[%d, %d, ..., %d]' % examples
-            else:
-                tup = value, ', '.join(map(repr, action.choices))
+            ##choices = action.choices
+            ##if type(choices[0]) in [int, float] and len(choices) > 20:
+            ##    examples = (choices[0], choices[1], choices[-1])
+            ##    tup = value, '[%d, %d, ..., %d]' % examples
+            ##else:
+            tup = value, ', '.join(map(repr, action.choices))
             msg = _('invalid choice: %r (choose from %s)') % tup
             raise ArgumentError(action, msg)
 

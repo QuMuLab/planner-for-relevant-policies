@@ -30,7 +30,7 @@ class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, **kwargs)
 
-        self.add_argument('--name', default='trial1',
+        self.add_argument('-n', '--name', default='trial',
             help='name of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
             '-t', '--timeout', type=int, default=1800,
@@ -243,11 +243,6 @@ class LocalExperiment(Experiment):
             file.write(script)
             # Make run script executable
             os.chmod(filename, 0755)
-
-
-class ArgoExperiment(Experiment):
-    def __init__(self, parser=ExpArgParser()):
-        Experiment.__init__(self, parser=parser)
 
 
 class Run(object):

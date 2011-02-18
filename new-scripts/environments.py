@@ -66,3 +66,6 @@ class GkiGridEnvironment(Environment):
                 'queue now by calling "qsub ./%(name)s/<q-filename.q>"' %
                 exp.__dict__)
 
+
+class ArgoEnvironment(Environment):
+    pass
