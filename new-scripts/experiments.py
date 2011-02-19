@@ -30,7 +30,7 @@ class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, **kwargs)
 
-        self.add_argument('-n', '--name', default='trial',
+        self.add_argument('-n', '--name',
             help='name of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
             '-t', '--timeout', type=int, default=1800,
@@ -43,8 +43,8 @@ class ExpArgParser(tools.ArgParser):
             help='how many tasks to group into one top-level directory')
         self.add_argument(
             '--root-dir',
-            help='directory where this experiment should be located '
-                 '(default is this folder). '
+            help='directory where the experiment should be located '
+                 '(default is the current working directory). '
                  'The new experiment will reside in <root-dir>/<name>')
 
 
@@ -78,11 +78,13 @@ class Experiment(object):
         for cls in [environments.GkiGridEnvironment]:
             cls.add_subparser(subparsers)
         self.parser.parse_args(namespace=self)
-        print self.environment_type
+        logging.info('Environment: %s' % self.environment_type)
         if self.environment_type == 'gkigrid':
             self.environment = environments.GkiGridEnvironment()
         else:
             raise Exception
+        while not self.name:
+            self.name = raw_input('Please enter an experiment name: ').strip()
 
     def set_property(self, name, value):
         """
