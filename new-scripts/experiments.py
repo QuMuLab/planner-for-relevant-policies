@@ -8,7 +8,6 @@ from __future__ import with_statement
 import os
 import sys
 import logging
-import math
 
 import environments
 import tools
@@ -24,6 +23,10 @@ Base module for creating fast downward experiments.
 PLEASE NOTE: The available options depend on the selected experiment type.
 You can set the experiment type with the "--exp-type" option.
 """
+
+ENVIRONMENTS = {'local': environments.LocalEnvironment,
+                'gkigrid': environments.GkiGridEnvironment,
+                'argo': environments.ArgoEnvironment}
 
 
 class ExpArgParser(tools.ArgParser):
@@ -75,14 +78,14 @@ class Experiment(object):
 
     def parse_args(self):
         subparsers = self.parser.add_subparsers(dest='environment_type')
-        for cls in [environments.GkiGridEnvironment]:
+        for cls in ENVIRONMENTS.values():
             cls.add_subparser(subparsers)
         self.parser.parse_args(namespace=self)
         logging.info('Environment: %s' % self.environment_type)
-        if self.environment_type == 'gkigrid':
-            self.environment = environments.GkiGridEnvironment()
-        else:
-            raise Exception
+        self.environment = ENVIRONMENTS.get(self.environment_type)
+        if not self.environment:
+            logging.error('Unknown environment "%s"' % self.environment_type)
+            sys.exit(1)
         while not self.name:
             self.name = raw_input('Please enter an experiment name: ').strip()
 
@@ -210,41 +213,6 @@ class Experiment(object):
     def _build_properties_file(self):
         self.properties.filename = self._get_abs_path('properties')
         self.properties.write()
-
-
-class LocalExperiment(Experiment):
-    def __init__(self, parser=ExpArgParser()):
-        import multiprocessing
-        cores = multiprocessing.cpu_count()
-        parser.add_argument(
-            '-j', '--processes', type=int, default=1,
-            choices=xrange(1, cores + 1),
-            help='number of parallel processes to use (default: 1)')
-        Experiment.__init__(self, parser=parser)
-
-        self.end_instructions = ('You can run the experiment now by calling '
-            '"./%(name)s/run"' % {'name': self.name})
-
-    def _build_main_script(self):
-        """
-        Generates the main script
-        """
-        dirs = [os.path.relpath(run.dir, self.base_dir) for run in self.runs]
-        commands = ['"cd %s; ./run"' % dir for dir in dirs]
-        replacements = {'COMMANDS': ',\n'.join(commands),
-                        'PROCESSES': str(self.processes),
-                        }
-
-        script = open(os.path.join(DATA_DIR, 'local-job-template.py')).read()
-        for orig, new in replacements.items():
-            script = script.replace('***' + orig + '***', new)
-
-        filename = self._get_abs_path('run')
-
-        with open(filename, 'w') as file:
-            file.write(script)
-            # Make run script executable
-            os.chmod(filename, 0755)
 
 
 class Run(object):
@@ -418,7 +386,7 @@ class Run(object):
         the resources list
         """
         # Determine if we should link (gkigrid) or copy (argo)
-        if type(self.experiment) == ArgoExperiment:
+        if self.environment == environments.ArgoEnvironment:
             # Copy into run dir by adding the linked resource to normal
             # resources list
             for resource_name in self.linked_resources:
@@ -461,35 +429,6 @@ class Run(object):
         /home/user/mytestjob/runs-00001-00100/run
         """
         return os.path.join(self.dir, rel_path)
-
-
-
-
-
-def build_experiment(parser=ExpArgParser()):
-    """
-    Factory for experiments.
-
-    Parses cmd-line options to decide whether this is a gkigrid
-    experiment, a local experiment or whatever.
-    """
-    known_args, remaining_args = exp_type_parser.parse_known_args()
-
-    type = known_args.exp_type
-    logging.info('Experiment type: %s (Change with "--exp-type")' % type)
-
-    parser.description = HELP
-
-    environment = environments.GkiGridEnvironment()
-
-
-    #if type == 'local':
-    #    exp = LocalExperiment(parser)
-    #elif type == 'gkigrid':
-    #    exp = GkiGridExperiment(parser)
-    #elif type == 'argo':
-    #    exp = ArgoExperiment(parser)
-    return exp
 
 
 if __name__ == '__main__':
