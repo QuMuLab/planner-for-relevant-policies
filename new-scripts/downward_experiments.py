@@ -290,57 +290,65 @@ def build_search_exp(combinations, parser=experiments.ExpArgParser()):
     exp.build()
 
 
-def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
-    exp = experiments.build_experiment(parser)
-    checkouts.make_checkouts(combinations)
-    require_src_dirs(exp, combinations)
-    problems = downward_suites.build_suite(exp.suite)
+class DownwardExperiment(experiments.Experiment):
+    def __init__(self, combinations, parser=None):
+        self.combinations = combinations
+        parser = parser or experiments.ExpArgParser()
+        parser.add_argument('-p', '--preprocess', action='store_true',
+                            help='build preprocessing experiment')
+        parser.add_argument('--complete', action='store_true',
+                            help='build complete experiment (overrides -p)')
+        parser.add_argument('-s', '--suite', default=[], type=tools.csv,
+                            required=True, help=downward_suites.HELP)
+        parser.add_argument('-c', '--configs', default=[], type=tools.csv,
+                            required=False, help=downward_configs.HELP)
 
-    for translator, preprocessor, planner in combinations:
-        _prepare_preprocess_exp(exp, translator, preprocessor)
-        _prepare_search_exp(exp, translator, preprocessor, planner)
+        experiments.Experiment.__init__(self, parser)
 
-        configs = _get_configs(planner.rev, exp.configs)
+        config_needed = self.complete or not self.preprocess
+        if config_needed and not self.configs:
+            logging.error('Please specify at least one planner configuration')
+            sys.exit(2)
 
-        for config_nick, config in configs:
-            for problem in problems:
-                run = DownwardRun(exp, translator, preprocessor, planner,
-                                  problem)
+        checkouts.make_checkouts(combinations)
+        require_src_dirs(self, combinations)
+        self.problems = downward_suites.build_suite(self.suite)
+
+    def _prepare_preprocessing(self, translator, preprocessor):
+        _prepare_preprocess_exp(self, translator, preprocessor)
+
+    def _prepare_search(self, translator, preprocessor, planner):
+        _prepare_search_exp(self, translator, preprocessor, planner)
+
+    def _get_configs(self, rev):
+        return _get_configs(rev, self.configs)
+
+    def make_runs(self):
+        raise NotImplemented
+
+
+def make_complete_runs(exp):
+    for translator, preprocessor, planner in exp.combinations:
+        exp._prepare_preprocessing(translator, preprocessor)
+        exp._prepare_search(translator, preprocessor, planner)
+
+        for config_nick, config in exp._get_configs(planner.rev):
+            for prob in exp.problems:
+                run = DownwardRun(exp, translator, preprocessor, planner, prob)
                 _prepare_preprocess_run(exp, run)
                 _prepare_search_run(exp, run, config_nick, config)
                 exp.add_run(run)
-    exp.build()
-    return exp
 
 
 def build_experiment(combinations):
-    exp_type_parser = tools.ArgParser(add_help=False, add_log_option=False)
-    exp_type_parser.add_argument('-p', '--preprocess', action='store_true',
-                        default=False, help='build preprocessing experiment')
-    exp_type_parser.add_argument('--complete', action='store_true',
-                        default=False,
-                        help='build complete experiment (overrides -p)')
-
-    known_args, remaining_args = exp_type_parser.parse_known_args()
-    # delete parsed args
-    sys.argv = [sys.argv[0]] + remaining_args
-
-    logging.info('Preprocess exp: %s' % known_args.preprocess)
-
-    config_needed = known_args.complete or not known_args.preprocess
-
-    parser = experiments.ExpArgParser(parents=[exp_type_parser])
-    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
-                            required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
-                            required=config_needed, help=downward_configs.HELP)
-
-    if known_args.complete:
-        build_complete_experiment(combinations, parser)
-    elif known_args.preprocess:
-        build_preprocess_exp(combinations, parser)
+    exp = DownwardExperiment(combinations)
+    if exp.complete:
+        make_complete_runs(exp)
+    elif exp.preprocess:
+        make_preprocess_runs(exp)
     else:
-        build_search_exp(combinations, parser)
+        make_search_runs(exp)
+    exp.build()
 
 
 if __name__ == '__main__':
