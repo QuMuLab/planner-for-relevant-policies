@@ -13,6 +13,9 @@ sys.path.insert(0, exp_code_dir)
 from call import Call
 from log import redirects, save_returncode
 
+sys.stdout = redirects['stdout']
+sys.stderr = redirects['stderr']
+
 
 """VARIABLES"""
 
