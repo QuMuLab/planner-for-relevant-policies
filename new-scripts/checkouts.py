@@ -319,6 +319,7 @@ def make_checkouts(combinations):
             for part in combo:
                 parts.append(part)
 
-    for part in parts:
+    # Checkout and compile each revision only once
+    for part in set(parts):
         part.checkout()
         part.compile()
