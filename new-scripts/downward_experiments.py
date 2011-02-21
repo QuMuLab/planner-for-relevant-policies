@@ -48,7 +48,8 @@ def require_src_dirs(exp, combinations):
     import itertools
     checkouts = set(itertools.chain(*combinations))
     for checkout in checkouts:
-        exp.add_resource('SRC_%s' % checkout.rev, checkout.src_dir, 'CODE-%s' % checkout.rev)
+        exp.add_resource('SRC_%s' % checkout.rev, checkout.src_dir,
+                         'CODE-%s' % checkout.rev)
 
 
 class DownwardRun(experiments.Run):
@@ -149,7 +150,7 @@ class DownwardExperiment(experiments.Experiment):
             sys.exit(2)
 
         checkouts.make_checkouts(combinations)
-        require_src_dirs(self, combinations)
+        #require_src_dirs(self, combinations)
         self.problems = downward_suites.build_suite(self.suite)
 
         self.prepare()
