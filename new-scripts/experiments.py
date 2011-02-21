@@ -54,6 +54,7 @@ class ExpArgParser(tools.ArgParser):
 class Experiment(object):
     def __init__(self, parser=None):
         self.environment = None
+        self.end_instructions = ''
 
         # Give all the options to the experiment instance
         self.parser = parser or ExpArgParser()
@@ -144,9 +145,10 @@ class Experiment(object):
         self._build_properties_file()
 
         # Print some instructions for further processing at the end
-        end_instructions = self.environment.get_end_instructions(self)
-        if end_instructions:
-            logging.info(end_instructions)
+        self.end_instructions = (self.end_instructions or
+                                 self.environment.get_end_instructions(self))
+        if self.end_instructions:
+            logging.info(self.end_instructions)
 
     def _get_abs_path(self, rel_path):
         """
@@ -386,7 +388,7 @@ class Run(object):
         the resources list
         """
         # Determine if we should link (gkigrid) or copy (argo)
-        if self.environment == environments.ArgoEnvironment:
+        if self.experiment.environment == environments.ArgoEnvironment:
             # Copy into run dir by adding the linked resource to normal
             # resources list
             for resource_name in self.linked_resources:
