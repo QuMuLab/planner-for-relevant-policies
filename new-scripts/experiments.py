@@ -13,10 +13,6 @@ import environments
 import tools
 from external.ordereddict import OrderedDict
 
-#TODO: Move into tools.py
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
-DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
-CALLS_DIR = os.path.join(SCRIPTS_DIR, 'calls')
 
 HELP = """\
 Base module for creating fast downward experiments.
@@ -75,7 +71,7 @@ class Experiment(object):
         logging.info('Base Dir: "%s"' % self.base_dir)
 
         # Include the experiment code
-        self.add_resource('CALLS', CALLS_DIR, 'calls')
+        self.add_resource('CALLS', tools.CALLS_DIR, 'calls')
 
     def parse_args(self):
         subparsers = self.parser.add_subparsers(dest='environment_type')
@@ -344,7 +340,7 @@ class Run(object):
         self.experiment.env_vars.update(self.env_vars)
         self.env_vars = self.experiment.env_vars.copy()
 
-        run_script = open(os.path.join(DATA_DIR, 'run-template.py')).read()
+        run_script = open(os.path.join(tools.DATA_DIR, 'run-template.py')).read()
 
         def make_call(name, cmd, kwargs):
             if not type(cmd) is list:

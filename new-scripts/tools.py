@@ -15,6 +15,12 @@ from external.configobj import ConfigObj
 
 LOG_LEVEL = None
 
+# Directories and files
+
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
+CALLS_DIR = os.path.join(SCRIPTS_DIR, 'calls')
+
 
 def prod(values):
     """Computes the product of a list of numbers.

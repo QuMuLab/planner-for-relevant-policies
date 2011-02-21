@@ -16,9 +16,8 @@ import downward_suites
 import downward_configs
 import tools
 
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-PREPROCESSED_TASKS_DIR = os.path.join(SCRIPTS_DIR, 'preprocessed-tasks')
+PREPROCESSED_TASKS_DIR = os.path.join(tools.SCRIPTS_DIR, 'preprocessed-tasks')
 tools.makedirs(PREPROCESSED_TASKS_DIR)
 
 
@@ -256,7 +255,6 @@ class DownwardExperiment(experiments.Experiment):
             for config_nick, config in self._get_configs(planner.rev):
                 for prob in self.problems:
                     run = DownwardRun(self, translator, preprocessor, planner, prob)
-                    _prepare_preprocess_run(self, run)
                     _prepare_search_run(self, run, config_nick, config)
                     self.add_run(run)
 
