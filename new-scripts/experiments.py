@@ -352,7 +352,11 @@ class Run(object):
                 sys.exit(1)
 
             # Support running globally installed binaries
-            cmd_string = '[%s]' % ', '.join([arg if arg in self.env_vars else repr(arg) for arg in cmd])
+            def format_arg(arg):
+                if arg in self.env_vars:
+                    return arg
+                return '"%s"' % arg
+            cmd_string = '[%s]' % ', '.join([format_arg(arg) for arg in cmd])
             kwargs_string = ', '.join('%s="%s"' % pair for pair in kwargs.items())
             parts = [cmd_string]
             if kwargs_string:
