@@ -59,12 +59,8 @@ class Checkout(object):
         We need to compile the code if the executable does not exist.
         Additionally we want to compile it, when we run an experiment with
         the working copy to make sure the executable is based on the latest
-        version of the code. Obviously we don't need no compile the
-        translator code.
+        version of the code.
         """
-        if self.part == 'translate':
-            return
-
         if self.rev == 'WORK' or self._get_executable(default=None) is None:
             cwd = os.getcwd()
             src_dir = os.path.dirname(self.exe_dir)
