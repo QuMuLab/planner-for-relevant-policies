@@ -356,6 +356,7 @@ class Run(object):
                 if arg in self.env_vars:
                     return arg
                 return '"%s"' % arg
+
             cmd_string = '[%s]' % ', '.join([format_arg(arg) for arg in cmd])
             kwargs_string = ', '.join('%s="%s"' % pair for pair in kwargs.items())
             parts = [cmd_string]
