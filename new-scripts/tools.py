@@ -239,9 +239,17 @@ class ArgParser(argparse.ArgumentParser):
                 root_logger.removeHandler(handler)
 
             LOG_LEVEL = getattr(logging, args.log_level.upper())
-            logging.basicConfig(level=LOG_LEVEL,
-                            format='%(asctime)-s %(levelname)-8s %(message)s',
-                            stream=sys.stdout)
+
+            # Handler which writes LOG_LEVEL messages or higher to stdout
+            console = logging.StreamHandler(sys.stdout)
+            console.setLevel(LOG_LEVEL)
+            # set a format which is simpler for console use
+            format='%(asctime)-s %(levelname)-8s %(message)s'
+            formatter = logging.Formatter(format)
+            # tell the handler to use this format
+            console.setFormatter(formatter)
+            # add the handler to the root logger
+            root_logger.addHandler(console)
 
         return (args, remaining)
 
