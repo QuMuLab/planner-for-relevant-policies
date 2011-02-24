@@ -93,19 +93,16 @@ class GkiGridEnvironment(Environment):
                 script += '  ./run\n'
             script += 'fi\n'
 
-        filename = exp.name
-        if not filename.endswith('.q'):
-            filename += '.q'
-        filename = exp._get_abs_path(filename)
+        filename = exp._get_abs_path(exp.name + '.q')
 
         with open(filename, 'w') as file:
             file.write(script)
 
     @classmethod
     def get_end_instructions(cls, exp):
-        return ('You can submit the experiment to the '
-                'queue now by calling "qsub ./%(name)s/<q-filename.q>"' %
-                exp.__dict__)
+        return ('You can change into the experiment directory now and submit '
+                'the experiment to the '
+                'queue by calling "qsub <%s.q>"' % exp.name)
 
 
 class ArgoEnvironment(Environment):

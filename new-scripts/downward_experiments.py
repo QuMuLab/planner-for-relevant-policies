@@ -192,10 +192,6 @@ class DownwardExperiment(experiments.Experiment):
                 'Before you can create the search experiment you have to run\n'
                 './%(exp_name)s/run\n'
                 './resultfetcher.py %(exp_name)s' % {'exp_name': self.name})
-        elif self.environment == environments.GkiGridEnvironment:
-            exp.end_instructions = ('You can submit the preprocessing '
-                'experiment to the queue now by calling '
-                '"qsub ./%(name)s/%(filename)s"' % self.__dict__)
 
         # Set the eval directory already here, we don't want the results to land
         # in the default testname-eval
