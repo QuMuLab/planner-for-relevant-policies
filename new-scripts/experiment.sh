@@ -28,6 +28,7 @@ fi
 
 PHASE=$1
 
+# Support specifying an attribute subset e.g. "-a coverage,plan_length"
 if [[ -z $REPORTATTRS ]]; then
     echo aha
     REPORTATTRS=""
@@ -52,12 +53,6 @@ elif [[ "$EXPTYPE" != local ]]; then
     exit 2
 fi
 
-function build-all {
-    pushd .
-    cd ../src/
-    ./build_all
-    popd
-}
 
 if [[ "$PHASE" == 1 ]]; then
     ./downward_experiments.py --preprocess --timeout 7200 --memory 3072 \
