@@ -61,7 +61,7 @@ elif [[ "$PHASE" == 2 ]]; then
     if [[ "$EXPTYPE" == gkigrid ]]; then
         pushd .
         cd $EXPNAME-p
-        qsub $EXPNAME.q
+        qsub $EXPNAME-p.q
         popd
     else
         ./$EXPNAME-p/run
