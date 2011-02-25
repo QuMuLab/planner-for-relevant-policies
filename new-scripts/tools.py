@@ -28,7 +28,7 @@ def setup_logging(level):
 
     # Handler which writes LOG_LEVEL messages or higher to stdout
     console = logging.StreamHandler(sys.stdout)
-    console.setLevel(level)
+    #console.setLevel(level)
     # set a format which is simpler for console use
     format='%(asctime)-s %(levelname)-8s %(message)s'
     formatter = logging.Formatter(format)
@@ -36,6 +36,7 @@ def setup_logging(level):
     console.setFormatter(formatter)
     # add the handler to the root logger
     root_logger.addHandler(console)
+    root_logger.setLevel(level)
 
 setup_logging(logging.INFO)
 
