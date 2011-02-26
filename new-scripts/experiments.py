@@ -365,7 +365,9 @@ class Run(object):
                 return '"%s"' % arg
 
             cmd_string = '[%s]' % ', '.join([format_arg(arg) for arg in cmd])
-            kwargs_string = ', '.join('%s="%s"' % pair for pair in kwargs.items())
+            kw_pairs = [(key, repr(value)) for
+                        (key, value) in kwargs.items()]
+            kwargs_string = ', '.join('%s=%s' % pair for pair in kw_pairs)
             parts = [cmd_string]
             if kwargs_string:
                 parts.append(kwargs_string)

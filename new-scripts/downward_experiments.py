@@ -91,9 +91,11 @@ def _prepare_preprocess_run(exp, run):
     run.add_resource("PROBLEM", run.problem.problem_file(), "problem.pddl")
 
     run.add_command('translate', [run.translator.shell_name, 'domain.pddl',
-                                   'problem.pddl'])
+                                  'problem.pddl'], {'time_limit': 7200,
+                                                    'mem_limit': 4096})
     run.add_command('preprocess', [run.preprocessor.shell_name],
-                     {'stdin': 'output.sas'})
+                    {'stdin': 'output.sas', 'time_limit': 7200,
+                     'mem_limit': 4096})
 
     ext_config = '-'.join([run.translator.rev, run.preprocessor.rev])
     run.set_property('config', ext_config)

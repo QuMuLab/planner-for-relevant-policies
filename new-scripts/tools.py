@@ -123,9 +123,12 @@ def convert_to_correct_type(val):
     """
     import ast
     try:
-        val = ast.literal_eval(val)
+        out_val = ast.literal_eval(str(val))
+        logging.debug('Converted value %s to %s' % (repr(val), repr(out_val)))
+        return out_val
     except (ValueError, SyntaxError):
         pass
+    #logging.debug('Could not convert value %s' % repr(val))
     return val
 
 
