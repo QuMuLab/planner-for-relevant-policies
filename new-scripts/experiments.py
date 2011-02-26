@@ -52,16 +52,18 @@ class Experiment(object):
         self.environment = None
         self.end_instructions = ''
 
-        # Give all the options to the experiment instance
-        self.parser = parser or ExpArgParser()
-        self.parse_args()
-        assert self.environment
-
         self.runs = []
         self.resources = []
         self.env_vars = {}
 
         self.properties = tools.Properties()
+
+        self.set_property('commandline_string', ' '.join(sys.argv))
+
+        # Give all the options to the experiment instance
+        self.parser = parser or ExpArgParser()
+        self.parse_args()
+        assert self.environment
 
         if self.root_dir:
             self.base_dir = os.path.join(self.root_dir, self.name)
