@@ -207,11 +207,13 @@ class Experiment(object):
         """
         Uses the relative directory information and writes all runs to disc
         """
-        logging.info('Building %d runs' % len(self.runs))
+        num_runs = len(self.runs)
+        self.set_property('runs', num_runs)
+        logging.info('Building %d runs' % num_runs)
         for index, run in enumerate(self.runs, 1):
             run.build()
             if index % 100 == 0:
-                logging.info('Built run %6d/%d' % (index, len(self.runs)))
+                logging.info('Built run %6d/%d' % (index, num_runs))
 
     def _build_properties_file(self):
         self.properties.filename = self._get_abs_path('properties')
