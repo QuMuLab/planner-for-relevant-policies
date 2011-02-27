@@ -1,5 +1,7 @@
 #! /bin/bash
 
+EXPNAME=test-exp
+
 CONFIGS=downward_configs.py:yY
 QUEUE=athlon_core.q
 
