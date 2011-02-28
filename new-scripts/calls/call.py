@@ -82,8 +82,8 @@ class Call(subprocess.Popen):
 
             total_time = group.total_time()
             total_vsize = group.total_vsize()
-            print "[real-time %d] total_time: %.2f" % (real_time, total_time)
-            print "[real-time %d] total_vsize: %.2f" % (real_time, total_vsize)
+            #print "[real-time %d] total_time: %.2f" % (real_time, total_time)
+            #print "[real-time %d] total_vsize: %.2f" % (real_time, total_vsize)
 
             try_term = (total_time >= self.time_limit or
                         real_time >= self.wall_clock_time_limit or
