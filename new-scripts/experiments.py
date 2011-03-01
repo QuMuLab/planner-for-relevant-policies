@@ -371,8 +371,11 @@ class Run(object):
             parts = [cmd_string]
             if kwargs_string:
                 parts.append(kwargs_string)
-            call = 'retcode = Call(%s, **redirects).wait()\nsave_returncode("%s", retcode)\n'
-            return call % (', '.join(parts), name)
+            call = ('retcode = Call(%s, **redirects).wait()\n'
+                    'save_returncode("%s", retcode)\n'
+                    'if not retcode == 0:\n'
+                    '    sys.exit("%s returned %%s" %% retcode)\n')
+            return call % (', '.join(parts), name, name)
 
         calls_text = '\n'.join(make_call(name, cmd, kwargs)
                                for name, (cmd, kwargs) in self.commands.items())
