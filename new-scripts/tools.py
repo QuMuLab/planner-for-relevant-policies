@@ -66,8 +66,11 @@ def makedirs(dir):
     """
     mkdir variant that does not complain when the dir already exists
     """
-    if not os.path.exists(dir):
+    try:
         os.makedirs(dir)
+    except OSError:
+        # directory probably exists
+        pass
 
 
 def overwrite_dir(dir):
