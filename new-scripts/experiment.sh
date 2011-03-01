@@ -30,7 +30,6 @@ PHASE=$1
 
 # Support specifying an attribute subset e.g. "-a coverage,plan_length"
 if [[ -z $REPORTATTRS ]]; then
-    echo aha
     REPORTATTRS=""
 fi
 
