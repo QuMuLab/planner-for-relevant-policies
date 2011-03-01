@@ -258,8 +258,7 @@ def validate(content, old_props):
     Scan the returncode of the postprocess command
     Count everything that is not validated as invalid
     """
-    returncode = old_props.get("postprocess_returncode", 1)
-    return {"plan_valid": returncode == 0}
+    return {"plan_valid": 'Plan valid' in content}
 
 # -----------------------------------------------------------------------------
 
