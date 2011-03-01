@@ -214,7 +214,7 @@ class PlanningReport(Report):
             self.group_func = sum
 
         # Decide whether we want to highlight minima or maxima
-        max_attributes = ['solved', 'score', 'initial_h_value']
+        max_attributes = ['solved', 'score', 'initial_h_value', 'coverage']
         min_wins = True
         for attr_part in max_attributes:
             if attr_part in focus:

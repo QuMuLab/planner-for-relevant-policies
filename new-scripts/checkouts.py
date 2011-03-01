@@ -32,6 +32,12 @@ class Checkout(object):
 
         self._executable = None
 
+    def __eq__(self, other):
+        return self.rev == other.rev
+
+    def __hash__(self):
+        return hash(self.rev)
+
     def checkout(self):
         # We don't need to check out the working copy
         if not self.rev == 'WORK':
@@ -53,12 +59,8 @@ class Checkout(object):
         We need to compile the code if the executable does not exist.
         Additionally we want to compile it, when we run an experiment with
         the working copy to make sure the executable is based on the latest
-        version of the code. Obviously we don't need no compile the
-        translator code.
+        version of the code.
         """
-        if self.part == 'translate':
-            return
-
         if self.rev == 'WORK' or self._get_executable(default=None) is None:
             cwd = os.getcwd()
             src_dir = os.path.dirname(self.exe_dir)
@@ -102,6 +104,10 @@ class Checkout(object):
     @property
     def shell_name(self):
         return '%s_%s' % (self.part.upper(), self.rev)
+
+    @property
+    def src_dir(self):
+        return os.path.join(self.checkout_dir, 'src')
 
 
 # ---------- Mercurial --------------------------------------------------------
@@ -309,6 +315,7 @@ def make_checkouts(combinations):
             for part in combo:
                 parts.append(part)
 
-    for part in parts:
+    # Checkout and compile each revision only once
+    for part in set(parts):
         part.checkout()
         part.compile()

@@ -185,7 +185,7 @@ class Fetcher(object):
         self.check = None
 
     def _get_run_dirs(self):
-        return glob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
+        return sorted(glob(os.path.join(self.exp_dir, 'runs-*-*', '*')))
 
     def add_pattern(self, name, regex_string, group=1, file='run.log',
                         required=True, type=int, flags=''):
