@@ -122,7 +122,7 @@ def _prepare_search_run(exp, run, config_nick, config):
 
     # If all three parts have the same revision don't clutter the reports
     revs = [run.translator.rev, run.preprocessor.rev, run.planner.rev]
-    if len(revs) == len(set(revs)):
+    if len(set(revs)) == 1:
         revs = [run.translator.rev]
     ext_config = '-'.join(revs + [config_nick])
 
