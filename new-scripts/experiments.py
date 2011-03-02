@@ -24,6 +24,8 @@ ENVIRONMENTS = {'local': environments.LocalEnvironment,
                 'gkigrid': environments.GkiGridEnvironment,
                 'argo': environments.ArgoEnvironment}
 
+DEFAULT_ABORT_ON_FAILURE = True
+
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
@@ -289,8 +291,22 @@ class Run(object):
         self.resources.append((source, dest, required))
         self.env_vars[resource_name] = dest
 
-    def add_command(self, name, command, kwargs=None):
-        """
+    def add_command(self, name, command, **kwargs):
+        """Adds a command to the run.
+
+        "name" is the command's name.
+        "command" has to be a list of strings.
+
+        The items in kwargs are passed to the calls.call.Call() class. You can
+        find the valid keys there.
+
+        kwargs can also contain a value for "abort_on_failure" which makes the
+        run abort if the command does not return 0.
+
+        The remaining items in kwargs are passed to subprocess.Popen()
+        The allowed parameters can be found at
+        http://docs.python.org/library/subprocess.html
+
         Examples:
         >>> run.add_command('translate', [run.translator.shell_name,
                                           'domain.pddl', 'problem.pddl'])
@@ -298,10 +314,12 @@ class Run(object):
                             {'stdin': 'output.sas'})
         >>> run.add_command('validate', ['VALIDATE', 'DOMAIN', 'PROBLEM',
                                          'sas_plan'])
-        command has to be a list of strings
-        kwargs is a dict that is passed to subprocess.Popen()
+
         """
-        self.commands[name] = (command, kwargs or {})
+        assert type(name) is str, 'The command name must be a string'
+        assert type(command) in (tuple, list), 'The command must be a list'
+        name = name.replace(' ', '_')
+        self.commands[name] = (command, kwargs)
 
     def declare_optional_output(self, file_glob):
         """
@@ -350,6 +368,8 @@ class Run(object):
         run_script = open(os.path.join(tools.DATA_DIR, 'run-template.py')).read()
 
         def make_call(name, cmd, kwargs):
+            abort_on_failure = kwargs.pop('abort_on_failure',
+                                          DEFAULT_ABORT_ON_FAILURE)
             if not type(cmd) is list:
                 logging.error('Commands have to be lists of strings. '
                               'The command <%s> is not a list.' % cmd)
@@ -372,10 +392,11 @@ class Run(object):
             if kwargs_string:
                 parts.append(kwargs_string)
             call = ('retcode = Call(%s, **redirects).wait()\n'
-                    'save_returncode("%s", retcode)\n'
-                    'if not retcode == 0:\n'
-                    '    sys.exit("%s returned %%s" %% retcode)\n')
-            return call % (', '.join(parts), name, name)
+                    'save_returncode("%s", retcode)\n') % (', '.join(parts), name)
+            if abort_on_failure:
+                call += ('if not retcode == 0:\n'
+                         '    sys.exit("%s returned %%s" %% retcode)\n' % name)
+            return call
 
         calls_text = '\n'.join(make_call(name, cmd, kwargs)
                                for name, (cmd, kwargs) in self.commands.items())
