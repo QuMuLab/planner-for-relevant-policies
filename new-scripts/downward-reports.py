@@ -404,7 +404,8 @@ class SuiteReport(PlanningReport):
             filename = '_'.join(parts) + '.py'
             output_file = os.path.join(self.report_dir, filename)
             with open(output_file, 'w') as file:
-                logging.info('Writing output to "%s"' % output_file)
+                output_uri = 'file://' + os.path.abspath(output_file)
+                logging.info('Writing output to %s' % output_uri)
                 file.write(self.output)
 
         logging.info('Finished writing report')

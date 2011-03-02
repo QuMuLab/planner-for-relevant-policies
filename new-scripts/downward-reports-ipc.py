@@ -93,7 +93,8 @@ class IpcReport(Report):
             sys.stdout = file
             self.print_report()
             sys.stdout = sys.__stdout__
-        logging.info('Wrote file %s' % self.output_file)
+        output_uri = 'file://' + os.path.abspath(self.output_file)
+        logging.info('Wrote file %s' % output_uri)
 
     def print_report(self):
         self.print_header()
