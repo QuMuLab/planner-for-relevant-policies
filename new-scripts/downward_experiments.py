@@ -81,6 +81,8 @@ class DownwardRun(experiments.Run):
         # Add memory limit information in KB
         self.set_property('memory_limit', self.experiment.memory * 1024)
 
+        self.set_property('experiment_name', self.experiment.name)
+
 
 def _prepare_preprocess_run(exp, run):
     output_files = ["*.groups", "output.sas", "output"]
