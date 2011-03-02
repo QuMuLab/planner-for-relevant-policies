@@ -15,4 +15,6 @@ gawk --assign=num_ops=$num_ops '{if ($0 == "NUM_OPS") print num_ops; else print 
 $DOWNWARD_SRC/preprocess/preprocess < sas.fixed
 $DOWNWARD_SRC/search/downward --heuristic "h1=ff()" --heuristic "h2=goalcount()" --search "eager_greedy(h1,h2,preferred=(h1))" < output
 
-gawk '{if ($1 == "(move") printf "move(" $2+1 "," $3+1 "," $4+1 "," $5 +1 ").";} END {print "";}' sas_plan > soln
+if [ -f sas_plan ]; then
+    gawk '{if ($1 == "(move") printf "move(" $2+1 "," $3+1 "," $4+1 "," $5 +1 "). ";} END {print "";}' sas_plan > soln
+fi

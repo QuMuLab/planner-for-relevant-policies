@@ -1,4 +1,11 @@
 #!/bin/sh
 
 ./translate_knight /dev/stdin > log
-cat soln
+if [ -f soln ]; then
+    cat soln
+else
+    grep 'Completely explored state space -- no solution!' log > /dev/null
+    if [ $? -eq 0 ]; then
+        echo INCONSISTENT
+    fi
+fi
