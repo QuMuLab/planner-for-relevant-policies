@@ -8,5 +8,5 @@ for line in open(sys.argv[1]):
     line = line[1:]
     predicate = line.split()[0]
     valve = line.split()[1]
-    print predicate + "(" + valve[1:] + "," + str(timestep) + "). "
+    print predicate + "(" + valve[1:] + "," + str(timestep) + ").",
     timestep += 1
