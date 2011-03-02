@@ -132,15 +132,15 @@
       )
     :effect
       (and
-
          (not (activate ?p ?t))
+
         ;; set flag for queue update
 
-	(advance-head ?q)
-	(not (settled ?q))
+        (advance-head ?q)
+        (not (settled ?q))
         ;; set flag for state transition
 
-	(enabled ?p ?t)
+        (enabled ?p ?t)
       )
 )
 
@@ -173,14 +173,14 @@
      (exists (?q - queue)
       (exists (?m - message)
        (exists (?n - number)
-	(and (activate ?p ?t)
-	  (reads ?p ?q ?t)
-	  (settled ?q)
+        (and (activate ?p ?t)
+          (reads ?p ?q ?t)
+          (settled ?q)
         (trans-msg ?t ?m)
         (queue-size ?q ?n)
         (is-zero ?n)
-	  )))
-	 ))
+          )))
+         ))
    )
 
 ;; determines if a state transition cannot write, queue full
@@ -191,12 +191,12 @@
       (exists (?qt - queuetype)
        (exists (?m - message)
         (exists (?n - number)
-	 (and
-	  (activate ?p ?t)
-	  (writes ?p ?q ?t)
-	  (settled ?q)
-	  (trans-msg ?t ?m)
-  	  (is-a-queue ?q ?qt)
+         (and
+          (activate ?p ?t)
+          (writes ?p ?q ?t)
+          (settled ?q)
+          (trans-msg ?t ?m)
+          (is-a-queue ?q ?qt)
         (queue-size ?q ?n)
         (is-max ?qt ?n)
           ))))
@@ -224,7 +224,7 @@
    :parameters (?p - process
                 ?t - transition
                 ?q - queue
-	          ?m - message
+                  ?m - message
    )
    :precondition
       (and
@@ -235,12 +235,11 @@
       )
    :effect
       (and
-          (not (activate ?p ?t))
-	  (enabled ?p ?t)
-	  (not (settled ?q))
-
-	  (advance-tail ?q)
-        (queue-tail-msg ?q ?m)
+       (not (activate ?p ?t))
+       (enabled ?p ?t)
+       (not (settled ?q))
+       (advance-tail ?q)
+       (queue-tail-msg ?q ?m)
       )
 )
 
@@ -249,15 +248,15 @@
 
 (:action advance-queue-head
    :parameters (?q - queue ?qt - queuetype
-	          ?qs1 ?qs2 - queue-state
-	          ?m - message ?n1 ?n2 - number
+                  ?qs1 ?qs2 - queue-state
+                  ?m - message ?n1 ?n2 - number
 )
    :precondition
      (and
-	(queue-next ?qt ?qs1 ?qs2)
-	(is-a-queue ?q ?qt)
-	(queue-head ?q ?qs1)
-	(advance-head ?q)
+        (queue-next ?qt ?qs1 ?qs2)
+        (is-a-queue ?q ?qt)
+        (queue-head ?q ?qs1)
+        (advance-head ?q)
         (queue-msg ?q ?qs2 ?m)
       (queue-size ?q ?n1)
        (dec ?n1 ?n2)
@@ -278,15 +277,15 @@
 
 (:action advance-empty-queue-tail
    :parameters (?q - queue ?qt - queuetype
-	        ?qs1 ?qs2 - queue-state
-	        ?m ?m1 - message ?n1 ?n2 - number
+                ?qs1 ?qs2 - queue-state
+                ?m ?m1 - message ?n1 ?n2 - number
 )
    :precondition
      (and
-	(queue-next ?qt ?qs1 ?qs2)
-	(is-a-queue ?q ?qt)
-	(queue-tail ?q ?qs1)
-	(advance-tail ?q)
+        (queue-next ?qt ?qs1 ?qs2)
+        (is-a-queue ?q ?qt)
+        (queue-tail ?q ?qs1)
+        (advance-tail ?q)
       (queue-tail-msg ?q ?m)
       (queue-head-msg ?q ?m1)
       (queue-size ?q ?n1)
@@ -295,8 +294,8 @@
      )
    :effect
      (and
-	(settled ?q)
-	(not (advance-tail ?q))
+        (settled ?q)
+        (not (advance-tail ?q))
       (queue-tail ?q ?qs2)
       (not (queue-tail ?q ?qs1))
       (queue-msg ?q ?qs2 ?m)
@@ -312,16 +311,16 @@
 (:action advance-non-empty-queue-tail
    :parameters (
         ?q - queue ?qt - queuetype
-	  ?qs1 ?qs2 - queue-state
+          ?qs1 ?qs2 - queue-state
         ?m - message
         ?n1 ?n2 - number
 )
    :precondition
      (and
-	 (queue-next ?qt ?qs1 ?qs2)
-	 (is-a-queue ?q ?qt)
-	 (queue-tail ?q ?qs1)
-	 (advance-tail ?q)
+         (queue-next ?qt ?qs1 ?qs2)
+         (is-a-queue ?q ?qt)
+         (queue-tail ?q ?qs1)
+         (advance-tail ?q)
        (queue-tail-msg ?q ?m)
        (queue-size ?q ?n1)
        (inc ?n1 ?n2)
@@ -329,8 +328,8 @@
      )
    :effect
      (and
-	  (settled ?q)
-	  (not (advance-tail ?q))
+          (settled ?q)
+          (not (advance-tail ?q))
         (queue-tail ?q ?qs2)
         (not (queue-tail ?q ?qs1))
         (queue-msg ?q ?qs2 ?m)
@@ -343,12 +342,12 @@
 
 (:action perform-trans
    :parameters (?p - process
-	 	  ?pt - proctype
+                  ?pt - proctype
                 ?t - transition ?s1 ?s2 - state
    )
    :precondition
       (and
-	(forall (?q - queue) (settled ?q))
+        (forall (?q - queue) (settled ?q))
         (trans ?pt ?t ?s1 ?s2)
         (enabled ?p ?t)
         (at-process ?p ?s1)
@@ -358,7 +357,7 @@
         (at-process ?p ?s2)
         (not (at-process ?p ?s1))
         (not (enabled ?p ?t))
-	(pending ?p)
+        (pending ?p)
       )
 )
 
@@ -372,7 +371,7 @@
    )
    :precondition
       (and
-	(forall (?q - queue) (settled ?q))
+        (forall (?q - queue) (settled ?q))
         (trans ?pt ?t ?s1 ?s2)
         (is-a-process ?p ?pt)
         (at-process ?p ?s1)
