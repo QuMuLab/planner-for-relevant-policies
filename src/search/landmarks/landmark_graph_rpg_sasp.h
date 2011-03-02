@@ -1,11 +1,12 @@
-#ifndef LANDMARKS_LANDMARKS_GRAPH_RPG_SASP_H
-#define LANDMARKS_LANDMARKS_GRAPH_RPG_SASP_H
+#ifndef LANDMARKS_LANDMARK_GRAPH_RPG_SASP_H
+#define LANDMARKS_LANDMARK_GRAPH_RPG_SASP_H
 
+#include "landmark_factory.h"
+#include "landmark_graph.h"
 #include <ext/hash_set>
 #include "../globals.h"
-#include "landmarks_graph.h"
 
-class LandmarksGraphNew : public LandmarksGraph {
+class LandmarkGraphNew : public LandmarkFactory {
     list<LandmarkNode *> open_landmarks;
 
     void find_forward_orders(const vector<vector<int> > &lvl_var,
@@ -31,12 +32,10 @@ class LandmarksGraphNew : public LandmarksGraph {
     static bool domain_connectivity(const pair<int, int> &landmark,
                                     const hash_set<int> &exclude);
 public:
-    LandmarksGraphNew(LandmarkGraphOptions &options, Exploration *exploration)
-        : LandmarksGraph(options, exploration) {}
-    ~LandmarksGraphNew() {
-    }
-    static LandmarksGraph *create(const std::vector<std::string> &config, int start,
-                                  int &end, bool dry_run);
+    LandmarkGraphNew(LandmarkGraph::Options &options, Exploration *exploration);
+    virtual ~LandmarkGraphNew() {}
+    static LandmarkGraph *create(const std::vector<std::string> &config, int start,
+                                 int &end, bool dry_run);
 };
 
 #endif
