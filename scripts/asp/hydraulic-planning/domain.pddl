@@ -1,0 +1,26 @@
+(define (domain hydraulic-planning)
+  (:requirements :typing :adl :derived-predicates)
+  (:types node valve - object
+          tank jet junction - node)
+  (:predicates (open ?v - valve)
+	       (stuck ?v - valve)
+	       (pressurized ?n - node)
+	       (full ?n - node)
+               (link ?n1 ?n2 - node ?v - valve))
+
+  (:action switchon
+   :parameters (?v - valve ?from ?to - node)
+   :precondition (and (not (stuck ?v))
+                      (link ?from ?to ?v)
+                      (pressurized ?from)
+                      )
+   :effect       (and (open ?v)
+                      (pressurized ?to)
+                      )
+   )
+
+  (:derived (pressurized ?n - node)
+        (or (full ?n)
+             (exists (?n1 - node) (exists (?v - valve) (and (pressurized ?n1) (link ?n1 ?n ?v) (open ?v)))))
+   )
+)

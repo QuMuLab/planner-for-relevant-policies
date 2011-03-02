@@ -6,14 +6,39 @@ import re
 import traceback
 import logging
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)-s %(levelname)-8s %(message)s',)
-
 from external import argparse
 from external.configobj import ConfigObj
 
 
 LOG_LEVEL = None
+
+# Directories and files
+
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
+CALLS_DIR = os.path.join(SCRIPTS_DIR, 'calls')
+
+
+def setup_logging(level):
+    # Python adds a default handler if some log is written before now
+    # Remove all handlers that have been added automatically
+    root_logger = logging.getLogger('')
+    for handler in root_logger.handlers:
+        root_logger.removeHandler(handler)
+
+    # Handler which writes LOG_LEVEL messages or higher to stdout
+    console = logging.StreamHandler(sys.stdout)
+    #console.setLevel(level)
+    # set a format which is simpler for console use
+    format='%(asctime)-s %(levelname)-8s %(message)s'
+    formatter = logging.Formatter(format)
+    # tell the handler to use this format
+    console.setFormatter(formatter)
+    # add the handler to the root logger
+    root_logger.addHandler(console)
+    root_logger.setLevel(level)
+
+setup_logging(logging.INFO)
 
 
 def prod(values):
@@ -41,8 +66,11 @@ def makedirs(dir):
     """
     mkdir variant that does not complain when the dir already exists
     """
-    if not os.path.exists(dir):
+    try:
         os.makedirs(dir)
+    except OSError:
+        # directory probably exists
+        pass
 
 
 def overwrite_dir(dir):
@@ -98,9 +126,12 @@ def convert_to_correct_type(val):
     """
     import ast
     try:
-        val = ast.literal_eval(val)
+        out_val = ast.literal_eval(str(val))
+        logging.debug('Converted value %s to %s' % (repr(val), repr(out_val)))
+        return out_val
     except (ValueError, SyntaxError):
         pass
+    #logging.debug('Could not convert value %s' % repr(val))
     return val
 
 
@@ -226,15 +257,8 @@ class ArgParser(argparse.ArgumentParser):
         global LOG_LEVEL
         # Set log level only once (May have already been deleted from sys.argv)
         if getattr(args, 'log_level', None) and not LOG_LEVEL:
-            # Python adds a default handler if some log is written before now
-            # Remove all handlers that have been added automatically
-            root_logger = logging.getLogger('')
-            for handler in root_logger.handlers:
-                root_logger.removeHandler(handler)
-
             LOG_LEVEL = getattr(logging, args.log_level.upper())
-            logging.basicConfig(level=LOG_LEVEL,
-                            format='%(asctime)-s %(levelname)-8s %(message)s',)
+            setup_logging(LOG_LEVEL)
 
         return (args, remaining)
 

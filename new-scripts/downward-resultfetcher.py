@@ -180,7 +180,7 @@ def get_status(content, old_props):
     new_props = {}
     if 'does not support' in content:
         new_props['status'] = 'unsupported'
-    elif 'plan_length' in old_props:
+    elif 'plan_length' in old_props or 'cost' in old_props:
         new_props['status'] = 'ok'
     elif 'completely_explored' in old_props:
         new_props['status'] = 'failure'
@@ -191,7 +191,7 @@ def get_status(content, old_props):
 
 def coverage(content, old_props):
     new_props = {}
-    if 'plan_length' in old_props:
+    if 'plan_length' in old_props or 'cost' in old_props:
         new_props['coverage'] = 1
     else:
         new_props['coverage'] = 0
@@ -258,8 +258,7 @@ def validate(content, old_props):
     Scan the returncode of the postprocess command
     Count everything that is not validated as invalid
     """
-    returncode = old_props.get("postprocess_returncode", 1)
-    return {"plan_valid": returncode == 0}
+    return {"plan_valid": int('Plan valid' in content)}
 
 # -----------------------------------------------------------------------------
 

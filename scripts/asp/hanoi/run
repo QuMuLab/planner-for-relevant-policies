@@ -1,0 +1,4 @@
+#!/bin/sh
+
+./translate_hanoi /dev/stdin > log
+cat soln
