@@ -1,0 +1,4 @@
+#!/bin/sh
+
+./translate_knight /dev/stdin > log
+cat soln
