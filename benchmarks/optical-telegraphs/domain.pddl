@@ -10,7 +10,7 @@
 
  :typing)
 (:types process proctype state queue transition
-        number message
+        number_ message
  ;; tags for size and messages
 
         queuetype queue-state
@@ -82,28 +82,28 @@
    (trans-msg ?t - transition ?m - message)
    ;; true if message written or read by the transition
 
-   (inc ?n1 ?n2 - number)
+   (inc ?n1 ?n2 - number_)
    ;; links successive integers
 
-   (dec ?n1 ?n2 - number)
+   (dec ?n1 ?n2 - number_)
    ;; links successive integers
 
-   (queue-size ?q - queue ?n1 - number)
+   (queue-size ?q - queue ?n1 - number_)
    ;; current elements in communication channel
 
-   (queue-max ?qt - queuetype ?n1 - number)
+   (queue-max ?qt - queuetype ?n1 - number_)
    ;; maximum elements in communication channel
 
-   (is-zero ?n1 - number)
+   (is-zero ?n1 - number_)
    ;; true if number is equal to zero
 
-   (is-not-zero ?n1 - number)
+   (is-not-zero ?n1 - number_)
    ;; true if number is not equal to zero
 
-   (is-max ?qt - queuetype ?n1 - number)
+   (is-max ?qt - queuetype ?n1 - number_)
    ;; true if number is equal to maximum queue size
 
-   (is-not-max ?qt - queuetype ?n1 - number)
+   (is-not-max ?qt - queuetype ?n1 - number_)
    ;; true if number is not equal to maximum queue size
 
 )
@@ -172,7 +172,7 @@
    (and
      (exists (?q - queue)
       (exists (?m - message)
-       (exists (?n - number)
+       (exists (?n - number_)
         (and (activate ?p ?t)
           (reads ?p ?q ?t)
           (settled ?q)
@@ -190,7 +190,7 @@
      (exists (?q - queue)
       (exists (?qt - queuetype)
        (exists (?m - message)
-        (exists (?n - number)
+        (exists (?n - number_)
          (and
           (activate ?p ?t)
           (writes ?p ?q ?t)
@@ -249,7 +249,7 @@
 (:action advance-queue-head
    :parameters (?q - queue ?qt - queuetype
                   ?qs1 ?qs2 - queue-state
-                  ?m - message ?n1 ?n2 - number
+                  ?m - message ?n1 ?n2 - number_
 )
    :precondition
      (and
@@ -278,7 +278,7 @@
 (:action advance-empty-queue-tail
    :parameters (?q - queue ?qt - queuetype
                 ?qs1 ?qs2 - queue-state
-                ?m ?m1 - message ?n1 ?n2 - number
+                ?m ?m1 - message ?n1 ?n2 - number_
 )
    :precondition
      (and
@@ -313,7 +313,7 @@
         ?q - queue ?qt - queuetype
           ?qs1 ?qs2 - queue-state
         ?m - message
-        ?n1 ?n2 - number
+        ?n1 ?n2 - number_
 )
    :precondition
      (and
