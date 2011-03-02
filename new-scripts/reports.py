@@ -230,7 +230,8 @@ class Report(object):
             basename = self.name() + '.' + ext
             self.output_file = os.path.join(self.report_dir, basename)
             with open(self.output_file, 'w') as file:
-                logging.info('Writing output to "%s"' % self.output_file)
+                output_uri = 'file://' + os.path.abspath(self.output_file)
+                logging.info('Writing output to %s' % output_uri)
                 file.write(self.output)
 
     def open(self):
