@@ -415,7 +415,8 @@ class Table(collections.defaultdict):
         rows = self.rows
         cols = self.cols
 
-        text += ' | '.join(map(lambda col: '%-16s' % col, cols)) + ' |\n'
+        # Escape config names to prevent unvoluntary markup
+        text += ' | '.join('%-16s' % ('""%s""' % col) for col in cols) + ' |\n'
         for row in rows:
             text += self.get_row(row)
         return text
