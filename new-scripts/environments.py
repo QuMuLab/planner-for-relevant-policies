@@ -102,7 +102,7 @@ class GkiGridEnvironment(Environment):
     def get_end_instructions(cls, exp):
         return ('You can change into the experiment directory now and submit '
                 'the experiment to the '
-                'queue by calling "qsub <%s.q>"' % exp.name)
+                'queue by calling "qsub %s.q"' % exp.name)
 
 
 class ArgoEnvironment(Environment):
