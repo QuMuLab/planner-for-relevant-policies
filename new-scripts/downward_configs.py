@@ -178,6 +178,10 @@ pdb100000000 = """\
 --search "astar(pdb(max_states=100000000))"\
 """
 
+pdbs = """\
+---search "astar(pdbs())"\
+"""
+
 lmopt_rhw = """\
 --search "astar(lmcount(lm_rhw(),admissible=true),mpd=true)"\
 """
