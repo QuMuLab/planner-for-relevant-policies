@@ -393,6 +393,8 @@ def add_search_parsing(eval):
     eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int,
                      required=False)
     eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
+    eval.add_pattern('dead_ends', r'Dead ends: (.+) state\(s\)\.', type=int,
+                     required=False)
 
 
 def add_search_functions(eval):
