@@ -1,11 +1,18 @@
 #! /usr/bin/env python
 
-from downward_comparisons import *
+import downward_experiments
+import checkouts
 
 combinations = [
-    (TranslatorCheckout(), PreprocessorCheckout(), PlannerCheckout(rev=3612)),
-    (TranslatorCheckout(), PreprocessorCheckout(), PlannerCheckout(rev=3613)),
-    (TranslatorCheckout(), PreprocessorCheckout(), PlannerCheckout(rev='HEAD')),
+    (checkouts.TranslatorSvnCheckout(rev=3613),
+     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
+     checkouts.PlannerSvnCheckout(rev=3612)),
+    (checkouts.TranslatorSvnCheckout(rev=3613),
+     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
+     checkouts.PlannerSvnCheckout(rev=3613)),
+    (checkouts.TranslatorSvnCheckout(rev=3613),
+     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
+     checkouts.PlannerSvnCheckout(rev='HEAD')),
                ]
-               
-build_comparison_exp(combinations)
+
+downward_experiments.build_experiment(combinations)

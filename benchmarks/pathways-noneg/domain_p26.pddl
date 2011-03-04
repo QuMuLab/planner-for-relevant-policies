@@ -16,6 +16,7 @@
              (possible ?x - molecule) 	
 	     (available ?x - molecule)
              (chosen ?s - simple)
+             (not-chosen ?s - simple)
 	     (next ?l1 ?l2 - level)
 	     (num-subs ?l - level)
 	     (goal1)

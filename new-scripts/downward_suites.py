@@ -4,15 +4,14 @@ import re
 import tools
 
 HELP = """\
-tasks, domains and suites can be specified in the following ways: gripper, gripper:prob01.pddl, \
+Comma separated list of tasks, domains or suites. They can have the following \
+forms: gripper, gripper:prob01.pddl, \
 TEST, mysuitefile.py:myTEST, TEST_FIRST5, mysuitefile.py:myTEST_FIRST5
 The python modules have to live in the scripts dir.
 """
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 BENCHMARKS_DIR = os.path.join(ROOT_DIR, "benchmarks")
-RESULTS_DIR = os.path.join(ROOT_DIR, "results")
 
 
 class Repository(object):
@@ -23,7 +22,7 @@ class Repository(object):
         self.domains = [Domain(domain) for domain in domains]
     def __iter__(self):
         return iter(self.domains)
-        
+
 
 class Domain(object):
     def __init__(self, domain):
@@ -44,7 +43,7 @@ class Domain(object):
         return cmp(self.domain, other.domain)
     def __iter__(self):
         return iter(self.problems)
-        
+
 
 class Problem(object):
     def __init__(self, domain, problem):
@@ -72,13 +71,13 @@ class Problem(object):
 def generate_problems(description):
     """
     Descriptions have the form:
-    
+
     gripper:prob01.pddl
     gripper
     TEST
     mysuitefile.py:mytest
     mysuitefile.py:MYTEST
-    
+
     TEST_FIRST5
     mysuitefile.py:MYTEST_FIRST5
     """
@@ -87,20 +86,20 @@ def generate_problems(description):
         # This will work for all suites that only list domains and will
         # return the first problem of each domain
         description += '1'
-        
+
     number_expr = re.compile(r'.*FIRST([-]?\d+)', re.IGNORECASE)
     number_result = number_expr.search(description)
-    
-    
+
+
     if '.py:' in description:
         filename, rest = description.split(':', 1)
         description = rest
     else:
         filename = __file__
-    
+
     module = tools.import_python_file(filename)
     module_dict = module.__dict__
-        
+
     if number_result:
         # Allow writing SUITE_NAME_FIRSTn
         # This will work for all suites that only list domains and will
@@ -112,7 +111,7 @@ def generate_problems(description):
         if suite_func is None:
             suite_func = module_dict.get("suite_%s" % suite_name.lower(), None)
         if not suite_func:
-            raise SystemExit("unknown suite: %s" % suite_funcname)
+            raise SystemExit("unknown suite: %s" % suite_name)
         for domain_name in suite_func():
             domain = Domain(domain_name)
             for problem in domain.problems[:number]:
@@ -146,7 +145,7 @@ def build_suite(descriptions):
     return result
 
 
-def suite_all():
+def suite_ipc_one_to_five():
     # All IPC1-5 domains, including the trivial Movie.
     return [
         "airport", "assembly", "blocks", "depot", "driverlog",
@@ -158,31 +157,81 @@ def suite_all():
         "schedule", "storage", "tpp", "trucks", "zenotravel",
         ]
 
+def suite_ipc08_common():
+    return [
+        "parcprinter-08-strips",
+        "pegsol-08-strips",
+        "scanalyzer-08-strips",
+        ]
+
+def suite_ipc08_opt_only():
+    return [
+        'elevators-opt08-strips',
+        'openstacks-opt08-adl',
+        'openstacks-opt08-strips',
+        'sokoban-opt08-strips',
+        'transport-opt08-strips',
+        'woodworking-opt08-strips',
+        ]
+
+def suite_ipc08_opt_only_strips():
+    return [
+        'elevators-opt08-strips',
+        'openstacks-opt08-strips',
+        'sokoban-opt08-strips',
+        'transport-opt08-strips',
+        'woodworking-opt08-strips',
+        ]
+
+def suite_ipc08_sat_only():
+    return [
+        'elevators-sat08-strips',
+        'openstacks-sat08-strips',
+        'openstacks-sat08-adl',
+        'sokoban-sat08-strips',
+        'transport-sat08-strips',
+        'woodworking-sat08-strips',
+        # TODO: cyber-security is missing
+        ]
+
+def suite_ipc08_sat_only_strips():
+    return [
+        'elevators-sat08-strips',
+        'openstacks-sat08-strips',
+        'sokoban-sat08-strips',
+        'transport-sat08-strips',
+        'woodworking-sat08-strips',
+        # TODO: cyber-security is missing
+        ]
+
+def suite_ipc08_opt():
+    return suite_ipc08_common() + suite_ipc08_opt_only()
+
+def suite_ipc08_opt_strips():
+    return suite_ipc08_common() + suite_ipc08_opt_only_strips()
+
+def suite_ipc08_sat():
+    return suite_ipc08_common() + suite_ipc08_sat_only()
+
+def suite_ipc08_sat_strips():
+    return suite_ipc08_common() + suite_ipc08_sat_only_strips()
+
+def suite_ipc08_all():
+    return (suite_ipc08_common() +
+            suite_ipc08_opt_only() +
+            suite_ipc08_sat_only())
+
+def suite_ipc08_all_strips():
+    return (suite_ipc08_common() +
+            suite_ipc08_opt_only_strips() +
+            suite_ipc08_sat_only_strips())
+
 def suite_interesting():
     # A domain is boring if all planners solve all tasks in < 1 sec.
     # We include logistics00 even though it has that property because
     # we merge its results with logistics98 (which doesn't).
     boring = set(["gripper", "miconic", "miconic-simpleadl", "movie"])
     return [domain for domain in suite_all() if domain not in boring]
-
-def suite_icaps04_paper():
-    # The domains considered in the ICAPS 2004 CG heuristic paper, i.e.,
-    # all IPC 1-3 STRIPS domains.
-    suite = [
-        "blocks", "depot", "driverlog", "freecell", "grid", "gripper",
-        "logistics00", "logistics98", "miconic", "movie", "mprime", "mystery",
-        "zenotravel",
-        ]
-
-    # Only the first 20 Rovers and Satellite tasks are from IPC3.
-    # The remaining ones were introduced later.
-    for domain in ["rovers", "satellite"]:
-        tasks = list(Domain(domain))
-        suite += tasks[:20]
-
-    suite = build_suite(suite)
-    unsolvable = set(build_suite(suite_unsolvable()))
-    return [p for p in suite if p not in unsolvable]
 
 def suite_first_tasks():
     suite = []
@@ -203,16 +252,13 @@ def suite_test():
     return ["grid", "gripper", "blocks"]
 
 def suite_minitest():
-    return ["gripper:prob01.pddl", "gripper:prob02.pddl", 
+    return ["gripper:prob01.pddl", "gripper:prob02.pddl",
             "gripper:prob03.pddl", "zenotravel:pfile1",
             "zenotravel:pfile2", "zenotravel:pfile3", ]
-            
+
 def suite_tinytest():
     return ["gripper:prob01.pddl", "trucks-strips:p01.pddl",
             "trucks:p01.pddl", "psr-middle:p01-s17-n2-l2-f30.pddl"]
-            
-def suite_everything():
-    return suite_all() + ['openstacks-strips', 'pathways-noneg', 'trucks-strips']
 
 
 def suite_lmcut_domains():
@@ -239,34 +285,22 @@ def suite_lmcut_domains():
             "trucks-strips",
             "zenotravel",
             ]
-            
 
 def suite_strips():
-    # like suite_lmcut_domains, but without openstacks-strips (which has
-    # many translator timeouts).
-    return ["airport",
-            "blocks",
-            "depot",
-            "driverlog",
-            "freecell",
-            "grid",
-            "gripper",
-            "logistics00",
-            "logistics98",
-            "miconic",
-            "mprime",
-            "mystery",
-            "pathways-noneg",
-            "pipesworld-notankage",
-            "pipesworld-tankage",
-            "psr-small",
-            "rovers",
-            "satellite",
-            "tpp",
-            "trucks-strips",
-            "zenotravel",
-            ]
-            
+    return suite_lmcut_domains() + suite_ipc08_all_strips()
+
+def suite_strips_ipc12345():
+    ipc08 = set(suite_ipc08_all())
+    return [domain for domain in suite_strips() if domain not in ipc08]
+
+def suite_optimal():
+    return suite_lmcut_domains() + suite_ipc08_opt_strips()
+
+def suite_all():
+    domains = suite_ipc_one_to_five() + suite_lmcut_domains()
+    domains += suite_ipc08_all()
+    return list(sorted(set(domains)))
+
 
 def suite_five_per_domain():
     for domain in Repository():
@@ -276,27 +310,27 @@ def suite_five_per_domain():
 
 
 def select_evenly_spread(seq, num_items):
-   """Return num_items many items of seq, spread evenly.
-   If seq is shorter than num_items, include all items.
-   Otherwise, include first and last items and spread evenly in between.
-   (If num_items is 1, only include first item.)
+    """Return num_items many items of seq, spread evenly.
+    If seq is shorter than num_items, include all items.
+    Otherwise, include first and last items and spread evenly in between.
+    (If num_items is 1, only include first item.)
 
-   Example:
-   >>> select_evenly_spread("abcdef", 3)
-   ['a', 'd', 'f']
-   """
-   if len(seq) <= num_items:
-      return seq
-   if num_items == 1:
-      return [seq[0]]
-   step_size = (len(seq) - 1) / float(num_items - 1)
-   float_indices = [i * step_size for i in range(num_items)]
-   return [seq[int(round(index))] for index in float_indices]
-   
-   
+    Example:
+    >>> select_evenly_spread("abcdef", 3)
+    ['a', 'd', 'f']
+    """
+    if len(seq) <= num_items:
+        return seq
+    if num_items == 1:
+        return [seq[0]]
+    step_size = (len(seq) - 1) / float(num_items - 1)
+    float_indices = [i * step_size for i in range(num_items)]
+    return [seq[int(round(index))] for index in float_indices]
+
+
 if __name__ == '__main__':
     print build_suite([
-        'gripper', 
+        'gripper',
         'gripper:prob01.pddl',
         # Four times the same suite:
         'downward_suites.py:TEST',

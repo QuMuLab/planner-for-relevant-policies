@@ -1,13 +1,18 @@
 #! /usr/bin/env python
 
 import sys
+import os
 import multiprocessing
 import subprocess
 import time
 
+# make sure we're in the run directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+
 def run_cmd(command):
     try:
-        run = subprocess.call(command, shell=True)
+        run = subprocess.call(command, shell=True, stdout=sys.stdout, stderr=sys.stderr)
     except KeyboardInterrupt:
         print 'Call to run interrupted'
         run.terminate()

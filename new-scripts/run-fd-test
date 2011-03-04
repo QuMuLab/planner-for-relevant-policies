@@ -1,25 +1,62 @@
-#!/bin/sh
+#!/bin/bash
 # $1 - name
-# $2 - configs
-# $3 - suite
+# $2 - configs file
+# $3 - suite file
+
+RESULTS_BASE_DIR=~/results/$1
+RESULTS_DIR=$RESULTS_BASE_DIR/`hg id -i`
+BASELINE_DIR=$RESULTS_BASE_DIR/baseline
+
+mkdir $RESULTS_DIR || exit
+
+
+
+echo Creating Preprocessing Experiment
+python downward_experiments.py exp-p -l WARNING -s `cat $3` --preprocess
+
+echo Running Preprocessing Experiment
+exp-p/run
+
+echo Fetching Preprocessing Results
+python downward-resultfetcher.py exp-p -l WARNING 
 
 echo Creating Experiment
-python downward-experiments.py $1 -c $2 -s $3
+python downward_experiments.py exp -l WARNING -c `cat $2` -s `cat $3`
 
 echo Running Experiment
-$1/run
+exp/run
 
-echo Fetching Results 
-python downward-resultfetcher.py $1
+echo Storing Results
+mv exp $RESULTS_DIR
+mv exp-p $RESULTS_DIR
+mv preprocessed-tasks $RESULTS_DIR
 
-echo Printing Results
-for config in $1-eval/*; do 
-    for domain in $config/*; do 
-        for problem in $domain/*; do 
-            python print_results.py $problem/properties 
-        done;   
-    done; 
+echo Fetching Results
+rm -fr exp-eval
+python downward-resultfetcher.py $RESULTS_DIR/exp -l WARNING --dest `pwd`/exp-eval
+python downward-resultfetcher.py $BASELINE_DIR/exp -l WARNING --dest `pwd`/exp-eval
+
+rm -f test.exp.output
+
+echo Comparing Results to Baseline
+for c in `sed -e 's/,/ /g' $2`; do
+    echo Comparing Configuration $c;
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a expanded -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output; 
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a initial_h_value -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output; 
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a plan_length -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;        
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a search_time -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a total_time -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_vars -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_vars -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_ops -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_ops -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;       
 done
 
-echo Cleaning Up
-rm -fr $1 $1-eval
+rm -fr `pwd`/exp-eval
+
+if [ -s test.exp.output ]; then
+    cat test.exp.output
+    exit 2    
+else
+    echo No Significant Differences;
+fi    
