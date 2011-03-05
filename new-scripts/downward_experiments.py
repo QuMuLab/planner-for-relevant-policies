@@ -136,7 +136,7 @@ class DownwardExperiment(experiments.Experiment):
     def __init__(self, combinations, parser=None):
         self.combinations = combinations
         parser = parser or experiments.ExpArgParser()
-        parser.add_argument('-p', '--preprocess', action='store_true',
+        parser.add_argument('--preprocess', action='store_true',
                             help='build preprocessing experiment')
         parser.add_argument('--complete', action='store_true',
                             help='build complete experiment (overrides -p)')
@@ -186,9 +186,9 @@ class DownwardExperiment(experiments.Experiment):
             logging.info('Experiment name set to %s' % self.name)
 
         # Use unique dir for the preprocess experiment
-        if not self.base_dir.endswith('-p'):
-            self.base_dir += '-p'
-            logging.info('Experiment directory set to %s' % self.base_dir)
+        if not self.path.endswith('-p'):
+            self.path += '-p'
+            logging.info('Experiment directory set to %s' % self.path)
 
         # Add some instructions
         if self.environment == environments.LocalEnvironment:
