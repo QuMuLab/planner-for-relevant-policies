@@ -27,7 +27,7 @@ def set_limit(kind, amount):
 
 class Call(subprocess.Popen):
     def __init__(self, args, time_limit=1800, wall_clock_time_limit=1800,
-                 mem_limit=2048, kill_delay=5, check_interval=0.5, **kwargs):
+                 mem_limit=2048, kill_delay=5, check_interval=0.1, **kwargs):
         """
         mem_limit =         Memory in MiB
         kill_delay =        How long we wait between SIGTERM and SIGKILL
