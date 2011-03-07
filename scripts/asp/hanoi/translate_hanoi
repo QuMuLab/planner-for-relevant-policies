@@ -3,15 +3,20 @@
 
 DOWNWARD_SRC=../../../src
 
-bound=`grep steps $1 | gawk 'BEGIN {FS="(";} {print $2 + 1;}'`
+rm -f nocomment pddl output.sas output sas_plan soln temp_file
 
-gawk '{if (substr($1,1,1) != "%") print $0l}' $1 > $1.nocomment
-python translate_hanoi.py $1.nocomment > $1.pddl
+cat $1 > temp_file
 
-$DOWNWARD_SRC/translate/translate.py hanoi.pddl $1.pddl
+bound=`grep steps temp_file | gawk 'BEGIN {FS="(";} {print $2 + 1;}'`
+
+gawk '{if (substr($1,1,1) != "%") print $0l}' temp_file > nocomment
+python translate_hanoi.py nocomment > pddl
+
+$DOWNWARD_SRC/translate/translate.py hanoi.pddl pddl
 $DOWNWARD_SRC/preprocess/preprocess < output.sas
-#$DOWNWARD_SRC/search/downward --landmarks "lmg=lm_merged(lm_rhw(),lm_hm(m=1),reasonable_orders=true)" --heuristic "h1,h2=lm_ff_syn(lmg)" --heuristic "h3=cea()" --heuristic "h4=cg()" --heuristic "h5=add()" --search "lazy_greedy(h1,h2,h3,h4,h5,preferred=(h1,h2,h3,h4,h5),bound=$bound)" < output
-$DOWNWARD_SRC/search/downward --search "astar(selmax(lmcut(),hmax(),alpha=4,training_set=10),  pathmax=true)" < output
-gawk '{disc = substr($2,2); to = substr($4,2) + 0; print "PUT(" NR-1 "," to "," disc ").";}' sas_plan > $1.soln
+$DOWNWARD_SRC/search/downward --search "astar(selmax(lmcut(),hmax(),alpha=4,training_set=10),bound=$bound,pathmax=true)" < output
 
-cat $1.soln
+if [ -f sas_plan ]; then
+    gawk '{disc = substr($2,2); to = substr($4,2) + 0; printf "put(" NR-1 "," to "," disc "). ";} END {print "";}' sas_plan > soln
+fi
+
