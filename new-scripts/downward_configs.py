@@ -179,7 +179,11 @@ pdb100000000 = """\
 """
 
 pdbs = """\
----search "astar(pdbs())"\
+--search "astar(pdbs())"\
+"""
+
+ipdb = """\
+--search "astar(ipdb())"\
 """
 
 lmopt_rhw = """\
