@@ -1,17 +1,16 @@
 #! /bin/sh
-# $1 - ASP encoding of problem 
 
 DOWNWARD_SRC=../../../src
 
-./translate_hydraulic_planning.py $1 > problem.pddl
-$DOWNWARD_SRC/translate/translate.py domain.pddl problem.pddl
-$DOWNWARD_SRC/preprocess/preprocess < output.sas
-$DOWNWARD_SRC/search/downward --heuristic "hff=ff()" --search "lazy_wastar(hff,preferred=(hff),w=2)" < output
+./translate_hydraulic_leaking.py /dev/stdin > problem.pddl
+$DOWNWARD_SRC/translate/translate.py domain.pddl problem.pddl > translate.log
+$DOWNWARD_SRC/preprocess/preprocess < output.sas > preprocess.log
+$DOWNWARD_SRC/search/downward --heuristic "hff=ff()" --search "lazy_wastar(hff,preferred=(hff),w=2)" < output > search.log
 #$DOWNWARD_SRC/search/downward --heuristic "hff=ff()" --search "lazy_greedy(hff, preferred=(hff))" < output
 
 # Not running iterated search for now. If we do, adjust handling of plan files in "create_asp_output.py"
 #$DOWNWARD_SRC/search/downward --heuristic "hff=ff()" --search "iterated(lazy_greedy(hff, preferred=(hff)),lazy_wastar(hff,preferred=(hff),w=2),lazy_wastar(hff,preferred=(hff),w=1), repeat_last=true)" < output
 
-./create_asp_output.py sas_plan
+./create_asp_output.py search.log sas_plan
 
 rm -f problem.pddl test.groups all.groups elapsed.time output.sas output plan_numbers_and_cost downward.tmp.* sas_plan

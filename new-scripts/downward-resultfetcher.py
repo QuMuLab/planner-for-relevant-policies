@@ -394,6 +394,8 @@ def add_search_parsing(eval):
                      required=False)
     eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
     eval.add_pattern('pdb_time', r'PDB construction time: (.+)s', type=float, required=False)
+    eval.add_pattern('dead_ends', r'Dead ends: (.+) state\(s\)\.', type=int,
+                     required=False)
 
 
 def add_search_functions(eval):

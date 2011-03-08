@@ -31,8 +31,8 @@ class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, **kwargs)
 
-        self.add_argument('-n', '--name',
-            help='name of the experiment (e.g. <initials>-<descriptive name>)')
+        self.add_argument('-p', '--path',
+            help='path of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
             '-t', '--timeout', type=int, default=1800,
             help='timeout per task in seconds')
@@ -42,11 +42,6 @@ class ExpArgParser(tools.ArgParser):
         self.add_argument(
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
-        self.add_argument(
-            '--root-dir',
-            help='directory where the experiment should be located '
-                 '(default is the current working directory). '
-                 'The new experiment will reside in <root-dir>/<name>')
 
 
 class Experiment(object):
@@ -66,13 +61,12 @@ class Experiment(object):
         self.parser = parser or ExpArgParser()
         self.parse_args()
         assert self.environment
+        self.path = os.path.abspath(self.path)
 
-        if self.root_dir:
-            self.base_dir = os.path.join(self.root_dir, self.name)
-        else:
-            self.base_dir = self.name
-        self.base_dir = os.path.abspath(self.base_dir)
-        logging.info('Base Dir: "%s"' % self.base_dir)
+        # Derive the experiment name from the path
+        self.name = os.path.basename(self.path)
+
+        logging.info('Exp Dir: "%s"' % self.path)
 
         # Include the experiment code
         self.add_resource('CALLS', tools.CALLS_DIR, 'calls')
@@ -87,8 +81,8 @@ class Experiment(object):
         if not self.environment:
             logging.error('Unknown environment "%s"' % self.environment_type)
             sys.exit(1)
-        while not self.name:
-            self.name = raw_input('Please enter an experiment name: ').strip()
+        while not self.path:
+            self.path = raw_input('Please enter an experiment path: ').strip()
 
     def set_property(self, name, value):
         """
@@ -132,7 +126,7 @@ class Experiment(object):
         """
         Apply all the actions to the filesystem
         """
-        tools.overwrite_dir(self.base_dir)
+        tools.overwrite_dir(self.path)
 
         # Make the variables absolute
         self.env_vars = dict([(var, self._get_abs_path(path))
@@ -158,7 +152,7 @@ class Experiment(object):
         >>> _get_abs_path('mytest.q')
         /home/user/mytestjob/mytest.q
         """
-        return os.path.join(self.base_dir, rel_path)
+        return os.path.join(self.path, rel_path)
 
     def _set_run_dirs(self):
         """
@@ -178,16 +172,14 @@ class Experiment(object):
         shards = tools.divide_list(self.runs, self.shard_size)
 
         for shard_number, shard in enumerate(shards, start=1):
-            shard_dir = os.path.join(self.base_dir,
-                                     get_shard_dir(shard_number))
+            shard_dir = os.path.join(self.path, get_shard_dir(shard_number))
             tools.overwrite_dir(shard_dir)
 
             for run in shard:
                 current_run += 1
                 rel_dir = os.path.join(get_shard_dir(shard_number),
                                        run_number(current_run))
-                abs_dir = os.path.join(self.base_dir, rel_dir)
-                run.dir = abs_dir
+                run.dir = self._get_abs_path(rel_dir)
 
     def _build_main_script(self):
         """
