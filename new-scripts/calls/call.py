@@ -41,6 +41,8 @@ class Call(subprocess.Popen):
         self.kill_delay = kill_delay
         self.check_interval = check_interval
 
+        self.log_interval = 5
+
         stdin = kwargs.get('stdin')
         if type(stdin) is str:
             kwargs['stdin'] = open(stdin)
@@ -66,6 +68,7 @@ class Call(subprocess.Popen):
         """
         term_attempted = False
         real_time = 0
+        last_log_time = 0
         while True:
             time.sleep(self.check_interval)
             real_time += self.check_interval
@@ -82,8 +85,11 @@ class Call(subprocess.Popen):
 
             total_time = group.total_time()
             total_vsize = group.total_vsize()
-            #print "[real-time %d] total_time: %.2f" % (real_time, total_time)
-            #print "[real-time %d] total_vsize: %.2f" % (real_time, total_vsize)
+
+            if real_time >= last_log_time + self.log_interval:
+                print "[real-time %d] total_time: %.2f" % (real_time, total_time)
+                print "[real-time %d] total_vsize: %.2f" % (real_time, total_vsize)
+                last_log_time = real_time
 
             try_term = (total_time >= self.time_limit or
                         real_time >= self.wall_clock_time_limit or
@@ -125,7 +131,7 @@ class Call(subprocess.Popen):
 
 
 if __name__ == "__main__":
-    call = Call(['gnome-calculator'], time_limit=3, wall_clock_time_limit=4)
+    call = Call(['gnome-calculator'], time_limit=6, wall_clock_time_limit=7)
     print 'PID', call.pid
     call.wait()
     print 'RETCODE', call.returncode
