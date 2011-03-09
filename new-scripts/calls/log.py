@@ -7,8 +7,6 @@ def add_property(name, value):
     properties_file.flush()
 
 def save_returncode(command_name, value):
-    add_property('%s_returncode' % command_name.lower(), value)
-    # TODO: Do we want to mark errors here already?
-    # TODO: Would it be better to save just one "fatal_error" for each run?
+    add_property('%s_returncode' % command_name.lower(), str(value))
     error = 0 if value == 0 else 1
     add_property('%s_error' % command_name.lower(), error)
