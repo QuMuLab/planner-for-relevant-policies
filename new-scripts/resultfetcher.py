@@ -249,6 +249,12 @@ class Fetcher(object):
             props = tools.Properties(prop_file)
 
             id = props.get('id')
+            # Skip wrong property files
+            if not id:
+                msg = 'id in %s could not be read. skipping that run.'
+                logging.error(msg % prop_file)
+                continue
+
             dest_dir = os.path.join(self.eval_dir, *id)
             if self.copy_all:
                 tools.makedirs(dest_dir)
