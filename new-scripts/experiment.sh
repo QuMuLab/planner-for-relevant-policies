@@ -55,7 +55,7 @@ fi
 
 if [[ "$PHASE" == 1 ]]; then
     ./downward_experiments.py --preprocess --timeout 7200 --memory 3072 \
-        -s $SUITE --name $EXPNAME $EXPTYPEOPT
+        -s $SUITE --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 2 ]]; then
     if [[ "$EXPTYPE" == gkigrid ]]; then
         pushd .
@@ -68,7 +68,7 @@ elif [[ "$PHASE" == 2 ]]; then
 elif [[ "$PHASE" == 3 ]]; then
     ./resultfetcher.py $EXPNAME-p
 elif [[ "$PHASE" == 4 ]]; then
-    ./downward_experiments.py -s $SUITE -c $CONFIGS --name $EXPNAME $EXPTYPEOPT
+    ./downward_experiments.py -s $SUITE -c $CONFIGS --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 5 ]]; then
     if [[ "$EXPTYPE" == gkigrid ]]; then
         pushd .

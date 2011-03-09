@@ -1,4 +1,5 @@
 #! /bin/bash
+set -e
 
 rm -rf test-exp-p
 rm -rf test-exp

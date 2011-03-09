@@ -37,7 +37,7 @@ class FetchOptionParser(tools.ArgParser):
         # args is the populated namespace, i.e. the Fetcher instance
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
 
-        args.exp_dir = os.path.normpath(os.path.abspath(args.exp_dir))
+        args.exp_dir = os.path.abspath(args.exp_dir)
         logging.info('Exp dir:  "%s"' % args.exp_dir)
 
         if args.exp_dir.endswith('eval'):
@@ -57,10 +57,11 @@ class FetchOptionParser(tools.ArgParser):
             if 'copy_all' in exp_props:
                 args.copy_all = exp_props['copy_all']
 
-        if not args.eval_dir or not os.path.isabs(args.eval_dir):
-            dirname = os.path.basename(args.exp_dir)
-            eval_dirname = args.eval_dir or dirname + '-eval'
-            args.eval_dir = os.path.abspath(eval_dirname)
+        # If args.eval_dir is absolute already we don't have to do anything
+        if args.eval_dir and not os.path.isabs(args.eval_dir):
+            args.eval_dir = os.path.abspath(args.eval_dir)
+        elif not args.eval_dir:
+            args.eval_dir = args.eval_dir or args.exp_dir + '-eval'
 
         logging.info('Eval dir: "%s"' % args.eval_dir)
 
@@ -248,6 +249,12 @@ class Fetcher(object):
             props = tools.Properties(prop_file)
 
             id = props.get('id')
+            # Skip wrong property files
+            if not id:
+                msg = 'id in %s could not be read. skipping that run.'
+                logging.error(msg % prop_file)
+                continue
+
             dest_dir = os.path.join(self.eval_dir, *id)
             if self.copy_all:
                 tools.makedirs(dest_dir)
