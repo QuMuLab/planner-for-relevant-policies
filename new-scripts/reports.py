@@ -327,14 +327,8 @@ class Table(collections.defaultdict):
                 if key not in cols:
                     cols.append(key)
 
-        # Put special columns at the end
-        def sort(col):
-            if col.lower() in ['quotient']:
-                return 'zzz' + col.lower()
-            else:
-                return col.lower()
-
-        return sorted(cols, key=sort)
+        tools.natural_sort(cols)
+        return cols
 
     def get_cells_in_row(self, row):
         return [self[row][col] for col in self.cols]
