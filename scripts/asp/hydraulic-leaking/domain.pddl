@@ -1,5 +1,5 @@
 (define (domain hydraulic-leaking)
-  (:requirements :typing :action-costs :adl :derived-predicates)
+  (:requirements :typing :action-costs :adl)
   (:types node valve - object
           tank jet junction - node)
   (:predicates (open ?v - valve)
@@ -30,9 +30,5 @@
                       (pressurized ?to)
                       (increase (total-cost) 1000)
                       )
-   )
-  (:derived (pressurized ?n - node)
-        (or (full ?n)
-             (exists (?n1 - node) (exists (?v - valve) (and (pressurized ?n1) (link ?n1 ?n ?v) (open ?v)))))
    )
 )

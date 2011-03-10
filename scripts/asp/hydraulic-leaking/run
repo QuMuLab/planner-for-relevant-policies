@@ -2,14 +2,10 @@
 
 DOWNWARD_SRC=../../../src
 
-./translate_hydraulic_leaking.py /dev/stdin > problem.pddl
+python2.6 ./translate_hydraulic_leaking.py /dev/stdin > problem.pddl
 $DOWNWARD_SRC/translate/translate.py domain.pddl problem.pddl > translate.log
 $DOWNWARD_SRC/preprocess/preprocess < output.sas > preprocess.log
-$DOWNWARD_SRC/search/downward --heuristic "hff=ff()" --search "lazy_wastar(hff,preferred=(hff),w=2)" < output > search.log
-#$DOWNWARD_SRC/search/downward --heuristic "hff=ff()" --search "lazy_greedy(hff, preferred=(hff))" < output
-
-# Not running iterated search for now. If we do, adjust handling of plan files in "create_asp_output.py"
-#$DOWNWARD_SRC/search/downward --heuristic "hff=ff()" --search "iterated(lazy_greedy(hff, preferred=(hff)),lazy_wastar(hff,preferred=(hff),w=2),lazy_wastar(hff,preferred=(hff),w=1), repeat_last=true)" < output
+$DOWNWARD_SRC/search/downward --search "astar(lmcut())" < output > search.log
 
 ./create_asp_output.py search.log sas_plan
 
