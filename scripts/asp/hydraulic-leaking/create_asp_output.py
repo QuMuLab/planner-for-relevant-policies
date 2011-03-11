@@ -12,6 +12,7 @@ def output_plan():
         valve = line.split()[1]
         print predicate + "(" + valve[1:] + "," + str(timestep) + ").",
         timestep += 1
+    print
 
 # Read search log passed in as arg
 for line in open(sys.argv[1]):
@@ -20,4 +21,5 @@ for line in open(sys.argv[1]):
         break
     elif line.strip() == "Solution found!":
         output_plan()
+        print "ANSWER SET FOUND"
         break

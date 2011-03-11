@@ -81,15 +81,8 @@ def generate_problems(description):
     TEST_FIRST5
     mysuitefile.py:MYTEST_FIRST5
     """
-    if description.upper().endswith('FIRST'):
-        # Allow writing SUITE_NAME_FIRST
-        # This will work for all suites that only list domains and will
-        # return the first problem of each domain
-        description += '1'
-
-    number_expr = re.compile(r'.*FIRST([-]?\d+)', re.IGNORECASE)
-    number_result = number_expr.search(description)
-
+    range_expr = re.compile(r'.+_([-]?\d+)TO([-]?\d+)', re.IGNORECASE)
+    range_result = range_expr.search(description)
 
     if '.py:' in description:
         filename, rest = description.split(':', 1)
@@ -100,21 +93,24 @@ def generate_problems(description):
     module = tools.import_python_file(filename)
     module_dict = module.__dict__
 
-    if number_result:
-        # Allow writing SUITE_NAME_FIRSTn
+    if range_result:
+        # Allow writing SUITE_NAME_<NUMBER>TO<NUMBER>
         # This will work for all suites that only list domains and will
-        # return the first n problems of each domain
-        number = int(number_result.group(1))
-        assert number >= 1, number
-        suite_name, first_text = description.rsplit('_', 1)
+        # return the problems in that range of each domain
+        start = int(range_result.group(1))
+        end = int(range_result.group(2))
+        #assert start >= 1, start
+        #assert end >= start, (start, end)
+        suite_name, numbers = description.rsplit('_', 1)
         suite_func = module_dict.get(suite_name, None)
+        func_name = "suite_%s" % suite_name.lower()
         if suite_func is None:
-            suite_func = module_dict.get("suite_%s" % suite_name.lower(), None)
+            suite_func = module_dict.get(func_name, None)
         if not suite_func:
-            raise SystemExit("unknown suite: %s" % suite_name)
+            raise SystemExit("unknown suite: %s" % func_name)
         for domain_name in suite_func():
             domain = Domain(domain_name)
-            for problem in domain.problems[:number]:
+            for problem in domain.problems[start - 1:end]:
                 yield problem
     elif isinstance(description, Problem):
         yield description
@@ -123,10 +119,11 @@ def generate_problems(description):
             yield problem
     elif description.isupper() or description in module_dict:
         suite_func = module_dict.get(description, None)
+        func_name = "suite_%s" % description.lower()
         if suite_func is None:
-            suite_func = module_dict.get("suite_%s" % description.lower(), None)
+            suite_func = module_dict.get(func_name, None)
         if suite_func is None:
-            raise SystemExit("unknown suite: %s" % description)
+            raise SystemExit("unknown suite: %s" % func_name)
         for element in suite_func():
             for problem in generate_problems(element):
                 yield problem

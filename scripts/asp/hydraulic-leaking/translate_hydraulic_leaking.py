@@ -31,6 +31,7 @@ def convert_hydraulic_leaking_instance(filename):
 
     for tank in sorted(asp_instance["full"].objects()):
         print "    (full %s)" % tank
+        print "    (pressurized %s)" % tank
 
     print "    (= (total-cost) 0)"
     print "  )"
