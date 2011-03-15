@@ -1,10 +1,10 @@
 #include "landmark_count_heuristic.h"
 
 #include "h_m_landmarks.h"
-#include "landmarks_graph_rpg_exhaust.h"
-#include "landmarks_graph_rpg_sasp.h"
-#include "landmarks_graph_rpg_search.h"
-#include "landmarks_graph_zhu_givan.h"
+#include "landmark_factory_rpg_exhaust.h"
+#include "landmark_factory_rpg_sasp.h"
+#include "landmark_factory_rpg_search.h"
+#include "landmark_factory_zhu_givan.h"
 
 #include "../globals.h"
 #include "../operator.h"
@@ -24,7 +24,7 @@ static ScalarEvaluatorPlugin landmark_count_heuristic_plugin(
     "lmcount", LandmarkCountHeuristic::create);
 
 LandmarkCountHeuristic::LandmarkCountHeuristic(const HeuristicOptions &options,
-                                               LandmarksGraph &lm_graph,
+                                               LandmarkGraph &lm_graph,
                                                bool preferred_ops,
                                                bool admissible, bool optimal,
                                                bool use_action_landmarks)
@@ -126,7 +126,7 @@ int LandmarkCountHeuristic::get_heuristic_value(const State &state) {
             if (state[g_goal[i].first] != g_goal[i].second) {
                 //cout << "missing goal prop " << g_variable_name[g_goal[i].first] << " : "
                 //<< g_goal[i].second << endl;
-                LandmarkNode *node_p = lgraph.landmark_reached(g_goal[i]);
+                LandmarkNode *node_p = lgraph.get_landmarked(g_goal[i]);
                 assert(node_p != NULL);
                 if (node_p->min_cost != 0)
                     all_costs_are_zero = false;
@@ -241,7 +241,7 @@ bool LandmarkCountHeuristic::generate_helpful_actions(const State &state,
                 continue;
             const pair<int, int> varval = make_pair(prepost[j].var,
                                                     prepost[j].post);
-            LandmarkNode *lm_p = lgraph.landmark_reached(varval);
+            LandmarkNode *lm_p = lgraph.get_landmark(varval);
             if (lm_p != 0 && landmark_is_interesting(state, reached, *lm_p)) {
                 if (lm_p->disjunctive) {
                     ha_disj.push_back(all_operators[i]);
@@ -318,7 +318,7 @@ ScalarEvaluator *LandmarkCountHeuristic::create(
     if (config[start + 1] != "(")
         throw ParseError(start + 1);
 
-    LandmarksGraph *lm_graph = OptionParser::instance()->parse_lm_graph(config,
+    LandmarkGraph *lm_graph = OptionParser::instance()->parse_lm_graph(config,
                                                                         start + 2, end, dry_run);
     ++end;
 
