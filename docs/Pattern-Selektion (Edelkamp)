@@ -2,10 +2,10 @@ Selektion einer Pattern-Kollektion (Stefan Edelkamp)
 Genetischer Algorithmus, Durchschnittsheuristikwert
 
 Parameter:
-- pdb_size // Größe der Pattern-Database
-- num_coll // Anzahl von Pattern-Kollektionen
-- num_episodes // Anzahl der Generationen im genetischen Algorithmus, d.h. so oft entsteht aus der alten (oder initialen) Pattern-Kollektion eine neue Pattern-Kollektion. Die letzte Generation ist dann die endgültige Pattern-Kollektion.
-- mutation_probability // Mutationswahrscheinlichkeit. Mit dieser Wahrscheinlichkeit wird im genetischen Algorithmus eine Variable zu einem Pattern hinzugefügt oder entfern.
+- pdb_size = 100 (variabel) // Größe der Pattern-Database
+- num_coll = 5 (variable) // Anzahl von Pattern-Kollektionen
+- num_episodes = 30 (variabel) // Anzahl der Generationen im genetischen Algorithmus, d.h. so oft entsteht aus der alten (oder initialen) Pattern-Kollektion eine neue Pattern-Kollektion. Die letzte Generation ist dann die endgültige Pattern-Kollektion.
+- mutation_probability = 0.01 (0.001) // Mutationswahrscheinlichkeit. Mit dieser Wahrscheinlichkeit wird im genetischen Algorithmus eine Variable zu einem Pattern hinzugefügt oder entfern.
 
 Initialisierung:
 Eine initiale Menge von Pattern-Kollektionen wird erzeugt. Dabei wird Bin-Packing mit der Next-Fit Strategie verwendet. Ein Bin entspricht einem Pattern, welches mit Variablen bis zur Größe pdb_size gefüllt werden kann. Sobald eine Variable nicht mehr in ein Bin passt, wird ein neues Bin geöffnet und dieses solange befüllt bis eine Variable auftaucht, die nicht mehr in das Bin passt.
@@ -24,5 +24,6 @@ Für jede Pattern-Kollektion der aktuellen Menge von Pattern-Kollektionen berech
 Die Idee ist, dass Pattern-Kollektionen mit einem höheren Durchschnittsheuristikwert mit höherer Wahrscheinlichkeit in die nächste Generation gewählt werden sollen.
 Die Durchschnittsheuristik werden normalisiert und in Wahrscheinlichkeiten umgerechnet. --> Roulette Wheel Selection
 Die Anzahl der Pattern-Kollektionen bleibt während des gesamten genetischen Algorithmus identisch.
+TODO: elitism flag?
 
 Es wird keine Rekombination durchgeführt.
