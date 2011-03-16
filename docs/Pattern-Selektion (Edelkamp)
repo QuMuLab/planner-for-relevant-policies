@@ -1,0 +1,28 @@
+Selektion einer Pattern-Kollektion (Stefan Edelkamp)
+Genetischer Algorithmus, Durchschnittsheuristikwert
+
+Parameter:
+- pdb_size // Größe der Pattern-Database
+- num_coll // Anzahl von Pattern-Kollektionen
+- num_episodes // Anzahl der Generationen im genetischen Algorithmus, d.h. so oft entsteht aus der alten (oder initialen) Pattern-Kollektion eine neue Pattern-Kollektion. Die letzte Generation ist dann die endgültige Pattern-Kollektion.
+- mutation_probability // Mutationswahrscheinlichkeit. Mit dieser Wahrscheinlichkeit wird im genetischen Algorithmus eine Variable zu einem Pattern hinzugefügt oder entfern.
+
+Initialisierung:
+Eine initiale Menge von Pattern-Kollektionen wird erzeugt. Dabei wird Bin-Packing mit der Next-Fit Strategie verwendet. Ein Bin entspricht einem Pattern, welches mit Variablen bis zur Größe pdb_size gefüllt werden kann. Sobald eine Variable nicht mehr in ein Bin passt, wird ein neues Bin geöffnet und dieses solange befüllt bis eine Variable auftaucht, die nicht mehr in das Bin passt.
+
+Der genetische Algorithmus:
+1. Mutation
+Die aktuelle (im ersten Schritt initiale) Menge der Pattern-Kollektionen wird wie folgt modifiziert. 
+Für jede Pattern-Kollektion:
+	Für jedes Pattern:
+		Für jede mögliche Variable: Mit Wahrscheinlichkeit mutation_probability füge diese Variable zum Pattern hinzu, wenn sie nicht enthalten ist, oder lösche sie aus dem Pattern, wenn sie enthalten ist.
+
+2. Bewertung
+Für jede Pattern-Kollektion der aktuellen Menge von Pattern-Kollektionen berechne den Durchschnittsheuristikwert der jeweiligen Pattern-Databases einer Kollektion. Das ist die Summe der Pattern-Database-Einträge durch die Anzahl der Einträge. Unendliche Heuristikwerte werden völlig ignoriert. Es wird so getan, als existiere dieser Eintrag nicht. Die Durchschnittswerte der einzelnen Pattern-Databases einer Kollektion werden summiert.
+
+3. Selektion mithilfe der Durchschnittsheuristikwerte
+Die Idee ist, dass Pattern-Kollektionen mit einem höheren Durchschnittsheuristikwert mit höherer Wahrscheinlichkeit in die nächste Generation gewählt werden sollen.
+Die Durchschnittsheuristik werden normalisiert und in Wahrscheinlichkeiten umgerechnet. --> Roulette Wheel Selection
+Die Anzahl der Pattern-Kollektionen bleibt während des gesamten genetischen Algorithmus identisch.
+
+Es wird keine Rekombination durchgeführt.
