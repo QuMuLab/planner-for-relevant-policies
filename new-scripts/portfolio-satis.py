@@ -1,7 +1,6 @@
 #! /usr/bin/env python2.6
 # -*- coding: utf-8 -*-
 
-import pprint
 import sys
 
 
@@ -154,7 +153,7 @@ class Results(object):
                               if self.data[config, problem][0] is not None])
             print num_solved, "problems solved by", config
         for config in sorted(self.configs):
-            ipc_score = sum([self.data[config, problem][1] 
+            ipc_score = sum([self.data[config, problem][1]
                              for problem in self.problems
                              if self.data[config, problem][1] is not None])
             print "%.2f" % ipc_score, "IPC score by", config
@@ -188,10 +187,10 @@ class Portfolio(object):
             if time < self.timeouts[solver] + EPSILON:
                 if solution_scores[solver] > best_score:
                     best_score = solution_scores[solver]
-        return best_score 
+        return best_score
 
     def ipc_score(self):
-        return sum(self.score(problem) 
+        return sum(self.score(problem)
                    for problem in self.results.problems)
 
     def successors(self, granularity):

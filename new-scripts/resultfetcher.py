@@ -3,32 +3,23 @@
 Module that permits copying and parsing experiment files
 
 If called as the main script, it will only copy the files and do no parsing
-By default only the properties files are copied, with the "-c" parameter all
-files will be copied.
-
-Some timings (issue7-ou-lmcut):
-Copy-props No-regexes   No-functions   42s
-Copy-all   No-regexes   No-functions   17min
-Copy-props Regexes      Functions      67min
-Copy-props Regexes      No-Functions   7min
-Copy-props More-Regexes Less-Functions 9min
+By default only one properties file is written. With the "--copy-all" parameter
+all files will be copied.
 """
 
 from __future__ import with_statement
 
 import os
 import sys
-import shutil
 import re
 from glob import glob
 from collections import defaultdict
 import logging
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)-s %(levelname)-8s %(message)s',)
+import hashlib
+import cPickle
 
 import tools
-
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+from external.datasets import DataSet
 
 
 class FetchOptionParser(tools.ArgParser):
@@ -41,7 +32,7 @@ class FetchOptionParser(tools.ArgParser):
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
                 help='path to evaluation directory (default: <exp_dir>-eval)')
 
-        self.add_argument('-c', '--copy-all', default=False, action='store_true',
+        self.add_argument('--copy-all', action='store_true',
                 help='copy all files from run dirs to new directory tree, '
                     'not only the properties files')
 
@@ -49,18 +40,18 @@ class FetchOptionParser(tools.ArgParser):
         # args is the populated namespace, i.e. the Fetcher instance
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
 
-        args.exp_dir = os.path.normpath(os.path.abspath(args.exp_dir))
+        args.exp_dir = os.path.abspath(args.exp_dir)
         logging.info('Exp dir:  "%s"' % args.exp_dir)
 
         if args.exp_dir.endswith('eval'):
-            answer = raw_input('The source directory seems to be an evaluation '
-                                'directory. Are you sure you this is an '
-                                'experiment directory? (Y/N): ')
+            msg = ('The source directory seems to be an evaluation directory. '
+                   'Are you sure you this is an experiment directory? (Y/N): ')
+            answer = raw_input(msg)
             if not answer.upper() == 'Y':
                 sys.exit()
 
-        # Update some args with the values from the experiment's properties file
-        # if the values have not been set on the commandline
+        # Update some args with the values from the experiment's
+        # properties file if the values have not been set on the commandline
         exp_props_file = os.path.join(args.exp_dir, 'properties')
         if os.path.exists(exp_props_file):
             exp_props = tools.Properties(exp_props_file)
@@ -69,10 +60,11 @@ class FetchOptionParser(tools.ArgParser):
             if 'copy_all' in exp_props:
                 args.copy_all = exp_props['copy_all']
 
-        if not args.eval_dir or not os.path.isabs(args.eval_dir):
-            dirname = os.path.basename(args.exp_dir)
-            eval_dirname = args.eval_dir or dirname + '-eval'
-            args.eval_dir = os.path.abspath(eval_dirname)
+        # If args.eval_dir is absolute already we don't have to do anything
+        if args.eval_dir and not os.path.isabs(args.eval_dir):
+            args.eval_dir = os.path.abspath(args.eval_dir)
+        elif not args.eval_dir:
+            args.eval_dir = args.eval_dir or args.exp_dir + '-eval'
 
         logging.info('Eval dir: "%s"' % args.eval_dir)
 
@@ -114,12 +106,11 @@ class _MultiPattern(object):
                     value = type(value)
                     found_props[attribute_name] = value
                 except IndexError:
-                    msg = 'Atrribute "%s" not found for pattern "%s" in file "%s"'
+                    msg = 'Atrribute %s not found for pattern %s in file %s'
                     msg %= (attribute_name, self, filename)
                     logging.error(msg)
         elif self.required:
-            logging.error('Pattern "%s" not present in file "%s"' % \
-                                                            (self, filename))
+            logging.error('Pattern %s not found in %s' % (self, filename))
         return found_props
 
     def __str__(self):
@@ -130,7 +121,6 @@ class _Pattern(_MultiPattern):
     def __init__(self, name, regex, group, file, required, type, flags):
         groups = [(group, name, type)]
         _MultiPattern.__init__(self, groups, regex, file, required, flags)
-
 
 
 class _FileParser(object):
@@ -181,7 +171,6 @@ class _FileParser(object):
         return props
 
 
-
 class Fetcher(object):
     """
     If copy-all is True, copies files from run dirs into a new tree under
@@ -200,7 +189,7 @@ class Fetcher(object):
         self.check = None
 
     def _get_run_dirs(self):
-        return glob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
+        return sorted(glob(os.path.join(self.exp_dir, 'runs-*-*', '*')))
 
     def add_pattern(self, name, regex_string, group=1, file='run.log',
                         required=True, type=int, flags=''):
@@ -263,6 +252,12 @@ class Fetcher(object):
             props = tools.Properties(prop_file)
 
             id = props.get('id')
+            # Skip wrong property files
+            if not id:
+                msg = 'id in %s could not be read. skipping that run.'
+                logging.error(msg % prop_file)
+                continue
+
             dest_dir = os.path.join(self.eval_dir, *id)
             if self.copy_all:
                 tools.makedirs(dest_dir)
@@ -294,7 +289,23 @@ class Fetcher(object):
 
         tools.makedirs(self.eval_dir)
         combined_props.write()
+        self.write_data_dump(combined_props)
 
+    def write_data_dump(self, combined_props):
+        combined_props_file = combined_props.filename
+        dump_path = os.path.join(self.eval_dir, 'data_dump')
+        logging.info('Reading properties file without parsing')
+        properties_contents = open(combined_props_file).read()
+        logging.info('Calculating properties hash')
+        new_checksum = hashlib.md5(properties_contents).digest()
+        data = DataSet()
+        for run_id, run in sorted(combined_props.items()):
+            data.append(**run)
+        logging.info('Finished turning properties into dataset')
+        # Pickle data for faster future use
+        cPickle.dump((new_checksum, data), open(dump_path, 'wb'),
+                     cPickle.HIGHEST_PROTOCOL)
+        logging.info('Wrote data dump')
 
 
 if __name__ == "__main__":

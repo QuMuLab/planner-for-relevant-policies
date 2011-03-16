@@ -5,38 +5,38 @@ Regular expressions and functions for parsing planning experiments
 
 from __future__ import with_statement, division
 
-import sys
-import os
 import logging
 import re
 import math
 
 from resultfetcher import Fetcher, FetchOptionParser
 
+
 def check(props):
     if props.get('translator_error') == 1:
-        assert props.get('preprocessor_error') == 1, \
-                                'Translator error without preprocessor error'
+        msg = 'Translator error without preprocessor error'
+        assert props.get('preprocessor_error') == 1, msg
 
 
-# Preprocessing functions ------------------------------------------------------
+# Preprocessing functions -----------------------------------------------------
 
-# TODO: Is there a better way to parse this? Are the returncodes enough already?
+# TODO: Is there a better way to parse this?
+# Are the returncodes enough already?
 def translator_error(content, old_props):
     error = not 'Done! [' in content
     return {'translator_error': int(error)}
+
 
 def preprocessor_error(content, old_props):
     error = not 'Writing output...\ndone' in content
     return {'preprocessor_error': int(error)}
 
 
-
 def get_derived_vars(content):
     """
     Count those variables that have an axiom_layer >= 0
     """
-    regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M|re.S)
+    regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M | re.S)
     match = regex.search(content)
     if not match:
         logging.error('Number of derived vars could not be found')
@@ -53,17 +53,18 @@ def get_derived_vars(content):
             derived_vars += 1
     return derived_vars
 
+
 def translator_derived_vars(content, old_props):
     return {'translator_derived_vars': get_derived_vars(content)}
+
 
 def preprocessor_derived_vars(content, old_props):
     return {'preprocessor_derived_vars': get_derived_vars(content)}
 
 
-
 def get_facts(content):
     pattern = r'begin_variables\n\d+\n(.+)end_variables'
-    vars_regex = re.compile(pattern, re.M|re.S)
+    vars_regex = re.compile(pattern, re.M | re.S)
     match = vars_regex.search(content)
     if not match:
         logging.error('Number of facts could not be found')
@@ -79,12 +80,13 @@ def get_facts(content):
         total_domain_size += int(domain_size)
     return total_domain_size
 
+
 def translator_facts(content, old_props):
     return {'translator_facts': get_facts(content)}
 
+
 def preprocessor_facts(content, old_props):
     return {'preprocessor_facts': get_facts(content)}
-
 
 
 def get_axioms(content):
@@ -92,11 +94,11 @@ def get_axioms(content):
     If |axioms| > 0:  ...end_operator\nAXIOMS\nbegin_rule...
     If |axioms| == 0: ...end_operator\n0
     """
-    regex = re.compile(r'end_operator\n(\d+)\nbegin_rule', re.M|re.S)
+    regex = re.compile(r'end_operator\n(\d+)\nbegin_rule', re.M | re.S)
     match = regex.search(content)
     if not match:
         # make sure we have a valid file here
-        regex = re.compile(r'end_operator\n(\d+)', re.M|re.S)
+        regex = re.compile(r'end_operator\n(\d+)', re.M | re.S)
         match = regex.search(content)
 
         if match is None:
@@ -108,19 +110,20 @@ def get_axioms(content):
     axioms = int(match.group(1))
     return axioms
 
+
 def translator_axioms(content, old_props):
     return {'translator_axioms': get_axioms(content)}
 
+
 def preprocessor_axioms(content, old_props):
     return {'preprocessor_axioms': get_axioms(content)}
-
 
 
 def cg_arcs(content, old_props):
     """
     Sums up the number of outgoing arcs for each vertex
     """
-    regex = re.compile(r'begin_CG\n(.+)end_CG', re.M|re.S)
+    regex = re.compile(r'begin_CG\n(.+)end_CG', re.M | re.S)
     match = regex.search(content)
     if not match:
         logging.error('Number of arcs could not be determined')
@@ -138,7 +141,6 @@ def cg_arcs(content, old_props):
     return {'preprocessor_cg_arcs': arcs}
 
 
-
 def get_problem_size(content):
     """
     Total problem size can be measured as the total number of tokens in the
@@ -146,12 +148,13 @@ def get_problem_size(content):
     """
     return sum([len(line.split()) for line in content.splitlines()])
 
+
 def translator_problem_size(content, old_props):
     return {'translator_problem_size': get_problem_size(content)}
 
+
 def preprocessor_problem_size(content, old_props):
     return {'preprocessor_problem_size': get_problem_size(content)}
-
 
 
 def translator_invariant_groups_total_size(content, old_props):
@@ -159,13 +162,12 @@ def translator_invariant_groups_total_size(content, old_props):
     Total invariant group sizes after translating
     (sum over all numbers that follow a "group" line in the "all.groups" file)
     """
-    groups = re.findall(r'group\n(\d+)', content, re.M|re.S)
+    groups = re.findall(r'group\n(\d+)', content, re.M | re.S)
     total = sum(map(int, groups))
     return {'translator_invariant_groups_total_size': total}
 
 
-
-# Search functions -------------------------------------------------------------
+# Search functions ------------------------------------------------------------
 
 def completely_explored(content, old_props):
     new_props = {}
@@ -173,11 +175,12 @@ def completely_explored(content, old_props):
         new_props['completely_explored'] = True
     return new_props
 
+
 def get_status(content, old_props):
     new_props = {}
     if 'does not support' in content:
         new_props['status'] = 'unsupported'
-    elif 'plan_length' in old_props:
+    elif 'plan_length' in old_props or 'cost' in old_props:
         new_props['status'] = 'ok'
     elif 'completely_explored' in old_props:
         new_props['status'] = 'failure'
@@ -185,13 +188,15 @@ def get_status(content, old_props):
         new_props['status'] = 'unsolved'
     return new_props
 
+
 def coverage(content, old_props):
     new_props = {}
-    if 'plan_length' in old_props:
+    if 'plan_length' in old_props or 'cost' in old_props:
         new_props['coverage'] = 1
     else:
         new_props['coverage'] = 0
     return new_props
+
 
 def check_memory(content, old_props):
     """
@@ -203,6 +208,7 @@ def check_memory(content, old_props):
     if memory == -1 and memory_limit:
         new_props['memory'] = memory_limit
     return new_props
+
 
 def scores(content, old_props):
     """
@@ -233,6 +239,7 @@ def scores(content, old_props):
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
             }
 
+
 def check_min_values(content, old_props):
     """
     Ensure that times are at least 0.1s if they are present in log
@@ -245,15 +252,15 @@ def check_min_values(content, old_props):
             new_props[time] = sec
     return new_props
 
+
 def validate(content, old_props):
     """
     Scan the returncode of the postprocess command
     Count everything that is not validated as invalid
     """
-    returncode = old_props.get("postprocess_returncode", 1)
-    return {"plan_valid": returncode == 0}
+    return {"plan_valid": int('Plan valid' in content)}
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def add_preprocess_parsing(eval):
@@ -262,11 +269,15 @@ def add_preprocess_parsing(eval):
 
     TODO: translator time
     """
-    #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)', file='output.sas', type=int, flags='M')
-    #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas', type=int, flags='M')
+    #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)',
+    #                 file='output.sas', type=int, flags='M')
+    #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas',
+    #                 type=int, flags='M')
 
-    #eval.add_pattern('preprocessor_vars', r'begin_variables\n(\d+)', file='output', type=int, flags='M')
-    #eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output', type=int, flags='M')
+    #eval.add_pattern('preprocessor_vars', r'begin_variables\n(\d+)',
+    #                 file='output', type=int, flags='M')
+    #eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output',
+    #                 type=int, flags='M')
 
     # Preprocessor output:
     # 19 variables of 19 necessary
@@ -280,16 +291,20 @@ def add_preprocess_parsing(eval):
     # The file starts with "begin_groups\n7\ngroup"
     #eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
     #                    file='all.groups', type=int, flags='MS')
-    eval.add_pattern('translator_invariant_groups', r'group\n(\d+)\nbegin_groups',
-                        file='all.groups', type=int, flags='MS')
+    eval.add_pattern('translator_invariant_groups',
+                     r'group\n(\d+)\nbegin_groups', file='all.groups',
+                     type=int, flags='MS')
 
     # number of variables
-    eval.add_multipattern([(1, 'preprocessor_vars', int), (2, 'translator_vars', int)],
-                            r'(\d+) variables of (\d+) necessary')
-    eval.add_multipattern([(1, 'preprocessor_ops', int), (2, 'translator_ops', int)],
-                            r'(\d+) of (\d+) operators necessary')
-    eval.add_multipattern([(1, 'preprocessor_axioms', int), (2, 'translator_axioms', int)],
-                            r'(\d+) of (\d+) axiom rules necessary')
+    eval.add_multipattern([(1, 'preprocessor_vars', int),
+                          (2, 'translator_vars', int)],
+                          r'(\d+) variables of (\d+) necessary')
+    eval.add_multipattern([(1, 'preprocessor_ops', int),
+                           (2, 'translator_ops', int)],
+                           r'(\d+) of (\d+) operators necessary')
+    eval.add_multipattern([(1, 'preprocessor_axioms', int),
+                           (2, 'translator_axioms', int)],
+                           r'(\d+) of (\d+) axiom rules necessary')
 
     # translator time
 
@@ -355,22 +370,32 @@ def add_preprocess_functions(eval):
     eval.add_function(preprocessor_problem_size, file='output')
 
     # Total invariant group sizes after translating
-    # (sum over all numbers that follow a "group" line in the "all.groups" file)
-    eval.add_function(translator_invariant_groups_total_size, file='all.groups')
-
+    # (sum over all numbers following a "group" line in the "all.groups" file)
+    eval.add_function(translator_invariant_groups_total_size,
+                      file='all.groups')
 
 
 def add_search_parsing(eval):
     #eval.add_key_value_pattern('run_start_time')
-    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)\.', type=int, required=False)
-    eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int, required=False)
+    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)\.',
+                     type=int, required=False)
+    eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int,
+                     required=False)
     eval.add_pattern('expansions', r'Expanded (\d+)', type=int, required=False)
-    eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int, required=False)
-    eval.add_pattern('generated', r'Generated (\d+) state', type=int, required=False)
-    eval.add_pattern('search_time', r'^Search time: (.+)s', type=float, required=False, flags='MI')
-    eval.add_pattern('total_time', r'Total time: (.+)s', type=float, required=False)
-    eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int, required=False)
+    eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int,
+                     required=False)
+    eval.add_pattern('generated', r'Generated (\d+) state', type=int,
+                     required=False)
+    eval.add_pattern('search_time', r'^Search time: (.+)s', type=float,
+                     required=False, flags='MI')
+    eval.add_pattern('total_time', r'Total time: (.+)s', type=float,
+                     required=False)
+    eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int,
+                     required=False)
     eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
+    eval.add_pattern('dead_ends', r'Dead ends: (.+) state\(s\)\.', type=int,
+                     required=False)
+
 
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
@@ -379,7 +404,6 @@ def add_search_functions(eval):
     eval.add_function(scores)
     eval.add_function(check_memory)
     eval.add_function(validate)
-
 
 
 def build_fetcher(parser=FetchOptionParser()):

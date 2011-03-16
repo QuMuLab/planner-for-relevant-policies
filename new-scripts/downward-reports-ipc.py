@@ -3,7 +3,6 @@
 
 import sys
 import os
-from operator import itemgetter
 import logging
 from collections import defaultdict
 
@@ -11,12 +10,12 @@ from reports import Report, ReportArgParser, existing
 from external.datasets import missing
 
 SCORES = ['expansions', 'evaluations', 'search_time', 'total_time',
-            'coverage',
-          'quality'
-        ]
+          'coverage', 'quality']
+
 
 def get_date_and_time():
     return r"\today\ \thistime"
+
 
 def escape(text):
     return text.replace('_', r'\_')
@@ -27,23 +26,21 @@ class IpcReport(Report):
     """
     def __init__(self, parser=ReportArgParser()):
         parser.set_defaults(output_format='tex')
-        parser.add_argument('focus', choices=SCORES,# metavar='FOCUS',
+        parser.add_argument('focus', choices=SCORES,
                     help='the analyzed attribute (e.g. "expanded"). '
                         'The "attributes" parameter is ignored')
-        #parser.add_argument('--no-normalize', action='store_true',
-        #                    help='Do not add a summary table with normalized values')
         parser.add_argument('--squeeze', action='store_true',
                             help='Use small fonts to fit in more data')
         parser.add_argument('--no-best', action='store_false',
                             dest='best_value_column',
-                            help='Do not add a column with the best known score')
+                            help='Do not add a column with best known score')
         parser.add_argument('--page-size', choices=['a2', 'a3', 'a4'],
                             default='a4',
                             help='Set the page size for the latex report')
         Report.__init__(self, parser)
         self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
         self.focus_name = self.focus
-        self.normalize = True #not self.no_normalize
+        self.normalize = True
 
         self.score = 'score_' + self.focus
         if self.focus == 'coverage':
@@ -54,7 +51,9 @@ class IpcReport(Report):
             self.score = 'quality'
 
         logging.info('Using score attribute "%s"' % self.score)
-        logging.info('Adding column with best value: %s' % self.best_value_column)
+        logging.info('Adding column with best value: %s' %
+                     self.best_value_column)
+
         # Get set of configs
         self.configs = sorted(self.data.group_dict('config').keys())
         self.total_scores = self._compute_total_scores()
@@ -77,8 +76,8 @@ class IpcReport(Report):
             config_dict = runs.group_dict('config')
             for config in self.configs:
                 config_group = config_dict.get(config)
-                assert config_group, 'Config %s was not found in dict %s' % (
-                        config, config_dict)
+                assert config_group, ('Config %s was not found in dict %s' %
+                        (config, config_dict))
                 scores = config_group[self.score]
                 scores = filter(existing, scores)
                 total_score = sum(scores)
@@ -94,7 +93,8 @@ class IpcReport(Report):
             sys.stdout = file
             self.print_report()
             sys.stdout = sys.__stdout__
-        logging.info('Wrote file %s' % self.output_file)
+        output_uri = 'file://' + os.path.abspath(self.output_file)
+        logging.info('Wrote file %s' % output_uri)
 
     def print_report(self):
         self.print_header()
@@ -114,8 +114,8 @@ class IpcReport(Report):
             margin = "0.5cm"
         else:
             margin = "2.5cm"
-        print r"\usepackage[%spaper,landscape,margin=%s]{geometry}" % \
-                (self.page_size, margin)
+        print (r"\usepackage[%spaper,landscape,margin=%s]{geometry}" %
+                (self.page_size, margin))
         print r"\usepackage{supertabular}"
         print r"\usepackage{scrtime}"
         print r"\begin{document}"
@@ -148,7 +148,8 @@ class IpcReport(Report):
         print r"\tablehead{\hline"
         print r"\textbf{prob}"
         for config in self.configs:
-            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), escape(config))
+            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(),
+                                        escape(config))
         if self.best_value_column:
             print r"& %s\textbf{BEST}" % self._tiny_if_squeeze()
         print r"\\ \hline}"
@@ -199,7 +200,8 @@ class IpcReport(Report):
         print r"\textbf{total}"
         for config in self.configs:
             if self.score == 'quality':
-                self.total_scores[config, domain] = quality_total_scores[config]
+                score = quality_total_scores[config]
+                self.total_scores[config, domain] = score
             print r"& \textbf{%.2f}" % self.total_scores[config, domain]
         if self.best_value_column:
             print r"&"
@@ -224,7 +226,8 @@ class IpcReport(Report):
         print r"\tablehead{\hline"
         print r"\textbf{domain}"
         for config in self.configs:
-            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), escape(config))
+            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(),
+                                        escape(config))
         print r"\\ \hline}"
         print r"\tabletail{\hline}"
         print r"\begin{supertabular}{|l|%s|}" % ("r" * len(self.configs))
