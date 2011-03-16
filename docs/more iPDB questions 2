@@ -1,0 +1,99 @@
+Betreff:
+Re: more iPDB questions
+Von:
+Patrik Haslum <patrik.haslum@anu.edu.au>
+Datum:
+Thu, 27 Jan 2011 13:21:35 +1100
+An:
+Malte Helmert <helmert@informatik.uni-freiburg.de>
+CC:
+Silvan Sievers <Silvan.Sievers@gmx.de>, Manuela Ortlieb <ortlieb@informatik.uni-freiburg.de>
+
+
+Malte Helmert wrote:
+
+> > The argument for reusing sample sets even between iterations would be
+> > that this would allow caching h values for candidate patterns. If the
+> > number of new candidate patterns compared to old candidate patterns is
+> > low, this could save rather much time, assuming that computing the h
+> > values of candidate patterns is the most time-critical part of the process.
+
+I'm pretty sure it is, so this is a good point.
+
+Another thing you can consider (if using the same set of samples for all
+candidates) is to estimate not only the mean improvement of each
+candidate, but also their correlation. Then, if the best and second best
+candidates are strongly anti-correlated, you can add both at the same
+time (because it's very likely that the second best will be if not the
+best at least as good as it was after adding the best).
+
+> > I don't understand what you mean by 'and perhaps also in successive
+> > "trials" within the same iteration'. Can you explain?
+
+A "trial" is the number of samples after which the statistical dominance
+test is run.
+
+>> >> The length of the random walk is chosen (approximately) according to a
+> > 
+> > This is "approximate" only because of the dead-end restart thing, right?
+
+Yes.
+
+> > Thanks! One additional question I had was what the p value/variance of
+> > the binomial distribution is. If I read the code correctly, for
+> > unit-cost problems the mean value is actually 2*h(s_0)+1 and the n value
+> > is 4*h(s_0), so p would be roughly 0.5.
+
+Yes, that's correct.
+
+> > How would you adapt this to non-unit-cost problems? It seems like
+> > currently the h value is converted from a cost estimate to a
+> > distance(-ish) estimate by dividing it by the average cost of all
+> > actions in the problem. Have I got that approximately correct? I'm a bit
+> > worried about this being off in domains with wildly differing action
+> > costs such as ParcPrinter. Do you have any additional thoughts on how to
+> > handle costs here?
+
+You're correct, this is how it is currently done. The idea was to use
+the random walks also to estimate the average cost-to-depth ratio along
+search space paths, and use that to convert the cost estimate to a depth
+estimate (taking the average cost over all actions is just the initial
+(and probably not very good) estimate of this ratio). This is currently
+not used, because there's something wrong with the estimation (see
+comment in pdb.cc, line 2866 ;)).
+
+> > Thanks, that all makes a lot of sense. I think we'll stick with the
+> > counting approximation for now and will turn to the wikipedia article
+> > for that.
+
+Makes sense. Anyway, if I remember correctly, the weighted estimation
+was more unreliable (much greater variance in the end result, i.e.,
+number of nodes expanded in the search).
+
+> > Well, actually, now that I'm rereading my email, one more question: are
+> > the A* searches you do to compute the h values for a new pattern
+> > independent, or do you reuse some info between A* runs for different
+> > abstract states?
+
+There's a cache, so that the same abstract state is only evaluated
+(i.e., searched for) once, at the top level. There seems to be also some
+mechanism to use that within the search itself (idea probably being that
+when the search reaches an abstract state that is in the cache, we
+already know its optimal cost, so we can consider it solved with that
+cost), but that code is commented out, so I presume it wasn't working
+correctly (though I don't see why it wouldn't... might be that the cost
+should be added to delta, not to est...)
+
+>> >> Btw, does the m&s heuristic support action costs yet?
+> > 
+> > Yes for the far future, and maybe even in the near future.
+> > How near is near?
+
+Roughly, in time to do some experiments for a hypothetical final version
+of an ICAPS workshop paper ;)
+
+It's nothing critical. I was just wondering since I know you've been
+working on it.
+
+cheers,
+			/P@trik
