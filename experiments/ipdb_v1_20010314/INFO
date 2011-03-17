@@ -1,0 +1,2 @@
+- Bugfix: no applicable operators -> handle like dead end
+- Caching of pattern databases
