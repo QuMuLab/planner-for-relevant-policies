@@ -6,7 +6,7 @@ import os
 import logging
 from collections import defaultdict
 
-from reports import Report, ReportArgParser, existing
+from reports import Report, ReportArgParser
 from external.datasets import missing
 
 SCORES = ['expansions', 'evaluations', 'search_time', 'total_time',
@@ -19,6 +19,9 @@ def get_date_and_time():
 
 def escape(text):
     return text.replace('_', r'\_')
+
+def remove_missing(iterable):
+    return [value for value in iterable if value is not missing]
 
 
 class IpcReport(Report):
@@ -79,7 +82,7 @@ class IpcReport(Report):
                 assert config_group, ('Config %s was not found in dict %s' %
                         (config, config_dict))
                 scores = config_group[self.score]
-                scores = filter(existing, scores)
+                scores = remove_missing(scores)
                 total_score = sum(scores)
                 total_scores[config, domain] = total_score
         return total_scores
@@ -168,7 +171,7 @@ class IpcReport(Report):
             if self.score == 'quality':
                 # self.focus is "cost"
                 lengths = probgroup.get(self.focus)
-                lengths = filter(existing, lengths)
+                lengths = remove_missing(lengths)
                 best_length = min(lengths) if lengths else None
             config_dict = probgroup.group_dict('config')
             for config in self.configs:
@@ -192,7 +195,7 @@ class IpcReport(Report):
                     best = max(scores) if scores else None
                 else:
                     values = probgroup.get(self.focus)
-                    values = filter(existing, values)
+                    values = remove_missing(values)
                     best = min(values) if values else None
                 print r"& %s" % ("---" if best is None else best)
             print r"\\"
