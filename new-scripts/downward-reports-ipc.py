@@ -8,6 +8,7 @@ from collections import defaultdict
 
 from reports import Report, ReportArgParser
 from external.datasets import missing
+import tools
 
 SCORES = ['expansions', 'evaluations', 'search_time', 'total_time',
           'coverage', 'quality']
@@ -58,7 +59,8 @@ class IpcReport(Report):
                      self.best_value_column)
 
         # Get set of configs
-        self.configs = sorted(self.data.group_dict('config').keys())
+        self.configs = self.data.group_dict('config').keys()
+        tools.natural_sort(self.configs)
         self.total_scores = self._compute_total_scores()
 
     def name(self):
