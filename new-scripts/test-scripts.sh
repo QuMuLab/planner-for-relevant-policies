@@ -1,10 +1,14 @@
 #! /bin/bash
 set -e
 
-rm -rf test-exp-p
-rm -rf test-exp
-rm -rf test-exp-eval
+EXPNAME=test-exp
+
+rm -rf $EXPNAME-p
+rm -rf $EXPNAME
+rm -rf $EXPNAME-eval
 
 for STEP in {1..7}; do
     ./test-exp.sh $STEP
 done
+
+./downward-reports-ipc.py $EXPNAME-eval coverage
