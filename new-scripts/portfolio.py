@@ -22,6 +22,8 @@ class Results(object):
         for entry in self._parse(file):
             entry = self._massage_entry(entry)
             config = entry["config"]
+            if "fdss" in config:
+                continue
             problem = entry["problem"]
             # if "freecell" in problem:  ## TEST
             #    continue
@@ -232,7 +234,7 @@ def compute_portfolio(results, granularity):
 def main():
     results = Results(open(sys.argv[1]))
     results.dump_statistics()
-    portfolio = compute_portfolio(results, granularity=120)
+    portfolio = compute_portfolio(results, granularity=240)
     print
     portfolio.dump()
     # pprint.pprint(results.data)

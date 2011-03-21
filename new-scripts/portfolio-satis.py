@@ -27,7 +27,7 @@ class Results(object):
             problem = entry["problem"]
             cost = entry["cost"]
 
-            if "_wa" in config or "alt" in config:
+            if "_wa" in config or "alt" in config or "fdss" in config:
                 continue
             if "08" not in entry_["domain"]:
                 if config.endswith("_0"):
@@ -93,7 +93,12 @@ class Results(object):
         status = entry["status"]
         assert status in ["'ok'", "'unsolved'"], entry
 
-        if status == "'ok'":
+        if "08" in domain and "0000" in config:
+            # M&S config with no action cost support
+            # print "IGNORED:", entry
+            time = None
+            cost = None
+        elif status == "'ok'":
             assert "total_time" in entry, entry
             assert "cost" in entry, entry
             time = float(entry["total_time"])
