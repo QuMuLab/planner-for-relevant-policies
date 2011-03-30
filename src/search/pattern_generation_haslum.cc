@@ -55,7 +55,7 @@ void PatternGenerationHaslum::generate_candidate_patterns(const vector<int> &pat
             }
         }
     }
-    cout << "all possible new pattern candidates" << endl;
+    /*cout << "all possible new pattern candidates" << endl;
     for (size_t i = 0; i < candidate_patterns.size(); ++i) {
         cout << "[";
         for (size_t j = 0; j < candidate_patterns[i].size(); ++j) {
@@ -63,7 +63,7 @@ void PatternGenerationHaslum::generate_candidate_patterns(const vector<int> &pat
         }
         cout << " ]";
     }
-    cout << endl;
+    cout << endl;*/
 }
 
 // random walk for state sampling
@@ -177,6 +177,7 @@ void PatternGenerationHaslum::hill_climbing() {
     //vector<State> samples;
     //sample_states(samples, average_operator_costs);
 
+    Timer timer;
     // actual hillclimbing loop
     bool improved = true;
     while (improved) {
@@ -220,14 +221,16 @@ void PatternGenerationHaslum::hill_climbing() {
                 best_pattern_index = i;
                 improved = true;
             }
-            cout << "pattern [";
-            for (size_t j = 0; j < candidate_patterns[i].size(); ++j) {
-                cout << candidate_patterns[i][j] << " ";
+            if (count > 0) {
+                cout << "pattern [";
+                for (size_t j = 0; j < candidate_patterns[i].size(); ++j) {
+                    cout << " " << candidate_patterns[i][j];
+                }
+                cout << " ] improvement: " << count << endl;
             }
-            cout << "] improvement: " << count << endl;
         }
         if (improved) {
-            cout << "yippieee! we found a better pattern! Its improvement is " << best_pattern_count << endl;
+            cout << "found a better pattern with improvement " << best_pattern_count << endl;
             cout << "pattern [";
             for (size_t i = 0; i < candidate_patterns[best_pattern_index].size(); ++i) {
                 cout << " " << candidate_patterns[best_pattern_index][i];
@@ -245,6 +248,7 @@ void PatternGenerationHaslum::hill_climbing() {
             // successors for next iteration
             generate_candidate_patterns(best_pattern, candidate_patterns);
         }
+        cout << "Actual time (hill climbing loop): " << timer << endl;
     }
     // delete all created pattern databases in the map
     map<vector<int>, PDBHeuristic *>::iterator it = pattern_to_pdb.begin();
