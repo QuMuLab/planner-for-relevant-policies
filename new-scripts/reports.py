@@ -305,18 +305,10 @@ class Table(collections.defaultdict):
     def rows(self):
         special_rows = ['SUM', 'AVG', 'GM']
         rows = self.keys()
-
         # Let the sum, etc. rows be the last ones
-        def sort(row):
-            if self.numeric_rows:
-                return int(row)
-            else:
-                if row.upper() in special_rows:
-                    return 'zzz' + row.lower()
-                else:
-                    return row.lower()
-
-        rows = sorted(rows, key=sort)
+        rows = ['zzz' + row if row.upper() in special_rows else row for row in rows]
+        tools.natural_sort(rows)
+        rows = [row[3:] if row.startswith('zzz') else row for row in rows]
         return rows
 
     @property
