@@ -223,7 +223,7 @@ def suite_ipc08_all_strips():
             suite_ipc08_opt_only_strips() +
             suite_ipc08_sat_only_strips())
 
-def suite_pdb_tests():
+def suite_landmark_tests():
     return [
         "logistics00",
         "blocks",
