@@ -223,6 +223,16 @@ def suite_ipc08_all_strips():
             suite_ipc08_opt_only_strips() +
             suite_ipc08_sat_only_strips())
 
+def suite_pdb_tests():
+    return [
+        "logistics00",
+        "blocks",
+        "sokoban-opt08-strips",
+        "parcprinter-08-strips",
+        "pipesworld-notankage",
+        "woodworking-opt08-strips",
+        ]
+
 def suite_interesting():
     # A domain is boring if all planners solve all tasks in < 1 sec.
     # We include logistics00 even though it has that property because
