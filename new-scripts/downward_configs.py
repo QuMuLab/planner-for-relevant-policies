@@ -146,6 +146,14 @@ lmopt_rhw_hm1_zg = """\
 --search "astar(lmcount(lm_merged(lm_rhw(),lm_zg(),lm_hm(m=1)),admissible=true),mpd=true)"\
 """
 
+lmopt_exhaust = """\
+--search "astar(lmcount(lm_exhaust, admissible=true))"\
+"""
+
+lmopt_search = """\
+--search "astar(lmcount(lm_search, admissible=true))"\
+"""
+
 
 iter_ff = """\
 --heuristic "h=ff(cost_type=1)" \
