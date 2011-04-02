@@ -215,15 +215,16 @@ class DownwardExperiment(experiments.Experiment):
         self._require_checkout(preprocessor)
 
     def _prepare_planner(self, planner):
-        self._require_checkout(planner)
-        for bin in ['downward-1', 'downward-2', 'downward-4', 'dispatch',
-                    'downward-seq-opt-fdss-1.py', 'unitcost']:
-            src_path = os.path.join(planner.exe_dir, bin)
-            if not os.path.isfile(src_path):
-                continue
-            code_subdir = os.path.dirname(planner.rel_dest)
-            self.add_resource('UNUSEDNAME', src_path,
-                            os.path.join(code_subdir, bin))
+        self.add_resource(planner.shell_name + '_DIR',
+                          planner.exe_dir,
+                          planner.rel_dest)
+        self.add_resource(planner.shell_name + 'IMPL_ABS_DIR',
+                          planner.exe_dir + "-implicit-abstractions",
+                          planner.rel_dest + "-implicit-abstractions")
+        # In order to set an environment variable, overwrite the executable
+        self.add_resource(planner.shell_name,
+                          os.path.join(planner.exe_dir, 'downward'),
+                          os.path.join(planner.rel_dest, 'downward'))
         validate = os.path.join(planner.exe_dir, '..', 'validate')
         if os.path.exists(validate):
             self.add_resource('VALIDATE', validate, 'validate')
