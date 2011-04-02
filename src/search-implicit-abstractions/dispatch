@@ -1,0 +1,47 @@
+#!/bin/sh
+# $1 - SAS input (output)
+
+svs=`cat $1 | gawk 'BEGIN {
+	in_vars = 0;
+	max = 0;
+}
+{
+	if ($0 == "end_variables") {
+		in_vars = 0;
+	}
+	if (in_vars == 2) {
+		dom_size = $2;
+		if (dom_size > max) 
+			max = dom_size;
+	}
+	if (in_vars == 1) {
+		in_vars++;
+	}
+	if ($0 == "begin_variables") {
+		in_vars = 1;
+	}
+}
+END {
+	if (max > 255) 
+		print "_svs";
+}'`;
+
+hca=`cat $1 | gawk 'BEGIN {
+	max = 0;
+}
+{
+	if ($0 == "end_operator") {
+		cost = lastline;
+		if (cost > max)
+			max = cost;
+	}
+	lastline = $0;
+}
+END {
+	if (max > 30) 
+		print "_hca";
+}'`;
+
+echo -n release-search
+echo -n $svs
+echo -n $hca

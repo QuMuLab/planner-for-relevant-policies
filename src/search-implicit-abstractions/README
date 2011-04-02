@@ -1,0 +1,36 @@
+Code for implicit abstractions, based on archive provided by Michael
+Katz on 2011-01-03. These notes by Malte Helmert.
+
+Modifications made compared to Michael's archive:
+
+ * Removed translate and preprocess directories.
+ * Removed build and plan scripts.
+ * Renamed directory "seq-opt-fork/search" to "search-implicit-abstractions".
+
+ * In the search directory:
+   * Removed .svn directories and some svn-commit.tmp files.
+   * Removed .cproject and .project.
+   * Removed a bunch of unnecessary files (CODING-CONVENTIONS,
+     CYCLIC_CG_DIJKSTRA, DFP-PSEUDOCODE, Doxyfile,
+     integration_status.txt, Makefile.depend, PSEUDOCODE,
+     landmarks/README.txt).
+   * Removed weka subdirectory and weka.jar.
+   * Removed cluster subdirectory.
+ * Added this README.
+ * Made source files and Makefile non-executable.
+
+
+To build this, run
+
+    ./build_all_configs-release
+
+(That's what Michael's IPC-2011 "build" script did.)
+
+To run the search component assuming that the translator and
+preprocessor files are available under the usual names, run:
+
+    SEARCH=$(./dispatch output)
+    ./$SEARCH oX L sas_plan
+
+(This is based on Michael's IPC-2011 "plan" script.)
+

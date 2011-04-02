@@ -1,0 +1,18 @@
+#!/bin/sh
+# passes all arguments
+
+make clean
+make HIGH_COST_ACTIONS=1 $*
+mv -f search search_hca
+
+make clean
+make STATE_VAR_SHORT=1 $*
+mv -f search search_svs
+
+make clean
+make STATE_VAR_SHORT=1 HIGH_COST_ACTIONS=1 $*
+mv -f search search_svs_hca
+
+make clean
+make $*
+
