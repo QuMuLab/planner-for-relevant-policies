@@ -203,16 +203,20 @@ PROFILE: profile-search
 	gprof profile-search | cleanup-profile > PROFILE
 
 $(OBJECTS): obj/%.o: %.cc
+	mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) -c $< -o $@
 
 $(PROFILE_OBJECTS): obj/%.profile.o: %.cc
+	mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(PROFOPT) -c $< -o $@
 
 $(RELEASE_OBJECTS): obj/%.release.o: %.cc
+	mkdir -p $$(dirname $@)
 	$(CC) $(RELEASEOPT) -c $< -o $@
 
 clean:
-	rm -f $(OBJECTS) $(PROFILE_OBJECTS) $(RELEASE_OBJECTS) *~ *.pyc
+	rm -rf obj
+	rm -f *~ *.pyc
 	rm -f Makefile.depend profile-search gmon.out PROFILE core
 	rm -f sas_plan
 	rm -f cluster/Cluster.class

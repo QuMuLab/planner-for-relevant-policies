@@ -17,7 +17,9 @@ Modifications made compared to Michael's archive:
    * Removed weka subdirectory and weka.jar.
    * Removed cluster subdirectory.
    * Replaced "-m64" with "-m32" in Makefile.
- * Added this README.
+   * Adjusted Makefile to automatically create "obj" and its
+     subdirectories and delete them upon "make clean".
+  * Added this README.
  * Made source files and Makefile non-executable.
 
 
