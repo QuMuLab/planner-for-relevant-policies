@@ -201,6 +201,30 @@ def ipc_optimal():
         ("mas100000", "--search 'astar(mas(max_states=100000))'"),
         ]
 
+def ijcai_2011_merge_and_shrink():
+    configs = []
+    def add_config(config_name, heuristic):
+        config = "--search 'astar(%s)'" % heuristic
+        configs.append((config_name, config))
+    def add_new_mas_config(max_states, shrink_strategy, simplify_labels):
+        config_name = "conf-%d-%d-%s" % (
+            max_states, shrink_strategy, simplify_labels)
+        h = "mas(max_states=%d, " % max_states
+        h += "merge_strategy=5, shrink_strategy=%d, " % shrink_strategy
+        h += "simplify_labels=%s)" % simplify_labels
+        add_config(config_name, h)
+    for max_states in [10000, 100000, 200000]:
+        add_config("hhh-%d" % max_states, "mas(max_states=%d)" % max_states)
+        for shrink_strategy, simplify_labels in [
+            (4, "true"), (4, "false"), (7, "true")]:
+            add_new_mas_config(max_states, shrink_strategy, simplify_labels)
+    for shrink_strategy, simplify_labels in [
+        (6, "true"), (6, "false"), (12, "true")]:
+        add_new_mas_config(1, shrink_strategy, simplify_labels)
+    add_config("lmcut", "lmcut()")
+    configs.append(("implicit-abstractions", "SPECIAL_IMPLICIT_ABSTRACTIONS"))
+    return sorted(configs)
+
 
 def satisficing_configs():
     return _build_satisficing_configs([0])
