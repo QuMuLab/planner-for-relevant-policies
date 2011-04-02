@@ -16,6 +16,7 @@ Modifications made compared to Michael's archive:
      landmarks/README.txt).
    * Removed weka subdirectory and weka.jar.
    * Removed cluster subdirectory.
+   * Replaced "-m64" with "-m32" in Makefile.
  * Added this README.
  * Made source files and Makefile non-executable.
 

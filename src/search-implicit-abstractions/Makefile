@@ -118,8 +118,8 @@ RELEASE_OBJECTS = $(SOURCES:%.cc=obj/%.release.o)
 CC = g++
 DEPEND = g++ -MM $(MOSEKCCOPT)
 #CCOPT         = -m32 -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror $(MOSEKCCOPT)
-CCOPT         = -m64 -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -Werror $(DLFAG) $(MOSEKCCOPT)
-LINKOPT = -m64 $(MOSEKLINKOPT)
+CCOPT         = -m32 -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -Werror $(DLFAG) $(MOSEKCCOPT)
+LINKOPT = -m32 $(MOSEKLINKOPT)
 RELEASEOPT = $(CCOPT)
 RELEASEOPT += -O5 -DNDEBUG -fomit-frame-pointer
 
