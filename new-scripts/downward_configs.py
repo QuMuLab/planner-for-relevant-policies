@@ -350,53 +350,53 @@ repeat_last=true)"\
                        single(sum([g(),weight(hlm,3)])),
                        single(sum([g(),weight(hlm,3)]),pref_only=true)]),
                    preferred=[hff,hlm],reopen_closed=true),
-             eager(alt(single(sum(g(),weight(hff,2))),
-                       single(sum(g(),weight(hff,2)),pref_only=true),
-                       single(sum(g(),weight(hlm,2))),
-                       single(sum(g(),weight(hlm,2)),pref_only=true)),
-                   preferred=(hff,hlm),reopen_closed=true),
-             eager(alt(single(sum(g(),weight(hff,1))),
-                       single(sum(g(),weight(hff,1)),pref_only=true),
-                       single(sum(g(),weight(hlm,1))),
-                       single(sum(g(),weight(hlm,1)),pref_only=true))],
+             eager(alt([single(sum([g(),weight(hff,2)])),
+                       single(sum([g(),weight(hff,2)]),pref_only=true),
+                       single(sum([g(),weight(hlm,2)])),
+                       single(sum([g(),weight(hlm,2)]),pref_only=true)]),
                    preferred=[hff,hlm],reopen_closed=true),
+             eager(alt([single(sum([g(),weight(hff,1)])),
+                       single(sum([g(),weight(hff,1)]),pref_only=true),
+                       single(sum([g(),weight(hlm,1)])),
+                       single(sum([g(),weight(hlm,1)]),pref_only=true)]),
+                   preferred=[hff,hlm],reopen_closed=true)],
              repeat_last=true)"\
 """),
 
         ("lama-gen-5", """\
 --heuristic "hlm1,hff1=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=1,cost_type=1))" \
 --heuristic "hlm2,hff2=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
---search "iterated(
-             eager(alt(single(hff1),
+--search "iterated([
+             eager(alt([single(hff1),
                        single(hff1,pref_only=true),
                        single(hlm1),
-                       single(hlm1,pref_only=true)),
-                   preferred=(hff1,hlm1),cost_type=1,reopen_closed=true),
-             eager(alt(single(hff2),
+                       single(hlm1,pref_only=true)]),
+                   preferred=[hff1,hlm1],cost_type=1,reopen_closed=true),
+             eager(alt([single(hff2),
                        single(hff2,pref_only=true),
                        single(hlm2),
-                       single(hlm2,pref_only=true)),
-                   preferred=(hff2,hlm2),reopen_closed=true),
-             eager(alt(single(sum(g(),weight(hff2,5))),
-                       single(sum(g(),weight(hff2,5)),pref_only=true),
-                       single(sum(g(),weight(hlm2,5))),
-                       single(sum(g(),weight(hlm2,5)),pref_only=true)),
-                   preferred=(hff2,hlm2),reopen_closed=true),
-             eager(alt(single(sum(g(),weight(hff2,3))),
-                       single(sum(g(),weight(hff2,3)),pref_only=true),
-                       single(sum(g(),weight(hlm2,3))),
-                       single(sum(g(),weight(hlm2,3)),pref_only=true)),
-                   preferred=(hff2,hlm2),reopen_closed=true),
+                       single(hlm2,pref_only=true)]),
+                   preferred=[hff2,hlm2],reopen_closed=true),
+             eager(alt([single(sum([g(),weight(hff2,5)])),
+                       single(sum([g(),weight(hff2,5)]),pref_only=true),
+                       single(sum([g(),weight(hlm2,5)])),
+                       single(sum([g(),weight(hlm2,5)]),pref_only=true)]),
+                   preferred=[hff2,hlm2],reopen_closed=true),
+             eager(alt([single(sum([g(),weight(hff2,3)])),
+                       single(sum([g(),weight(hff2,3)]),pref_only=true),
+                       single(sum([g(),weight(hlm2,3)])),
+                       single(sum([g(),weight(hlm2,3)]),pref_only=true)]),
+                   preferred=[hff2,hlm2],reopen_closed=true),
              eager(alt(single(sum(g(),weight(hff2,2))),
                        single(sum(g(),weight(hff2,2)),pref_only=true),
                        single(sum(g(),weight(hlm2,2))),
                        single(sum(g(),weight(hlm2,2)),pref_only=true)),
-                   preferred=(hff2,hlm2),reopen_closed=true),
-             eager(alt(single(sum(g(),weight(hff2,1))),
-                       single(sum(g(),weight(hff2,1)),pref_only=true),
-                       single(sum(g(),weight(hlm2,1))),
-                       single(sum(g(),weight(hlm2,1)),pref_only=true)),
-                   preferred=(hff2,hlm2),reopen_closed=true),
+                   preferred=[hff2,hlm2],reopen_closed=true),
+             eager(alt([single(sum([g(),weight(hff2,1)])),
+                       single(sum([g(),weight(hff2,1)]),pref_only=true),
+                       single(sum([g(),weight(hlm2,1)])),
+                       single(sum([g(),weight(hlm2,1)]),pref_only=true)]),
+                   preferred=[hff2,hlm2],reopen_closed=true)],
              repeat_last=true)"\
 """),
         ]
@@ -421,19 +421,19 @@ def issue154a():
         ('lg_blind', '--search "lazy_greedy(blind())"'),
         ('lg_ff', '--search "lazy_greedy(ff())"'),
         ('lg_cea', '--search "lazy_greedy(cea())"'),
-        ('lg_ff_cea', '--search "lazy_greedy(ff(), cea())"')])
+        ('lg_ff_cea', '--search "lazy_greedy([ff(), cea()])"')])
 
 
 def issue154b():
     return get_old_and_new_greedy([
         ('lg_hff', '--heuristic "hff=ff()" '
-            '--search "lazy_greedy(hff, preferred=(hff))"'),
+            '--search "lazy_greedy(hff, preferred=hff)"'),
         ('lg_hcea', '--heuristic "hcea=cea()" '
-            '--search "lazy_greedy(hcea, preferred=(hcea))"'),
+            '--search "lazy_greedy(hcea, preferred=hcea)"'),
         ('lg_hff_hcea', '--heuristic "hff=ff()" --heuristic "hcea=cea()" '
-            '--search "lazy_greedy(hff, hcea, preferred=(hff, hcea))"'),
+            '--search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"'),
         ('lg_hlm_hff', '--heuristic "hlm,hff=lm_ff_syn(lm_rhw())" '
-            '--search "lazy_greedy(hlm, hff, preferred=(hlm, hff))"')])
+            '--search "lazy_greedy([hlm, hff], preferred=[hlm, hff])"')])
 
 
 def get_configs(configs_strings):
