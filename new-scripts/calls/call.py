@@ -35,8 +35,7 @@ class Call(subprocess.Popen):
         """
         self.time_limit = time_limit
         self.wall_clock_time_limit = wall_clock_time_limit
-        # Memory in Bytes
-        self.mem_limit = mem_limit * 1024 * 1024
+        self.mem_limit = mem_limit
 
         self.kill_delay = kill_delay
         self.check_interval = check_interval
@@ -55,7 +54,8 @@ class Call(subprocess.Popen):
         def prepare_call():
             os.setpgrp()
             set_limit(resource.RLIMIT_CPU, self.time_limit)
-            set_limit(resource.RLIMIT_AS, self.mem_limit)
+            # Memory in Bytes
+            set_limit(resource.RLIMIT_AS, self.mem_limit * 1024 * 1024)
             set_limit(resource.RLIMIT_CORE, 0)
 
         subprocess.Popen.__init__(self, args, preexec_fn=prepare_call, **kwargs)
