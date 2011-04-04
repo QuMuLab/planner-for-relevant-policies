@@ -395,7 +395,10 @@ def add_search_parsing(eval):
     eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
     eval.add_pattern('dead_ends', r'Dead ends: (.+) state\(s\)\.', type=int,
                      required=False)
-
+    eval.add_pattern(
+        'mas_time',
+        r'^Done initializing merge-and-shrink heuristic \[(.+)s\]$',
+        type=float, required=False)
 
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
