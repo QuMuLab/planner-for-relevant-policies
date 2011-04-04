@@ -26,7 +26,7 @@ def set_limit(kind, amount):
 
 
 class Call(subprocess.Popen):
-    def __init__(self, args, time_limit=1800, wall_clock_time_limit=1800,
+    def __init__(self, args, time_limit=1800, wall_clock_time_limit=None,
                  mem_limit=2048, kill_delay=5, check_interval=0.1, **kwargs):
         """
         mem_limit =         Memory in MiB
@@ -34,7 +34,7 @@ class Call(subprocess.Popen):
         check_interval =    How often we query the process group status
         """
         self.time_limit = time_limit
-        self.wall_clock_time_limit = wall_clock_time_limit
+        self.wall_clock_time_limit = wall_clock_time_limit or time_limit * 1.5
         self.mem_limit = mem_limit
 
         self.kill_delay = kill_delay
