@@ -397,7 +397,7 @@ def add_search_parsing(eval):
                      required=False)
     eval.add_pattern(
         'mas_time',
-        r'^Done initializing merge-and-shrink heuristic \[(.+)s\]$',
+        r'Done initializing merge-and-shrink heuristic \[(.+)s\]',
         type=float, required=False)
 
 def add_search_functions(eval):
