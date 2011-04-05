@@ -69,6 +69,7 @@ class Call(subprocess.Popen):
         term_attempted = False
         real_time = 0
         last_log_time = 0
+        wall_clock_start_time = time.time()
         while True:
             time.sleep(self.check_interval)
             real_time += self.check_interval
@@ -87,8 +88,10 @@ class Call(subprocess.Popen):
             total_vsize = group.total_vsize()
 
             if real_time >= last_log_time + self.log_interval:
+                print "wall-clock time: %.2f" % (time.time() - wall_clock_start_time)
                 print "[real-time %d] total_time: %.2f" % (real_time, total_time)
                 print "[real-time %d] total_vsize: %.2f" % (real_time, total_vsize)
+                print
                 last_log_time = real_time
 
             try_term = (total_time >= self.time_limit or
