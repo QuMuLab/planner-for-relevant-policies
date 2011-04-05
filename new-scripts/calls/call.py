@@ -12,17 +12,16 @@ def kill_pgrp(pgrp, sig):
     try:
         os.killpg(pgrp, sig)
     except OSError:
-        #TODO: log error somewhere
-        pass
+        msg = "Process group %s could not be killed with signal %s"
+        print msg % (pgrp, sig)
 
 
 def set_limit(kind, amount):
     try:
         resource.setrlimit(kind, (amount, amount))
     except (OSError, ValueError), e:
-        #TODO: log error somewhere or return a success flag that makes the call
-        # abort
-        pass
+        msg = "Resource limit for %s could not be set to %s"
+        print msg % (kind, amount)
 
 
 class Call(subprocess.Popen):
