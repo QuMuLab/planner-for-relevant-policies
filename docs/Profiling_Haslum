@@ -1,0 +1,58 @@
+Profiling der PDB-Erzeugung nach Haslum et al.
+
+Bei 'pipesworld-notankage', 'p22-net3-b12-g4.pddl' wurde die
+PDB-Erzeugung von Version 0 auf 1 (=> Einführen des Cachings) deutlich
+schneller (etwa Faktor 3), und es wurde wohl dieselbe PDB-Collection
+erzeugt. Das Caching scheint hier also etwas zu bringen.
+
+Bei 'logistics00', 'probLOGISTICS-9-0.pddl' wurde die PDB-Erzeugung von
+Version 0 auf 1 (=> Einführen des Cachings) langsamer (um etwa 10%), und
+es wurde wohl dieselbe PDB-Collection erzeugt. Das Caching scheint hier
+also zu schaden.
+
+=> Sollte man noch mal versuchen zu reproduzieren und dann mal einen
+Profiler darauf loslassen. (Dazu nach der Heuristik-Erzeugung abbrechen,
+also gar nicht die eigentliche Suche starten.)
+--
+siehe prof_logistics_v0, prof_logistics_v1, prof_pipes_v0, prof_pipes_v1
+
+logistics: in v0 werden 637 pdbs, in v1 85 pdbs erzeugt.
+pipes: in v0 werden 5771 pdbs, in v1 1256 pdbs erzeugt.
+
+Vermutung: der Zugriff mittels Map dauert laenger als die pdb-Erzeugung,
+wenn die pdbs klein sind.
+--
+
+Bei Sokoban hat sich die Performance von v1 auf v2 ein ganzes Stück
+verschlechtert. Bei Problem 08 wurde in v1 noch ein etwas besseres
+Pattern gefunden, aber ab v2 findet schon die erste
+Local-Search-Iteration keine Verbesserung mehr. Woran liegt das?
+--
+Das liegt wohl daran, dass wir in v1 bei nur 9 Samples Glueck hatten. 
+Bei einem Pattern bekommen wir fuer diese 9 Samples einen besseren 
+h-Wert.
+In v2 haben wir in der ersten Iteration 13 Samples, die aber keine 
+Verbesserung liefern. Veraendert man v2, sodass wie in v1 nicht durch
+die Durchschnittsoperatorkosten geteilt wird, bekommen wir wieder 9 
+Samples. Allerdings hat sich was an den Random Zahlen veraendert - in
+diesem Fall schlecht fuer uns, weil diese 9 Samples wiederum zu keiner
+Verbesserung fuehren. Vergleicht man mit meld pattern_generation_haslum.cc
+der beiden Versionen, sieht man das bis auf diesen feinen Unterschied 
+des Teilens durch die Durchschnittsoperatorkosten, keine weiteren
+Veraenderungen gemacht worden sind.
+
+Pattern [30 35]:
+bei v1 h pattern 4 fuer alle Samples. h collection 4 und h subset 3
+--
+
+
+Bei v3 wurde insgesamt die Performance schlechter (außer in
+Blocksworld), aber die Qualität der Heuristik besser. Warum, ist nach
+Durchsicht eines Logistics-Beispiels (7-0) nicht ganz klar. Die
+PDB-Collection-Generierung brauchte länger, aber warum ist nicht so
+ersichtlich. Profiler anwerfen? Es wäre auch ganz informativ, nach jeder
+Hillclimbing-Runde den aktuellen Timer-Stand auszugeben. (Beispiel-Code,
+der so was macht, z.B. in der Suche, eager_search.cc oder so, wobei das
+wahrscheinlich an eine andere Klasse übergeben wird, z.B.
+search_progress.cc.)
+
