@@ -42,3 +42,4 @@ der so was macht, z.B. in der Suche, eager_search.cc oder so, wobei das
 wahrscheinlich an eine andere Klasse übergeben wird, z.B.
 search_progress.cc.)
 
+
