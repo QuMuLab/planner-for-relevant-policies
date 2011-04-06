@@ -28,21 +28,7 @@ verschlechtert. Bei Problem 08 wurde in v1 noch ein etwas besseres
 Pattern gefunden, aber ab v2 findet schon die erste
 Local-Search-Iteration keine Verbesserung mehr. Woran liegt das?
 --
-Das liegt wohl daran, dass wir in v1 bei nur 9 Samples Glueck hatten. 
-Bei einem Pattern bekommen wir fuer diese 9 Samples einen besseren 
-h-Wert.
-In v2 haben wir in der ersten Iteration 13 Samples, die aber keine 
-Verbesserung liefern. Veraendert man v2, sodass wie in v1 nicht durch
-die Durchschnittsoperatorkosten geteilt wird, bekommen wir wieder 9 
-Samples. Allerdings hat sich was an den Random Zahlen veraendert - in
-diesem Fall schlecht fuer uns, weil diese 9 Samples wiederum zu keiner
-Verbesserung fuehren. Vergleicht man mit meld pattern_generation_haslum.cc
-der beiden Versionen, sieht man das bis auf diesen feinen Unterschied 
-des Teilens durch die Durchschnittsoperatorkosten, keine weiteren
-Veraenderungen gemacht worden sind.
-
-Pattern [30 35]:
-bei v1 h pattern 4 fuer alle Samples. h collection 4 und h subset 3
+Bug gefixt!!!
 --
 
 
