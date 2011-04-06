@@ -41,5 +41,18 @@ Hillclimbing-Runde den aktuellen Timer-Stand auszugeben. (Beispiel-Code,
 der so was macht, z.B. in der Suche, eager_search.cc oder so, wobei das
 wahrscheinlich an eine andere Klasse übergeben wird, z.B.
 search_progress.cc.)
+--
+Aktuelle Version (v6) vs. v2
+In der aktuellen Version dauert die Pattern-Suche 35.57s, also laenger
+als in Version 2 mit 26.53s. Die Suche selbst ist in der aktuellen Version
+schneller mit 1.83s vs. 7.62s. (Woran liegt das? Makefile o3?)
+Der initiale h-Wert ist jeweils identisch. 
+Die Anzahl der Improvements ist aber unterschiedlich. In der aktuellen Version werden
+18 bessere Nachfolgekollektionen gefunden, waehrend in v2 nur 13 bessere
+Kollektionen gefunden werden. In der aktuellen Version vergroessert sich
+dabei die Suchnachbarschaft enorm. Zu Beginn sind 70 Patterns in der
+Suchnachbarschaft und in der letzten Iteration 630.
 
+Version 3 vs. Version 2
+--
 
