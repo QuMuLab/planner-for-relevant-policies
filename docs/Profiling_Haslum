@@ -42,17 +42,21 @@ der so was macht, z.B. in der Suche, eager_search.cc oder so, wobei das
 wahrscheinlich an eine andere Klasse übergeben wird, z.B.
 search_progress.cc.)
 --
-Aktuelle Version (v6) vs. v2
-In der aktuellen Version dauert die Pattern-Suche 35.57s, also laenger
-als in Version 2 mit 26.53s. Die Suche selbst ist in der aktuellen Version
-schneller mit 1.83s vs. 7.62s. (Woran liegt das? Makefile o3?)
-Der initiale h-Wert ist jeweils identisch. 
-Die Anzahl der Improvements ist aber unterschiedlich. In der aktuellen Version werden
-18 bessere Nachfolgekollektionen gefunden, waehrend in v2 nur 13 bessere
-Kollektionen gefunden werden. In der aktuellen Version vergroessert sich
-dabei die Suchnachbarschaft enorm. Zu Beginn sind 70 Patterns in der
-Suchnachbarschaft und in der letzten Iteration 630.
+v2 vs. v3
+Suchzeit in v2: 1.61s
+Suchzeit in v3: 1.83s
+--> Erklaerung: in v2 weniger Pattern in der endgueltigen Pattern-Kollektion.
+Pattern-Suche in v2: 5.44s
+Pattern-Suche in v3: 35.66s
+--> Erklaerung:
+In v2 gibt es 13 Improvements, d.h. die Suchnachbarschaft waechst 13 mal stark an.
+In v3 gibt es 18 Improvements, d.h. die Suchnachbarschaft ist hier groesser und die Suche dauert laenger, da mehr Iterationen.
+Die Qualitaet der Heuristik scheint hier aber gleich zu sein. Der intiale h-Wert ist identisch. Die Patternsuche frueher abzubrechen koennte sinnvoll sein.
+Weiterer Grund: in v3 werden in jeder Iteration 100 Random Walks gemacht, in v2 in jeder Iteration nur 1 Random Walk.
+Bei diesem Experiment macht das Resampling ungefaehr 6s aus. D.h. 24s erhalten wir durch weitere Pattern-Suche und dem damit verbundenen Sampling.
+Bei dem frueheren Abbruch nach 13 Iterationen in v3, wurde die Suchzeit auf 0.93s reduziert. (Weniger Patterns - gute Qualitaet!) 
 
-Version 3 vs. Version 2
+--> moeglicherweise reichen weniger Samples (Experimente?)
+--> Experimente mit frueherem Abbrechen der Patternsuche
 --
 
