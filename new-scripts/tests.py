@@ -53,7 +53,7 @@ def test_copy_dir_to_dir():
 
 
 def gm_old(values):
-    return round(prod(values) ** (1 / len(values)), 4)
+    return round(prod(values) ** (1 / len(values)), 2)
 
 
 def test_gm1():

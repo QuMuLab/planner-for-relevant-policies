@@ -387,7 +387,8 @@ class Run(object):
                     'save_returncode("%s", retcode)\n') % (', '.join(parts), name)
             if abort_on_failure:
                 call += ('if not retcode == 0:\n'
-                         '    sys.exit("%s returned %%s" %% retcode)\n' % name)
+                         '    print_(driver_log, "%s returned %%s" %% retcode)\n'
+                         '    sys.exit(1)\n' % name)
             return call
 
         calls_text = '\n'.join(make_call(name, cmd, kwargs)

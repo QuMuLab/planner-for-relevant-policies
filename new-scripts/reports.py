@@ -25,7 +25,7 @@ def avg(values):
     >>> print avg([20, 30, 70])
     40.0
     """
-    return round(sum(values, 0.0) / len(values), 4)
+    return round(sum(values, 0.0) / len(values), 2)
 
 
 def gm(values):
@@ -36,7 +36,7 @@ def gm(values):
     """
     assert len(values) >= 1
     exp = 1.0 / len(values)
-    return round(tools.prod([val ** exp for val in values]), 4)
+    return round(tools.prod([val ** exp for val in values]), 2)
 
 
 class ReportArgParser(tools.ArgParser):
