@@ -11,10 +11,10 @@ exp_code_dir = os.path.abspath("../../calls")
 sys.path.insert(0, exp_code_dir)
 
 from call import Call
-from log import redirects, save_returncode
+from log import print_, redirects, save_returncode, driver_log, driver_err
 
-sys.stdout = redirects['stdout']
-sys.stderr = redirects['stderr']
+sys.stdout = driver_log
+sys.stderr = driver_err
 
 
 """VARIABLES"""
