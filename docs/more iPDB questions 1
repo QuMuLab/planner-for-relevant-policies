@@ -1,0 +1,174 @@
+Betreff:
+Re: more iPDB questions
+Von:
+Malte Helmert <helmert@informatik.uni-freiburg.de>
+Datum:
+Wed, 26 Jan 2011 13:42:24 +0100
+An:
+Patrik Haslum <patrik.haslum@anu.edu.au>
+CC:
+Silvan Sievers <Silvan.Sievers@gmx.de>, Manuela Ortlieb <ortlieb@informatik.uni-freiburg.de>
+
+On 26.01.2011 12:47, Patrik Haslum wrote:
+
+> > I'll try to answer some questions in a bit more detail, in no particular
+> > order:
+
+Thanks a lot!
+
+> > (Though I think one should certainly use
+> > different sample sets in each local search iteration, since they do
+> > depend on current estimates, and perhaps also in successive "trials"
+> > within the same iteration.)
+
+The argument for reusing sample sets even between iterations would be
+that this would allow caching h values for candidate patterns. If the
+number of new candidate patterns compared to old candidate patterns is
+low, this could save rather much time, assuming that computing the h
+values of candidate patterns is the most time-critical part of the process.
+
+The disadvantage, of course, would be that if a sample set if unusually
+unlucky for one pattern, then this would keep it from being ever
+selected (rather than keeping it from being selected in a particular
+iteration), and that the sample sets might become less adequate as their
+sample depth moves away from the desired sample depth. But you could
+think of some compromises here such as only picking a new sample set
+once h(s0) has increased by some minimal amount. I think this might be
+worth trying out.
+
+I don't understand what you mean by 'and perhaps also in successive
+"trials" within the same iteration'. Can you explain?
+
+> > The length of the random walk is chosen (approximately) according to a
+
+This is "approximate" only because of the dead-end restart thing, right?
+
+> > binomial distribution with mean at 2*h(s0), where h is the current PDB
+> > heuristic (I think this is the only way that sampling is influenced by
+> > the PDB, though). The procedure used is RandomWalk2::sample_bin (in
+> > random.cc). There are two "implicit" parameters (class members), called
+> > "irreducible" and "ergodic" (and probably misnamed), which it appears
+> > are both always set to true. Thus, the behaviour of the random walk
+> > procedure should be: At each step, pick an applicable action or no-op,
+> > with uniform probability (i.e., the prob. of picking a no-op depends on
+> > the number of applicable actions, which is probably stupid). If there is
+> > no applicable action (except the no-op), reset to initial state and
+> > continue (thus, if a reset occurs, the depth of the selected state is
+> > likely to be very different from the target depth).
+
+Thanks! One additional question I had was what the p value/variance of
+the binomial distribution is. If I read the code correctly, for
+unit-cost problems the mean value is actually 2*h(s_0)+1 and the n value
+is 4*h(s_0), so p would be roughly 0.5.
+
+How would you adapt this to non-unit-cost problems? It seems like
+currently the h value is converted from a cost estimate to a
+distance(-ish) estimate by dividing it by the average cost of all
+actions in the problem. Have I got that approximately correct? I'm a bit
+worried about this being off in domains with wildly differing action
+costs such as ParcPrinter. Do you have any additional thoughts on how to
+handle costs here?
+
+> > The branching factor estimate I think is done by simply keeping track of
+> > the summed number of applicable actions and the total number of rw steps
+> > taken, and dividing them. So there is no adjustment for transpositions;
+> > it's simply an estimate of the search tree branching factor.
+
+OK, thanks!
+
+> > The statistical pruning thing works as follows: The evaluation of
+> > candidate extensions is divided into "trials", say NT trials of NS
+> > samples each. After each NS samples, we have an estimate of the
+> > "improvement" of each candidate (e.g., for the counting case, this is
+> > simply the fraction of "positive" samples, i.e., #samples where
+> > candidate gives a higher h-value than current PDB / NS), and a
+> > confidence interval on this improvement is computed. The method used for
+> > this is different between the counting and the weighted case. For the
+> > counting case, it uses "Wilson's formula" (which, honestly, I have no
+> > memory of what it is or why it works, but I think there was a very good
+> > wikipedia article on it ;) if not, let me know and I can send you the
+> > paper (which I also remember as being fairly understandable)). For the
+> > weighted case, I think the improvement is assumed to be normally
+> > distributed and a standard ci is calculated from that. Then, we simply
+> > throw away any candidate X such that there exists another candidate X'
+> > such that the lower bound of the ci for X' is > the upper bound of the
+> > ci for X. The justification for this is basically: we believe, with a
+> > probability of 0.95 or so, that the "true" improvement value of each
+> > candidate lies in its calculated ci; thus, if the lower bound of the ci
+> > for X' is greater than the upper bound of the ci for X, it looks very
+> > unlikely that the true value of X will turn out to be better than that
+> > of X', and since we're only interested in the candidate with the best
+> > (true) improvement, we don't bother with evaluating X any more. The code
+> > for this is in eval_extension_vec and prune_extension_vec (in pdb.cc).
+
+Thanks, that all makes a lot of sense. I think we'll stick with the
+counting approximation for now and will turn to the wikipedia article
+for that.
+
+> > Anything I missed? (or any follow-on/other question...) Just let me know.
+
+No open questions at the moment! :-)
+
+Well, actually, now that I'm rereading my email, one more question: are
+the A* searches you do to compute the h values for a new pattern
+independent, or do you reuse some info between A* runs for different
+abstract states?
+
+> > Btw, does the m&s heuristic support action costs yet?
+
+I'm tracking this at http://issues.fast-downward.org/issue193 and the
+last entry there pretty much describes the current state of affairs. In
+more detail than there:
+
+ * We have two m&s implementations now: mine and Raz's. They should be
+   combined at some point (hopefully not too far in the future), but
+   this is going to be a bit of work; I don't have an ETA for that at
+   the moment.
+
+ * My implementation includes the merge and shrink strategies we tried
+   in our original m&s paper, plus an implementation of the DFP shrink
+   strategy (but not yet their merge strategy).
+
+ * Raz's implementation includes a disjoint set of shrink strategies
+   from ours, but I think they're all pretty much variations on the
+   bisimulation theme, i.e., not entirely unlike the DFP stuff. He uses
+   a different merge_strategy parameter too, but I'm not sure if it's
+   actually a different merge strategy or some hack to signal something
+   or other to the code.
+
+ * Raz's implementation supports costs, although that part was added
+   very late and is apparently hackish. I found several bugs with it in
+   only a few minutes. These bugs are fixed now apart from some
+   misleading output that claims the heuristic still doesn't support
+   action costs (which should be ignored), but more may lurk there. But
+   at least I tested this on quite a few problems with costs and it
+   seemed to produce correct results.
+
+ * My implementation supports costs in theory, but there is a bug with
+   zero-cost actions which makes it unusable in domains that have them
+   (would be easy to fix, but maybe harder to fix without losing
+   performance in the unit-cost case, which is why I haven't done it
+   yet), and some things are O(N2) where N is the maximum abstract f
+   value, which is unacceptable in domains with high-cost actions such
+   as ParcPrinter. Together, these limitations mean that you can only
+   use it in a few IPC-2008 domains right now (Transport, Woodworking,
+   Scanalyzer).
+
+ * My initial impression is that the heuristic is comparatively weak in
+   domains with costs, which I think can be explained to a large degree
+   by the blindness of the merge strategy to costs. (There may be
+   additional reasons why it doesn't work very well with costs.)
+   I think to turn this into a good heuristic in the cost-based
+   setting, some decisions in the merge and shrink strategies need to
+   be rethought. Raz's stuff is maybe already good enough as far as
+   shrink strategies are concerned; would need more testing on
+   cost-based domains.
+
+> > Do you expect that it will sometime in the near (or far) future?
+
+Yes for the far future, and maybe even in the near future.
+How near is near?
+
+Cheers,
+
+Malte

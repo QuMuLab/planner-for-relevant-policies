@@ -23,6 +23,7 @@ HEADERS = \
           option_parser.h \
           pref_evaluator.h \
           relaxation_heuristic.h \
+	  rng.h \
           search_engine.h \
           search_node_info.h \
           search_progress.h \
@@ -94,6 +95,13 @@ HEADERS += learning/AODE.h \
            learning/state_space_sample.h \
            learning/state_vars_feature_extractor.h
 
+HEADERS += pdb_heuristic.h \
+           abstract_state_iterator.h \
+           pdb_collection_heuristic.h \
+           planning_utilities.h \
+           pattern_generation_haslum.h \
+#           pattern_generation_edelkamp.h
+
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET  = downward
 
@@ -149,7 +157,7 @@ POSTLINKOPT =
 ## NOTE: This precludes some uses of exceptions.
 ##        For details, see man gcc on -static-libgcc.
 
-CCOPT_RELEASE  = -O3 -DNDEBUG -fomit-frame-pointer
+CCOPT_RELEASE  = -O3 -fomit-frame-pointer
 CCOPT_DEBUG    = -O3
 CCOPT_PROFILE  = -O3 -pg
 
