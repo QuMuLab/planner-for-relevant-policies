@@ -156,12 +156,17 @@ lmopt_search = """\
 --search "astar(lmcount(lm_search,admissible=true),mpd=true)"\
 """
 
-seq-sat-lama-2011 = """\
---heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))"\
---search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm)),lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5),lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3),lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2),lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1),repeat_last=true,continue_on_fail=true)"\
+seq_sat_lama_ipc2011 = """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm)),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2),\
+lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1),\
+repeat_last=true,continue_on_fail=true)"\
 """
 
-seq-opt-bjolp = """\
+seq_opt_bjolp_ipc2011 = """\
 --search "astar(lmcount(lm_merged(lm_rhw(),lm_hm(m=1)),admissible=true),mpd=true)"\
 """
 
