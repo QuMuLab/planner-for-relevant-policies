@@ -11,133 +11,151 @@
 
 <div class="header" id="header">
 <h1>exp-mo-ipdb_6-eval-d-abs</h1>
-<h3>2011-04-11</h3>
+<h3>2011-04-12</h3>
 </div>
 
 <div class="toc">
 
   <ul>
-  <li><a href="#toc1">1. coverage</a>
+  <li><a href="#toc1">1. cost</a>
   </li>
-  <li><a href="#toc2">2. memory</a>
+  <li><a href="#toc2">2. coverage</a>
   </li>
-  <li><a href="#toc3">3. memory_limit</a>
+  <li><a href="#toc3">3. dead_ends</a>
   </li>
-  <li><a href="#toc4">4. plan_valid</a>
+  <li><a href="#toc4">4. evaluations</a>
   </li>
-  <li><a href="#toc5">5. preprocessor_axioms</a>
+  <li><a href="#toc5">5. expansions</a>
   </li>
-  <li><a href="#toc6">6. preprocessor_derived_vars</a>
+  <li><a href="#toc6">6. generated</a>
   </li>
-  <li><a href="#toc7">7. preprocessor_error</a>
+  <li><a href="#toc7">7. initial_h_value</a>
   </li>
-  <li><a href="#toc8">8. preprocessor_facts</a>
+  <li><a href="#toc8">8. memory</a>
   </li>
-  <li><a href="#toc9">9. preprocessor_ops</a>
+  <li><a href="#toc9">9. memory_limit</a>
   </li>
-  <li><a href="#toc10">10. preprocessor_problem_size</a>
+  <li><a href="#toc10">10. plan_length</a>
   </li>
-  <li><a href="#toc11">11. preprocessor_vars</a>
+  <li><a href="#toc11">11. plan_valid</a>
   </li>
-  <li><a href="#toc12">12. score_evaluations</a>
+  <li><a href="#toc12">12. preprocessor_axioms</a>
   </li>
-  <li><a href="#toc13">13. score_expansions</a>
+  <li><a href="#toc13">13. preprocessor_derived_vars</a>
   </li>
-  <li><a href="#toc14">14. score_search_time</a>
+  <li><a href="#toc14">14. preprocessor_error</a>
   </li>
-  <li><a href="#toc15">15. score_total_time</a>
+  <li><a href="#toc15">15. preprocessor_facts</a>
   </li>
-  <li><a href="#toc16">16. search_error</a>
+  <li><a href="#toc16">16. preprocessor_ops</a>
   </li>
-  <li><a href="#toc17">17. translator_auxiliary_atoms</a>
+  <li><a href="#toc17">17. preprocessor_problem_size</a>
   </li>
-  <li><a href="#toc18">18. translator_axioms</a>
+  <li><a href="#toc18">18. preprocessor_vars</a>
   </li>
-  <li><a href="#toc19">19. translator_derived_vars</a>
+  <li><a href="#toc19">19. score_evaluations</a>
   </li>
-  <li><a href="#toc20">20. translator_effect_conditions_simplified</a>
+  <li><a href="#toc20">20. score_expansions</a>
   </li>
-  <li><a href="#toc21">21. translator_error</a>
+  <li><a href="#toc21">21. score_search_time</a>
   </li>
-  <li><a href="#toc22">22. translator_facts</a>
+  <li><a href="#toc22">22. score_total_time</a>
   </li>
-  <li><a href="#toc23">23. translator_final_queue_length</a>
+  <li><a href="#toc23">23. search_error</a>
   </li>
-  <li><a href="#toc24">24. translator_implied_effects_removed</a>
+  <li><a href="#toc24">24. search_time</a>
   </li>
-  <li><a href="#toc25">25. translator_implied_preconditions_added</a>
+  <li><a href="#toc25">25. total_time</a>
   </li>
-  <li><a href="#toc26">26. translator_invariant_groups</a>
+  <li><a href="#toc26">26. translator_auxiliary_atoms</a>
   </li>
-  <li><a href="#toc27">27. translator_invariant_groups_total_size</a>
+  <li><a href="#toc27">27. translator_axioms</a>
   </li>
-  <li><a href="#toc28">28. translator_operators_removed</a>
+  <li><a href="#toc28">28. translator_derived_vars</a>
   </li>
-  <li><a href="#toc29">29. translator_ops</a>
+  <li><a href="#toc29">29. translator_effect_conditions_simplified</a>
   </li>
-  <li><a href="#toc30">30. translator_problem_size</a>
+  <li><a href="#toc30">30. translator_error</a>
   </li>
-  <li><a href="#toc31">31. translator_propositions_removed</a>
+  <li><a href="#toc31">31. translator_facts</a>
   </li>
-  <li><a href="#toc32">32. translator_relevant_atoms</a>
+  <li><a href="#toc32">32. translator_final_queue_length</a>
   </li>
-  <li><a href="#toc33">33. translator_time_building_dictionary_for_full_mutex_groups</a>
+  <li><a href="#toc33">33. translator_implied_effects_removed</a>
   </li>
-  <li><a href="#toc34">34. translator_time_building_mutex_information</a>
+  <li><a href="#toc34">34. translator_implied_preconditions_added</a>
   </li>
-  <li><a href="#toc35">35. translator_time_building_strips_to_sas_dictionary</a>
+  <li><a href="#toc35">35. translator_invariant_groups</a>
   </li>
-  <li><a href="#toc36">36. translator_time_building_translation_key</a>
+  <li><a href="#toc36">36. translator_invariant_groups_total_size</a>
   </li>
-  <li><a href="#toc37">37. translator_time_checking_invariant_weight</a>
+  <li><a href="#toc37">37. translator_operators_removed</a>
   </li>
-  <li><a href="#toc38">38. translator_time_choosing_groups</a>
+  <li><a href="#toc38">38. translator_ops</a>
   </li>
-  <li><a href="#toc39">39. translator_time_collecting_mutex_groups</a>
+  <li><a href="#toc39">39. translator_problem_size</a>
   </li>
-  <li><a href="#toc40">40. translator_time_completing_instantiation</a>
+  <li><a href="#toc40">40. translator_propositions_removed</a>
   </li>
-  <li><a href="#toc41">41. translator_time_computing_fact_groups</a>
+  <li><a href="#toc41">41. translator_relevant_atoms</a>
   </li>
-  <li><a href="#toc42">42. translator_time_computing_model</a>
+  <li><a href="#toc42">42. translator_time_building_dictionary_for_full_mutex_groups</a>
   </li>
-  <li><a href="#toc43">43. translator_time_detecting_unreachable_propositions</a>
+  <li><a href="#toc43">43. translator_time_building_mutex_information</a>
   </li>
-  <li><a href="#toc44">44. translator_time_done</a>
+  <li><a href="#toc44">44. translator_time_building_strips_to_sas_dictionary</a>
   </li>
-  <li><a href="#toc45">45. translator_time_generating_datalog_program</a>
+  <li><a href="#toc45">45. translator_time_building_translation_key</a>
   </li>
-  <li><a href="#toc46">46. translator_time_instantiating</a>
+  <li><a href="#toc46">46. translator_time_checking_invariant_weight</a>
   </li>
-  <li><a href="#toc47">47. translator_time_instantiating_groups</a>
+  <li><a href="#toc47">47. translator_time_choosing_groups</a>
   </li>
-  <li><a href="#toc48">48. translator_time_normalizing_datalog_program</a>
+  <li><a href="#toc48">48. translator_time_collecting_mutex_groups</a>
   </li>
-  <li><a href="#toc49">49. translator_time_normalizing_task</a>
+  <li><a href="#toc49">49. translator_time_completing_instantiation</a>
   </li>
-  <li><a href="#toc50">50. translator_time_parsing</a>
+  <li><a href="#toc50">50. translator_time_computing_fact_groups</a>
   </li>
-  <li><a href="#toc51">51. translator_time_preparing_model</a>
+  <li><a href="#toc51">51. translator_time_computing_model</a>
   </li>
-  <li><a href="#toc52">52. translator_time_processing_axioms</a>
+  <li><a href="#toc52">52. translator_time_detecting_unreachable_propositions</a>
   </li>
-  <li><a href="#toc53">53. translator_time_simplifying_axioms</a>
+  <li><a href="#toc53">53. translator_time_done</a>
   </li>
-  <li><a href="#toc54">54. translator_time_translating_task</a>
+  <li><a href="#toc54">54. translator_time_generating_datalog_program</a>
   </li>
-  <li><a href="#toc55">55. translator_time_writing_mutex_key</a>
+  <li><a href="#toc55">55. translator_time_instantiating</a>
   </li>
-  <li><a href="#toc56">56. translator_time_writing_output</a>
+  <li><a href="#toc56">56. translator_time_instantiating_groups</a>
   </li>
-  <li><a href="#toc57">57. translator_time_writing_translation_key</a>
+  <li><a href="#toc57">57. translator_time_normalizing_datalog_program</a>
   </li>
-  <li><a href="#toc58">58. translator_total_queue_pushes</a>
+  <li><a href="#toc58">58. translator_time_normalizing_task</a>
   </li>
-  <li><a href="#toc59">59. translator_uncovered_facts</a>
+  <li><a href="#toc59">59. translator_time_parsing</a>
   </li>
-  <li><a href="#toc60">60. translator_vars</a>
+  <li><a href="#toc60">60. translator_time_preparing_model</a>
   </li>
-  <li><a href="#toc61">61. validate_error</a>
+  <li><a href="#toc61">61. translator_time_processing_axioms</a>
+  </li>
+  <li><a href="#toc62">62. translator_time_simplifying_axioms</a>
+  </li>
+  <li><a href="#toc63">63. translator_time_translating_task</a>
+  </li>
+  <li><a href="#toc64">64. translator_time_writing_mutex_key</a>
+  </li>
+  <li><a href="#toc65">65. translator_time_writing_output</a>
+  </li>
+  <li><a href="#toc66">66. translator_time_writing_translation_key</a>
+  </li>
+  <li><a href="#toc67">67. translator_total_queue_pushes</a>
+  </li>
+  <li><a href="#toc68">68. translator_uncovered_facts</a>
+  </li>
+  <li><a href="#toc69">69. translator_vars</a>
+  </li>
+  <li><a href="#toc70">70. validate_error</a>
   </li>
   </ul>
 
@@ -153,7 +171,45 @@ If in a group of configs not all configs have a value for the attribute, the con
 <hr class="heavy" />
 
 <a id="toc1" name="toc1"></a>
-<h1>1. coverage</h1>
+<h1>1. cost</h1>
+
+<table border="1">
+<tr>
+<th>cost</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
+<td><span style="color:Gray">402</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">592</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">6880500</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">243</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">778</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">1460</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">6883975</span></td>
+</tr>
+</table>
+
+<a id="toc2" name="toc2"></a>
+<h1>2. coverage</h1>
 
 <table border="1">
 <tr>
@@ -162,6 +218,44 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>blocks</b></td>
+<td><span style="color:Gray">21</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">20</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">12</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">17</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">27</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">8</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">105</span></td>
+</tr>
+</table>
+
+<a id="toc3" name="toc3"></a>
+<h1>3. dead_ends</h1>
+
+<table border="1">
+<tr>
+<th>dead_ends</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
 <td><span style="color:Gray">0</span></td>
 </tr>
 <tr>
@@ -170,7 +264,7 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>parcprinter-08-strips</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">127150</span></td>
 </tr>
 <tr>
 <td><b>pipesworld-notankage</b></td>
@@ -178,20 +272,172 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>sokoban-opt08-strips</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">873795</span></td>
 </tr>
 <tr>
 <td><b>woodworking-opt08-strips</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">2773</span></td>
 </tr>
 <tr>
 <td><b>SUM</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">1003718</span></td>
 </tr>
 </table>
 
-<a id="toc2" name="toc2"></a>
-<h1>2. memory</h1>
+<a id="toc4" name="toc4"></a>
+<h1>4. evaluations</h1>
+
+<table border="1">
+<tr>
+<th>evaluations</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
+<td><span style="color:Gray">5293094</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">1430885</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">642788</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">11572706</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">21751112</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">13899</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">40704484</span></td>
+</tr>
+</table>
+
+<a id="toc5" name="toc5"></a>
+<h1>5. expansions</h1>
+
+<table border="1">
+<tr>
+<th>expansions</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
+<td><span style="color:Gray">2540967</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">224543</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">196958</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">4876588</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">20109038</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">1895</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">27949989</span></td>
+</tr>
+</table>
+
+<a id="toc6" name="toc6"></a>
+<h1>6. generated</h1>
+
+<table border="1">
+<tr>
+<th>generated</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
+<td><span style="color:Gray">11298821</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">3629508</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">1457094</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">44828009</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">51184593</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">23858</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">112421883</span></td>
+</tr>
+</table>
+
+<a id="toc7" name="toc7"></a>
+<h1>7. initial_h_value</h1>
+
+<table border="1">
+<tr>
+<th>initial_h_value</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
+<td><span style="color:Gray">232</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">578</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">6322584</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">108</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">365</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">1270</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">6325137</span></td>
+</tr>
+</table>
+
+<a id="toc8" name="toc8"></a>
+<h1>8. memory</h1>
 
 <table border="1">
 <tr>
@@ -200,36 +446,36 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>blocks</b></td>
-<td><span style="color:Gray">169532</span></td>
+<td><span style="color:Gray">28715912</span></td>
 </tr>
 <tr>
 <td><b>logistics00</b></td>
-<td><span style="color:Gray">134088</span></td>
+<td><span style="color:Gray">206928</span></td>
 </tr>
 <tr>
 <td><b>parcprinter-08-strips</b></td>
-<td><span style="color:Gray">145176</span></td>
+<td><span style="color:Gray">165248</span></td>
 </tr>
 <tr>
 <td><b>pipesworld-notankage</b></td>
-<td><span style="color:Gray">441604</span></td>
+<td><span style="color:Gray">69524876</span></td>
 </tr>
 <tr>
 <td><b>sokoban-opt08-strips</b></td>
-<td><span style="color:Gray">158436</span></td>
+<td><span style="color:Gray">4255540</span></td>
 </tr>
 <tr>
 <td><b>woodworking-opt08-strips</b></td>
-<td><span style="color:Gray">157000</span></td>
+<td><span style="color:Gray">49252</span></td>
 </tr>
 <tr>
 <td><b>SUM</b></td>
-<td><span style="color:Gray">1205836</span></td>
+<td><span style="color:Gray">102917756</span></td>
 </tr>
 </table>
 
-<a id="toc3" name="toc3"></a>
-<h1>3. memory_limit</h1>
+<a id="toc9" name="toc9"></a>
+<h1>9. memory_limit</h1>
 
 <table border="1">
 <tr>
@@ -266,8 +512,46 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc4" name="toc4"></a>
-<h1>4. plan_valid</h1>
+<a id="toc10" name="toc10"></a>
+<h1>10. plan_length</h1>
+
+<table border="1">
+<tr>
+<th>plan_length</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
+<td><span style="color:Gray">402</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">592</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">257</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">243</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">3887</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">83</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">5464</span></td>
+</tr>
+</table>
+
+<a id="toc11" name="toc11"></a>
+<h1>11. plan_valid</h1>
 
 <table border="1">
 <tr>
@@ -276,36 +560,36 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>blocks</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">21</span></td>
 </tr>
 <tr>
 <td><b>logistics00</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">20</span></td>
 </tr>
 <tr>
 <td><b>parcprinter-08-strips</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">12</span></td>
 </tr>
 <tr>
 <td><b>pipesworld-notankage</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">17</span></td>
 </tr>
 <tr>
 <td><b>sokoban-opt08-strips</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">27</span></td>
 </tr>
 <tr>
 <td><b>woodworking-opt08-strips</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">8</span></td>
 </tr>
 <tr>
 <td><b>SUM</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">105</span></td>
 </tr>
 </table>
 
-<a id="toc5" name="toc5"></a>
-<h1>5. preprocessor_axioms</h1>
+<a id="toc12" name="toc12"></a>
+<h1>12. preprocessor_axioms</h1>
 
 <table border="1">
 <tr>
@@ -342,8 +626,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc6" name="toc6"></a>
-<h1>6. preprocessor_derived_vars</h1>
+<a id="toc13" name="toc13"></a>
+<h1>13. preprocessor_derived_vars</h1>
 
 <table border="1">
 <tr>
@@ -380,8 +664,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc7" name="toc7"></a>
-<h1>7. preprocessor_error</h1>
+<a id="toc14" name="toc14"></a>
+<h1>14. preprocessor_error</h1>
 
 <table border="1">
 <tr>
@@ -418,8 +702,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc8" name="toc8"></a>
-<h1>8. preprocessor_facts</h1>
+<a id="toc15" name="toc15"></a>
+<h1>15. preprocessor_facts</h1>
 
 <table border="1">
 <tr>
@@ -456,8 +740,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc9" name="toc9"></a>
-<h1>9. preprocessor_ops</h1>
+<a id="toc16" name="toc16"></a>
+<h1>16. preprocessor_ops</h1>
 
 <table border="1">
 <tr>
@@ -494,8 +778,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc10" name="toc10"></a>
-<h1>10. preprocessor_problem_size</h1>
+<a id="toc17" name="toc17"></a>
+<h1>17. preprocessor_problem_size</h1>
 
 <table border="1">
 <tr>
@@ -532,8 +816,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc11" name="toc11"></a>
-<h1>11. preprocessor_vars</h1>
+<a id="toc18" name="toc18"></a>
+<h1>18. preprocessor_vars</h1>
 
 <table border="1">
 <tr>
@@ -570,8 +854,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc12" name="toc12"></a>
-<h1>12. score_evaluations</h1>
+<a id="toc19" name="toc19"></a>
+<h1>19. score_evaluations</h1>
 
 <table border="1">
 <tr>
@@ -580,40 +864,40 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>blocks</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.41</span></td>
 </tr>
 <tr>
 <td><b>logistics00</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.48</span></td>
 </tr>
 <tr>
 <td><b>parcprinter-08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.3</span></td>
 </tr>
 <tr>
 <td><b>pipesworld-notankage</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.14</span></td>
 </tr>
 <tr>
 <td><b>sokoban-opt08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.28</span></td>
 </tr>
 <tr>
 <td><b>woodworking-opt08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.21</span></td>
 </tr>
 <tr>
 <td><b>AVG</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.29</span></td>
 </tr>
 <tr>
 <td><b>NORMALIZED AVG</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.3</span></td>
 </tr>
 </table>
 
-<a id="toc13" name="toc13"></a>
-<h1>13. score_expansions</h1>
+<a id="toc20" name="toc20"></a>
+<h1>20. score_expansions</h1>
 
 <table border="1">
 <tr>
@@ -622,40 +906,40 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>blocks</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.44</span></td>
 </tr>
 <tr>
 <td><b>logistics00</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.56</span></td>
 </tr>
 <tr>
 <td><b>parcprinter-08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.33</span></td>
 </tr>
 <tr>
 <td><b>pipesworld-notankage</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.16</span></td>
 </tr>
 <tr>
 <td><b>sokoban-opt08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.29</span></td>
 </tr>
 <tr>
 <td><b>woodworking-opt08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.25</span></td>
 </tr>
 <tr>
 <td><b>AVG</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.32</span></td>
 </tr>
 <tr>
 <td><b>NORMALIZED AVG</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.34</span></td>
 </tr>
 </table>
 
-<a id="toc14" name="toc14"></a>
-<h1>14. score_search_time</h1>
+<a id="toc21" name="toc21"></a>
+<h1>21. score_search_time</h1>
 
 <table border="1">
 <tr>
@@ -664,40 +948,40 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>blocks</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.58</span></td>
 </tr>
 <tr>
 <td><b>logistics00</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.55</span></td>
 </tr>
 <tr>
 <td><b>parcprinter-08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.35</span></td>
 </tr>
 <tr>
 <td><b>pipesworld-notankage</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.29</span></td>
 </tr>
 <tr>
 <td><b>sokoban-opt08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.74</span></td>
 </tr>
 <tr>
 <td><b>woodworking-opt08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.26</span></td>
 </tr>
 <tr>
 <td><b>AVG</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.44</span></td>
 </tr>
 <tr>
 <td><b>NORMALIZED AVG</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.46</span></td>
 </tr>
 </table>
 
-<a id="toc15" name="toc15"></a>
-<h1>15. score_total_time</h1>
+<a id="toc22" name="toc22"></a>
+<h1>22. score_total_time</h1>
 
 <table border="1">
 <tr>
@@ -706,40 +990,40 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>blocks</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.58</span></td>
 </tr>
 <tr>
 <td><b>logistics00</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.43</span></td>
 </tr>
 <tr>
 <td><b>parcprinter-08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.27</span></td>
 </tr>
 <tr>
 <td><b>pipesworld-notankage</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.27</span></td>
 </tr>
 <tr>
 <td><b>sokoban-opt08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.72</span></td>
 </tr>
 <tr>
 <td><b>woodworking-opt08-strips</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.15</span></td>
 </tr>
 <tr>
 <td><b>AVG</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.39</span></td>
 </tr>
 <tr>
 <td><b>NORMALIZED AVG</b></td>
-<td><span style="color:Gray">0.0</span></td>
+<td><span style="color:Gray">0.4</span></td>
 </tr>
 </table>
 
-<a id="toc16" name="toc16"></a>
-<h1>16. search_error</h1>
+<a id="toc23" name="toc23"></a>
+<h1>23. search_error</h1>
 
 <table border="1">
 <tr>
@@ -748,23 +1032,23 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>blocks</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">7</span></td>
 </tr>
 <tr>
 <td><b>logistics00</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">1</span></td>
 </tr>
 <tr>
 <td><b>parcprinter-08-strips</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">4</span></td>
 </tr>
 <tr>
 <td><b>pipesworld-notankage</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">32</span></td>
 </tr>
 <tr>
 <td><b>sokoban-opt08-strips</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">3</span></td>
 </tr>
 <tr>
 <td><b>woodworking-opt08-strips</b></td>
@@ -772,12 +1056,88 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 <tr>
 <td><b>SUM</b></td>
-<td><span style="color:Gray">0</span></td>
+<td><span style="color:Gray">47</span></td>
 </tr>
 </table>
 
-<a id="toc17" name="toc17"></a>
-<h1>17. translator_auxiliary_atoms</h1>
+<a id="toc24" name="toc24"></a>
+<h1>24. search_time</h1>
+
+<table border="1">
+<tr>
+<th>search_time</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
+<td><span style="color:Gray">0.21</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">1.5</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">0.59</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">1.11</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">1.67</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">0.43</span></td>
+</tr>
+<tr>
+<td><b>GM</b></td>
+<td><span style="color:Gray">0.81</span></td>
+</tr>
+</table>
+
+<a id="toc25" name="toc25"></a>
+<h1>25. total_time</h1>
+
+<table border="1">
+<tr>
+<th>total_time</th>
+<th>WORK-ipdb</th>
+</tr>
+<tr>
+<td><b>blocks</b></td>
+<td><span style="color:Gray">0.21</span></td>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">18.87</span></td>
+</tr>
+<tr>
+<td><b>parcprinter-08-strips</b></td>
+<td><span style="color:Gray">5.8</span></td>
+</tr>
+<tr>
+<td><b>pipesworld-notankage</b></td>
+<td><span style="color:Gray">2.88</span></td>
+</tr>
+<tr>
+<td><b>sokoban-opt08-strips</b></td>
+<td><span style="color:Gray">2.59</span></td>
+</tr>
+<tr>
+<td><b>woodworking-opt08-strips</b></td>
+<td><span style="color:Gray">30.37</span></td>
+</tr>
+<tr>
+<td><b>GM</b></td>
+<td><span style="color:Gray">3.07</span></td>
+</tr>
+</table>
+
+<a id="toc26" name="toc26"></a>
+<h1>26. translator_auxiliary_atoms</h1>
 
 <table border="1">
 <tr>
@@ -814,8 +1174,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc18" name="toc18"></a>
-<h1>18. translator_axioms</h1>
+<a id="toc27" name="toc27"></a>
+<h1>27. translator_axioms</h1>
 
 <table border="1">
 <tr>
@@ -852,8 +1212,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc19" name="toc19"></a>
-<h1>19. translator_derived_vars</h1>
+<a id="toc28" name="toc28"></a>
+<h1>28. translator_derived_vars</h1>
 
 <table border="1">
 <tr>
@@ -890,8 +1250,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc20" name="toc20"></a>
-<h1>20. translator_effect_conditions_simplified</h1>
+<a id="toc29" name="toc29"></a>
+<h1>29. translator_effect_conditions_simplified</h1>
 
 <table border="1">
 <tr>
@@ -928,8 +1288,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc21" name="toc21"></a>
-<h1>21. translator_error</h1>
+<a id="toc30" name="toc30"></a>
+<h1>30. translator_error</h1>
 
 <table border="1">
 <tr>
@@ -966,8 +1326,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc22" name="toc22"></a>
-<h1>22. translator_facts</h1>
+<a id="toc31" name="toc31"></a>
+<h1>31. translator_facts</h1>
 
 <table border="1">
 <tr>
@@ -1004,8 +1364,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc23" name="toc23"></a>
-<h1>23. translator_final_queue_length</h1>
+<a id="toc32" name="toc32"></a>
+<h1>32. translator_final_queue_length</h1>
 
 <table border="1">
 <tr>
@@ -1042,8 +1402,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc24" name="toc24"></a>
-<h1>24. translator_implied_effects_removed</h1>
+<a id="toc33" name="toc33"></a>
+<h1>33. translator_implied_effects_removed</h1>
 
 <table border="1">
 <tr>
@@ -1080,8 +1440,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc25" name="toc25"></a>
-<h1>25. translator_implied_preconditions_added</h1>
+<a id="toc34" name="toc34"></a>
+<h1>34. translator_implied_preconditions_added</h1>
 
 <table border="1">
 <tr>
@@ -1118,8 +1478,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc26" name="toc26"></a>
-<h1>26. translator_invariant_groups</h1>
+<a id="toc35" name="toc35"></a>
+<h1>35. translator_invariant_groups</h1>
 
 <table border="1">
 <tr>
@@ -1156,8 +1516,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc27" name="toc27"></a>
-<h1>27. translator_invariant_groups_total_size</h1>
+<a id="toc36" name="toc36"></a>
+<h1>36. translator_invariant_groups_total_size</h1>
 
 <table border="1">
 <tr>
@@ -1194,8 +1554,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc28" name="toc28"></a>
-<h1>28. translator_operators_removed</h1>
+<a id="toc37" name="toc37"></a>
+<h1>37. translator_operators_removed</h1>
 
 <table border="1">
 <tr>
@@ -1232,8 +1592,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc29" name="toc29"></a>
-<h1>29. translator_ops</h1>
+<a id="toc38" name="toc38"></a>
+<h1>38. translator_ops</h1>
 
 <table border="1">
 <tr>
@@ -1270,8 +1630,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc30" name="toc30"></a>
-<h1>30. translator_problem_size</h1>
+<a id="toc39" name="toc39"></a>
+<h1>39. translator_problem_size</h1>
 
 <table border="1">
 <tr>
@@ -1308,8 +1668,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc31" name="toc31"></a>
-<h1>31. translator_propositions_removed</h1>
+<a id="toc40" name="toc40"></a>
+<h1>40. translator_propositions_removed</h1>
 
 <table border="1">
 <tr>
@@ -1346,8 +1706,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc32" name="toc32"></a>
-<h1>32. translator_relevant_atoms</h1>
+<a id="toc41" name="toc41"></a>
+<h1>41. translator_relevant_atoms</h1>
 
 <table border="1">
 <tr>
@@ -1384,8 +1744,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc33" name="toc33"></a>
-<h1>33. translator_time_building_dictionary_for_full_mutex_groups</h1>
+<a id="toc42" name="toc42"></a>
+<h1>42. translator_time_building_dictionary_for_full_mutex_groups</h1>
 
 <table border="1">
 <tr>
@@ -1422,8 +1782,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc34" name="toc34"></a>
-<h1>34. translator_time_building_mutex_information</h1>
+<a id="toc43" name="toc43"></a>
+<h1>43. translator_time_building_mutex_information</h1>
 
 <table border="1">
 <tr>
@@ -1460,8 +1820,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc35" name="toc35"></a>
-<h1>35. translator_time_building_strips_to_sas_dictionary</h1>
+<a id="toc44" name="toc44"></a>
+<h1>44. translator_time_building_strips_to_sas_dictionary</h1>
 
 <table border="1">
 <tr>
@@ -1498,8 +1858,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc36" name="toc36"></a>
-<h1>36. translator_time_building_translation_key</h1>
+<a id="toc45" name="toc45"></a>
+<h1>45. translator_time_building_translation_key</h1>
 
 <table border="1">
 <tr>
@@ -1536,8 +1896,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc37" name="toc37"></a>
-<h1>37. translator_time_checking_invariant_weight</h1>
+<a id="toc46" name="toc46"></a>
+<h1>46. translator_time_checking_invariant_weight</h1>
 
 <table border="1">
 <tr>
@@ -1574,8 +1934,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc38" name="toc38"></a>
-<h1>38. translator_time_choosing_groups</h1>
+<a id="toc47" name="toc47"></a>
+<h1>47. translator_time_choosing_groups</h1>
 
 <table border="1">
 <tr>
@@ -1612,8 +1972,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc39" name="toc39"></a>
-<h1>39. translator_time_collecting_mutex_groups</h1>
+<a id="toc48" name="toc48"></a>
+<h1>48. translator_time_collecting_mutex_groups</h1>
 
 <table border="1">
 <tr>
@@ -1650,8 +2010,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc40" name="toc40"></a>
-<h1>40. translator_time_completing_instantiation</h1>
+<a id="toc49" name="toc49"></a>
+<h1>49. translator_time_completing_instantiation</h1>
 
 <table border="1">
 <tr>
@@ -1688,8 +2048,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc41" name="toc41"></a>
-<h1>41. translator_time_computing_fact_groups</h1>
+<a id="toc50" name="toc50"></a>
+<h1>50. translator_time_computing_fact_groups</h1>
 
 <table border="1">
 <tr>
@@ -1726,8 +2086,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc42" name="toc42"></a>
-<h1>42. translator_time_computing_model</h1>
+<a id="toc51" name="toc51"></a>
+<h1>51. translator_time_computing_model</h1>
 
 <table border="1">
 <tr>
@@ -1764,8 +2124,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc43" name="toc43"></a>
-<h1>43. translator_time_detecting_unreachable_propositions</h1>
+<a id="toc52" name="toc52"></a>
+<h1>52. translator_time_detecting_unreachable_propositions</h1>
 
 <table border="1">
 <tr>
@@ -1802,8 +2162,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc44" name="toc44"></a>
-<h1>44. translator_time_done</h1>
+<a id="toc53" name="toc53"></a>
+<h1>53. translator_time_done</h1>
 
 <table border="1">
 <tr>
@@ -1840,8 +2200,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc45" name="toc45"></a>
-<h1>45. translator_time_generating_datalog_program</h1>
+<a id="toc54" name="toc54"></a>
+<h1>54. translator_time_generating_datalog_program</h1>
 
 <table border="1">
 <tr>
@@ -1878,8 +2238,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc46" name="toc46"></a>
-<h1>46. translator_time_instantiating</h1>
+<a id="toc55" name="toc55"></a>
+<h1>55. translator_time_instantiating</h1>
 
 <table border="1">
 <tr>
@@ -1916,8 +2276,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc47" name="toc47"></a>
-<h1>47. translator_time_instantiating_groups</h1>
+<a id="toc56" name="toc56"></a>
+<h1>56. translator_time_instantiating_groups</h1>
 
 <table border="1">
 <tr>
@@ -1954,8 +2314,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc48" name="toc48"></a>
-<h1>48. translator_time_normalizing_datalog_program</h1>
+<a id="toc57" name="toc57"></a>
+<h1>57. translator_time_normalizing_datalog_program</h1>
 
 <table border="1">
 <tr>
@@ -1992,8 +2352,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc49" name="toc49"></a>
-<h1>49. translator_time_normalizing_task</h1>
+<a id="toc58" name="toc58"></a>
+<h1>58. translator_time_normalizing_task</h1>
 
 <table border="1">
 <tr>
@@ -2030,8 +2390,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc50" name="toc50"></a>
-<h1>50. translator_time_parsing</h1>
+<a id="toc59" name="toc59"></a>
+<h1>59. translator_time_parsing</h1>
 
 <table border="1">
 <tr>
@@ -2068,8 +2428,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc51" name="toc51"></a>
-<h1>51. translator_time_preparing_model</h1>
+<a id="toc60" name="toc60"></a>
+<h1>60. translator_time_preparing_model</h1>
 
 <table border="1">
 <tr>
@@ -2106,8 +2466,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc52" name="toc52"></a>
-<h1>52. translator_time_processing_axioms</h1>
+<a id="toc61" name="toc61"></a>
+<h1>61. translator_time_processing_axioms</h1>
 
 <table border="1">
 <tr>
@@ -2144,8 +2504,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc53" name="toc53"></a>
-<h1>53. translator_time_simplifying_axioms</h1>
+<a id="toc62" name="toc62"></a>
+<h1>62. translator_time_simplifying_axioms</h1>
 
 <table border="1">
 <tr>
@@ -2182,8 +2542,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc54" name="toc54"></a>
-<h1>54. translator_time_translating_task</h1>
+<a id="toc63" name="toc63"></a>
+<h1>63. translator_time_translating_task</h1>
 
 <table border="1">
 <tr>
@@ -2220,8 +2580,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc55" name="toc55"></a>
-<h1>55. translator_time_writing_mutex_key</h1>
+<a id="toc64" name="toc64"></a>
+<h1>64. translator_time_writing_mutex_key</h1>
 
 <table border="1">
 <tr>
@@ -2258,8 +2618,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc56" name="toc56"></a>
-<h1>56. translator_time_writing_output</h1>
+<a id="toc65" name="toc65"></a>
+<h1>65. translator_time_writing_output</h1>
 
 <table border="1">
 <tr>
@@ -2296,8 +2656,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc57" name="toc57"></a>
-<h1>57. translator_time_writing_translation_key</h1>
+<a id="toc66" name="toc66"></a>
+<h1>66. translator_time_writing_translation_key</h1>
 
 <table border="1">
 <tr>
@@ -2334,8 +2694,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc58" name="toc58"></a>
-<h1>58. translator_total_queue_pushes</h1>
+<a id="toc67" name="toc67"></a>
+<h1>67. translator_total_queue_pushes</h1>
 
 <table border="1">
 <tr>
@@ -2372,8 +2732,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc59" name="toc59"></a>
-<h1>59. translator_uncovered_facts</h1>
+<a id="toc68" name="toc68"></a>
+<h1>68. translator_uncovered_facts</h1>
 
 <table border="1">
 <tr>
@@ -2410,8 +2770,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc60" name="toc60"></a>
-<h1>60. translator_vars</h1>
+<a id="toc69" name="toc69"></a>
+<h1>69. translator_vars</h1>
 
 <table border="1">
 <tr>
@@ -2448,8 +2808,8 @@ If in a group of configs not all configs have a value for the attribute, the con
 </tr>
 </table>
 
-<a id="toc61" name="toc61"></a>
-<h1>61. validate_error</h1>
+<a id="toc70" name="toc70"></a>
+<h1>70. validate_error</h1>
 
 <table border="1">
 <tr>
