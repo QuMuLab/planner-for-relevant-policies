@@ -186,6 +186,22 @@ ipdb = """\
 --search "astar(ipdb())"\
 """
 
+ipdbi2 = """\
+--search "astar(ipdb(min_improvement=2))"\
+"""
+
+ipdbi4 = """\
+--search "astar(ipdb(min_improvement=4))"\
+"""
+
+ipdbi8 = """\
+--search "astar(ipdb(min_improvement=8))"\
+"""
+
+ipdbi16 = """\
+--search "astar(ipdb(min_improvement=16)"\
+"""
+
 lmopt_rhw = """\
 --search "astar(lmcount(lm_rhw(),admissible=true),mpd=true)"\
 """
