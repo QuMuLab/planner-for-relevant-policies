@@ -20,7 +20,7 @@ using namespace std;
 
 // AbstractOperator -------------------------------------------------------------------------------
 
-AbstractOperator::AbstractOperator(const Operator &o, const vector<int> &var_to_index) : cost(o.get_cost()) {
+/*AbstractOperator::AbstractOperator(const Operator &o, const vector<int> &var_to_index) : cost(o.get_cost()) {
     const vector<Prevail> &prevail = o.get_prevail();
     const vector<PrePost> &pre_post = o.get_pre_post();
     for (size_t j = 0; j < prevail.size(); ++j) {
@@ -35,7 +35,7 @@ AbstractOperator::AbstractOperator(const Operator &o, const vector<int> &var_to_
             effects.push_back(make_pair(var_to_index[pre_post[j].var], pre_post[j].post));
         }
     }
-}
+}*/
 
 AbstractOperator::AbstractOperator(const vector<pair<int, int> > &prev_pairs,
                                    const vector<pair<int, int> > &pre_pairs,
@@ -46,11 +46,11 @@ AbstractOperator::AbstractOperator(const vector<pair<int, int> > &prev_pairs,
         regression_preconditions.push_back(eff_pairs[i]);
     }
     sort(regression_preconditions.begin(), regression_preconditions.end()); // for MatchTree construction
-    regression_effects.reserve(pre_pairs.size());
+    //regression_effects.reserve(pre_pairs.size());
     hash_effect = 0;
     assert(pre_pairs.size() == eff_pairs.size());
     for (size_t i = 0; i < pre_pairs.size(); ++i) {
-        regression_effects.push_back(pre_pairs[i]);
+        //regression_effects.push_back(pre_pairs[i]);
         int var = pre_pairs[i].first;
         assert(var == eff_pairs[i].first);
         int old_val = eff_pairs[i].second;
@@ -63,7 +63,7 @@ AbstractOperator::AbstractOperator(const vector<pair<int, int> > &prev_pairs,
 AbstractOperator::~AbstractOperator() {
 }
 
-void AbstractOperator::dump(const vector<int> &pattern) const {
+/*void AbstractOperator::dump(const vector<int> &pattern) const {
     cout << "AbstractOperator:" << endl;
     cout << "Conditions:" << endl;
     for (size_t i = 0; i < conditions.size(); ++i) {
@@ -75,7 +75,7 @@ void AbstractOperator::dump(const vector<int> &pattern) const {
         cout << "Variable: " << effects[i].first << " (True name: "
         << g_variable_name[pattern[effects[i].first]] << ") Value: " << effects[i].second << endl;
     }
-}
+}*/
 
 void AbstractOperator::dump2(const vector<int> &pattern) const {
     cout << "AbstractOperator:" << endl;
@@ -106,16 +106,16 @@ AbstractState::AbstractState(const State &state, const vector<int> &pattern) {
 AbstractState::~AbstractState() {
 }
 
-bool AbstractState::is_applicable(const AbstractOperator &op) const {
+/*bool AbstractState::is_applicable(const AbstractOperator &op) const {
     const vector<pair<int, int> > &conditions = op.get_conditions();
     for (size_t i = 0; i < conditions.size(); ++i) {
         if (variable_values[conditions[i].first] != conditions[i].second)
             return false;
     }
     return true;
-}
+}*/
 
-void AbstractState::apply_operator(const AbstractOperator &op) {
+/*void AbstractState::apply_operator(const AbstractOperator &op) {
     assert(is_applicable(op));
     const vector<pair<int, int> > &effects = op.get_effects();
     for (size_t i = 0; i < effects.size(); ++i) {
@@ -123,7 +123,7 @@ void AbstractState::apply_operator(const AbstractOperator &op) {
         int val = effects[i].second;
         variable_values[var] = val;
     }
-}
+}*/
 
 bool AbstractState::is_goal_state(const vector<pair<int, int> > &abstract_goal) const {
     for (size_t i = 0; i < abstract_goal.size(); ++i) {
@@ -169,31 +169,31 @@ MatchTree::Node::~Node() {
 }
 
 void MatchTree::build_recursively(const AbstractOperator &op, int pre_index, int old_index, Node *node, Node *parent) {
-    cout << endl;
-    cout << "node->test_var = " << node->test_var << endl;
-    cout << "node->applicable_operators.size() = " << node->applicable_operators.size() << endl;
-    cout << "pre_index = " << pre_index << endl;
+    //cout << endl;
+    //cout << "node->test_var = " << node->test_var << endl;
+    //cout << "node->applicable_operators.size() = " << node->applicable_operators.size() << endl;
+    //cout << "pre_index = " << pre_index << endl;
     const vector<pair<int, int> > &regression_preconditions = op.get_regression_preconditions();
     if (pre_index == regression_preconditions.size()) { // all preconditions have been checked, insert op
-        cout << "inserting operator" << endl;
+        //cout << "inserting operator" << endl;
         node->applicable_operators.push_back(&op);
     } else {
         const pair<int, int> &var_val = regression_preconditions[pre_index];
         if (node->test_var == var_val.first) { // operator has a precondition on test_var
-            cout << "case 1: operator has precondition on actual test_var" << endl;
+            //cout << "case 1: operator has precondition on actual test_var" << endl;
             if (node->successors[var_val.second] == 0) { // child with correct value doesn't exist, create
-                cout << "child doesn't exist, create" << endl;
+                //cout << "child doesn't exist, create" << endl;
                 Node *new_node = new Node();
                 node->successors[var_val.second] = new_node;
                 build_recursively(op, pre_index + 1, pre_index, new_node, node);
             } else { // child already exists, follow
-                cout << "child exists, follow" << endl;
+                //cout << "child exists, follow" << endl;
                 build_recursively(op, pre_index + 1, pre_index, node->successors[var_val.second], node);
             }
         } else if (node->test_var == -1) { // node is a leaf
-            cout << "case 2: leaf node" << endl;
+            //cout << "case 2: leaf node" << endl;
             node->test_var = var_val.first;
-            cout << "assigning new value of " << var_val.first << " to node->test_var" << endl;
+            //cout << "assigning new value of " << var_val.first << " to node->test_var" << endl;
             node->successors = new Node *[g_variable_domain[pattern[var_val.first]]];
             for (int i = 0; i < g_variable_domain[pattern[var_val.first]]; ++i) {
                 node->successors[i] = 0;
@@ -202,7 +202,7 @@ void MatchTree::build_recursively(const AbstractOperator &op, int pre_index, int
             node->successors[var_val.second] = new_node;
             build_recursively(op, pre_index + 1, pre_index, new_node, node);
         } else if (node->test_var > var_val.first) { // variable has been left out
-            cout << "case 3: variable has been left out" << endl;
+            //cout << "case 3: variable has been left out" << endl;
             assert(parent != 0); // if node is root and therefore parent 0, we should never get in this if clause
             Node *new_node = new Node(var_val.first, g_variable_domain[pattern[var_val.first]]); // new node gets the left out variable as test_var
             if (old_index == pre_index) { // method was called from the last case, parent -> node is a *-edge
@@ -218,14 +218,14 @@ void MatchTree::build_recursively(const AbstractOperator &op, int pre_index, int
             new_node->successors[var_val.second] = new_nodes_child; // new_node gets a default child
             build_recursively(op, pre_index + 1, pre_index, new_nodes_child, new_node);
         } else { // operator doesn't have a precondition on test_var, follow/create *-edge
-            cout << "case 4: *-edge" << endl;
+            //cout << "case 4: *-edge" << endl;
             if (node->star_successor == 0) { // *-edge doesn't exist, create
-                cout << "*-edge doesn't exist, create" << endl;
+                //cout << "*-edge doesn't exist, create" << endl;
                 Node *new_node = new Node();
                 node->star_successor = new_node;
                 build_recursively(op, pre_index, pre_index, new_node, node);
             } else { // *-edge exists, follow
-                cout << "*-edge exists, follow" << endl;
+                //cout << "*-edge exists, follow" << endl;
                 build_recursively(op, pre_index, pre_index, node->star_successor, node);
             }
         }
@@ -233,43 +233,59 @@ void MatchTree::build_recursively(const AbstractOperator &op, int pre_index, int
 }
 
 void MatchTree::insert(const AbstractOperator &op) {
-    cout << "inserting operator into MatchTree:" << endl;
-    op.dump2(pattern);
+    //cout << "inserting operator into MatchTree:" << endl;
+    //op.dump2(pattern);
     if (root == 0)
         root = new Node(0, g_variable_domain[pattern[0]]); // initialize root-node with var0
     build_recursively(op, 0, 0, root, 0);
-    cout << endl;
+    //cout << endl;
 }
 
-void MatchTree::traverse(Node *node, int var_index, const size_t state_index,
+void MatchTree::traverse(Node *node, size_t var_index, const size_t state_index,
                          vector<const AbstractOperator *> &applicable_operators) const {
-    cout << "node->test_var = " << node->test_var << endl;
-    //TODO: handle the case where a variable has been left out in the MatchTree, var_index++ or something
-    if (node->applicable_operators.empty())
-        cout << "no applicable operators at this node" << endl;
-    else {
-        cout << "applicable_operators.size() = " << node->applicable_operators.size() << endl;
+    //cout << "node->test_var = " << node->test_var << endl;
+    //cout << "var_index = " << var_index << endl;
+    if (!node->applicable_operators.empty()) {
+        //cout << "applicable_operators.size() = " << node->applicable_operators.size() << endl;
         for (size_t i = 0; i < node->applicable_operators.size(); ++i) {
-            node->applicable_operators[i]->dump2(pattern);
             applicable_operators.push_back(node->applicable_operators[i]);
         }
-    }
-    cout << "var_index = " << var_index << endl;
+    } //else
+        //cout << "no applicable operators at this node" << endl;
     if (var_index == pattern.size()) // all state vars have been checked
+        return;
+    if (node->test_var != -1) { // not a leaf
+        while (var_index != node->test_var) {
+            ++var_index;
+            //cout << "skipping var index, next one is: " << var_index << endl;
+            if (var_index == pattern.size()) { // I think this cannot happen in this if-block
+                assert(false);
+            }
+        }
+    } else
         return;
     int temp = state_index / n_i[var_index];
     int val = temp % g_variable_domain[pattern[var_index]];
-    if (node->successors[val] != 0) // no leaf reached
+    //cout << "calculated value for var_index: " << val << endl;
+    if (node->successors[val] != 0) { // no leaf reached
+        //cout << "recursive call for child with value " << val << " of test_var" << endl;
         traverse(node->successors[val], var_index + 1, state_index, applicable_operators);
-    if (node->star_successor != 0) // always follow the *-edge, if exists
+        //cout << "back from recursive call (for successors[" << val << "]) to node with test_var = " << node->test_var << endl;
+    } //else
+        //cout << "no child for this value of test_var" << endl;
+    if (node->star_successor != 0) { // always follow the *-edge, if exists
+        //cout << "recursive call for star_successor" << endl;
         traverse(node->star_successor, var_index + 1, state_index, applicable_operators);
+        //cout << "back from recursive call (for star_successor) to node with test_var = " << node->test_var << endl;
+    } //else
+        //cout << "no star_successor" << endl;
 }
 
 void MatchTree::get_applicable_operators(size_t state_index,
                                          vector<const AbstractOperator *> &applicable_operators) const {
-    cout << "getting applicable operators for state_index = " << state_index << endl;
+    //cout << "getting applicable operators for state_index = " << state_index << endl;
     traverse(root, 0, state_index, applicable_operators);
-    cout << endl;
+    //cout << endl;
 }
 
 void MatchTree::dump(Node *node) const {
@@ -310,13 +326,6 @@ void MatchTree::dump(Node *node) const {
 }
 
 // PDBHeuristic ---------------------------------------------------------------
-
-/*PDBHeuristic::PDBHeuristic(int max_abstract_states) {
-    verify_no_axioms_no_cond_effects();
-    Timer timer;
-    generate_pattern(max_abstract_states);
-    cout << "PDB construction time: " << timer << endl;
-}*/
 
 PDBHeuristic::PDBHeuristic(const vector<int> &pattern, bool dump)
     : Heuristic(Heuristic::default_options()) {
@@ -421,54 +430,19 @@ void PDBHeuristic::build_abstract_operators(const Operator &op, vector<AbstractO
 
 void PDBHeuristic::create_pdb() {
     vector<AbstractOperator> operators;
-    //size_t index = 0;
     for (size_t i = 0; i < g_operators.size(); ++i) {
         build_abstract_operators(g_operators[i], operators);
-        /*g_operators[i].dump();
-        cout << "abstracted and multiplied out operators:" << endl;
-        while (index < operators.size()) {
-            operators[i].dump(pattern);
-            ++index;
-        }*/
     }
 
     // so far still use the multiplied out operators in order to have no more
     // operators with pre = -1. Better: build abstract operators on the fly
     // while creating the op_tree
-    /*MatchTree match_tree(pattern, n_i);
+    // TODO: blödsinn? operatoren müssen ja eh einmal gebaut werden, während der Tree-Konstruktion
+    // nicht unbedingt vorteilhaft...
+    MatchTree match_tree(pattern, n_i);
     for (size_t i = 0; i < operators.size(); ++i) {
         match_tree.insert(operators[i]);
-    }*/
-    //match_tree.dump();
-
-    // old method for comparison reasons
-    /*vector<AbstractOperator> operators2;
-    for (size_t i = 0; i < g_operators.size(); ++i) {
-        AbstractOperator ao(g_operators[i], variable_to_index);
-        if (!ao.get_effects().empty())
-            operators2.push_back(ao);
-    }*/
-
-    // assertion tests for domain in which no operators with pre = -1 exist
-    // in this case, both methods should generate the exact same abstract operators
-    /*assert(operators.size() == operators2.size());
-    for (size_t i = 0; i < operators.size(); ++i) {
-        //cout << "i = " << i << endl;
-        const vector<pair<int, int> > &conditions = operators[i].get_conditions();
-        const vector<pair<int, int> > &conditions2 = operators2[i].get_conditions();
-        assert(conditions.size() == conditions2.size());
-        for (size_t j = 0; j < conditions.size(); ++j) {
-            assert(conditions[j].first == conditions2[j].first);
-            assert(conditions[j].second == conditions2[j].second);
-        }
-        const vector<pair<int, int> > &effects = operators[i].get_effects();
-        const vector<pair<int, int> > &effects2 = operators2[i].get_effects();
-        assert(effects.size() == effects2.size());
-        for (size_t j = 0; j < effects.size(); ++j) {
-            assert(effects[j].first == effects2[j].first);
-            assert(effects[j].second == effects2[j].second);
-        }
-    }*/
+    }
 
     vector<pair<int, int> > abstracted_goal;
     for (size_t i = 0; i < g_goal.size(); ++i) {
@@ -477,16 +451,11 @@ void PDBHeuristic::create_pdb() {
         }
     }
 
-    // all data structures ending on "2" is just for comparison (implementing old create_pdb)
-    /*vector<vector<Edge> > back_edges;
-    back_edges.resize(num_states);
-    vector<int> distances2;
-    distances2.reserve(num_states);
-    AdaptiveQueue<size_t> pq2; // (first implicit entry: priority,) second entry: index for an abstract state*/
-
     distances.reserve(num_states);
     AdaptiveQueue<size_t> pq; // (first implicit entry: priority,) second entry: index for an abstract state
 
+    // TODO: get rid of AbstractState and hash_index here
+    // need a way to check for a given state index whether it's a goal state or not
     vector<int> ranges;
     for (size_t i = 0; i < pattern.size(); ++i) {
         ranges.push_back(g_variable_domain[pattern[i]]);
@@ -498,76 +467,30 @@ void PDBHeuristic::create_pdb() {
 
         if (abstract_state.is_goal_state(abstracted_goal)) {
             pq.push(0, counter);
-            //pq2.push(0, counter);
             distances.push_back(0);
-            //distances2.push_back(0);
         }
         else {
             distances.push_back(numeric_limits<int>::max());
-            //distances2.push_back(numeric_limits<int>::max());
         }
-
-        // old edges generation
-        /*for (size_t j = 0; j < operators2.size(); ++j) {
-            if (abstract_state.is_applicable(operators2[j])) {
-                //cout << "applying operator:" << endl;
-                //operators[j].dump(pattern);
-                AbstractState next_state = abstract_state;
-                next_state.apply_operator(operators2[j]);
-                //next_state.dump(pattern);
-                size_t state_index = hash_index(next_state);
-                if (state_index == counter) {
-                    //cout << "operator didn't lead to a new state, ignoring!" << endl;
-                    continue;
-                } else {
-                    assert(counter != state_index);
-                    back_edges[state_index].push_back(Edge(operators[j].get_cost(), counter));
-                }
-            }
-        }*/
     }
 
-    while (!pq.empty()/* && !pq2.empty()*/) {
+    while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
-        //pair<int, size_t> node2 = pq2.pop();
-        //cout << "popped (new method): " << node.first << " " << node.second << endl;
-        //cout << "popped (old method): " << node2.first << " " << node2.second << endl;
-        //assert(node == node2);
         int distance = node.first;
         size_t state_index = node.second;
         if (distance > distances[state_index]) {
-            //assert(distance > distances2[state_index]);
             continue;
         }
 
-        // old Dijkstra
-        /*const vector<Edge> &edges = back_edges[state_index];
-        for (size_t i = 0; i < edges.size(); ++i) {
-            size_t predecessor = edges[i].target;
-            //cout << "predecessor index (old): " << predecessor << endl;
-            int cost = edges[i].cost;
-            int alternative_cost = distances2[state_index] + cost;
-            if (alternative_cost < distances2[predecessor]) {
-                distances2[predecessor] = alternative_cost;
-                pq2.push(alternative_cost, predecessor);
-            }
-        }*/
-
-        /*vector<const AbstractOperator *> applicable_operators;
-        match_tree.get_applicable_operators(state_index, applicable_operators);
-        cout << "applicable operators according to match_tree:" << endl;
-        for (size_t i = 0; i < applicable_operators.size(); ++i) {
-            applicable_operators[i]->dump2(pattern);
-            cout << endl;
-        }*/
-
-        //cout << "applicable operators according to old method:" << endl;
-        // regress abstract_state
+        /*// regress abstract_state - old
+        //cout << "===========================================================================" << endl;
+        vector<AbstractOperator> app_ops_old;
         AbstractState abstract_state = inv_hash_index(state_index);
+        //abstract_state.dump(pattern);
+        //cout << "applicable operators according to old method:" << endl;
         for (size_t i = 0; i < operators.size(); ++i) {
             const vector<pair<int, int> > &regr_pre = operators[i].get_regression_preconditions();
             //const vector<pair<int, int> > &regr_eff = operators[i].get_regression_effects();
-            int cost = operators[i].get_cost();
             bool eff_in_state = true;
             for (size_t j = 0; j < regr_pre.size(); ++j) {
                 if (abstract_state[regr_pre[j].first] != regr_pre[j].second) {
@@ -578,34 +501,41 @@ void PDBHeuristic::create_pdb() {
             if (eff_in_state) {
                 //operators[i].dump2(pattern);
                 //cout << endl;
-
-                /*vector<int> var_vals = abstract_state.get_var_vals();
-                for (size_t j = 0; j < regr_eff.size(); ++j)
-                    var_vals[regr_eff[j].first] = regr_eff[j].second;
-                AbstractState regressed_state(var_vals);
-                size_t predecessor = hash_index(regressed_state);
-                //cout << "predecessor index (new): " << predecessor << endl;*/
-                size_t predecessor = state_index + operators[i].get_hash_effect();
-
-                // Dijkstra
-                int alternative_cost = distances[state_index] + cost;
-                if (alternative_cost < distances[predecessor]) {
-                    distances[predecessor] = alternative_cost;
-                    pq.push(alternative_cost, predecessor);
-                }
+                app_ops_old.push_back(operators[i]);
             }
         }
-    }
+        //cout << endl;*/
 
-    /*assert(distances2.size() == distances.size());
-    for (size_t i = 0; i < distances2.size(); ++i) {
-        if (distances2[i] != distances[i]) {
-            cout << "distances2[" << i << "] = " << distances2[i] << " != " << distances[i] << " = distances[" << i << "]" << endl;
+        // regress abstract_state - new
+        vector<const AbstractOperator *> applicable_operators;
+        match_tree.get_applicable_operators(state_index, applicable_operators);
+        //cout << "applicable operators according to match_tree:" << endl;
+        for (size_t i = 0; i < applicable_operators.size(); ++i) {
+            //applicable_operators[i]->dump2(pattern);
+            //cout << endl;
+            size_t predecessor = state_index + applicable_operators[i]->get_hash_effect();
+            // Dijkstra
+            int alternative_cost = distances[state_index] + applicable_operators[i]->get_cost();
+            if (alternative_cost < distances[predecessor]) {
+                distances[predecessor] = alternative_cost;
+                pq.push(alternative_cost, predecessor);
+            }
         }
-        assert(distances2[i] == distances[i]);
+        //cout << endl;
+
+        /*assert(app_ops_old.size() == applicable_operators.size());
+        for (size_t i = 0; i < app_ops_old.size(); ++i) {
+            size_t hash_effect_old = app_ops_old[i].get_hash_effect();
+            bool found = false;
+            for (size_t j = 0; j < applicable_operators.size(); ++j) {
+                if (applicable_operators[j]->get_hash_effect() == hash_effect_old) {
+                    found = true;
+                    break;
+                }
+            }
+            assert(found);
+        }*/
     }
-    cout << "assertion checked - distances correctly calculated" << endl;*/
-    //cout << "done creating" << endl;
 }
 
 void PDBHeuristic::set_pattern(const vector<int> &pat) {
@@ -623,6 +553,7 @@ void PDBHeuristic::set_pattern(const vector<int> &pat) {
     create_pdb();
 }
 
+// TODO: do this for a concrete state directly (after getting rid of AbstractState everywhere)
 size_t PDBHeuristic::hash_index(const AbstractState &abstract_state) const {
     size_t index = 0;
     for (int i = 0; i < pattern.size(); ++i) {
@@ -634,7 +565,7 @@ size_t PDBHeuristic::hash_index(const AbstractState &abstract_state) const {
 AbstractState PDBHeuristic::inv_hash_index(int index) const {
     vector<int> var_vals;
     var_vals.resize(pattern.size());
-    for (int n = 0; n < pattern.size(); ++n) {
+    for (size_t n = 0; n < pattern.size(); ++n) {
         int temp = index / n_i[n];
         var_vals[n] = temp % g_variable_domain[pattern[n]];
     }
@@ -661,6 +592,7 @@ void PDBHeuristic::initialize() {
     //cout << "Didn't do anything. Done initializing." << endl;
 }
 
+// TODO: hash State directly (with help of pattern)
 int PDBHeuristic::compute_heuristic(const State &state) {
     int h = distances[hash_index(AbstractState(state, pattern))];
     if (h == numeric_limits<int>::max())
