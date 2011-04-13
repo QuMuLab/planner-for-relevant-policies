@@ -199,7 +199,15 @@ ipdbi8 = """\
 """
 
 ipdbi16 = """\
---search "astar(ipdb(min_improvement=16)"\
+--search "astar(ipdb(min_improvement=16))"\
+"""
+
+gapdb = """\
+--search "astar(gapdb())"\
+"""
+
+gapdb_disjoint = """\
+--search "astar(gapdb(disjoint=true))"
 """
 
 lmopt_rhw = """\
