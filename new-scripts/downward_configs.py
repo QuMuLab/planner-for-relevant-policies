@@ -190,12 +190,36 @@ ipdbi2 = """\
 --search "astar(ipdb(min_improvement=2))"\
 """
 
+ipdbi3 = """\
+--search "astar(ipdb(min_improvement=3))"\
+"""
+
 ipdbi4 = """\
 --search "astar(ipdb(min_improvement=4))"\
 """
 
+ipdbi5 = """\
+--search "astar(ipdb(min_improvement=5))"\
+"""
+
+ipdbi6 = """\
+--search "astar(ipdb(min_improvement=6))"\
+"""
+
+ipdbi7 = """\
+--search "astar(ipdb(min_improvement=7))"\
+"""
+
 ipdbi8 = """\
 --search "astar(ipdb(min_improvement=8))"\
+"""
+
+ipdbi9 = """\
+--search "astar(ipdb(min_improvement=9))"\
+"""
+
+ipdbi10 = """\
+--search "astar(ipdb(min_improvement=10))"\
 """
 
 ipdbi16 = """\
