@@ -178,6 +178,18 @@ pdb100000000 = """\
 --search "astar(pdb(max_states=100000000))"\
 """
 
+pdb250000000 = """\
+--search "astar(pdb(max_states=250000000))"\
+"""
+
+pdb500000000 = """\
+--search "astar(pdb(max_states=500000000))"\
+"""
+
+pdb1000000000 = """\
+--search "astar(pdb(max_states=1000000000))"\
+"""
+
 pdbs = """\
 --search "astar(pdbs())"\
 """
@@ -222,12 +234,132 @@ ipdbi10 = """\
 --search "astar(ipdb(min_improvement=10))"\
 """
 
+ipdbi11 = """\
+--search "astar(ipdb(min_improvement=11))"\
+"""
+
+ipdbi12 = """\
+--search "astar(ipdb(min_improvement=12))"\
+"""
+
+ipdbi13 = """\
+--search "astar(ipdb(min_improvement=13))"\
+"""
+
+ipdbi14 = """\
+--search "astar(ipdb(min_improvement=14))"\
+"""
+
+ipdbi15 = """\
+--search "astar(ipdb(min_improvement=15))"\
+"""
+
 ipdbi16 = """\
 --search "astar(ipdb(min_improvement=16))"\
 """
 
+ipdbi17 = """\
+--search "astar(ipdb(min_improvement=17))"\
+"""
+
+ipdbi18 = """\
+--search "astar(ipdb(min_improvement=18))"\
+"""
+
+ipdbi19 = """\
+--search "astar(ipdb(min_improvement=19))"\
+"""
+
+ipdbi20 = """\
+--search "astar(ipdb(min_improvement=20))"\
+"""
+
 gapdb = """\
 --search "astar(gapdb())"\
+"""
+
+gapdb_e10 = """\
+--search "astar(gapdb(num_episodes=10))"\
+"""
+
+gapdb_e20 = """\
+--search "astar(gapdb(num_episodes=20))"\
+"""
+
+gapdb_e30 = """\
+--search "astar(gapdb(num_episodes=30))"\
+"""
+
+gapdb_e40 = """\
+--search "astar(gapdb(num_episodes=40))"\
+"""
+
+gapdb_e50 = """\
+--search "astar(gapdb(num_episodes=50))"\
+"""
+
+gapdb_e60 = """\
+--search "astar(gapdb(num_episodes=60))"\
+"""
+
+gapdb_e70 = """\
+--search "astar(gapdb(num_episodes=70))"\
+"""
+
+gapdb_e80 = """\
+--search "astar(gapdb(num_episodes=80))"\
+"""
+
+gapdb_e90 = """\
+--search "astar(gapdb(num_episodes=90))"\
+"""
+
+gapdb_e100 = """\
+--search "astar(gapdb(num_episodes=100))"\
+"""
+
+gapdb_max100 = """\
+--search "astar(gapdb(pdb_max_size=100))"\
+"""
+
+gapdb_max1000 = """\
+--search "astar(gapdb(pdb_max_size=1000))"\
+"""
+
+gapdb_max10000 = """\
+--search "astar(gapdb(pdb_max_size=10000))"\
+"""
+
+gapdb_max100000 = """\
+--search "astar(gapdb(pdb_max_size=100000))"\
+"""
+
+gapdb_max1000000 = """\
+--search "astar(gapdb(pdb_max_size=1000000))"\
+"""
+
+gapdb_c10 = """\
+--search "astar(gapdb(pdb(num_collections=10))"\
+"""
+
+gapdb_c20 = """\
+--search "astar(gapdb(pdb(num_collections=20))"\
+"""
+
+gapdb_c40 = """\
+--search "astar(gapdb(pdb(num_collections=40))"\
+"""
+
+gapdb_c80 = """\
+--search "astar(gapdb(pdb(num_collections=80))"\
+"""
+
+gapdb_m5 = """\
+--search "astar(gapdb(pdb(mutation_probability=5))"\
+"""
+
+gapdb_m10 = """\
+--search "astar(gapdb(pdb(mutation_probability=10))"\
 """
 
 gapdb_disjoint = """\
