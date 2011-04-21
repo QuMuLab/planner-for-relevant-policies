@@ -233,6 +233,22 @@ def suite_pdb_tests():
         "woodworking-opt08-strips",
         ]
 
+def suite_ipdb():
+    return [
+        "airport",
+        "logistics00",
+        "pipesworld-notankage",
+        "psr-small",
+        "pipesworld-tankage",
+        "satellite",
+        "tpp",
+        ]
+        
+def suite_ipdb2():   
+    return [
+        "sokoban-opt08-strips",
+        ]
+
 def suite_interesting():
     # A domain is boring if all planners solve all tasks in < 1 sec.
     # We include logistics00 even though it has that property because
