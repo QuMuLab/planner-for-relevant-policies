@@ -348,27 +348,27 @@ gapdb_max1000000 = """\
 """
 
 gapdb_c10 = """\
---search "astar(gapdb(pdb(num_collections=10))"\
+--search "astar(gapdb(num_collections=10))"\
 """
 
 gapdb_c20 = """\
---search "astar(gapdb(pdb(num_collections=20))"\
+--search "astar(gapdb(num_collections=20))"\
 """
 
 gapdb_c40 = """\
---search "astar(gapdb(pdb(num_collections=40))"\
+--search "astar(gapdb(num_collections=40))"\
 """
 
 gapdb_c80 = """\
---search "astar(gapdb(pdb(num_collections=80))"\
+--search "astar(gapdb(num_collections=80))"\
 """
 
 gapdb_m5 = """\
---search "astar(gapdb(pdb(mutation_probability=5))"\
+--search "astar(gapdb(mutation_probability=5))"\
 """
 
 gapdb_m10 = """\
---search "astar(gapdb(pdb(mutation_probability=10))"\
+--search "astar(gapdb(mutation_probability=10))"\
 """
 
 gapdb_disjoint = """\
