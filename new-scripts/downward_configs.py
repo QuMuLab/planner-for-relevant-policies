@@ -280,7 +280,7 @@ ipdb_hhh = """\
 
 ipdb_hhh2 = """\
 --search 
-"astar(ipdb(num_samples=1000,min_improvements=10,pdb_max_size=5000000))"
+"astar(ipdb(num_samples=1000,min_improvement=10,pdb_max_size=5000000))"
 """
 
 gapdb = """\
