@@ -1,7 +1,0 @@
-build_collection:
-ab 2818: "some random walks to initialize estimates"
-ab 2864: "update estimates"
-
-eval_extension_vec:
-Konfidenzintervall, Wilson's Formula
-berechnet viele Zahlen - ist das die "counting approximation", wie wir sie implementieren?
