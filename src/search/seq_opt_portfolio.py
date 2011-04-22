@@ -9,6 +9,18 @@ import sys
 DEFAULT_TIMEOUT = 1800
 
 
+def set_ipc_memory_limit():
+    # Set limit of 6 GB (the IPC limit) minus 64 MB as a safety buffer
+    # for this process and the ones that called it.
+    IPC_LIMIT = 6 * 2 ** 30        # 6 GB is the IPC limit
+    SAFETY_BUFFER = 64 * 2 ** 20   # 32 MB for this process and its ancestors
+    limit = IPC_LIMIT - SAFETY_BUFFER
+    try:
+        resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+    except ValueError:
+        print "WARNING! failed to set resource limit"
+
+
 def run(configs, timeout=DEFAULT_TIMEOUT):
     extra_args = sys.argv[1:]
     assert len(extra_args) == 3, extra_args
@@ -46,6 +58,7 @@ def run(configs, timeout=DEFAULT_TIMEOUT):
         if not os.fork():
             os.close(0)
             os.open("output", os.O_RDONLY)
+            set_ipc_memory_limit()
             if relative_time != remaining_relative_time:
                 resource.setrlimit(resource.RLIMIT_CPU, (
                     int(run_timeout), int(run_timeout)))
