@@ -161,7 +161,7 @@ lmopt_search = """\
 """
 
 seq_sat_lama_ipc2011 = """\
---heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))"\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))"\ 
 --search "iterated([lazy_greedy([hff,hlm],preferred=[hff,hlm]),\
 lazy_wastar([hff,hlm],preferred=[hff,hlm],w=5),\
 lazy_wastar([hff,hlm],preferred=[hff,hlm],w=3),\
