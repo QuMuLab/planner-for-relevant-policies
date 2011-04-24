@@ -133,19 +133,23 @@ lmopt_zg = """\
 """
 
 lmopt_rhw_hm1 = """\
---search "astar(lmcount(lm_merged(lm_rhw(),lm_hm(m=1)),admissible=true),mpd=true)"\
+--search 
+"astar(lmcount(lm_merged([lm_rhw(),lm_hm(m=1)]),admissible=true),mpd=true)"\
 """
 
 lmopt_rhw_zg = """\
---search "astar(lmcount(lm_merged(lm_rhw(),lm_zg()),admissible=true),mpd=true)"\
+--search 
+"astar(lmcount(lm_merged([lm_rhw(),lm_zg()]),admissible=true),mpd=true)"\
 """
 
 lmopt_hm1_zg = """\
---search "astar(lmcount(lm_merged(lm_zg(),lm_hm(m=1)),admissible=true),mpd=true)"\
+--search 
+"astar(lmcount(lm_merged([lm_zg(),lm_hm(m=1)]),admissible=true),mpd=true)"\
 """
 
 lmopt_rhw_hm1_zg = """\
---search "astar(lmcount(lm_merged(lm_rhw(),lm_zg(),lm_hm(m=1)),admissible=true),mpd=true)"\
+--search 
+"astar(lmcount(lm_merged([lm_rhw(),lm_zg(),lm_hm(m=1)]),admissible=true),mpd=true)"\
 """
 
 lmopt_exhaust = """\
@@ -157,19 +161,18 @@ lmopt_search = """\
 """
 
 seq_sat_lama_ipc2011 = """\
---heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
---search "iterated(lazy_greedy(hff,hlm,preferred=(hff,hlm)),\
-lazy_wastar(hff,hlm,preferred=(hff,hlm),w=5),\
-lazy_wastar(hff,hlm,preferred=(hff,hlm),w=3),\
-lazy_wastar(hff,hlm,preferred=(hff,hlm),w=2),\
-lazy_wastar(hff,hlm,preferred=(hff,hlm),w=1),\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))"\
+--search "iterated([lazy_greedy([hff,hlm],preferred=[hff,hlm]),\
+lazy_wastar([hff,hlm],preferred=[hff,hlm],w=5),\
+lazy_wastar([hff,hlm],preferred=[hff,hlm],w=3),\
+lazy_wastar([hff,hlm],preferred=[hff,hlm],w=2),\
+lazy_wastar([hff,hlm],preferred=[hff,hlm],w=1)],\
 repeat_last=true,continue_on_fail=true)"\
 """
 
 seq_opt_bjolp_ipc2011 = """\
---search "astar(lmcount(lm_merged(lm_rhw(),lm_hm(m=1)),admissible=true),mpd=true)"\
+--search "astar(lmcount(lm_merged([lm_rhw(),lm_hm(m=1)]),admissible=true),mpd=true)"\
 """
-
 
 iter_ff = """\
 --heuristic "h=ff(cost_type=1)" \
