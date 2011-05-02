@@ -170,6 +170,11 @@ lazy_wastar([hff,hlm],preferred=[hff,hlm],w=1)],\
 repeat_last=true,continue_on_fail=true)"\
 """
 
+seq_sat_lama_ipc2011_new = """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "lazy_greedy([hff,hlm],preferred=[hff,hlm])"
+"""
+
 seq_opt_bjolp_ipc2011 = """\
 --search "astar(lmcount(lm_merged([lm_rhw(),lm_hm(m=1)]),admissible=true),mpd=true)"\
 """
