@@ -4,15 +4,15 @@ filenames_old = ["ipdb_hhh_old/logistics00-iPDB-default.txt", "ipdb_hhh_old/airp
                  "ipdb_hhh_old/pnt-iPDB-best.txt", "ipdb_hhh_old/pwt-iPDB-best.txt", 
                  "ipdb_hhh_old/psr-iPDB-default.txt", "ipdb_hhh_old/sat-iPDB-default.txt", 
                  "ipdb_hhh_old/tpp-iPDB-default.txt"]
-filenames_downward = ["hhh_ipdb1_20110502/exp-mo-hhh_ipdb1-eval-p-abs.html", 
-                      "hhh_ipdb1_20110502/exp-mo-hhh_ipdb1-eval-p-abs.html",
-                      "hhh_ipdb1_20110502/exp-mo-hhh_ipdb1-eval-p-abs.html",
-                      "hhh_ipdb1_20110502/exp-mo-hhh_ipdb1-eval-p-abs.html",
-                      "hhh_ipdb1_20110502/exp-mo-hhh_ipdb1-eval-p-abs.html",
-                      "hhh_ipdb1_20110502/exp-mo-hhh_ipdb1-eval-p-abs.html",
-                      "hhh_ipdb1_20110502/exp-mo-hhh_ipdb1-eval-p-abs.html"]
+filenames_downward = ["hhh_20110505/exp-ss-hhh-eval-p-abs.html", 
+                      "hhh_ap_20110505/exp-ss-hhh-ap-eval-p-abs.html",
+                      "hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html",
+                      "hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html",
+                      "hhh_20110505/exp-ss-hhh-eval-p-abs.html",
+                      "hhh_20110505/exp-ss-hhh-eval-p-abs.html",
+                      "hhh_20110505/exp-ss-hhh-eval-p-abs.html"]
 domains = ["log", "air", "pipesworld-not", "pipesworld-tan", "psr", "sat", "tpp"]
-index = 1
+index = 6
 assert(len(filenames_old) == len(filenames_downward))
 domain = domains[index]
 
@@ -187,6 +187,7 @@ def evaluate_downward(filename):
     
 
 if __name__ == '__main__':
+    
     result_old = evaluate_old(filenames_old[index])
     
     result_downward = evaluate_downward(filenames_downward[index])
