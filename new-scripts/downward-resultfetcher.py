@@ -396,6 +396,7 @@ def add_search_parsing(eval):
     eval.add_pattern('dead_ends', r'Dead ends: (.+) state\(s\)\.', type=int,
                      required=False)
     eval.add_pattern('landmarks', r'Discovered (\d+) landmarks', type=int, required=False)
+    eval.add_pattern('landmark time', r'Landmarks generation time: (.+)s', type=float, required=False)
 
 
 def add_search_functions(eval):
