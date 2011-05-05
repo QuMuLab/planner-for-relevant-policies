@@ -275,12 +275,15 @@ ipdbi20 = """\
 """
 
 ipdb_hhh = """\
---search "astar(ipdb(num_samples=1000,min_improvement=10))"\
+--search "astar(ipdb())"\
 """
 
-ipdb_hhh2 = """\
---search 
-"astar(ipdb(num_samples=1000,min_improvement=10,pdb_max_size=5000000))"
+ipdb_hhh_pipesworld = """\
+--search "astar(ipdb(num_samples=250,min_improvement=3))"\
+"""
+
+ipdb_hhh_airport = """\
+--search "astar(ipdb(num_samples=50,min_improvement=5))"\
 """
 
 gapdb = """\

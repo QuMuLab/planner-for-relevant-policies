@@ -235,18 +235,10 @@ def suite_pdb_tests():
 
 def suite_ipdb():
     return [
-        "airport",
         "logistics00",
-        "pipesworld-notankage",
         "psr-small",
-        "pipesworld-tankage",
         "satellite",
         "tpp",
-        ]
-        
-def suite_ipdb2():   
-    return [
-        "sokoban-opt08-strips",
         ]
 
 def suite_interesting():
