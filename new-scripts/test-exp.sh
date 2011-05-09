@@ -3,7 +3,7 @@
 EXPNAME=test-exp
 
 CONFIGS=downward_configs.py:yY
-QUEUE=athlon_core.q
+QUEUE=xeon_core.q
 
 SUITE=gripper:prob01.pddl,zenotravel:pfile1
 
