@@ -12,21 +12,20 @@ def kill_pgrp(pgrp, sig):
     try:
         os.killpg(pgrp, sig)
     except OSError:
-        #TODO: log error somewhere
-        pass
+        msg = "Process group %s could not be killed with signal %s"
+        print msg % (pgrp, sig)
 
 
 def set_limit(kind, amount):
     try:
         resource.setrlimit(kind, (amount, amount))
     except (OSError, ValueError), e:
-        #TODO: log error somewhere or return a success flag that makes the call
-        # abort
-        pass
+        msg = "Resource limit for %s could not be set to %s"
+        print msg % (kind, amount)
 
 
 class Call(subprocess.Popen):
-    def __init__(self, args, time_limit=1800, wall_clock_time_limit=1800,
+    def __init__(self, args, time_limit=1800, wall_clock_time_limit=None,
                  mem_limit=2048, kill_delay=5, check_interval=0.1, **kwargs):
         """
         mem_limit =         Memory in MiB
@@ -34,9 +33,8 @@ class Call(subprocess.Popen):
         check_interval =    How often we query the process group status
         """
         self.time_limit = time_limit
-        self.wall_clock_time_limit = wall_clock_time_limit
-        # Memory in Bytes
-        self.mem_limit = mem_limit * 1024 * 1024
+        self.wall_clock_time_limit = wall_clock_time_limit or time_limit * 1.5
+        self.mem_limit = mem_limit
 
         self.kill_delay = kill_delay
         self.check_interval = check_interval
@@ -55,7 +53,8 @@ class Call(subprocess.Popen):
         def prepare_call():
             os.setpgrp()
             set_limit(resource.RLIMIT_CPU, self.time_limit)
-            set_limit(resource.RLIMIT_AS, self.mem_limit)
+            # Memory in Bytes
+            set_limit(resource.RLIMIT_AS, self.mem_limit * 1024 * 1024)
             set_limit(resource.RLIMIT_CORE, 0)
 
         subprocess.Popen.__init__(self, args, preexec_fn=prepare_call, **kwargs)
@@ -69,6 +68,7 @@ class Call(subprocess.Popen):
         term_attempted = False
         real_time = 0
         last_log_time = 0
+        wall_clock_start_time = time.time()
         while True:
             time.sleep(self.check_interval)
             real_time += self.check_interval
@@ -87,8 +87,10 @@ class Call(subprocess.Popen):
             total_vsize = group.total_vsize()
 
             if real_time >= last_log_time + self.log_interval:
+                print "wall-clock time: %.2f" % (time.time() - wall_clock_start_time)
                 print "[real-time %d] total_time: %.2f" % (real_time, total_time)
                 print "[real-time %d] total_vsize: %.2f" % (real_time, total_vsize)
+                print
                 last_log_time = real_time
 
             try_term = (total_time >= self.time_limit or
