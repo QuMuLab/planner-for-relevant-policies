@@ -72,7 +72,6 @@ class GkiGridEnvironment(Environment):
         job_params = {
             'logfile': exp.name + '.log',
             'errfile': exp.name + '.err',
-            'driver_timeout': exp.timeout * exp.runs_per_task + 30,
             'num_tasks': num_tasks,
             'queue': exp.queue,
             'priority': exp.priority,

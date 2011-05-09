@@ -34,12 +34,6 @@ class ExpArgParser(tools.ArgParser):
         self.add_argument('-p', '--path',
             help='path of the experiment (e.g. <initials>-<descriptive name>)')
         self.add_argument(
-            '-t', '--timeout', type=int, default=1800,
-            help='timeout per task in seconds')
-        self.add_argument(
-            '-m', '--memory', type=int, default=2048,
-            help='memory limit per task in MB')
-        self.add_argument(
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
 
