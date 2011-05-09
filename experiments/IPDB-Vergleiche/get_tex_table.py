@@ -1,16 +1,16 @@
 #from datetime import datetime
 
-filenames_old = ["ipdb_hhh_old/logistics00-iPDB-default.txt", "ipdb_hhh_old/airport-b.txt",
-                 "ipdb_hhh_old/pnt-iPDB-best.txt", "ipdb_hhh_old/pwt-iPDB-best.txt", 
-                 "ipdb_hhh_old/psr-iPDB-default.txt", "ipdb_hhh_old/sat-iPDB-default.txt", 
-                 "ipdb_hhh_old/tpp-iPDB-default.txt"]
-filenames_downward = ["hhh_20110505/exp-ss-hhh-eval-p-abs.html", 
-                      "hhh_ap_20110505/exp-ss-hhh-ap-eval-p-abs.html",
-                      "hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html",
-                      "hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html",
-                      "hhh_20110505/exp-ss-hhh-eval-p-abs.html",
-                      "hhh_20110505/exp-ss-hhh-eval-p-abs.html",
-                      "hhh_20110505/exp-ss-hhh-eval-p-abs.html"]
+filenames_old = ["../ipdb_hhh_old/logistics00-iPDB-default.txt", "../ipdb_hhh_old/airport-b.txt",
+                 "../ipdb_hhh_old/pnt-iPDB-best.txt", "../ipdb_hhh_old/pwt-iPDB-best.txt", 
+                 "../ipdb_hhh_old/psr-iPDB-default.txt", "../ipdb_hhh_old/sat-iPDB-default.txt", 
+                 "../ipdb_hhh_old/tpp-iPDB-default.txt"]
+filenames_downward = ["../hhh_20110505/exp-ss-hhh-eval-p-abs.html", 
+                      "../hhh_ap_20110505/exp-ss-hhh-ap-eval-p-abs.html",
+                      "../hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html",
+                      "../hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html",
+                      "../hhh_20110505/exp-ss-hhh-eval-p-abs.html",
+                      "../hhh_20110505/exp-ss-hhh-eval-p-abs.html",
+                      "../hhh_20110505/exp-ss-hhh-eval-p-abs.html"]
 domains = ["log", "air", "pipesworld-not", "pipesworld-tan", "psr", "sat", "tpp"]
 index = 6
 assert(len(filenames_old) == len(filenames_downward))
@@ -25,58 +25,59 @@ def evaluate_old(filename):
     for line in open(filename):
         if len(line.split(" ")) == 14:
          
-            prob_raw = line.split(" ")[0]
-            # for logistics
-            if (prob_raw.startswith("log")):
-                prob.append(prob_raw[4:-6])
-            elif (prob_raw.startswith("air")):
-                prob.append(prob_raw[7:9])
-            elif (prob_raw.startswith("pnt")):
-                prob.append(prob_raw[3:5])
-            elif (prob_raw.startswith("pwt")):
-                prob.append(prob_raw[3:5])
-            elif (prob_raw.startswith("psr")):
-                prob.append(prob_raw[3:5])
-            elif (prob_raw.startswith("sat")):
-                prob.append(prob_raw[3:5])
-            elif (prob_raw.startswith("tpp")):
-                prob.append(prob_raw[3:5])
+            if line.split(" ")[1] == "1":
+                prob_raw = line.split(" ")[0]
+                if (prob_raw.startswith("log")):
+                    prob.append(prob_raw[4:-6])
+                elif (prob_raw.startswith("air")):
+                    prob.append(prob_raw[7:9])
+                elif (prob_raw.startswith("pnt")):
+                    prob.append(prob_raw[3:5])
+                elif (prob_raw.startswith("pwt")):
+                    prob.append(prob_raw[3:5])
+                elif (prob_raw.startswith("psr")):
+                    prob.append(prob_raw[3:5])
+                elif (prob_raw.startswith("sat")):
+                    prob.append(prob_raw[3:5])
+                elif (prob_raw.startswith("tpp")):
+                    prob.append(prob_raw[3:5])
         
-            t_h_raw = line.split(" ")[4]
-            if t_h_raw == "X":
-                t_h.append("X")
-            else:
-                t_h.append(round(float(t_h_raw), 2))
+                t_h_raw = line.split(" ")[4]
+                if t_h_raw == "X":
+                    t_h.append("X")
+                else:
+                    t_h.append(round(float(t_h_raw), 2))
             
-            exp.append(line.split(" ")[9])
+                exp.append(line.split(" ")[9])
         
-            t_s_raw = line.split(" ")[11]
-            if t_s_raw == "X":
-                t_s.append("X")
-            else:
-                t_s.append(round(float(t_s_raw), 2))
+                t_s_raw = line.split(" ")[11]
+                if t_s_raw == "X":
+                    t_s.append("X")
+                else:
+                    t_s.append(round(float(t_s_raw), 2))
                 
         elif len(line.split(" ")) == 13:
         
-            prob_raw = line.split(" ")[0]
+            if line.split(" ")[1] == "1":
+                prob_raw = line.split(" ")[0]
+                
+                if (prob_raw.startswith("air")):
+                    prob.append(prob_raw[7:9])
             
-            if (prob_raw.startswith("air")):
-                prob.append(prob_raw[7:9])
-        
-            t_h_raw = line.split(" ")[4]
-            if t_h_raw == "X":
-                t_h.append("X")
-            else:
-                t_h.append(round(float(t_h_raw), 2))
+                t_h_raw = line.split(" ")[4]
+                if t_h_raw == "X":
+                    t_h.append("X")
+                else:
+                    t_h.append(round(float(t_h_raw), 2))
+                
+                exp.append(line.split(" ")[9])
             
-            exp.append(line.split(" ")[9])
-        
-            t_s_raw = line.split(" ")[10]
-            if t_s_raw == "X":
-                t_s.append("X")
-            else:
-                t_s.append(round(float(t_s_raw), 2))
-            
+                t_s_raw = line.split(" ")[10]
+                if t_s_raw == "X":
+                    t_s.append("X")
+                else:
+                    t_s.append(round(float(t_s_raw), 2))
+                
             
     
     print("prob", prob)
