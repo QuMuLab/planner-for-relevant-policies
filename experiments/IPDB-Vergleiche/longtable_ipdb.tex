@@ -1,7 +1,7 @@
 \begin{longtable}{|c||r|r|r||r|r|r|}\firsthline
 & \multicolumn{3}{c||}{IPDB HHH} & \multicolumn{3}{c||}{IPDB FD}\\\hline
 inst & $T_h$ & exp & $T_s$ & $T_h$ & exp & $T_s$\\\hline
-\multicolumn{7}{|l|}{logistics00: $N=$}\\\hline
+\multicolumn{7}{|l|}{logistics00: $\text{num-samples}=1000,\text{min-improvement}=10$}\\\hline
 %%% log ipdb_hhh_old/logistics00-iPDB-default.txt hhh_20110505/exp-ss-hhh-eval-p-abs.html %%%
 $4-0$ & 3.2 & 0 & 0.0 & 1.98 & 21 & 0.1 \\\hline
 $4-1$ & 5.47 & 0 & 0.0 & 2.66 & 20 & 0.1 \\\hline
@@ -32,7 +32,7 @@ $14-1$ & 5736.19 & 0 & 324.67 & X & X & X \\\hline
 $15-0$ & X & X & 7207.55 & X & X & X \\\hline
 $15-1$ & X & X & 7212.02 & X & X & X \\\hline
 
-\multicolumn{7}{|l|}{airport: $N=$}\\\hline
+\multicolumn{7}{|l|}{airport: $\text{num-samples}=50,\text{min-improvement}=5$}\\\hline
 %%% air ipdb_hhh_old/airport-b.txt hhh_ap_20110505/exp-ss-hhh-ap-eval-p-abs.html %%%
 $01$ & 0.33 & 8 & 0.0 & 0.0 & 10 & 0.1 \\\hline
 $02$ & 0.26 & 9 & 0.0 & 0.0 & 10 & 0.1 \\\hline
@@ -70,7 +70,7 @@ $42$ &  X &  X &  X & 223.21 & 44527 & 20.42 \\\hline
 $44$ &  X &  X &  X & 88.17 & 448 & 0.17 \\\hline
 $45$ &  X &  X &  X & 195.79 & 470 & 0.21 \\\hline
 
-\multicolumn{7}{|l|}{pipesworld-not-tankage: $N=$}\\\hline
+\multicolumn{7}{|l|}{pipesworld-not-tankage: $\text{num-samples}=250,\text{min-improvement}=3$}\\\hline
 %%% pipesworld-not ipdb_hhh_old/pnt-iPDB-best.txt hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html %%%
 $01$ & 5.32 & 0 & 0.0 & 0.0 & 17 & 0.1 \\\hline
 $02$ & 6.81 & 0 & 0.0 & 0.01 & 924 & 0.1 \\\hline
@@ -98,7 +98,7 @@ $23$ & 4660.32 & 12517 & 5.49 & 1.13 & 639448 & 37.72 \\\hline
 $24$ & X & X & 7197.04 & X & X & X \\\hline
 $25$ & 4325.53 & 1711528 & 1222.78 & X & X & X \\\hline
 
-\multicolumn{7}{|l|}{pipesworld-tankage: $N=$}\\\hline
+\multicolumn{7}{|l|}{pipesworld-tankage: $\text{num-samples}=250,\text{min-improvement}=3$}\\\hline
 %%% pipesworld-tan ipdb_hhh_old/pwt-iPDB-best.txt hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html %%%
 $01$ & 10.55 & 0 & 0.0 & 0.0 & 127 & 0.1 \\\hline
 $02$ & 20.44 & 0 & 0.0 & 0.0 & 1021 & 0.1 \\\hline
@@ -119,7 +119,7 @@ $21$ & X & X & 7192.77 & 0.4 & 938943 & 19.49 \\\hline
 $31$ & 4867.42 & 776658 & 366.24 & 0.31 & 1465128 & 16.17 \\\hline
 $17$ &  X &  X &  X & 162.21 & 6335719 & 93.42 \\\hline
 
-\multicolumn{7}{|l|}{psr-small: $N=$}\\\hline
+\multicolumn{7}{|l|}{psr-small: $\text{num-samples}=1000,\text{min-improvement}=10$}\\\hline
 %%% psr ipdb_hhh_old/psr-iPDB-default.txt hhh_20110505/exp-ss-hhh-eval-p-abs.html %%%
 $29$ & 255.43 & 124 & 0.01 & 1.09 & 79693 & 0.74 \\\hline
 $36$ & 1026.2 & 139 & 0.03 & 0.02 & 1702494 & 11.7 \\\hline
@@ -171,7 +171,7 @@ $46$ &  X &  X &  X & 0.26 & 69506 & 0.4 \\\hline
 $47$ &  X &  X &  X & 92.74 & 28 & 0.1 \\\hline
 $50$ &  X &  X &  X & 14.9 & 24 & 0.1 \\\hline
 
-\multicolumn{7}{|l|}{satellite: $N=$}\\\hline
+\multicolumn{7}{|l|}{satellite: $\text{num-samples}=1000,\text{min-improvement}=10$}\\\hline
 %%% sat ipdb_hhh_old/sat-iPDB-default.txt hhh_20110505/exp-ss-hhh-eval-p-abs.html %%%
 $01$ & 0.26 & 28 & 0.0 & 0.01 & 34 & 0.1 \\\hline
 $02$ & 0.3 & 324 & 0.02 & 0.06 & 329 & 0.1 \\\hline
@@ -182,7 +182,7 @@ $06$ & 14.57 & 1435962 & 620.17 & 0.65 & 1435987 & 42.68 \\\hline
 $07$ & 26.52 & 1226320 & 932.65 & X & X & X \\\hline
 $08$ & 75.29 & 1132967 & 1252.75 & X & X & X \\\hline
 
-\multicolumn{7}{|l|}{tpp: $N=$}\\\hline
+\multicolumn{7}{|l|}{tpp: $\text{num-samples}=1000,\text{min-improvement}=10$}\\\hline
 %%% tpp ipdb_hhh_old/tpp-iPDB-default.txt hhh_20110505/exp-ss-hhh-eval-p-abs.html %%%
 $01$ & 0.0 & 4 & 0.0 & 0.0 & 7 & 0.1 \\\hline
 $02$ & 0.34 & 2 & 0.0 & 0.09 & 9 & 0.1 \\\hline
