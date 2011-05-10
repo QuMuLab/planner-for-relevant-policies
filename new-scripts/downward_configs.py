@@ -436,6 +436,16 @@ def issue154b():
             '--search "lazy_greedy([hlm, hff], preferred=[hlm, hff])"')])
 
 
+# Used for debugging purposes
+multiple_plans = """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=false,lm_cost_type=2,cost_type=2))" \
+--heuristic "hadd=add()" \
+--search "iterated([lazy_greedy([hadd]),\
+lazy_wastar([hff,hlm],preferred=[hff,hlm],w=2)],\
+repeat_last=false)"\
+"""
+
+
 def get_configs(configs_strings):
     """
     Parses configs_strings and returns a list of tuples of the form

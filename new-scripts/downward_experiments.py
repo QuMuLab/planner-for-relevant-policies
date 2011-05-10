@@ -130,8 +130,8 @@ def _prepare_search_run(exp, run, config_nick, config):
 
     # Validation
     run.require_resource('VALIDATE')
-    run.add_command('validate', ['VALIDATE', 'DOMAIN', 'PROBLEM', 'sas_plan'],
-                    abort_on_failure=False)
+    run.require_resource('DOWNWARD_VALIDATE')
+    run.add_command('validate', ['DOWNWARD_VALIDATE', 'VALIDATE'])
 
     run.set_property('commandline_config', run.planner_config)
 
@@ -238,9 +238,12 @@ class DownwardExperiment(experiments.Experiment):
             code_subdir = os.path.dirname(planner.rel_dest)
             self.add_resource('UNUSEDNAME', src_path,
                             os.path.join(code_subdir, bin))
+
         validate = os.path.join(planner.exe_dir, '..', 'validate')
-        if os.path.exists(validate):
-            self.add_resource('VALIDATE', validate, 'validate')
+        self.add_resource('VALIDATE', validate, 'validate')
+
+        downward_validate = os.path.join(tools.SCRIPTS_DIR, 'downward-validate.py')
+        self.add_resource('DOWNWARD_VALIDATE', downward_validate, 'downward-validate')
 
     def _get_configs(self, rev):
         return _get_configs(rev, self.configs)
