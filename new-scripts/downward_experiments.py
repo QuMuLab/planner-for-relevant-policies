@@ -207,8 +207,9 @@ class DownwardExperiment(experiments.Experiment):
         if self.environment == environments.LocalEnvironment:
             self.end_instructions = ('Preprocess experiment has been created. '
                 'Before you can create the search experiment you have to run\n'
-                './%(exp_name)s/run\n'
-                './resultfetcher.py %(exp_name)s' % {'exp_name': self.name})
+                '%(run_script)s\n'
+                './resultfetcher.py %(exp_path)s' % {'run_script': self.compact_main_script_path,
+                    'exp_path': self.compact_exp_path})
 
         # Set the eval directory already here, we don't want the results to land
         # in the default testname-eval

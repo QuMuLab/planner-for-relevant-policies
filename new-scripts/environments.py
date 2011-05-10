@@ -6,6 +6,7 @@ import tools
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
 
+
 class Environment(object):
     @classmethod
     def add_subparser(cls, subparsers):
@@ -48,8 +49,8 @@ class LocalEnvironment(Environment):
 
     @classmethod
     def get_end_instructions(cls, exp):
-        return ('You can run the experiment now by calling '
-            '"./%(name)s/run"' % {'name': exp.name})
+        return ('You can run the experiment now by calling %s' %
+                exp.compact_main_script_path)
 
 
 class GkiGridEnvironment(Environment):
