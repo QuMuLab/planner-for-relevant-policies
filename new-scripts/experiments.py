@@ -260,10 +260,6 @@ class Run(object):
         Example:
         >>> run.set_property('domain', 'gripper')
         """
-        # id parts can only be strings
-        if name == 'id':
-            assert type(value) == list
-            value = map(str, value)
         self.properties[name] = value
 
     def require_resource(self, resource_name):
@@ -462,6 +458,16 @@ class Run(object):
                 logging.error(msg % (source, dest, err))
 
     def _build_properties_file(self):
+        # Check correctness of id property
+        run_id = self.properties.get('id')
+        if run_id is None:
+            logging.error('Each run must have an id')
+            sys.exit(1)
+        if not type(run_id) is list:
+            logging.error('id must be a list, but %s is not' % run_id)
+            sys.exit(1)
+        self.properties['id'] = [str(item) for item in run_id]
+
         self.properties.filename = self._get_abs_path('properties')
         self.properties.write()
 
