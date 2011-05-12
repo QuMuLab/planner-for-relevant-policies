@@ -272,8 +272,8 @@ class Report(object):
             self.data = self.orig_data.copy()
             try:
                 table = self._get_table(focus)
+                # We return None for a table if we don't want to add it
                 if table:
-                    # We return None for a table if we don't want to add it
                     print table
                     tables.append((focus, table))
             except TypeError, err:
