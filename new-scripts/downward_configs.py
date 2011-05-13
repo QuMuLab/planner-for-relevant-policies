@@ -3,6 +3,7 @@ Example configurations taken from
 http://alfons.informatik.uni-freiburg.de/downward/PlannerUsage
 """
 import sys
+import os
 import logging
 from collections import defaultdict
 
@@ -460,6 +461,7 @@ def get_configs(configs_strings):
     for config_string in configs_strings:
         if ':' in config_string:
             config_file, config_name = config_string.split(':')
+            config_file = os.path.abspath(config_file)
         else:
             # Check if this module has the config
             config_file, config_name = __file__, config_string

@@ -136,6 +136,9 @@ def convert_to_correct_type(val):
 
 
 def import_python_file(filename):
+    parent_dir =  os.path.dirname(filename)
+    if parent_dir not in sys.path:
+        sys.path.insert(0, parent_dir)
     filename = os.path.normpath(filename)
     filename = os.path.basename(filename)
     if filename.endswith('.py'):
