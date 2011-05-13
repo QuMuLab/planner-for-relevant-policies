@@ -8,10 +8,12 @@ import resource
 from processgroup import ProcessGroup
 
 
-def kill_pgrp(pgrp, sig):
+def kill_pgrp(pgrp, sig, show_error=True):
     try:
         os.killpg(pgrp, sig)
     except OSError:
+        if not show_error:
+            return
         msg = "Process group %s could not be killed with signal %s"
         print msg % (pgrp, sig)
 
@@ -127,7 +129,7 @@ class Call(subprocess.Popen):
         # if checking the ProcessGroup for emptiness is reliable, because
         # reading the process table may not be atomic, so for this last blow,
         # we don't do an emptiness test.
-        kill_pgrp(self.pid, signal.SIGKILL)
+        kill_pgrp(self.pid, signal.SIGKILL, show_error=False)
 
         return self.returncode
 
