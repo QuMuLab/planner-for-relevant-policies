@@ -379,6 +379,38 @@ gapdb_disjoint = """\
 --search "astar(gapdb(disjoint=true))"
 """
 
+gapdb_1 = """\
+--search "astar(gapdb(pdb_max_size=1024,num_episodes=50,num_collections=5))"\
+"""
+
+gapdb_2 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=50,num_collections=5))"\
+"""
+
+gapdb_3 = """\
+--search "astar(gapdb(pdb_max_size=1024,num_episodes=100,num_collections=5))"\
+"""
+
+gapdb_4 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=5))"\
+"""
+
+gapdb_5 = """\
+--search "astar(gapdb(pdb_max_size=1024,num_episodes=300,num_collections=5))"\
+"""
+
+gapdb_6 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=300,num_collections=5))"\
+"""
+
+gapdb_7 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=10))"\
+"""
+
+gapdb_8 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=15))"\
+"""
+
 lmopt_rhw = """\
 --search "astar(lmcount(lm_rhw(),admissible=true),mpd=true)"\
 """
