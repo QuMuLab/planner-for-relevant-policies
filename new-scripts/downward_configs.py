@@ -191,10 +191,6 @@ pdb1000000000 = """\
 --search "astar(pdb(max_states=1000000000))"\
 """
 
-pdbs = """\
---search "astar(pdbs())"\
-"""
-
 ipdb = """\
 --search "astar(ipdb())"\
 """
@@ -273,6 +269,10 @@ ipdbi19 = """\
 
 ipdbi20 = """\
 --search "astar(ipdb(min_improvement=20))"\
+"""
+
+pdbs = """\
+--search "astar(pdbs())"\
 """
 
 ipdb_hhh = """\
