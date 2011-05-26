@@ -281,7 +281,8 @@ class AbsolutePlanningReport(PlanningReport):
                 if not values:
                     show_missing_attribute_msg(config + '-' + domain)
                     continue
-                table.add_cell(domain, config, func(values))
+                num_instances = len(group.group_dict('problem'))
+                table.add_cell('%s (%s)' % (domain, num_instances), config, func(values))
         elif self.resolution == 'problem':
             self.set_grouping('config', 'domain', 'problem')
             for (config, domain, problem), group in self.group_dict.items():
