@@ -272,7 +272,7 @@ class AbsolutePlanningReport(PlanningReport):
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, focus)
-            logging.error(msg)
+            logging.debug(msg)
 
         if self.resolution == 'domain':
             self.set_grouping('config', 'domain')
