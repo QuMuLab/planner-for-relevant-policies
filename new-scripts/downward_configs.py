@@ -411,6 +411,22 @@ gapdb_8 = """\
 --search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=15))"\
 """
 
+gapdb_9 = """\
+--search "astar(gapdb(pdb_max_size=1048576,num_episodes=100,num_collections=15))"\
+"""
+
+gapdb_10 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=300,num_collections=15))"\
+"""
+
+gapdb_11 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=20))"\
+"""
+
+gapdb_12 = """\
+--search "astar(gapdb(pdb_max_size=1048576,num_episodes=300,num_collections=20))"\
+"""
+
 lmopt_rhw = """\
 --search "astar(lmcount(lm_rhw(),admissible=true),mpd=true)"\
 """
