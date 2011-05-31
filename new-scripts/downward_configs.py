@@ -427,6 +427,10 @@ gapdb_12 = """\
 --search "astar(gapdb(pdb_max_size=1048576,num_episodes=300,num_collections=20))"\
 """
 
+gapdb_comparison = """\
+--search "astar(gapdb(pdb_max_size=100000,num_episodes=100,num_collections=15))"\
+"""
+
 lmopt_rhw = """\
 --search "astar(lmcount(lm_rhw(),admissible=true),mpd=true)"\
 """
