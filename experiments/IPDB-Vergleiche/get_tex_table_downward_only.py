@@ -9,8 +9,8 @@ filenames_downward_1 = ["../hhh_20110505/exp-ss-hhh-eval-p-abs.html",
                         "../hhh_20110505/exp-ss-hhh-eval-p-abs.html"]
 filenames_downward_2 = ["../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
                       	"../hhh_end_20110530/exp-mo-hhh-ap_end-eval-p-abs.html",
-                      	"../hhh_end_20110530/exp-mo-hhh-pw_end-eval-p-abs.html",
-                      	"../hhh_end_20110530/exp-mo-hhh-pw_end-eval-p-abs.html",
+                      	"../hhh_end_20110530/exp-mo-hhh-pw_end_new-eval-p-abs.html",
+                      	"../hhh_end_20110530/exp-mo-hhh-pw_end_new-eval-p-abs.html",
                       	"../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
                       	"../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
                       	"../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html"]

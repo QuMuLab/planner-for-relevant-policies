@@ -9,8 +9,8 @@ filenames_old = ["../ipdb_hhh_old/logistics00-iPDB-default.txt",
                  "../ipdb_hhh_old/tpp-iPDB-default.txt"]
 filenames_downward = ["../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
                       "../hhh_end_20110530/exp-mo-hhh-ap_end-eval-p-abs.html",
-                      "../hhh_end_20110530/exp-mo-hhh-pw_end-eval-p-abs.html",
-                      "../hhh_end_20110530/exp-mo-hhh-pw_end-eval-p-abs.html",
+                      "../hhh_end_20110530/exp-mo-hhh-pw_end_new-eval-p-abs.html",
+                      "../hhh_end_20110530/exp-mo-hhh-pw_end_new-eval-p-abs.html",
                       "../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
                       "../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
                       "../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html"]
