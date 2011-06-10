@@ -272,7 +272,7 @@ ipdbi20 = """\
 """
 
 pdbs = """\
---search "astar(pdbs())"\
+--search "astar(cpdbs())"\
 """
 
 ipdb_hhh = """\
