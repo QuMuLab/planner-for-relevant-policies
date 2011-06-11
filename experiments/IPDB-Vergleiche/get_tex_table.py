@@ -7,13 +7,14 @@ filenames_old = ["../ipdb_hhh_old/logistics00-iPDB-default.txt",
                  "../ipdb_hhh_old/psr-iPDB-default.txt",
                  "../ipdb_hhh_old/sat-iPDB-default.txt",
                  "../ipdb_hhh_old/tpp-iPDB-default.txt"]
-filenames_downward = ["../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
-                      "../hhh_end_20110530/exp-mo-hhh-ap_end-eval-p-abs.html",
-                      "../hhh_end_20110530/exp-mo-hhh-pw_end_new-eval-p-abs.html",
-                      "../hhh_end_20110530/exp-mo-hhh-pw_end_new-eval-p-abs.html",
-                      "../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
-                      "../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html",
-                      "../hhh_end_20110530/exp-mo-hhh_end-eval-p-abs.html"]
+filenames_downward = [
+                      "../hhh_20110605/exp-ss-hhh-v2-eval-p-abs.html",
+                      "../hhh_ap_20110605/exp-ss-hhh-ap-v2-eval-p-abs.html",
+                      "../hhh_pw_20110605/exp-ss-hhh-pw-v2-eval-p-abs.html",
+                      "../hhh_pw_20110605/exp-ss-hhh-pw-v2-eval-p-abs.html",
+                      "../hhh_20110605/exp-ss-hhh-v2-eval-p-abs.html",
+                      "../hhh_20110605/exp-ss-hhh-v2-eval-p-abs.html",
+                      "../hhh_20110605/exp-ss-hhh-v2-eval-p-abs.html"]
 domains = ["log", "air", "pipesworld-not", "pipesworld-tan", "psr", "sat", "tpp"]
 index = 6
 assert(len(filenames_old) == len(filenames_downward))

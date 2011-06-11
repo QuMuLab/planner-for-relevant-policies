@@ -1,23 +1,23 @@
 #from datetime import datetime
 
 filenames_downward_1 = [
-                        "../pdbs_bug_20110526/exp-mo-pdbs_1-eval-p-abs.html",
-                        "../pdbs_bug_20110526/exp-mo-pdbs_2-eval-p-abs.html",
-                        "../pdbs_bug_20110526/exp-mo-pdbs_3-eval-p-abs.html",
-                        "../pdbs_bug_20110526/exp-mo-pdbs_3-eval-p-abs.html",
-                        "../pdbs_bug_20110526/exp-mo-pdbs_1-eval-p-abs.html",
-                        "../pdbs_bug_20110526/exp-mo-pdbs_1-eval-p-abs.html",
-                        "../pdbs_bug_20110526/exp-mo-pdbs_1-eval-p-abs.html"]
+                        "../pdbs_20110610/exp-mo-pdbs_1b-eval-p-abs.html",
+                        "../pdbs_20110610/exp-mo-pdbs_2b-eval-p-abs.html",
+                        "../pdbs_20110610/exp-mo-pdbs_3b-eval-p-abs.html",
+                        "../pdbs_20110610/exp-mo-pdbs_3b-eval-p-abs.html",
+                        "../pdbs_20110610/exp-mo-pdbs_1b-eval-p-abs.html",
+                        "../pdbs_20110610/exp-mo-pdbs_1b-eval-p-abs.html",
+                        "../pdbs_20110610/exp-mo-pdbs_1b-eval-p-abs.html"]
 filenames_downward_2 = [
-                        "../hhh_20110505/exp-ss-hhh-eval-p-abs.html",
-                        "../hhh_ap_20110505/exp-ss-hhh-ap-eval-p-abs.html",
-                        "../hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html",
-                        "../hhh_pw_20110505/exp-ss-hhh-pw-eval-p-abs.html",
-                        "../hhh_20110505/exp-ss-hhh-eval-p-abs.html",
-                        "../hhh_20110505/exp-ss-hhh-eval-p-abs.html",
-                        "../hhh_20110505/exp-ss-hhh-eval-p-abs.html"]
+                        "../hhh_20110605/exp-ss-hhh-v2-eval-p-abs.html",
+                        "../hhh_ap_20110605/exp-ss-hhh-ap-v2-eval-p-abs.html",
+                        "../hhh_pw_20110605/exp-ss-hhh-pw-v2-eval-p-abs.html",
+                        "../hhh_pw_20110605/exp-ss-hhh-pw-v2-eval-p-abs.html",
+                        "../hhh_20110605/exp-ss-hhh-v2-eval-p-abs.html",
+                        "../hhh_20110605/exp-ss-hhh-v2-eval-p-abs.html",
+                        "../hhh_20110605/exp-ss-hhh-v2-eval-p-abs.html"]
 domains = ["log", "air", "pipesworld-not", "pipesworld-tan", "psr", "sat", "tpp"]
-index = 6
+index = 
 assert(len(filenames_downward_1) == len(filenames_downward_2))
 domain = domains[index]
 
