@@ -20,7 +20,16 @@ function run_experiment() {
     if [[ "$EXPTYPE" == gkigrid ]]; then
         pushd .
         cd $1
-        qsub $1.q
+        if [ -e already-submitted ]; then
+            # file exists
+            echo "Experiment has already been submitted once. \
+Delete the file 'already-submitted' or submit it \
+manually if you know what you're doing."
+        else
+            qsub $1.q
+            # Do not submit an experiment more than once
+            touch already-submitted
+        fi
         popd
     else
         ./$1/run
