@@ -117,13 +117,22 @@ def _prepare_preprocess_run(exp, run):
         run.declare_optional_output(output_file)
 
 
-def _prepare_search_run(exp, run, config_nick, config):
+def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
+    """
+    If preprocess_dir is None we are assuming all relevant files are present
+    in the dir (output, domain.pddl, problem.pddl).
+    Else we use the absolute paths to the preprocess_dir to specify these
+    files.
+
+    In the code we use the fact that "os.path.join('', 'filename') = filename".
+    """
     run.config_nick = config_nick
     run.planner_config = config
 
     run.require_resource(run.planner.shell_name)
     run.add_command('search', [run.planner.shell_name] +
-                              shlex.split(run.planner_config), stdin='output',
+                              shlex.split(run.planner_config),
+                    stdin=os.path.join(preprocess_dir, 'output'),
                     time_limit=LIMIT_SEARCH_TIME,
                     mem_limit=LIMIT_SEARCH_MEMORY)
     run.declare_optional_output("sas_plan")
@@ -131,7 +140,10 @@ def _prepare_search_run(exp, run, config_nick, config):
     # Validation
     run.require_resource('VALIDATE')
     run.require_resource('DOWNWARD_VALIDATE')
-    run.add_command('validate', ['DOWNWARD_VALIDATE', 'VALIDATE'])
+    domain = os.path.join(preprocess_dir, 'domain.pddl')
+    problem = os.path.join(preprocess_dir, 'problem.pddl')
+    run.add_command('validate', ['DOWNWARD_VALIDATE', 'VALIDATE', domain,
+                                 problem])
 
     run.set_property('commandline_config', run.planner_config)
 
@@ -153,6 +165,13 @@ class DownwardExperiment(experiments.Experiment):
                             help='build preprocessing experiment')
         parser.add_argument('--complete', action='store_true',
                             help='build complete experiment (overrides -p)')
+        parser.add_argument('--compact', action='store_true',
+                            help='link to preprocessing files instead of '
+                                 'copying them. Only use this option if the '
+                                 'preprocessed files will NOT be changed '
+                                 'during the experiment. This option only has '
+                                 'an effect if neither --preprocess nor '
+                                 '--complete are set.')
         parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
         parser.add_argument('-c', '--configs', default=[], type=tools.csv,
@@ -271,24 +290,34 @@ class DownwardExperiment(experiments.Experiment):
 
             for config_nick, config in self._get_configs(planner.rev):
                 for prob in self.problems:
-                    run = DownwardRun(self, translator, preprocessor, planner, prob)
-                    _prepare_search_run(self, run, config_nick, config)
-                    self.add_run(run)
-
                     preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
-                                    translator.rev + '-' + preprocessor.rev,
-                                    prob.domain, prob.problem)
-
+                                                  translator.rev + '-' +
+                                                  preprocessor.rev,
+                                                  prob.domain, prob.problem)
                     def path(filename):
                         return os.path.join(preprocess_dir, filename)
+
+                    run = DownwardRun(self, translator, preprocessor, planner, prob)
+                    self.add_run(run)
+
+                    run.set_property('preprocess_dir', preprocess_dir)
+
+                    # This resource is used by the landmarks code.
+                    run.add_resource('ALL_GROUPS', path('all.groups'),
+                                     'all.groups', required=False)
+
+                    if self.compact:
+                        _prepare_search_run(self, run, config_nick, config,
+                                            preprocess_dir)
+                        continue
+
+                    _prepare_search_run(self, run, config_nick, config)
 
                     # Add the preprocess files for later parsing
                     run.add_resource('OUTPUT', path('output'), 'output',
                                      required=False)
                     run.add_resource('TEST_GROUPS', path('test.groups'),
                                      'test.groups', required=False)
-                    run.add_resource('ALL_GROUPS', path('all.groups'),
-                                     'all.groups', required=False)
                     run.add_resource('OUTPUT_SAS', path('output.sas'),
                                      'output.sas', required=False)
                     run.add_resource('RUN_LOG', path('run.log'), 'run.log')
