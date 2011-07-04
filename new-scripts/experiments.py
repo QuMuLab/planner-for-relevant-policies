@@ -31,8 +31,9 @@ class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, **kwargs)
 
-        self.add_argument('-p', '--path',
-            help='path of the experiment (e.g. <initials>-<descriptive name>)')
+        self.add_argument('--path',
+            help='path of the experiment (e.g. <initials>-<descriptive name>). '
+            'If no path is given, you will be prompted interactively for it.')
         self.add_argument(
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
