@@ -14,11 +14,14 @@ import tools
 from external.ordereddict import OrderedDict
 
 
-HELP = """\
-Base module for creating fast downward experiments.
-PLEASE NOTE: The available options depend on the selected experiment type.
-You can set the experiment type with the "--exp-type" option.
-"""
+EPILOG = """\
+--------------------------------------------------------------------------------
+PLEASE NOTE: The available options depend on the selected experiment type:
+
+global options:  %(exe)s --help
+special options: %(exe)s {local,gkigrid,argo} --help
+--------------------------------------------------------------------------------
+""" % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
                 'gkigrid': environments.GkiGridEnvironment,
@@ -29,7 +32,7 @@ DEFAULT_ABORT_ON_FAILURE = True
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, **kwargs)
+        tools.ArgParser.__init__(self, *args, epilog=EPILOG, **kwargs)
 
         self.add_argument('--path',
             help='path of the experiment (e.g. <initials>-<descriptive name>). '
