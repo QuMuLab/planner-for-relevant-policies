@@ -242,9 +242,9 @@ def csv(string):
 
 class ArgParser(argparse.ArgumentParser):
     def __init__(self, add_log_option=True, *args, **kwargs):
-        argparse.ArgumentParser.__init__(self, *args,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
-
+        argparse.ArgumentParser.__init__(self, *args, formatter_class=
+                                RawDescriptionAndArgumentDefaultsHelpFormatter,
+                                         **kwargs)
         if add_log_option:
             try:
                 self.add_argument('-l', '--log-level', dest='log_level',
@@ -275,3 +275,21 @@ class ArgParser(argparse.ArgumentParser):
             msg = '%r is not an evaluation directory' % string
             raise argparse.ArgumentTypeError(msg)
         return string
+
+
+class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
+    """
+    Help message formatter which retains any formatting in descriptions and adds
+    default values to argument help.
+    """
+    def _fill_text(self, text, width, indent):
+        return ''.join([indent + line for line in text.splitlines(True)])
+
+    def _get_help_string(self, action):
+        help = action.help
+        if '%(default)' not in action.help:
+            if action.default is not argparse.SUPPRESS:
+                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+                if action.option_strings or action.nargs in defaulting_nargs:
+                    help += ' (default: %(default)s)'
+        return help
