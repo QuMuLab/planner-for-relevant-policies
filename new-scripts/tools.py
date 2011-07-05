@@ -293,3 +293,13 @@ class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
                 if action.option_strings or action.nargs in defaulting_nargs:
                     help += ' (default: %(default)s)'
         return help
+
+    def _format_args(self, action, default_metavar):
+        """
+        We want to show "[environment-specific options]" instead of "...".
+        """
+        get_metavar = self._metavar_formatter(action, default_metavar)
+        if action.nargs == argparse.PARSER:
+            return '%s [environment-specific options]' % get_metavar(1)
+        else:
+            return argparse.HelpFormatter._format_args(self, action, default_metavar)
