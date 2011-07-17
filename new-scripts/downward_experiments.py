@@ -258,7 +258,11 @@ class DownwardExperiment(experiments.Experiment):
             self.add_resource('UNUSEDNAME', src_path,
                             os.path.join(code_subdir, bin))
 
-        validate = os.path.join(planner.exe_dir, '..', 'validate')
+        # The tip changeset has the newest validator version so we use this one
+        validate = os.path.join(tools.SCRIPTS_DIR, '..', 'src', 'validate')
+        if not os.path.exists(validate):
+            logging.error('Please run ./build_all in the src directory first '
+                          'to compile the validator')
         self.add_resource('VALIDATE', validate, 'validate')
 
         downward_validate = os.path.join(tools.SCRIPTS_DIR, 'downward-validate.py')

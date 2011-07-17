@@ -16,6 +16,9 @@ combinations = [
     (checkouts.TranslatorSvnCheckout(repo=branch, rev=3840),
      preprocessor, planner),
     (checkouts.TranslatorSvnCheckout(rev=4283), preprocessor, planner),
+    (checkouts.TranslatorHgCheckout(),
+     checkouts.PreprocessorHgCheckout(),
+     checkouts.PlannerHgCheckout())
                ]
 
 downward_experiments.build_experiment(combinations)
