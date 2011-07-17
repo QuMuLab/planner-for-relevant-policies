@@ -107,6 +107,10 @@ blind = """\
 --search "astar(blind())"\
 """
 
+oa10000 = """\
+--search "astar(mas(max_states=10000))"\
+"""
+
 oa50000 = """\
 --search "astar(mas())"\
 """
@@ -415,26 +419,6 @@ def arch_comp_configs():
 def get_old_and_new_greedy(pairs):
     return pairs + [(nick.replace('lg', 'og'),
         config.replace('lazy_greedy', 'old_greedy')) for nick, config in pairs]
-
-
-def issue154a():
-    return get_old_and_new_greedy([
-        ('lg_blind', '--search "lazy_greedy(blind())"'),
-        ('lg_ff', '--search "lazy_greedy(ff())"'),
-        ('lg_cea', '--search "lazy_greedy(cea())"'),
-        ('lg_ff_cea', '--search "lazy_greedy([ff(), cea()])"')])
-
-
-def issue154b():
-    return get_old_and_new_greedy([
-        ('lg_hff', '--heuristic "hff=ff()" '
-            '--search "lazy_greedy(hff, preferred=hff)"'),
-        ('lg_hcea', '--heuristic "hcea=cea()" '
-            '--search "lazy_greedy(hcea, preferred=hcea)"'),
-        ('lg_hff_hcea', '--heuristic "hff=ff()" --heuristic "hcea=cea()" '
-            '--search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"'),
-        ('lg_hlm_hff', '--heuristic "hlm,hff=lm_ff_syn(lm_rhw())" '
-            '--search "lazy_greedy([hlm, hff], preferred=[hlm, hff])"')])
 
 
 # Used for debugging purposes
