@@ -78,9 +78,10 @@ class Experiment(object):
         self.environment = ENVIRONMENTS.get(self.environment_type)
         if not self.environment:
             logging.error('Unknown environment "%s"' % self.environment_type)
-            sys.exit(1)
-        while not self.path:
-            self.path = raw_input('Please enter an experiment path: ').strip()
+            sys.exit(2)
+        if not self.path:
+            logging.error('Please specify the experiment path')
+            sys.exit(2)
 
     def set_property(self, name, value):
         """
