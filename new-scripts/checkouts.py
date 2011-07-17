@@ -61,12 +61,11 @@ class Checkout(object):
         the working copy to make sure the executable is based on the latest
         version of the code.
         """
-        if self.rev == 'WORK' or self._get_executable(default=None) is None:
-            cwd = os.getcwd()
-            src_dir = os.path.dirname(self.exe_dir)
-            os.chdir(src_dir)
-            subprocess.call(['./build_all'])
-            os.chdir(cwd)
+        cwd = os.getcwd()
+        src_dir = os.path.dirname(self.exe_dir)
+        os.chdir(src_dir)
+        subprocess.call(['./build_all'])
+        os.chdir(cwd)
 
     def _get_executable(self, default=_sentinel):
         """ Returns the path to the python module or a binary """
