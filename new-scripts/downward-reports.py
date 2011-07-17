@@ -13,7 +13,6 @@ from collections import defaultdict
 
 import tools
 import downward_suites
-from external import datasets
 from external.datasets import missing
 import reports
 from reports import Report, ReportArgParser, Table

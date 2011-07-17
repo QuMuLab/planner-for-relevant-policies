@@ -4,7 +4,6 @@ import sys
 import os
 import multiprocessing
 import subprocess
-import time
 
 # make sure we're in the run directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -21,10 +20,10 @@ def run_cmd(command):
         run.terminate()
 
 commands = [\
-***COMMANDS***
+"""COMMANDS"""
 ]
 
-pool = multiprocessing.Pool(processes=***PROCESSES***)
+pool = multiprocessing.Pool(processes="""PROCESSES""")
 res = pool.map_async(run_cmd, commands)
 pool.close()
 
