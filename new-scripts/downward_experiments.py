@@ -169,9 +169,7 @@ class DownwardExperiment(experiments.Experiment):
                         'Only use this option if the preprocessed files will '
                         'NOT be changed during the experiment. This option '
                         'only has an effect if neither --preprocess nor '
-                        '--complete are set. Make sure to pass --no-preprocess '
-                        'to the resultfetcher, because it will not find any '
-                        'preprocess files in the run\'s directory.')
+                        '--complete are set.')
         parser.add_argument('--compact', action='store_true',
                             help=compact_help)
         parser.add_argument('-s', '--suite', default=[], type=tools.csv,

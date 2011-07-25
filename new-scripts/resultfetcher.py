@@ -12,7 +12,7 @@ from __future__ import with_statement
 import os
 import sys
 import re
-from glob import glob
+import glob
 from collections import defaultdict
 import logging
 import hashlib
@@ -182,13 +182,8 @@ class Fetcher(object):
         # Give all the options to the experiment instance
         parser.parse_args(namespace=self)
 
-        self.run_dirs = self._get_run_dirs()
-
         self.file_parsers = defaultdict(_FileParser)
         self.check = None
-
-    def _get_run_dirs(self):
-        return sorted(glob(os.path.join(self.exp_dir, 'runs-*-*', '*')))
 
     def add_pattern(self, name, regex_string, group=1, file='run.log',
                         required=True, type=int, flags=''):
@@ -241,12 +236,14 @@ class Fetcher(object):
         self.check = function
 
     def fetch(self):
-        total_dirs = len(self.run_dirs)
+        total_dirs = self.exp_props.get('runs')
 
         combined_props_filename = os.path.join(self.eval_dir, 'properties')
         combined_props = tools.Properties(combined_props_filename)
 
-        for index, run_dir in enumerate(self.run_dirs, 1):
+        # Generator that returns all run_dirs
+        run_dirs = glob.iglob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
+        for index, run_dir in enumerate(run_dirs, 1):
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
 
