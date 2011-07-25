@@ -20,17 +20,6 @@ def check(props):
 
 # Preprocessing functions -----------------------------------------------------
 
-# TODO: Is there a better way to parse this?
-# Are the returncodes enough already?
-def translator_error(content, old_props):
-    error = not 'Done! [' in content
-    return {'translator_error': int(error)}
-
-
-def preprocessor_error(content, old_props):
-    error = not 'Writing output...\ndone' in content
-    return {'preprocessor_error': int(error)}
-
 
 def get_derived_vars(content):
     """
@@ -266,8 +255,6 @@ def validate(content, old_props):
 def add_preprocess_parsing(eval):
     """
     Add some preprocess specific parsing:
-
-    TODO: translator time
     """
     #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)',
     #                 file='output.sas', type=int, flags='M')
@@ -352,9 +339,6 @@ def add_preprocess_parsing(eval):
 
 
 def add_preprocess_functions(eval):
-    eval.add_function(translator_error)
-    eval.add_function(preprocessor_error)
-
     eval.add_function(translator_facts, file='output.sas')
     eval.add_function(preprocessor_facts, file='output')
 
