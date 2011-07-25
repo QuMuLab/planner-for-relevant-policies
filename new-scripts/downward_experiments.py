@@ -165,13 +165,15 @@ class DownwardExperiment(experiments.Experiment):
                             help='build preprocessing experiment')
         parser.add_argument('--complete', action='store_true',
                             help='build complete experiment (overrides -p)')
+        compact_help = ('link to preprocessing files instead of copying them. '
+                        'Only use this option if the preprocessed files will '
+                        'NOT be changed during the experiment. This option '
+                        'only has an effect if neither --preprocess nor '
+                        '--complete are set. Make sure to pass --no-preprocess '
+                        'to the resultfetcher, because it will not find any '
+                        'preprocess files in the run\'s directory.')
         parser.add_argument('--compact', action='store_true',
-                            help='link to preprocessing files instead of '
-                                 'copying them. Only use this option if the '
-                                 'preprocessed files will NOT be changed '
-                                 'during the experiment. This option only has '
-                                 'an effect if neither --preprocess nor '
-                                 '--complete are set.')
+                            help=compact_help)
         parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
         parser.add_argument('-c', '--configs', default=[], type=tools.csv,
@@ -311,6 +313,7 @@ class DownwardExperiment(experiments.Experiment):
                                      'all.groups', required=False)
 
                     if self.compact:
+                        run.set_property('compact', True)
                         _prepare_search_run(self, run, config_nick, config,
                                             preprocess_dir)
                         continue
