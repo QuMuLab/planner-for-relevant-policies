@@ -186,6 +186,10 @@ class DownwardExperiment(experiments.Experiment):
             logging.error('Please specify at least one planner configuration')
             sys.exit(2)
 
+        # Save if this is a compact experiment i.e. preprocess files are copied
+        compact = self.compact and not self.preprocess and not self.complete
+        self.set_property('compact', compact)
+
         checkouts.make_checkouts(combinations)
         #require_src_dirs(self, combinations)
         self.problems = downward_suites.build_suite(self.suite)

@@ -53,11 +53,11 @@ class FetchOptionParser(tools.ArgParser):
         # Update some args with the values from the experiment's
         # properties file if the values have not been set on the commandline
         exp_props_file = os.path.join(args.exp_dir, 'properties')
-        self.exp_props = tools.Properties(exp_props_file)
-        if not args.eval_dir and 'eval_dir' in self.exp_props:
-            args.eval_dir = self.exp_props['eval_dir']
-        if 'copy_all' in self.exp_props:
-            args.copy_all = self.exp_props['copy_all']
+        args.exp_props = tools.Properties(exp_props_file)
+        if not args.eval_dir and 'eval_dir' in args.exp_props:
+            args.eval_dir = args.exp_props['eval_dir']
+        if 'copy_all' in args.exp_props:
+            args.copy_all = args.exp_props['copy_all']
 
         # If args.eval_dir is absolute already we don't have to do anything
         if args.eval_dir and not os.path.isabs(args.eval_dir):
@@ -265,6 +265,7 @@ class Fetcher(object):
             props['run_dir'] = os.path.relpath(run_dir, self.exp_dir)
 
             for filename, file_parser in self.file_parsers.items():
+                # If filename is absolute it will not be changed here
                 filename = os.path.join(run_dir, filename)
                 file_parser.load_file(filename)
                 props = file_parser.parse(props)

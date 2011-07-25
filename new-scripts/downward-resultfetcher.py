@@ -390,9 +390,16 @@ def build_fetcher(parser=FetchOptionParser()):
 
     eval = Fetcher(parser)
 
+    # Do not parse preprocess files if it has been disabled on the commandline
     if not eval.no_preprocess:
-        add_preprocess_parsing(eval)
-        add_preprocess_functions(eval)
+        if eval.exp_props.get('compact', False):
+            # For compact experiments the preprocess files do not reside in the
+            # run's directory so we can't parse them
+            logging.info('You are parsing a compact experiment, so preprocess '
+                         'files will not be parsed')
+        else:
+            add_preprocess_parsing(eval)
+            add_preprocess_functions(eval)
     if not eval.no_search:
         add_search_parsing(eval)
         add_search_functions(eval)
