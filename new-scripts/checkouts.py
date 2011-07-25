@@ -297,11 +297,15 @@ class PlannerSvnCheckout(SvnCheckout):
 # -----------------------------------------------------------------------------
 
 
-def make_checkouts(combinations):
-    """
-    Checks out and compiles the code
-    """
+def checkout(combinations):
+    """Checks out the code once for each separate checkout directory."""
     # Checkout and compile each revision only once
     for part in set(itertools.chain(*combinations)):
         part.checkout()
+
+
+def compile(combinations):
+    """Compiles the code."""
+    # Checkout and compile each revision only once
+    for part in set(itertools.chain(*combinations)):
         part.compile()

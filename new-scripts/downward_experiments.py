@@ -188,7 +188,8 @@ class DownwardExperiment(experiments.Experiment):
         compact = self.compact and not self.preprocess and not self.complete
         self.set_property('compact', compact)
 
-        checkouts.make_checkouts(combinations)
+        checkouts.checkout(combinations)
+        checkouts.compile(combinations)
         #require_src_dirs(self, combinations)
         self.problems = downward_suites.build_suite(self.suite)
 
