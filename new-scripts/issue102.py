@@ -6,8 +6,9 @@ import experiments
 import downward_suites
 import downward_configs
 import tools
-from downward_experiments import (TranslatorHgCheckout, PreprocessorHgCheckout,
-                               PlannerHgCheckout, make_checkouts, _get_configs)
+from checkouts import (TranslatorHgCheckout, PreprocessorHgCheckout,
+                       PlannerHgCheckout, make_checkouts)
+from downward_experiments import _get_configs
 
 
 def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):

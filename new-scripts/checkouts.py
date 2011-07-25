@@ -6,12 +6,8 @@ import re
 
 import tools
 
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-CHECKOUTS_DIRNAME = 'checkouts'
-CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
+CHECKOUTS_DIR = os.path.join(tools.SCRIPTS_DIR, 'checkouts')
 tools.makedirs(CHECKOUTS_DIR)
-
-BASE_DIR = os.path.dirname(SCRIPTS_DIR)
 
 ABS_REV_CACHE = {}
 _sentinel = object()
@@ -112,7 +108,7 @@ class Checkout(object):
 # ---------- Mercurial --------------------------------------------------------
 
 class HgCheckout(Checkout):
-    DEFAULT_URL = BASE_DIR
+    DEFAULT_URL = tools.BASE_DIR
     DEFAULT_REV = 'WORK'
 
     def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, name=''):
@@ -121,7 +117,7 @@ class HgCheckout(Checkout):
         rev_abs = self.get_rev_abs(repo, rev)
 
         if rev_nick == 'WORK':
-            checkout_dir = os.path.join(SCRIPTS_DIR, '../')
+            checkout_dir = tools.BASE_DIR
         else:
             checkout_dir = name if name else rev_abs
 

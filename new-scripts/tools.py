@@ -15,6 +15,7 @@ LOG_LEVEL = None
 # Directories and files
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SCRIPTS_DIR)
 DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
 CALLS_DIR = os.path.join(SCRIPTS_DIR, 'calls')
 
