@@ -3,6 +3,7 @@ import sys
 import subprocess
 import logging
 import re
+import itertools
 
 import tools
 
@@ -32,7 +33,7 @@ class Checkout(object):
         return self.rev == other.rev
 
     def __hash__(self):
-        return hash(self.rev)
+        return hash(self.checkout_dir)
 
     def checkout(self):
         # We don't need to check out the working copy
@@ -299,18 +300,8 @@ class PlannerSvnCheckout(SvnCheckout):
 def make_checkouts(combinations):
     """
     Checks out and compiles the code
-    We allow both lists of checkouts and list of checkout tuples
     """
-    parts = []
-
-    for combo in combinations:
-        if isinstance(combo, Checkout):
-            parts.append(combo)
-        else:
-            for part in combo:
-                parts.append(part)
-
     # Checkout and compile each revision only once
-    for part in set(parts):
+    for part in set(itertools.chain(*combinations)):
         part.checkout()
         part.compile()
