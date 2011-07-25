@@ -53,12 +53,11 @@ class FetchOptionParser(tools.ArgParser):
         # Update some args with the values from the experiment's
         # properties file if the values have not been set on the commandline
         exp_props_file = os.path.join(args.exp_dir, 'properties')
-        if os.path.exists(exp_props_file):
-            exp_props = tools.Properties(exp_props_file)
-            if not args.eval_dir and 'eval_dir' in exp_props:
-                args.eval_dir = exp_props['eval_dir']
-            if 'copy_all' in exp_props:
-                args.copy_all = exp_props['copy_all']
+        self.exp_props = tools.Properties(exp_props_file)
+        if not args.eval_dir and 'eval_dir' in self.exp_props:
+            args.eval_dir = self.exp_props['eval_dir']
+        if 'copy_all' in self.exp_props:
+            args.copy_all = self.exp_props['copy_all']
 
         # If args.eval_dir is absolute already we don't have to do anything
         if args.eval_dir and not os.path.isabs(args.eval_dir):
