@@ -159,32 +159,25 @@ def translator_invariant_groups_total_size(content, old_props):
 # Search functions ------------------------------------------------------------
 
 def completely_explored(content, old_props):
-    new_props = {}
-    if 'Completely explored state space -- no solution!' in content:
-        new_props['completely_explored'] = True
-    return new_props
+    return {'completely_explored':
+            'Completely explored state space -- no solution!' in content}
 
 
 def get_status(content, old_props):
     new_props = {}
-    if 'does not support' in content:
-        new_props['status'] = 'unsupported'
-    elif 'plan_length' in old_props or 'cost' in old_props:
+    if 'plan_length' in old_props or 'cost' in old_props:
         new_props['status'] = 'ok'
-    elif 'completely_explored' in old_props:
+    elif old_props.get('completely_explored', False):
         new_props['status'] = 'failure'
+    elif 'does not support' in content:
+        new_props['status'] = 'unsupported'
     else:
         new_props['status'] = 'unsolved'
     return new_props
 
 
 def coverage(content, old_props):
-    new_props = {}
-    if 'plan_length' in old_props or 'cost' in old_props:
-        new_props['coverage'] = 1
-    else:
-        new_props['coverage'] = 0
-    return new_props
+    return {'coverage': int('plan_length' in old_props or 'cost' in old_props)}
 
 
 def check_memory(content, old_props):
