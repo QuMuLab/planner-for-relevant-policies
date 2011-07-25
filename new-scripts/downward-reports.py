@@ -130,6 +130,8 @@ class PlanningReport(Report):
             name += '-' + '+'.join(self.configs)
         if self.suite:
             name += '-' + '+'.join(self.suite)
+        if self.filter:
+            name += '-' + '+'.join([f.replace(':', '_') for f in self.filter])
         name += '-' + self.resolution[0]
         name += '-' + self.report_type
         return name
