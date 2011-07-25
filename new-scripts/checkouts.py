@@ -21,6 +21,7 @@ class Checkout(object):
         self.repo = repo
         self.rev = str(rev)
         # Nickname for the checkout (used for reports and checkout directory)
+        # TODO: name = property: basename(checkout_dir)
         self.name = name
 
         if not os.path.isabs(checkout_dir):
@@ -29,11 +30,14 @@ class Checkout(object):
 
         self._executable = None
 
+    def __lt__(self, other):
+        return self.name < other.name
+
     def __eq__(self, other):
-        return self.rev == other.rev
+        return self.name == other.name
 
     def __hash__(self):
-        return hash(self.checkout_dir)
+        return hash(self.name)
 
     def checkout(self):
         # We don't need to check out the working copy
@@ -95,7 +99,7 @@ class Checkout(object):
 
     @property
     def rel_dest(self):
-        return 'code-%s/%s' % (self.rev, self.part)
+        return 'code-%s/%s' % (self.name, self.part)
 
     @property
     def shell_name(self):
@@ -300,12 +304,12 @@ class PlannerSvnCheckout(SvnCheckout):
 def checkout(combinations):
     """Checks out the code once for each separate checkout directory."""
     # Checkout and compile each revision only once
-    for part in set(itertools.chain(*combinations)):
+    for part in sorted(set(itertools.chain(*combinations))):
         part.checkout()
 
 
 def compile(combinations):
     """Compiles the code."""
     # Checkout and compile each revision only once
-    for part in set(itertools.chain(*combinations)):
+    for part in sorted(set(itertools.chain(*combinations))):
         part.compile()
