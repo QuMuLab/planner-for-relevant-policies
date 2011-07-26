@@ -132,7 +132,8 @@ class HgCheckout(Checkout):
               checkout manually (e.g. for comparing Makefile options).
         """
         if dest and rev == 'WORK':
-            logging.error('You cannot have multiple copies of the working dir')
+            logging.error('You cannot have multiple copies of the working '
+                          'copy. Please specify a specific revision.')
             sys.exit(1)
 
         # Find proper absolute revision
