@@ -20,10 +20,10 @@ def build_exp():
     """Make sure that the replacements are idempotent."""
     optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
     settings = [(opt, [('-O3', '-' + opt)]) for opt in optimizations]
-    combos = [(checkouts.TranslatorHgCheckout(),
-               checkouts.PreprocessorHgCheckout(),
+    combos = [(checkouts.Translator(),
+               checkouts.Preprocessor(),
                # If we use "tip" here a new folder is created each time
-               checkouts.PlannerHgCheckout(rev='tip', name=opt))
+               checkouts.Planner(rev='tip', dest=opt))
               for opt in optimizations
              ]
     checkouts.checkout(combos)
