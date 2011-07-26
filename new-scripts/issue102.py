@@ -3,6 +3,7 @@ import os
 import sys
 
 import checkouts
+from checkouts import Translator, Preprocessor, Planner
 import downward_experiments
 
 
@@ -20,20 +21,16 @@ def build_exp():
     """Make sure that the replacements are idempotent."""
     optimizations = ['O0', 'O1', 'O2', 'O3', 'Os']
     settings = [(opt, [('-O3', '-' + opt)]) for opt in optimizations]
-    combos = [(checkouts.Translator(),
-               checkouts.Preprocessor(),
-               # If we use "tip" here a new folder is created each time
-               checkouts.Planner(rev='tip', dest=opt))
-              for opt in optimizations
-             ]
+    # We use "tip" here to have a new folder be created each time
+    combos = [(Translator(), Preprocessor(), Planner(rev='tip', dest=opt))
+              for opt in optimizations]
     checkouts.checkout(combos)
     # Make adjustments to Makefiles
     for opt, combo in zip(optimizations, combos):
         translator, preprocessor, planner = combo
         planner_name = 'downward-' + opt
         replacements = [('-O3', '-' + opt)]
-        makefile_path = os.path.join(planner.exe_dir, 'Makefile')
-        print makefile_path
+        makefile_path = os.path.join(planner.bin_dir, 'Makefile')
         change_makefile(makefile_path, opt, replacements)
 
     downward_experiments.build_experiment(combos)
