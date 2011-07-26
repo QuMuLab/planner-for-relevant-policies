@@ -193,7 +193,7 @@ def fast_updatetree(src, dst):
         dstname = os.path.join(dst, name)
         try:
             if os.path.isdir(srcname):
-                shutil.copytree(srcname, dstname)
+                fast_updatetree(srcname, dstname)
             else:
                 shutil.copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?
