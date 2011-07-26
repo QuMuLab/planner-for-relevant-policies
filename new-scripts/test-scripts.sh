@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-EXPNAME=test-exp
+EXPNAME=exp-test
 
 rm -rf $EXPNAME-p
 rm -rf $EXPNAME
