@@ -28,6 +28,11 @@ LIMIT_PREPROCESS_MEMORY = 8192
 LIMIT_SEARCH_TIME = 1800
 LIMIT_SEARCH_MEMORY = 2048
 
+PLANNER_BINARIES = ['release-search', 'search',
+                    'downward-debug', 'downward-profile',
+                    'downward-1', 'downward-2', 'downward-4',
+                    'dispatch', 'downward-seq-opt-fdss-1.py', 'unitcost']
+
 
 def _get_configs(planner_rev, config_list):
     """
@@ -55,8 +60,8 @@ def require_src_dirs(exp, combinations):
     import itertools
     checkouts = set(itertools.chain(*combinations))
     for checkout in checkouts:
-        exp.add_resource('SRC_%s' % checkout.rev, checkout.src_dir,
-                         'CODE-%s' % checkout.rev)
+        exp.add_resource('SRC_%s' % checkout.name, checkout.get_path('src'),
+                         'code-%s' % checkout.name)
 
 
 class DownwardRun(experiments.Run):
@@ -196,9 +201,6 @@ class DownwardExperiment(experiments.Experiment):
         self.prepare()
         self.make_runs()
 
-    def _require_checkout(self, part):
-        self.add_resource(part.shell_name, part.binary, part.rel_dest)
-
     def prepare(self):
         if self.preprocess:
             self._prepare_preprocess()
@@ -244,24 +246,26 @@ class DownwardExperiment(experiments.Experiment):
 
     def _prepare_translator_and_preprocessor(self, translator, preprocessor):
         # Copy the whole translate directory
-        self.add_resource(translator.shell_name + '_DIR', translator.exe_dir,
-                         translator.rel_dest)
+        self.add_resource(translator.shell_name + '_DIR', translator.bin_dir,
+                          translator.get_path_dest('translate'))
         # In order to set an environment variable, overwrite the executable
         self.add_resource(translator.shell_name,
-                         os.path.join(translator.exe_dir, 'translate.py'),
-                         os.path.join(translator.rel_dest, 'translate.py'))
-        self._require_checkout(preprocessor)
+                          translator.get_bin('translate.py'),
+                          translator.get_path_dest('translate', 'translate.py'))
+        self.add_resource(preprocessor.shell_name,
+                          preprocessor.get_bin('preprocess'),
+                          preprocessor.get_bin_dest())
 
     def _prepare_planner(self, planner):
-        self._require_checkout(planner)
-        for bin in ['downward-1', 'downward-2', 'downward-4', 'dispatch',
-                    'downward-seq-opt-fdss-1.py', 'unitcost']:
-            src_path = os.path.join(planner.exe_dir, bin)
+        self.add_resource(planner.shell_name, planner.get_bin('downward'),
+                          planner.get_bin_dest())
+        for bin in PLANNER_BINARIES:
+            src_path = planner.get_bin(bin)
             if not os.path.isfile(src_path):
+                logging.warning('File %s could not be found. Is it required?' %
+                                src_path)
                 continue
-            code_subdir = os.path.dirname(planner.rel_dest)
-            self.add_resource('UNUSEDNAME', src_path,
-                            os.path.join(code_subdir, bin))
+            self.add_resource('NONAME', src_path, planner.get_path_dest(bin))
 
         # The tip changeset has the newest validator version so we use this one
         validate = os.path.join(tools.SCRIPTS_DIR, '..', 'src', 'validate')
@@ -361,8 +365,8 @@ def build_experiment(combinations):
 
 
 if __name__ == '__main__':
-    combinations = [(checkouts.TranslatorHgCheckout(rev='WORK'),
-                     checkouts.PreprocessorHgCheckout(rev='WORK'),
-                     checkouts.PlannerHgCheckout(rev='WORK'))]
+    combinations = [(checkouts.Translator(rev='WORK'),
+                     checkouts.Preprocessor(rev='WORK'),
+                     checkouts.Planner(rev='WORK'))]
 
     build_experiment(combinations)

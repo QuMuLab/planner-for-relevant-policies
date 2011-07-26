@@ -15,20 +15,15 @@ _sentinel = object()
 
 
 class Checkout(object):
-    def __init__(self, part, repo, rev, checkout_dir, name):
+    def __init__(self, part, repo, rev, checkout_dir):
         # Directory name of the planner part (translate, preprocess, search)
         self.part = part
         self.repo = repo
         self.rev = str(rev)
-        # Nickname for the checkout (used for reports and checkout directory)
-        # TODO: name = property: basename(checkout_dir)
-        self.name = name
 
         if not os.path.isabs(checkout_dir):
             checkout_dir = os.path.join(CHECKOUTS_DIR, checkout_dir)
         self.checkout_dir = os.path.abspath(checkout_dir)
-
-        self._executable = None
 
     def __lt__(self, other):
         return self.name < other.name
@@ -39,75 +34,72 @@ class Checkout(object):
     def __hash__(self):
         return hash(self.name)
 
+    @property
+    def name(self):
+        """
+        Nickname for the checkout that is used for the reports and comparisons.
+        """
+        if self.rev == 'WORK':
+            return 'WORK'
+        return os.path.basename(self.checkout_dir)
+
     def checkout(self):
         # We don't need to check out the working copy
-        if not self.rev == 'WORK':
-            # If there's already a checkout, don't checkout again
-            path = self.checkout_dir
-            if os.path.exists(path):
-                logging.debug('Checkout "%s" already exists' % path)
-            else:
-                cmd = self.get_checkout_cmd()
-                print cmd
-                subprocess.call(cmd, shell=True)
-            assert os.path.exists(path), 'Could not checkout to "%s"' % path
+        if self.rev == 'WORK':
+            return
+
+        # If there's already a checkout, don't checkout again
+        path = self.checkout_dir
+        if os.path.exists(path):
+            logging.info('Checkout "%s" already exists' % path)
+        else:
+            cmd = self.get_checkout_cmd()
+            print cmd
+            subprocess.call(cmd, shell=True)
+        assert os.path.exists(path), 'Could not checkout to "%s"' % path
 
     def get_checkout_cmd(self):
         raise Exception('Not implemented')
 
     def compile(self):
         """
-        We need to compile the code if the executable does not exist.
-        Additionally we want to compile it, when we run an experiment with
-        the working copy to make sure the executable is based on the latest
-        version of the code.
+        We issue the build_all command unconditionally and let "make" take care
+        of checking if something has to be recompiled.
         """
         cwd = os.getcwd()
-        src_dir = os.path.dirname(self.exe_dir)
-        os.chdir(src_dir)
+        os.chdir(self.get_path('src'))
         subprocess.call(['./build_all'])
         os.chdir(cwd)
 
-    def _get_executable(self, default=_sentinel):
-        """ Returns the path to the python module or a binary """
-        names = ['translate.py', 'preprocess',
-                'downward', 'release-search', 'search',
-                'downward-debug', 'downward-profile']
-        for name in names:
-            planner = os.path.join(self.exe_dir, name)
-            if os.path.exists(planner):
-                return planner
-        if default is _sentinel:
-            logging.error('%s executable could not be found in %s' %
-                            (self.part, self.exe_dir))
-            sys.exit(1)
-        return default
+    def get_path(self, *rel_path):
+        return os.path.join(self.checkout_dir, *rel_path)
+
+    def get_bin(self, *bin_path):
+        """Return the absolute path to this part's src directory."""
+        return os.path.join(self.bin_dir, *bin_path)
+
+    def get_path_dest(self, *rel_path):
+        return os.path.join('code-' + self.name, *rel_path)
+
+    def get_bin_dest(self):
+        return self.get_path_dest(self.part)
 
     @property
-    def binary(self):
-        if not self._executable:
-            self._executable = self._get_executable()
-        return self._executable
+    def bin_dir(self):
+        assert os.path.exists(self.checkout_dir), self.checkout_dir
+        bin_dir = self.get_path('downward', self.part)
+        # "downward" dir has been renamed to "src"
+        if not os.path.exists(bin_dir):
+            bin_dir = self.get_path('src', self.part)
+        return bin_dir
 
     @property
     def parent_rev(self):
         raise Exception('Not implemented')
 
     @property
-    def exe_dir(self):
-        raise Exception('Not implemented')
-
-    @property
-    def rel_dest(self):
-        return 'code-%s/%s' % (self.name, self.part)
-
-    @property
     def shell_name(self):
-        return '%s_%s' % (self.part.upper(), self.rev)
-
-    @property
-    def src_dir(self):
-        return os.path.join(self.checkout_dir, 'src')
+        return '%s_%s' % (self.part.upper(), self.name)
 
 
 # ---------- Mercurial --------------------------------------------------------
@@ -116,23 +108,19 @@ class HgCheckout(Checkout):
     DEFAULT_URL = tools.BASE_DIR
     DEFAULT_REV = 'WORK'
 
-    def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, name=''):
-        rev_nick = str(rev).upper()
+    def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, dest=''):
         # Find proper absolute revision
-        rev_abs = self.get_rev_abs(repo, rev)
+        rev = self.get_abs_rev(repo, rev)
 
-        if rev_nick == 'WORK':
+        if rev == 'WORK':
             checkout_dir = tools.BASE_DIR
         else:
-            checkout_dir = name if name else rev_abs
+            checkout_dir = dest if dest else rev
 
-        if not name:
-            name = part + '-' + rev_nick
-
-        Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
+        Checkout.__init__(self, part, repo, rev, checkout_dir)
         self.parent = None
 
-    def get_rev_abs(self, repo, rev):
+    def get_abs_rev(self, repo, rev):
         if str(rev).upper() == 'WORK':
             return 'WORK'
         cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
@@ -165,27 +153,18 @@ class HgCheckout(Checkout):
         self.parent = tools.run_command(cmd)
         return self.parent
 
-    @property
-    def exe_dir(self):
-        assert os.path.exists(self.checkout_dir), self.checkout_dir
-        exe_dir = os.path.join(self.checkout_dir, 'downward', self.part)
-        # "downward" dir has been renamed to "src"
-        if not os.path.exists(exe_dir):
-            exe_dir = os.path.join(self.checkout_dir, 'src', self.part)
-        return exe_dir
 
-
-class TranslatorHgCheckout(HgCheckout):
+class Translator(HgCheckout):
     def __init__(self, *args, **kwargs):
         HgCheckout.__init__(self, 'translate', *args, **kwargs)
 
 
-class PreprocessorHgCheckout(HgCheckout):
+class Preprocessor(HgCheckout):
     def __init__(self, *args, **kwargs):
         HgCheckout.__init__(self, 'preprocess', *args, **kwargs)
 
 
-class PlannerHgCheckout(HgCheckout):
+class Planner(HgCheckout):
     def __init__(self, *args, **kwargs):
         HgCheckout.__init__(self, 'search', *args, **kwargs)
 
@@ -201,7 +180,7 @@ class SvnCheckout(Checkout):
     def __init__(self, part, repo, rev=DEFAULT_REV):
         rev = str(rev)
         name = part + '-' + rev
-        rev_abs = self.get_rev_abs(repo, rev)
+        rev_abs = self.get_abs_rev(repo, rev)
 
         if rev == 'WORK':
             logging.error('Comparing SVN working copy is not supported')
@@ -211,7 +190,7 @@ class SvnCheckout(Checkout):
 
         Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
 
-    def get_rev_abs(self, repo, rev):
+    def get_abs_rev(self, repo, rev):
         try:
             # If we have a number string, return it
             int(rev)
@@ -263,7 +242,7 @@ class SvnCheckout(Checkout):
 
         if self.rev == 'WORK' or self._get_executable(default=None) is None:
             cwd = os.getcwd()
-            os.chdir(self.exe_dir)
+            os.chdir(self.bin_dir)
             subprocess.call(['make'])
             os.chdir(cwd)
 
@@ -272,8 +251,8 @@ class SvnCheckout(Checkout):
         return self._get_rev(self.checkout_dir)
 
     @property
-    def exe_dir(self):
-        # checkout_dir is exe_dir for SVN
+    def bin_dir(self):
+        # checkout_dir is bin_dir for SVN
         assert os.path.exists(self.checkout_dir)
         return self.checkout_dir
 
