@@ -61,20 +61,20 @@ def test_gm1():
     for l in lists:
         assert gm_old(l) == gm(l)
 
-def test_checkouts():
+def make_checkouts():
     combinations = [
-        (checkouts.TranslatorHgCheckout(),
-         checkouts.PreprocessorHgCheckout(rev='TIP'),
-         checkouts.PlannerHgCheckout(rev='WORK')),
-        (checkouts.TranslatorSvnCheckout(rev='HEAD'),
-         checkouts.PreprocessorSvnCheckout(rev='head'),
-         checkouts.PlannerSvnCheckout(rev='HEAD')),
-        (checkouts.TranslatorSvnCheckout(rev=4321),
-         checkouts.PreprocessorHgCheckout(rev='tip'),
-         checkouts.PlannerSvnCheckout(rev='HEAD')),
-        (checkouts.TranslatorHgCheckout(rev='a640c9a9284c'),
-         checkouts.PreprocessorHgCheckout(rev='work'),
-         checkouts.PlannerHgCheckout(rev='623')),
+        (checkouts.Translator(),
+         checkouts.Preprocessor(rev='TIP'),
+         checkouts.Planner(rev='WORK')),
+        (checkouts.TranslatorSvn(rev='HEAD'),
+         checkouts.PreprocessorSvn(rev='head'),
+         checkouts.PlannerSvn(rev='HEAD')),
+        (checkouts.TranslatorSvn(rev=4321),
+         checkouts.Preprocessor(rev='tip'),
+         checkouts.PlannerSvn(rev='HEAD')),
+        (checkouts.Translator(rev='a640c9a9284c'),
+         checkouts.Preprocessor(rev='work'),
+         checkouts.Planner(rev='623')),
                    ]
     import sys
     sys.argv += ['try', '-s', 'MINITEST', '-c', 'yY']
@@ -87,4 +87,4 @@ if __name__ == '__main__':
     test_copy_file_to_not_ex_dir()
     test_copy_dir_to_dir()
     test_gm1()
-    test_checkouts()
+    #make_checkouts()
