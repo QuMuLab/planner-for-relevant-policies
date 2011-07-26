@@ -189,6 +189,9 @@ def fast_updatetree(src, dst):
 
     errors = []
     for name in names:
+        # Skip over svn directories
+        if name.startswith('.svn'):
+            continue
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         try:
