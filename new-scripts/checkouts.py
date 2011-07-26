@@ -116,10 +116,25 @@ class Checkout(object):
 # ---------- Mercurial --------------------------------------------------------
 
 class HgCheckout(Checkout):
+    """
+    Base class for the three checkout types (translate, preprocess, search).
+    """
     DEFAULT_URL = tools.BASE_DIR
     DEFAULT_REV = 'WORK'
 
     def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, dest=''):
+        """
+        part: One of translate, preprocess, search
+        repo: Path to the hg repository. Can be either local or remote.
+        rev:  Changeset. Can be any valid hg revision specifier or "WORK"
+        dest: If set this will be the checkout's name. Use this if you need to
+              checkout the same revision multiple times and want to alter each
+              checkout manually (e.g. for comparing Makefile options).
+        """
+        if dest and rev == 'WORK':
+            logging.error('You cannot have multiple copies of the working dir')
+            sys.exit(1)
+
         # Find proper absolute revision
         rev = self.get_abs_rev(repo, rev)
 
