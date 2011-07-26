@@ -136,6 +136,13 @@ class HgCheckout(Checkout):
                           'copy. Please specify a specific revision.')
             sys.exit(1)
 
+        if not os.path.abspath(repo) == HgCheckout.DEFAULT_URL and not dest:
+            logging.warning('You should set "dest" explicitly when using a '
+                            'remote repo. Otherwise local checkouts might '
+                            'overwrite checkouts of the same revision from '
+                            'the remote repo.')
+            sys.exit(1)
+
         # Find proper absolute revision
         rev = self.get_abs_rev(repo, rev)
 
