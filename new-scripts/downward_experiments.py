@@ -116,7 +116,7 @@ def _prepare_preprocess_run(exp, run):
                     time_limit=LIMIT_PREPROCESS_TIME,
                     mem_limit=LIMIT_PREPROCESS_MEMORY)
 
-    ext_config = '-'.join([run.translator.rev, run.preprocessor.rev])
+    ext_config = '-'.join([run.translator.name, run.preprocessor.name])
     run.set_property('config', ext_config)
     run.set_property('id', [ext_config, run.domain_name, run.problem_name])
 
@@ -155,10 +155,10 @@ def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
     run.set_property('commandline_config', run.planner_config)
 
     # If all three parts have the same revision don't clutter the reports
-    revs = [run.translator.rev, run.preprocessor.rev, run.planner.rev]
-    if len(set(revs)) == 1:
-        revs = [run.translator.rev]
-    ext_config = '-'.join(revs + [config_nick])
+    names = [run.translator.name, run.preprocessor.name, run.planner.name]
+    if len(set(names)) == 1:
+        names = [run.translator.name]
+    ext_config = '-'.join(names + [config_nick])
 
     run.set_property('config', ext_config)
     run.set_property('id', [ext_config, run.domain_name, run.problem_name])
@@ -236,11 +236,12 @@ class DownwardExperiment(experiments.Experiment):
             self.end_instructions = ('Preprocess experiment has been created. '
                 'Before you can create the search experiment you have to run\n'
                 '%(run_script)s\n'
-                './resultfetcher.py %(exp_path)s' % {'run_script': self.compact_main_script_path,
-                    'exp_path': self.compact_exp_path})
+                './resultfetcher.py %(exp_path)s' %
+                {'run_script': self.compact_main_script_path,
+                 'exp_path': self.compact_exp_path})
 
-        # Set the eval directory already here, we don't want the results to land
-        # in the default testname-eval
+        # Set the eval directory already here, we don't want the results to
+        # land in the default testname-eval
         self.set_property('eval_dir', os.path.relpath(PREPROCESSED_TASKS_DIR))
 
         # We need the "output" file, not only the properties file
@@ -316,8 +317,8 @@ class DownwardExperiment(experiments.Experiment):
             for config_nick, config in self._get_configs(planner.rev):
                 for prob in self.problems:
                     preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
-                                                  translator.rev + '-' +
-                                                  preprocessor.rev,
+                                                  translator.name + '-' +
+                                                  preprocessor.name,
                                                   prob.domain, prob.problem)
                     def path(filename):
                         return os.path.join(preprocess_dir, filename)
