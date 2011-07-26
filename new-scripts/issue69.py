@@ -4,15 +4,15 @@ import downward_experiments
 import checkouts
 
 combinations = [
-    (checkouts.TranslatorSvnCheckout(rev=3613),
-     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
-     checkouts.PlannerSvnCheckout(rev=3612)),
-    (checkouts.TranslatorSvnCheckout(rev=3613),
-     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
-     checkouts.PlannerSvnCheckout(rev=3613)),
-    (checkouts.TranslatorSvnCheckout(rev=3613),
-     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
-     checkouts.PlannerSvnCheckout(rev='HEAD')),
+    (checkouts.TranslatorSvn(rev=3613),
+     checkouts.PreprocessorSvn(rev='HEAD'),
+     checkouts.PlannerSvn(rev=3612)),
+    (checkouts.TranslatorSvn(rev=3613),
+     checkouts.PreprocessorSvn(rev='HEAD'),
+     checkouts.PlannerSvn(rev=3613)),
+    (checkouts.TranslatorSvn(rev=3613),
+     checkouts.PreprocessorSvn(rev='HEAD'),
+     checkouts.PlannerSvn(rev='HEAD')),
                ]
 
 downward_experiments.build_experiment(combinations)
