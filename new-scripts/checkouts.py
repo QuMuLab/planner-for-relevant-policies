@@ -67,8 +67,13 @@ class Checkout(object):
         of checking if something has to be recompiled.
         """
         cwd = os.getcwd()
-        os.chdir(self.get_path('src'))
-        subprocess.call(['./build_all'])
+        os.chdir(self.src_dir)
+        try:
+            subprocess.call(['./build_all'])
+        except OSError:
+            logging.error('Changeset %s does not have the build_all script' %
+                          self.rev)
+            sys.exit(1)
         os.chdir(cwd)
 
     def get_path(self, *rel_path):
@@ -85,13 +90,20 @@ class Checkout(object):
         return self.get_path_dest(self.part)
 
     @property
-    def bin_dir(self):
+    def src_dir(self):
+        """Returns the path to the global Fast Downward source directory.
+
+        The directory "downward" dir has been renamed to "src", but we still
+        want to support older changesets."""
         assert os.path.exists(self.checkout_dir), self.checkout_dir
-        bin_dir = self.get_path('downward', self.part)
-        # "downward" dir has been renamed to "src"
-        if not os.path.exists(bin_dir):
-            bin_dir = self.get_path('src', self.part)
-        return bin_dir
+        src_dir = self.get_path('downward')
+        if not os.path.exists(src_dir):
+            src_dir = self.get_path('src')
+        return src_dir
+
+    @property
+    def bin_dir(self):
+        return os.path.join(self.src_dir, self.part)
 
     @property
     def parent_rev(self):
@@ -112,7 +124,7 @@ class HgCheckout(Checkout):
         # Find proper absolute revision
         rev = self.get_abs_rev(repo, rev)
 
-        if rev == 'WORK':
+        if rev.upper() == 'WORK':
             checkout_dir = tools.BASE_DIR
         else:
             checkout_dir = dest if dest else rev
@@ -172,25 +184,24 @@ class Planner(HgCheckout):
 # ---------- Subversion -------------------------------------------------------
 
 class SvnCheckout(Checkout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward'
+    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/'
     DEFAULT_REV = 'WORK'
 
     REV_REGEX = re.compile(r'Revision: (\d+)')
 
-    def __init__(self, part, repo, rev=DEFAULT_REV):
+    def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV):
         rev = str(rev)
-        name = part + '-' + rev
-        rev_abs = self.get_abs_rev(repo, rev)
+        rev = self._get_abs_rev(repo, rev)
 
         if rev == 'WORK':
             logging.error('Comparing SVN working copy is not supported')
             sys.exit(1)
 
-        checkout_dir = part + '-' + rev_abs
+        checkout_dir = rev
 
-        Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
+        Checkout.__init__(self, part, repo, rev, checkout_dir)
 
-    def get_abs_rev(self, repo, rev):
+    def _get_abs_rev(self, repo, rev):
         try:
             # If we have a number string, return it
             int(rev)
@@ -229,53 +240,24 @@ class SvnCheckout(Checkout):
     def get_checkout_cmd(self):
         return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
 
-    def compile(self):
-        """
-        We need to compile the code if the executable does not exist.
-        Additionally we want to compile it, when we run an experiment with
-        the working copy to make sure the executable is based on the latest
-        version of the code. Obviously we don't need no compile the
-        translator code.
-        """
-        if self.part == 'translate':
-            return
-
-        if self.rev == 'WORK' or self._get_executable(default=None) is None:
-            cwd = os.getcwd()
-            os.chdir(self.bin_dir)
-            subprocess.call(['make'])
-            os.chdir(cwd)
-
     @property
     def parent_rev(self):
         return self._get_rev(self.checkout_dir)
 
-    @property
-    def bin_dir(self):
-        # checkout_dir is bin_dir for SVN
-        assert os.path.exists(self.checkout_dir)
-        return self.checkout_dir
+
+class TranslatorSvn(SvnCheckout):
+    def __init__(self, *args, **kwargs):
+        SvnCheckout.__init__(self, 'translate', *args, **kwargs)
 
 
-class TranslatorSvnCheckout(SvnCheckout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/translate'
-
-    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
-        SvnCheckout.__init__(self, 'translate', repo, rev)
+class PreprocessorSvn(SvnCheckout):
+    def __init__(self, *args, **kwargs):
+        SvnCheckout.__init__(self, 'preprocess', *args, **kwargs)
 
 
-class PreprocessorSvnCheckout(SvnCheckout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/preprocess'
-
-    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
-        SvnCheckout.__init__(self, 'preprocess', repo, rev)
-
-
-class PlannerSvnCheckout(SvnCheckout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/search'
-
-    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
-        SvnCheckout.__init__(self, 'search', repo, rev)
+class PlannerSvn(SvnCheckout):
+    def __init__(self, *args, **kwargs):
+        SvnCheckout.__init__(self, 'search', *args, **kwargs)
 
 # -----------------------------------------------------------------------------
 
