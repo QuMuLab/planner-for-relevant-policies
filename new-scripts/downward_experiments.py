@@ -28,10 +28,12 @@ LIMIT_PREPROCESS_MEMORY = 8192
 LIMIT_SEARCH_TIME = 1800
 LIMIT_SEARCH_MEMORY = 2048
 
-PLANNER_BINARIES = ['release-search', 'search',
-                    'downward-debug', 'downward-profile',
-                    'downward-1', 'downward-2', 'downward-4',
-                    'dispatch', 'downward-seq-opt-fdss-1.py', 'unitcost']
+# At least one of those must be found (First is taken if many are present)
+PLANNER_BINARIES = ['downward', 'downward-debug', 'downward-profile',
+                    'release-search', 'search']
+# The following are added only if they are present
+PLANNER_HELPERS = ['downward-1', 'downward-2', 'downward-4',
+                   'dispatch', 'downward-seq-opt-fdss-1.py', 'unitcost']
 
 
 def _get_configs(planner_rev, config_list):
@@ -60,7 +62,7 @@ def require_src_dirs(exp, combinations):
     import itertools
     checkouts = set(itertools.chain(*combinations))
     for checkout in checkouts:
-        exp.add_resource('SRC_%s' % checkout.name, checkout.get_path('src'),
+        exp.add_resource('SRC_%s' % checkout.name, checkout.src_dir,
                          'code-%s' % checkout.name)
 
 
@@ -257,9 +259,19 @@ class DownwardExperiment(experiments.Experiment):
                           preprocessor.get_bin_dest())
 
     def _prepare_planner(self, planner):
-        self.add_resource(planner.shell_name, planner.get_bin('downward'),
-                          planner.get_bin_dest())
-        for bin in PLANNER_BINARIES:
+        # Get the planner binary
+        bin = None
+        for name in PLANNER_BINARIES:
+            path = os.path.join(planner.get_bin(name))
+            if os.path.isfile(path):
+                bin = path
+                break
+        if not bin:
+            logging.error('None of the binaries %s could be found in %s' %
+                          PLANNER_BINARIES, planner.bin_dir)
+            sys.exit(1)
+        self.add_resource(planner.shell_name, bin, planner.get_bin_dest())
+        for bin in PLANNER_HELPERS:
             src_path = planner.get_bin(bin)
             if not os.path.isfile(src_path):
                 logging.warning('File %s could not be found. Is it required?' %
