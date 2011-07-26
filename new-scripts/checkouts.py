@@ -71,9 +71,8 @@ class Checkout(object):
         try:
             subprocess.call(['./build_all'])
         except OSError:
-            logging.error('Changeset %s does not have the build_all script' %
-                          self.rev)
-            sys.exit(1)
+            logging.warning('Changeset %s does not have the build_all script. '
+                            'Please compile it manually.' % self.rev)
         os.chdir(cwd)
 
     def get_path(self, *rel_path):
