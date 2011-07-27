@@ -200,12 +200,7 @@ class DownwardExperiment(experiments.Experiment):
         #require_src_dirs(self, combinations)
         self.problems = downward_suites.build_suite(self.suite)
 
-        self.prepare()
         self.make_runs()
-
-    def prepare(self):
-        if self.preprocess:
-            self._prepare_preprocess()
 
     def _prepare_preprocess(self):
         """
@@ -294,11 +289,16 @@ class DownwardExperiment(experiments.Experiment):
         return _get_configs(rev, self.configs)
 
     def make_runs(self):
+        # Save the experiment stage in the properties
         if self.complete:
+            self.set_property('stage', 'complete')
             self._make_complete_runs()
         elif self.preprocess:
+            self.set_property('stage', 'preprocess')
+            self._prepare_preprocess()
             self._make_preprocess_runs()
         else:
+            self.set_property('stage', 'search')
             self._make_search_runs()
 
     def _make_preprocess_runs(self):
