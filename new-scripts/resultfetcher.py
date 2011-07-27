@@ -238,8 +238,13 @@ class Fetcher(object):
     def fetch(self):
         total_dirs = self.exp_props.get('runs')
 
-        combined_props_filename = os.path.join(self.eval_dir, 'properties')
-        combined_props = tools.Properties(combined_props_filename)
+        # Only write the combined properties when we are not copying preprocess
+        # files.
+        write_combined_props = not self.exp_props.get('stage') == 'preprocess'
+
+        if write_combined_props:
+            combined_props_filename = os.path.join(self.eval_dir, 'properties')
+            combined_props = tools.Properties(combined_props_filename)
 
         # Generator that returns all run_dirs
         run_dirs = glob.iglob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
@@ -267,7 +272,8 @@ class Fetcher(object):
                 file_parser.load_file(filename)
                 props = file_parser.parse(props)
 
-            combined_props['-'.join(id)] = props.dict()
+            if write_combined_props:
+                combined_props['-'.join(id)] = props.dict()
             if self.copy_all:
                 # Write new properties file
                 props.filename = os.path.join(dest_dir, 'properties')
@@ -285,8 +291,9 @@ class Fetcher(object):
             logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
 
         tools.makedirs(self.eval_dir)
-        combined_props.write()
-        self.write_data_dump(combined_props)
+        if write_combined_props:
+            combined_props.write()
+            self.write_data_dump(combined_props)
 
     def write_data_dump(self, combined_props):
         combined_props_file = combined_props.filename
