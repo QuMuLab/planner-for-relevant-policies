@@ -77,12 +77,14 @@ def makedirs(dir):
 def overwrite_dir(dir):
     if os.path.exists(dir):
         if not os.path.exists(os.path.join(dir, 'run')):
-            msg = 'The experiment directory "%s" ' % dir
+            msg = 'The directory "%s" ' % dir
             msg += 'is not empty, do you want to overwrite it? (Y/N): '
             answer = raw_input(msg).upper().strip()
             if not answer == 'Y':
                 sys.exit('Aborted')
         shutil.rmtree(dir)
+    # We use the os.makedirs method instead of our own here to check if the dir
+    # has really been properly deleted.
     os.makedirs(dir)
 
 
