@@ -9,6 +9,14 @@ import logging
 from external import argparse
 from external.configobj import ConfigObj
 
+# Patch configobj's unrepr method. Our version is much faster, but depends on
+# Python 2.6.
+import external.configobj
+import ast
+def fastr_unrepr(s):
+    return ast.literal_eval(s)
+external.configobj.unrepr = fastr_unrepr
+
 
 LOG_LEVEL = None
 
@@ -175,7 +183,7 @@ def run_command(cmd, env=None):
 class Properties(ConfigObj):
     def __init__(self, *args, **kwargs):
         kwargs['unrepr'] = True
-        ConfigObj.__init__(self, *args, **kwargs)
+        ConfigObj.__init__(self, *args, interpolation=False, **kwargs)
 
 
 def fast_updatetree(src, dst):
