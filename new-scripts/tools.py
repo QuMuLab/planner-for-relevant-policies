@@ -12,10 +12,8 @@ from external.configobj import ConfigObj
 # Patch configobj's unrepr method. Our version is much faster, but depends on
 # Python 2.6.
 import external.configobj
-import ast
-def fastr_unrepr(s):
-    return ast.literal_eval(s)
-external.configobj.unrepr = fastr_unrepr
+from ast import literal_eval as unrepr
+external.configobj.unrepr = unrepr
 
 
 LOG_LEVEL = None
