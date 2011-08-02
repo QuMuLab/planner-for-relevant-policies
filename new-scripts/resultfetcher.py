@@ -17,6 +17,7 @@ from collections import defaultdict
 import logging
 import hashlib
 import cPickle
+import time
 
 import tools
 from external.datasets import DataSet
@@ -236,6 +237,7 @@ class Fetcher(object):
         self.check = function
 
     def fetch(self):
+        start_time = time.clock()
         total_dirs = self.exp_props.get('runs')
 
         # Only write the combined properties when we are not copying preprocess
@@ -294,6 +296,7 @@ class Fetcher(object):
         if write_combined_props:
             combined_props.write()
             self.write_data_dump(combined_props)
+        logging.info('Parsing took %s CPU secs' % (time.clock() - start_time))
 
     def write_data_dump(self, combined_props):
         combined_props_file = combined_props.filename
