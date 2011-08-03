@@ -187,7 +187,7 @@ class Fetcher(object):
         self.check = None
 
     def add_pattern(self, name, regex_string, group=1, file='run.log',
-                        required=True, type=int, flags=''):
+                    required=True, type=int, flags=''):
         """
         During evaluate() look for pattern in file and add what is found in
         group to the properties dictionary under "name"
@@ -248,8 +248,8 @@ class Fetcher(object):
             combined_props_filename = os.path.join(self.eval_dir, 'properties')
             combined_props = tools.Properties(combined_props_filename)
 
-        # Generator that returns all run_dirs
-        run_dirs = glob.iglob(os.path.join(self.exp_dir, 'runs-*-*', '*'))
+        # Get all run_dirs
+        run_dirs = sorted(glob.glob(os.path.join(self.exp_dir, 'runs-*-*', '*')))
         for index, run_dir in enumerate(run_dirs, 1):
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
