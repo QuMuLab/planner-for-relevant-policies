@@ -243,6 +243,9 @@ def get_cumulative_results(content, old_props):
     reverse_content = list(reversed(content.splitlines()))
     for name, pattern, cast in patterns:
         for line in reverse_content:
+            # There will be no cumulative values above this line
+            if line.startswith('Cumulative statistics'):
+                break
             match = pattern.search(line)
             if not match:
                 continue
