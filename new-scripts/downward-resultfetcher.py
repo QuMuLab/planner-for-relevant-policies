@@ -209,7 +209,6 @@ def get_iterative_results(content, old_props):
     group1 = ('cost', 'plan_length')
     group2 = ('dead_ends', 'expansions', 'evaluations', 'generated',
               'initial_h_value', 'search_time')
-    assert len(group1) + len(group2) == len(values)
     assert same_length(values[x] for x in group1), values
     assert same_length(values[x] for x in group2), values
 
