@@ -8,14 +8,18 @@ from __future__ import with_statement, division
 import logging
 import re
 import math
+from collections import defaultdict
 
 from resultfetcher import Fetcher, FetchOptionParser
 
 
 def check(props):
-    if props.get('translator_error') == 1:
+    if props.get('translate_error') == 1:
         msg = 'Translator error without preprocessor error'
-        assert props.get('preprocessor_error') == 1, msg
+        assert props.get('preprocess_error') == 1, msg
+
+    if props.get('cost') is not None:
+        assert props.get('search_time') is not None
 
 
 # Preprocessing functions -----------------------------------------------------
@@ -158,6 +162,95 @@ def translator_invariant_groups_total_size(content, old_props):
 
 # Search functions ------------------------------------------------------------
 
+def _get_states_pattern(attribute, name):
+    return (attribute, re.compile(r'%s (\d+) state\(s\)\.' % name), int)
+
+
+# TODO: What about lines like "Initial state h value: 1147184/1703241."?
+def get_iterative_results(content, old_props):
+    """
+    In iterative search some attributes like plan cost can have multiple
+    values, i.e. one value for each iterative search. We save those values in
+    lists.
+    """
+    values = defaultdict(list)
+    patterns = [('cost', re.compile(r'Plan cost: (.+)'), int),
+                _get_states_pattern('dead_ends', 'Dead ends:'),
+                _get_states_pattern('evaluations', 'Evaluated'),
+                _get_states_pattern('expansions', 'Expanded'),
+                _get_states_pattern('generated', 'Generated'),
+                ('initial_h_value', re.compile(r'Initial state h value: (\d+)'), int),
+                ('plan_length', re.compile(r'Plan length: (\d+)'), int),
+                ('search_time', re.compile(r'Actual search time: (.+)s \[t=.+s\]'), float)
+               ]
+    for line in content.splitlines():
+        # At the end of iterative search some statistics are printed and we do
+        # not want to parse those here.
+        if line.startswith('Cumulative statistics'):
+            break
+        for name, pattern, cast in patterns:
+            match = pattern.search(line)
+            if not match:
+                continue
+            values[name].append(cast(match.group(1)))
+            # We can break here, because each line contains only one value
+            break
+
+    # After iterative search completes there is another line starting with
+    # "Actual search time" that just states the cumulative search time.
+    # In order to let all lists have the same length, we omit that value here.
+    if len(values['search_time']) > len(values['expansions']):
+        values['search_time'].pop()
+
+    # Check that some lists have the same length
+    def same_length(group):
+        return len(set(len(x) for x in group)) == 1
+
+    group1 = ('cost', 'plan_length')
+    group2 = ('dead_ends', 'expansions', 'evaluations', 'generated',
+              'initial_h_value', 'search_time')
+    assert len(group1) + len(group2) == len(values)
+    assert same_length(values[x] for x in group1), values
+    assert same_length(values[x] for x in group2), values
+
+    new_props = {}
+    for name, items in values.items():
+        new_props[name + '_all'] = items
+
+    if values['cost']:
+        new_props['cost'] = values['cost'][-1]
+    if values['plan_length']:
+        new_props['plan_length'] = values['plan_length'][-1]
+    return new_props
+
+
+def get_cumulative_results(content, old_props):
+    """
+    Some cumulative results are printed at the end of the logfile. We revert
+    the content to make a search for those values much faster. We would have to
+    convert the content anyways, because there's no real telling if those
+    values talk about a single or a cumulative result. If we start parsing at
+    the bottom of the file we know that the values are the cumulative ones.
+    """
+    new_props = {}
+    patterns = [_get_states_pattern('dead_ends', 'Dead ends:'),
+                _get_states_pattern('evaluations', 'Evaluated'),
+                _get_states_pattern('expansions', 'Expanded'),
+                _get_states_pattern('generated', 'Generated'),
+                ('search_time', re.compile(r'^Search time: (.+)s$'), float),
+                ('total_time', re.compile(r'^Total time: (.+)s$'), float),
+                ('memory', re.compile(r'Peak memory: (.+) KB'), int)
+               ]
+    reverse_content = list(reversed(content.splitlines()))
+    for name, pattern, cast in patterns:
+        for line in reverse_content:
+            match = pattern.search(line)
+            if not match:
+                continue
+            new_props[name] = cast(match.group(1))
+    return new_props
+
+
 def completely_explored(content, old_props):
     return {'completely_explored':
             'Completely explored state space -- no solution!' in content}
@@ -219,7 +312,7 @@ def scores(content, old_props):
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
             'score_search_time': log_score(old_props.get('search_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
-            }
+           }
 
 
 def check_min_values(content, old_props):
@@ -351,32 +444,12 @@ def add_preprocess_functions(eval):
                       file='all.groups')
 
 
-def add_search_parsing(eval):
-    #eval.add_key_value_pattern('run_start_time')
-    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)\.',
-                     type=int, required=False)
-    eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int,
-                     required=False)
-    eval.add_pattern('expansions', r'Expanded (\d+)', type=int, required=False)
-    eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int,
-                     required=False)
-    eval.add_pattern('generated', r'Generated (\d+) state', type=int,
-                     required=False)
-    eval.add_pattern('search_time', r'^Search time: (.+)s', type=float,
-                     required=False, flags='MI')
-    eval.add_pattern('total_time', r'Total time: (.+)s', type=float,
-                     required=False)
-    eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int,
-                     required=False)
-    eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
-    eval.add_pattern('dead_ends', r'Dead ends: (.+) state\(s\)\.', type=int,
-                     required=False)
-
-
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
-    eval.add_function(get_status)
+    eval.add_function(get_iterative_results)
+    eval.add_function(get_cumulative_results)
     eval.add_function(coverage)
+    eval.add_function(get_status)
     eval.add_function(scores)
     eval.add_function(check_memory)
     eval.add_function(validate)
@@ -401,7 +474,6 @@ def build_fetcher(parser=FetchOptionParser()):
             add_preprocess_parsing(eval)
             add_preprocess_functions(eval)
     if not eval.no_search:
-        add_search_parsing(eval)
         add_search_functions(eval)
 
     eval.add_function(check_min_values)
