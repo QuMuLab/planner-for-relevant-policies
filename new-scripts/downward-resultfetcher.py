@@ -179,9 +179,11 @@ def get_iterative_results(content, old_props):
                 _get_states_pattern('evaluations', 'Evaluated'),
                 _get_states_pattern('expansions', 'Expanded'),
                 _get_states_pattern('generated', 'Generated'),
-                ('initial_h_value', re.compile(r'Initial state h value: (\d+)'), int),
+                ('initial_h_value',
+                    re.compile(r'Initial state h value: (\d+)'), int),
                 ('plan_length', re.compile(r'Plan length: (\d+)'), int),
-                ('search_time', re.compile(r'Actual search time: (.+)s \[t=.+s\]'), float)
+                ('search_time',
+                    re.compile(r'Actual search time: (.+)s \[t=.+s\]'), float)
                ]
     for line in content.splitlines():
         # At the end of iterative search some statistics are printed and we do
@@ -379,7 +381,7 @@ def add_preprocess_parsing(eval):
     #eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
     #                    file='all.groups', type=int, flags='MS')
     eval.add_pattern('translator_invariant_groups',
-                     r'group\n(\d+)\nbegin_groups', file='all.groups',
+                     r'begin_groups\n(\d+)\ngroup', file='all.groups',
                      type=int, flags='MS')
 
     # number of variables
