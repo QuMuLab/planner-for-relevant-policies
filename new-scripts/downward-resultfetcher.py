@@ -137,7 +137,7 @@ def cg_arcs(content, old_props):
 def get_problem_size(content):
     """
     Total problem size can be measured as the total number of tokens in the
-    output.sas/output file (sum(len(line.split()) for line in lines)).
+    output.sas/output file.
     """
     return sum([len(line.split()) for line in content.splitlines()])
 
@@ -375,10 +375,11 @@ def add_preprocess_parsing(eval):
     # 2384 of 2384 operators necessary.
     # 0 of 0 axiom rules necessary
 
+    # TODO: Set required to True
     eval.add_pattern('translate_error', r'translate_error = (\d)',
-                     file='preprocess-properties', type=int)
+                     file='preprocess-properties', type=int, required=False)
     eval.add_pattern('preprocess_error', r'preprocess_error = (\d)',
-                     file='preprocess-properties', type=int)
+                     file='preprocess-properties', type=int, required=False)
 
     # Number of invariant groups (second line in the "all.groups" file)
     # The file starts with "begin_groups\n7\ngroup"
@@ -456,8 +457,8 @@ def add_preprocess_functions(eval):
 
     #eval.add_function(cg_arcs, file='output')
 
-    eval.add_function(translator_problem_size, file='output.sas')
-    eval.add_function(preprocessor_problem_size, file='output')
+    #eval.add_function(translator_problem_size, file='output.sas')
+    #eval.add_function(preprocessor_problem_size, file='output')
 
     # Total invariant group sizes after translating
     # (sum over all numbers following a "group" line in the "all.groups" file)
