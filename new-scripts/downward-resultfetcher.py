@@ -349,7 +349,9 @@ def validate(content, old_props):
     """
     Check the returncode of the validate command
     """
-    return {"plan_valid": int(old_props.get('validate_returncode') == '0')}
+    assert 'coverage' in old_props
+    return {"plan_invalid": int(old_props.get('coverage') == 1 and
+                                old_props.get('validate_returncode') == '1')}
 
 # -----------------------------------------------------------------------------
 
