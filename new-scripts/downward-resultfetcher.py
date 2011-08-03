@@ -375,8 +375,10 @@ def add_preprocess_parsing(eval):
     # 2384 of 2384 operators necessary.
     # 0 of 0 axiom rules necessary
 
-    # What does "rules" stand for?
-    #eval.add_pattern('rules', r'Generated (\d+) rules', type=int)
+    eval.add_pattern('translate_error', r'translate_error = (\d)',
+                     file='preprocess-properties', type=int)
+    eval.add_pattern('preprocess_error', r'preprocess_error = (\d)',
+                     file='preprocess-properties', type=int)
 
     # Number of invariant groups (second line in the "all.groups" file)
     # The file starts with "begin_groups\n7\ngroup"

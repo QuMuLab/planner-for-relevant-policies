@@ -353,6 +353,8 @@ class DownwardExperiment(experiments.Experiment):
                                      'domain.pddl')
                     run.add_resource('PROBLEM', path('problem.pddl'),
                                      'problem.pddl')
+                    run.add_resource('PREPROCESS_PROPERTIES', path('properties'),
+                                     'preprocess-properties')
 
     def _make_complete_runs(self):
         for translator, preprocessor, planner in self.combinations:
