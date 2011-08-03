@@ -251,6 +251,19 @@ def get_cumulative_results(content, old_props):
     return new_props
 
 
+def set_search_time(content, old_props):
+    """
+    If iterative search has accumulated single search times, but the total
+    search time was not written (due to a possible timeout for example), we
+    set search_time to be the sum of the single search times.
+    """
+    new_props = {}
+    if 'search_time' not in old_props:
+        if 'search_time_all' in old_props:
+            new_props['search_time'] = math.fsum(old_props['search_time_all'])
+    return new_props
+
+
 def completely_explored(content, old_props):
     return {'completely_explored':
             'Completely explored state space -- no solution!' in content}
@@ -448,6 +461,7 @@ def add_search_functions(eval):
     #eval.add_function(completely_explored)
     eval.add_function(get_iterative_results)
     eval.add_function(get_cumulative_results)
+    eval.add_function(set_search_time)
     eval.add_function(coverage)
     eval.add_function(get_status)
     eval.add_function(scores)
