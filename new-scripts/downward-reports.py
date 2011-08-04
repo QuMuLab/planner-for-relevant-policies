@@ -103,6 +103,13 @@ class PlanningReport(Report):
         if filter_funcs:
             self.data.filter(*filter_funcs)
 
+        # Save the unfiltered group_dicts for faster retrieval
+        if self.resolution == 'domain':
+            self.orig_group_dict = self.data.group_dict('config', 'domain')
+        else:
+            self.orig_group_dict = self.data.group_dict('config', 'domain', 'problem')
+        self.orig_group_dict_domain_prob = self.data.group_dict('domain', 'problem')
+
     def get_name(self):
         name = Report.get_name(self)
         if self.configs:
@@ -124,6 +131,13 @@ class PlanningReport(Report):
             return self.configs
         return list(set([run['config'] for run in self._orig_data]))
 
+    def _must_filter_common_attributes(self, attribute):
+        """For some reports include all runs"""
+        return not (attribute not in self.commonly_solved_attributes or
+                    self.handle_missing_attrs == 'include' or
+                    (self.handle_missing_attrs == 'auto' and
+                     self.resolution == 'problem'))
+
     def _filter_common_attributes(self, attribute):
         """
         for an attribute include or ignore problems for which not
@@ -132,15 +146,12 @@ class PlanningReport(Report):
         domain-summary reports
         """
         # For some reports include all runs
-        if (attribute not in self.commonly_solved_attributes or
-                self.handle_missing_attrs == 'include' or
-                (self.handle_missing_attrs == 'auto' and
-                    self.resolution == 'problem')):
+        if not self._must_filter_common_attributes(attribute):
             return self.data
 
         logging.info('Filtering problems with missing attributes for runs')
         del_probs = set()
-        for (domain, problem), group in self.data.group_dict('domain', 'problem').items():
+        for (domain, problem), group in self.orig_group_dict_domain_prob.items():
             if any(value is missing for value in group[attribute]):
                 del_probs.add(domain + problem)
 
@@ -217,7 +228,6 @@ class AbsolutePlanningReport(PlanningReport):
     def get_text(self):
         # list of (attribute, table) pairs
         tables = []
-
         for attribute in self.attributes:
             try:
                 table = self._get_table(attribute)
@@ -233,14 +243,22 @@ class AbsolutePlanningReport(PlanningReport):
         table = PlanningReport._get_empty_table(self, attribute)
         func = self.get_group_func(attribute)
 
-        data = self._filter_common_attributes(attribute)
+        # If we don't have to filter the runs, we can use the saved group_dict
+        if self._must_filter_common_attributes(attribute):
+            data = self._filter_common_attributes(attribute)
+            if self.resolution == 'domain':
+                group_dict = data.group_dict('config', 'domain')
+            else:
+                group_dict = data.group_dict('config', 'domain', 'problem')
+        else:
+            group_dict = self.orig_group_dict
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, attribute)
             logging.debug(msg)
 
         if self.resolution == 'domain':
-            for (config, domain), group in data.group_dict('config', 'domain').items():
+            for (config, domain), group in group_dict.items():
                 values = filter(not_missing, group[attribute])
                 if not values:
                     show_missing_attribute_msg(config + '-' + domain)
@@ -248,7 +266,7 @@ class AbsolutePlanningReport(PlanningReport):
                 num_instances = len(group.group_dict('problem'))
                 table.add_cell('%s (%s)' % (domain, num_instances), config, func(values))
         elif self.resolution == 'problem':
-            for (config, domain, problem), group in data.group_dict('problem').items():
+            for (config, domain, problem), group in group_dict.items():
                 values = filter(not_missing, group[attribute])
                 name = domain + ':' + problem
                 if not values:
