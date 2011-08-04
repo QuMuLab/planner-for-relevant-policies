@@ -91,10 +91,6 @@ class Experiment(object):
         Example:
         >>> exp.set_property('translator', '4321')
         """
-        # id parts can only be strings
-        if name == 'id':
-            assert type(value) == list, value
-            value = map(str, value)
         self.properties[name] = value
 
     def add_resource(self, resource_name, source, dest, required=True):
