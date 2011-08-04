@@ -12,10 +12,10 @@ import logging
 import collections
 import cPickle
 import hashlib
+import subprocess
 
 import tools
 from markup import Document
-from external.datasets import DataSet
 from external import txt2tags
 
 
@@ -56,9 +56,9 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--group-func', default='sum',
                     help='the function used to cumulate the values of a group')
 
-        self.add_argument('--hide-sum', dest='hide_sum_row',
-                    default=False, action='store_true',
-                    help='do not add a row that sums up each column')
+        self.add_argument('--filter', type=tools.csv, default=[],
+            help='filters will be applied as follows: '
+                'expanded:lt:100 -> only process if run[expanded] < 100')
 
         self.add_argument('--dry', default=False, action='store_true',
                     help='do not write anything to the filesystem')
@@ -70,7 +70,7 @@ class ReportArgParser(tools.ArgParser):
                     dest='open_report',
                     help='open the report file after writing it')
 
-        self.add_argument('-a', '--attributes', dest='foci', type=tools.csv,
+        self.add_argument('-a', '--attributes', type=tools.csv,
                     metavar='ATTR',
                     help='the analyzed attributes (e.g. "expanded"). '
                     'If omitted, use all found numerical attributes')
@@ -107,20 +107,19 @@ class Report(object):
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
 
-        self.data = None
-        self.orig_data = self._get_data()
-        self.data = self.orig_data.copy()
+        self._orig_data = self._load_data()
+        self._group_dict = None
 
-        attributes = sorted(self.orig_data.get_attributes())
+        attributes = sorted(self._orig_data.get_attributes())
 
         if self.show_attributes:
             print '\nAvailable attributes: %s' % attributes
             sys.exit()
 
-        if not self.foci or self.foci == 'all':
-            self.foci = attributes
-        self.foci.sort()
-        logging.info('Attributes: %s' % self.foci)
+        if not self.attributes or self.attributes == 'all':
+            self.attributes = attributes
+        self.attributes.sort()
+        logging.info('Attributes: %s' % self.attributes)
 
         self.filter_funcs = []
         self.filter_pairs = {}
@@ -133,6 +132,7 @@ class Report(object):
     def add_filter(self, *filter_funcs, **filter_pairs):
         self.filter_funcs.extend(filter_funcs)
         self.filter_pairs.update(filter_pairs)
+        self._group_dict = None
 
     def set_grouping(self, *grouping):
         """
@@ -143,9 +143,11 @@ class Report(object):
         grouping = ['domain', 'problem']: Use one group for each problem
         """
         self.grouping = grouping
+        self._group_dict = None
 
     def set_order(self, *order):
         self.order = order
+        self._group_dict = None
 
     def add_info(self, info):
         """
@@ -155,19 +157,20 @@ class Report(object):
 
     @property
     def group_dict(self):
-        data = DataSet(self.data)
+        if self._group_dict:
+            return self._group_dict
+        data = self._orig_data.copy()
 
-        if not self.order:
-            self.order = ['id']
+        self.order = self.order or ['id']
         data.sort(*self.order)
 
         if self.filter_funcs or self.filter_pairs:
-            data = data.filtered(*self.filter_funcs, **self.filter_pairs)
+            data = self._orig_data.filtered(*self.filter_funcs, **self.filter_pairs)
 
-        group_dict = data.group_dict(*self.grouping)
-        return group_dict
+        self._group_dict = data.group_dict(*self.grouping)
+        return self._group_dict
 
-    def _get_data(self):
+    def _load_data(self):
         """
         The data is reloaded for every attribute, but read only once from disk
         """
@@ -190,12 +193,10 @@ class Report(object):
             reload = (not old_checksum == new_checksum)
             logging.info('Reloading: %s' % reload)
         if reload:
-            data = DataSet()
             logging.info('Reading properties file')
             combined_props = tools.Properties(combined_props_file)
             logging.info('Reading properties file finished')
-            for run_id, run in sorted(combined_props.items()):
-                data.append(**run)
+            data = combined_props.get_dataset()
             logging.info('Finished turning properties into dataset')
             # Pickle data for faster future use
             cPickle.dump((new_checksum, data), open(dump_path, 'wb'),
@@ -203,34 +204,54 @@ class Report(object):
             logging.info('Wrote data dump')
         return data
 
-    def name(self):
+    def get_name(self):
         name = os.path.basename(self.eval_dir)
-        if len(self.foci) == 1:
-            name += '-' + self.foci[0]
+        if len(self.attributes) == 1:
+            name += '-' + self.attributes[0]
         return name
 
-    def _get_table(self, focus):
-        raise Exception('Not implemented')
+    def get_filename(self):
+        ext = self.output_format.replace('xhtml', 'html')
+        return os.path.join(self.report_dir, self.get_name() + '.' + ext)
+
+    def get_text(self):
+        self.set_order('id-string')
+        self.set_grouping('id-string')
+        table = Table(highlight=False)
+        for run_id, run_group in self.group_dict.items():
+            #run_group.dump()
+            assert len(run_group) == 1, run_group
+            run = run_group.items[0]
+            del run['id']
+            for key, value in run.items():
+                if type(value) is list:
+                    run[key] = '-'.join([str(item) for item in value])
+            table[run_id] = run
+        return str(table)
 
     def write(self):
-        doc = Document(title=self.name())
-        string = str(self)
+        doc = Document(title=self.get_name())
+        for info in self.infos:
+            doc.add_text('- %s\n' % info)
+        if self.infos:
+            doc.add_text('\n\n====================\n')
 
-        if not string:
+        text = self.get_text()
+
+        if not text:
             logging.info('No tables generated. '
                          'This happens when no significant changes occured. '
                          'Therefore no output file has been created')
             return
 
-        doc.add_text(string)
+        doc.add_text(text)
+        print 'REPORT MARKUP:\n'
+        print doc
         self.output = doc.render(self.output_format, {'toc': 1})
 
         if not self.dry:
-            ext = self.output_format.replace('xhtml', 'html')
-            basename = self.name() + '.' + ext
-            self.output_file = os.path.join(self.report_dir, basename)
-            with open(self.output_file, 'w') as file:
-                output_uri = 'file://' + os.path.abspath(self.output_file)
+            with open(self.get_filename(), 'w') as file:
+                output_uri = 'file://' + os.path.abspath(self.get_filename())
                 logging.info('Writing output to %s' % output_uri)
                 file.write(self.output)
 
@@ -238,11 +259,10 @@ class Report(object):
         """
         If the --open parameter is set, tries to open the report
         """
-        if not self.open_report or not os.path.exists(self.output_file):
+        if not self.open_report or not os.path.exists(self.get_filename()):
             return
 
-        import subprocess
-        dir, filename = os.path.split(self.output_file)
+        dir, filename = os.path.split(self.get_filename())
         os.chdir(dir)
         if self.output_format == 'tex':
             subprocess.call(['pdflatex', filename])
@@ -253,22 +273,13 @@ class Report(object):
         extensions = ['aux', 'log']
         filename_prefix, old_ext = os.path.splitext(os.path.basename(filename))
         for ext in extensions:
-            try:
-                os.remove(filename_prefix + '.' + ext)
-            except OSError:
-                pass
+            tools.remove(filename_prefix + '.' + ext)
 
     def __str__(self):
-        res = ''
-        for info in self.infos:
-            res += '- %s\n' % info
-        if self.infos:
-            res += '\n\n====================\n'
-
         # list of (attribute, table) pairs
         tables = []
 
-        for focus in self.foci:
+        for focus in self.attributes:
             self.data = self.orig_data.copy()
             try:
                 table = self._get_table(focus)
@@ -409,4 +420,5 @@ class Table(collections.defaultdict):
 
 
 if __name__ == "__main__":
-    logging.error('Please import this module from another script')
+    report = Report()
+    report.write()
