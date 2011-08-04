@@ -95,15 +95,13 @@ class PlanningReport(Report):
             """
             return any(config == run['config'] for config in self.configs)
 
+        filter_funcs = []
         if self.configs:
-            self.add_filter(filter_by_config)
+            filter_funcs.append(filter_by_config)
         if self.problems:
-            self.add_filter(filter_by_problem)
-
-        if self.resolution == 'domain':
-            self.set_grouping('config', 'domain')
-        elif self.resolution == 'problem':
-            self.set_grouping('config', 'domain', 'problem')
+            filter_funcs.append(filter_by_problem)
+        if filter_funcs:
+            self.data.filter(*filter_funcs)
 
     def get_name(self):
         name = Report.get_name(self)
@@ -126,7 +124,7 @@ class PlanningReport(Report):
             return self.configs
         return list(set([run['config'] for run in self._orig_data]))
 
-    def _filter_common_attributes(self, attribute, data):
+    def _filter_common_attributes(self, attribute):
         """
         for an attribute include or ignore problems for which not
         all configs have this attribute. --missing=auto includes those
@@ -149,8 +147,7 @@ class PlanningReport(Report):
         def delete_runs_with_missing_attributes(run):
             return not run['domain'] + run['problem'] in del_probs
 
-        data.filter(delete_runs_with_missing_attributes)
-        return data
+        return self.data.filtered(delete_runs_with_missing_attributes)
 
     def _get_empty_table(self, attribute):
         '''
@@ -236,7 +233,7 @@ class AbsolutePlanningReport(PlanningReport):
         table = PlanningReport._get_empty_table(self, attribute)
         func = self.get_group_func(attribute)
 
-        data = self._filter_common_attributes(attribute, self.data.copy())
+        data = self._filter_common_attributes(attribute)
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, attribute)

@@ -108,11 +108,9 @@ class Report(object):
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
 
-        self._orig_data = self._load_data()
-        self.data = self._orig_data.copy()
-        #self._group_dict = None
+        self.data = self._load_data()
 
-        attributes = sorted(self._orig_data.get_attributes())
+        attributes = sorted(self.data.get_attributes())
 
         if self.show_attributes:
             print '\nAvailable attributes: %s' % attributes
@@ -120,95 +118,18 @@ class Report(object):
 
         if not self.attributes or self.attributes == 'all':
             self.attributes = attributes
-        self.attributes.sort()
         logging.info('Attributes: %s' % self.attributes)
 
-        # Filters
-        self.filter_funcs = []
-        self.filter_pairs = {}
         if self.filters:
-            self.parse_filters()
-
-        self.grouping = []
-        self.order = []
+            self._apply_filters()
 
         self.infos = []
-
-    def add_filter(self, *filter_funcs, **filter_pairs):
-        self.filter_funcs.extend(filter_funcs)
-        self.filter_pairs.update(filter_pairs)
-        self._group_dict = None
-
-    def set_grouping(self, *grouping):
-        """
-        Set by which attributes the runs should be separated into groups
-
-        grouping = None/[]: Use only one big group (default)
-        grouping = 'domain': group by domain
-        grouping = ['domain', 'problem']: Use one group for each problem
-        """
-        self.grouping = grouping
-        self._group_dict = None
-
-    def set_order(self, *order):
-        self.order = order
-        self._group_dict = None
 
     def add_info(self, info):
         """
         Add strings of additional info to the report
         """
         self.infos.append(info)
-
-    #@property
-    #def group_dict(self):
-    #    if self._group_dict:
-    #        return self._group_dict
-    #    data = self._orig_data.copy()
-
-    #    self.order = self.order or ['id']
-    #    data.sort(*self.order)
-
-    #    if self.filter_funcs or self.filter_pairs:
-    #        data = self._orig_data.filtered(*self.filter_funcs,
-    #                                        **self.filter_pairs)
-
-    #    self._group_dict = data.group_dict(*self.grouping)
-    #    return self._group_dict
-
-    def _load_data(self):
-        """
-        The data is reloaded for every attribute, but read only once from disk
-        """
-        combined_props_file = os.path.join(self.eval_dir, 'properties')
-        if not os.path.exists(combined_props_file):
-            msg = 'Properties file not found at %s'
-            logging.error(msg % combined_props_file)
-            sys.exit(1)
-        dump_path = os.path.join(self.eval_dir, 'data_dump')
-        logging.info('Reading properties file without parsing')
-        properties_contents = open(combined_props_file).read()
-        logging.info('Calculating properties hash')
-        new_checksum = hashlib.md5(properties_contents).digest()
-        # Reload when the properties file changed or when no dump exists
-        reload = True
-        if os.path.exists(dump_path):
-            logging.info('Reading data dump')
-            old_checksum, data = cPickle.load(open(dump_path, 'rb'))
-            logging.info('Reading data dump finished')
-            reload = (not old_checksum == new_checksum)
-            logging.info('Reloading: %s' % reload)
-        if reload:
-            logging.info('Reading properties file')
-            combined_props = tools.Properties(combined_props_file)
-            logging.info('Reading properties file finished')
-            data = combined_props.get_dataset()
-            logging.info('Finished turning properties into dataset')
-            # Pickle data for faster future use
-            cPickle.dump((new_checksum, data), open(dump_path, 'wb'),
-                         cPickle.HIGHEST_PROTOCOL)
-            logging.info('Wrote data dump')
-        return data
 
     def get_name(self):
         name = os.path.basename(self.eval_dir)
@@ -282,29 +203,63 @@ class Report(object):
         for ext in extensions:
             tools.remove(filename_prefix + '.' + ext)
 
-    def _parse_filters(self):
-        '''
+    def _load_data(self):
+        """
+        The data is reloaded for every attribute, but read only once from disk
+        """
+        combined_props_file = os.path.join(self.eval_dir, 'properties')
+        if not os.path.exists(combined_props_file):
+            msg = 'Properties file not found at %s'
+            logging.error(msg % combined_props_file)
+            sys.exit(1)
+        dump_path = os.path.join(self.eval_dir, 'data_dump')
+        logging.info('Reading properties file without parsing')
+        properties_contents = open(combined_props_file).read()
+        logging.info('Calculating properties hash')
+        new_checksum = hashlib.md5(properties_contents).digest()
+        # Reload when the properties file changed or when no dump exists
+        reload = True
+        if os.path.exists(dump_path):
+            logging.info('Reading data dump')
+            old_checksum, data = cPickle.load(open(dump_path, 'rb'))
+            logging.info('Reading data dump finished')
+            reload = (not old_checksum == new_checksum)
+            logging.info('Reloading: %s' % reload)
+        if reload:
+            logging.info('Reading properties file')
+            combined_props = tools.Properties(combined_props_file)
+            logging.info('Reading properties file finished')
+            data = combined_props.get_dataset()
+            logging.info('Finished turning properties into dataset')
+            # Pickle data for faster future use
+            cPickle.dump((new_checksum, data), open(dump_path, 'wb'),
+                         cPickle.HIGHEST_PROTOCOL)
+            logging.info('Wrote data dump')
+        return data
+
+    def _apply_filters(self):
+        """
         Filter strings have the form e.g.
         expanded:lt:100 or solved:eq:1 or generated:ge:2000
-        '''
-        for string in self.filters:
-            self._parse_filter(string)
+        """
+        filter_funcs = []
+        for s in self.filters:
+            attribute, op, value = s.split(':')
 
-    def _parse_filter(self, string):
-        attribute, op, value = string.split(':')
+            try:
+                value = float(value)
+            except ValueError:
+                pass
 
-        try:
-            value = float(value)
-        except ValueError:
-            pass
+            try:
+                op = getattr(operator, op.lower())
+            except AttributeError:
+                logging.error('The operator module has no operator "%s"' % op)
+                sys.exit()
 
-        try:
-            op = getattr(operator, op.lower())
-        except AttributeError:
-            logging.error('The operator module has no operator "%s"' % op)
-            sys.exit()
+            filter_funcs.append(lambda run: op(run[attribute], value))
 
-        self.add_filter(lambda run: op(run[attribute], value))
+        self.data.filter(*filter_funcs)
 
 
 class Table(collections.defaultdict):
