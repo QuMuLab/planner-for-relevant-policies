@@ -414,28 +414,33 @@ class SuiteReport(PlanningReport):
 
 
 if __name__ == "__main__":
-    known_args, remaining_args = report_type_parser.parse_known_args()
+    sys.path.append(os.path.join(tools.BASE_DIR, 'src', 'translate'))
+    from timers import Timer, timing
 
-    # delete parsed args
-    sys.argv = [sys.argv[0]] + remaining_args
+    with timing("Create report", block=True):
+        known_args, remaining_args = report_type_parser.parse_known_args()
 
-    report_type = known_args.report
-    logging.info('Report type: %s' % report_type)
+        # delete parsed args
+        sys.argv = [sys.argv[0]] + remaining_args
 
-    if report_type == 'abs':
-        report = AbsolutePlanningReport()
-    elif report_type == 'cmp':
-        report = ComparativePlanningReport()
-    elif report_type == 'any':
-        report = AnyAttributeReport()
-    elif report_type == 'suite':
-        report = SuiteReport()
+        report_type = known_args.report
+        logging.info('Report type: %s' % report_type)
 
-    # Copy the report type
-    report.report_type = report_type
+        if report_type == 'abs':
+            report = AbsolutePlanningReport()
+        elif report_type == 'cmp':
+            report = ComparativePlanningReport()
+        elif report_type == 'any':
+            report = AnyAttributeReport()
+        elif report_type == 'suite':
+            report = SuiteReport()
 
-    report.write()
-    report.open()
+        # Copy the report type
+        report.report_type = report_type
+
+        report.write()
+        report.open()
+
 
     #report.add_filter(domain='gripper')
     #report.add_filter(lambda item: item['expanded'] == '21')
