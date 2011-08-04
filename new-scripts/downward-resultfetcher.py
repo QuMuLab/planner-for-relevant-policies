@@ -25,10 +25,26 @@ def check(props):
 # Preprocessing functions -----------------------------------------------------
 
 
+def parse_translator_timestamps(content, old_props):
+    """Parse all translator output of the following forms:
+
+        Computing fact groups: [0.000s CPU, 0.004s wall-clock]
+        Writing output... [0.000s CPU, 0.001s wall-clock]
+    """
+    pattern = re.compile(r'^(.+)(\.\.\.|:) \[(.+)s CPU, .+s wall-clock\]$')
+    new_props = {}
+    for line in content.splitlines():
+        if line.startswith('Done!'):
+            break
+        match = pattern.match(line)
+        if match:
+            section = match.group(1).lower().replace(' ', '_')
+            new_props['translator_time_' + section] = float(match.group(3))
+    return new_props
+
+
 def get_derived_vars(content):
-    """
-    Count those variables that have an axiom_layer >= 0
-    """
+    """Count those variables that have an axiom_layer >= 0."""
     regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M | re.S)
     match = regex.search(content)
     if not match:
@@ -357,29 +373,13 @@ def validate(content, old_props):
 
 
 def add_preprocess_parsing(eval):
-    """
-    Add some preprocess specific parsing:
-    """
-    #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)',
-    #                 file='output.sas', type=int, flags='M')
-    #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas',
-    #                 type=int, flags='M')
-
-    #eval.add_pattern('preprocessor_vars', r'begin_variables\n(\d+)',
-    #                 file='output', type=int, flags='M')
-    #eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output',
-    #                 type=int, flags='M')
-
-    # Preprocessor output:
-    # 19 variables of 19 necessary
-    # 2384 of 2384 operators necessary.
-    # 0 of 0 axiom rules necessary
+    """Add some preprocess specific parsing"""
 
     # TODO: Set required to True
-    eval.add_pattern('translate_error', r'translate_error = (\d)',
-                     file='preprocess-properties', type=int, required=False)
-    eval.add_pattern('preprocess_error', r'preprocess_error = (\d)',
-                     file='preprocess-properties', type=int, required=False)
+    #eval.add_pattern('translate_error', r'translate_error = (\d)',
+    #                 file='preprocess-properties', type=int, required=False)
+    #eval.add_pattern('preprocess_error', r'preprocess_error = (\d)',
+    #                 file='preprocess-properties', type=int, required=False)
 
     # Number of invariant groups (second line in the "all.groups" file)
     # The file starts with "begin_groups\n7\ngroup"
@@ -389,7 +389,10 @@ def add_preprocess_parsing(eval):
                      r'begin_groups\n(\d+)\ngroup', file='all.groups',
                      type=int, flags='MS')
 
-    # number of variables
+    # Preprocessor output:
+    # 19 variables of 19 necessary
+    # 2384 of 2384 operators necessary.
+    # 0 of 0 axiom rules necessary
     eval.add_multipattern([(1, 'preprocessor_vars', int),
                           (2, 'translator_vars', int)],
                           r'(\d+) variables of (\d+) necessary')
@@ -399,28 +402,6 @@ def add_preprocess_parsing(eval):
     eval.add_multipattern([(1, 'preprocessor_axioms', int),
                            (2, 'translator_axioms', int)],
                            r'(\d+) of (\d+) axiom rules necessary')
-
-    # translator time
-
-    # all detailed translator timings (lines of the form "XXX.YYYs CPU")
-    sections = [
-        'Parsing', 'Normalizing task', 'Generating Datalog program',
-        'Normalizing Datalog program', 'Preparing model', 'Computing model',
-        'Completing instantiation', 'Instantiating',
-        #'Finding invariants',
-        'Checking invariant weight', 'Instantiating groups',
-        'Collecting mutex groups', 'Choosing groups',
-        'Building translation key', 'Computing fact groups',
-        'Building STRIPS to SAS dictionary',
-        'Building dictionary for full mutex groups', 'Simplifying axioms',
-        'Processing axioms', 'Translating task', 'Building mutex information',
-        'Detecting unreachable propositions', 'Writing translation key',
-        'Writing mutex key', 'Writing output', 'Done!']
-    for sec in sections:
-        attribute = 'translator_time_' + sec.lower()
-        for orig, repl in [(' ', '_'), ('!', '')]:
-            attribute = attribute.replace(orig, repl)
-        eval.add_pattern(attribute, r'%s.* \[(.+)s CPU' % sec, type=float)
 
     """
     the numbers from the following lines of translator output:
@@ -446,11 +427,11 @@ def add_preprocess_parsing(eval):
 
 
 def add_preprocess_functions(eval):
+    eval.add_function(parse_translator_timestamps)
+    return
+
     eval.add_function(translator_facts, file='output.sas')
     eval.add_function(preprocessor_facts, file='output')
-
-    #eval.add_function(translator_axioms, file='output.sas')
-    #eval.add_function(preprocessor_axioms, file='output')
 
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
