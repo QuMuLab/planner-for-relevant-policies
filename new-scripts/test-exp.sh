@@ -1,6 +1,6 @@
 #! /bin/bash
 
-EXPNAME=test-exp
+EXPNAME=exp-test
 
 CONFIGS=downward_configs.py:yY,downward_configs.py:multiple_plans
 QUEUE=xeon_core.q

@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import signal
 import subprocess
@@ -14,16 +13,16 @@ def kill_pgrp(pgrp, sig, show_error=True):
     except OSError:
         if not show_error:
             return
-        msg = "Process group %s could not be killed with signal %s"
-        print msg % (pgrp, sig)
+        print ("Process group %s could not be killed with signal %s" %
+               (pgrp, sig))
 
 
 def set_limit(kind, amount):
     try:
         resource.setrlimit(kind, (amount, amount))
-    except (OSError, ValueError), e:
-        msg = "Resource limit for %s could not be set to %s"
-        print msg % (kind, amount)
+    except (OSError, ValueError), err:
+        print ("Resource limit for %s could not be set to %s (%s)" %
+               (kind, amount, err))
 
 
 class Call(subprocess.Popen):

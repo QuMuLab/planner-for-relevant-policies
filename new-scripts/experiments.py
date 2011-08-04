@@ -14,11 +14,14 @@ import tools
 from external.ordereddict import OrderedDict
 
 
-HELP = """\
-Base module for creating fast downward experiments.
-PLEASE NOTE: The available options depend on the selected experiment type.
-You can set the experiment type with the "--exp-type" option.
-"""
+EPILOG = """\
+--------------------------------------------------------------------------------
+PLEASE NOTE: The available options depend on the selected experiment type:
+
+global options:  %(exe)s --help
+special options: %(exe)s {local,gkigrid,argo} --help
+--------------------------------------------------------------------------------
+""" % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
                 'gkigrid': environments.GkiGridEnvironment,
@@ -29,10 +32,11 @@ DEFAULT_ABORT_ON_FAILURE = True
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, **kwargs)
+        tools.ArgParser.__init__(self, *args, epilog=EPILOG, **kwargs)
 
-        self.add_argument('-p', '--path',
-            help='path of the experiment (e.g. <initials>-<descriptive name>)')
+        self.add_argument('--path',
+            help='path of the experiment (e.g. <initials>-<descriptive name>). '
+            'If no path is given, you will be prompted interactively for it.')
         self.add_argument(
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
@@ -74,9 +78,10 @@ class Experiment(object):
         self.environment = ENVIRONMENTS.get(self.environment_type)
         if not self.environment:
             logging.error('Unknown environment "%s"' % self.environment_type)
-            sys.exit(1)
-        while not self.path:
-            self.path = raw_input('Please enter an experiment path: ').strip()
+            sys.exit(2)
+        if not self.path:
+            logging.error('Please specify the experiment path')
+            sys.exit(2)
 
     def set_property(self, name, value):
         """

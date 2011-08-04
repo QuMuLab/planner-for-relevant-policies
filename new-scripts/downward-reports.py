@@ -13,7 +13,6 @@ from collections import defaultdict
 
 import tools
 import downward_suites
-from external import datasets
 from external.datasets import missing
 import reports
 from reports import Report, ReportArgParser, Table
@@ -131,6 +130,8 @@ class PlanningReport(Report):
             name += '-' + '+'.join(self.configs)
         if self.suite:
             name += '-' + '+'.join(self.suite)
+        if self.filter:
+            name += '-' + '+'.join([f.replace(':', '_') for f in self.filter])
         name += '-' + self.resolution[0]
         name += '-' + self.report_type
         return name
@@ -214,7 +215,7 @@ class PlanningReport(Report):
             self.group_func = sum
 
         # Decide whether we want to highlight minima or maxima
-        max_attributes = ['solved', 'score', 'initial_h_value', 'coverage']
+        max_attributes = ['score', 'initial_h_value', 'coverage']
         min_wins = True
         for attr_part in max_attributes:
             if attr_part in focus:
@@ -272,7 +273,7 @@ class AbsolutePlanningReport(PlanningReport):
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, focus)
-            logging.error(msg)
+            logging.debug(msg)
 
         if self.resolution == 'domain':
             self.set_grouping('config', 'domain')
@@ -281,7 +282,8 @@ class AbsolutePlanningReport(PlanningReport):
                 if not values:
                     show_missing_attribute_msg(config + '-' + domain)
                     continue
-                table.add_cell(domain, config, func(values))
+                num_instances = len(group.group_dict('problem'))
+                table.add_cell('%s (%s)' % (domain, num_instances), config, func(values))
         elif self.resolution == 'problem':
             self.set_grouping('config', 'domain', 'problem')
             for (config, domain, problem), group in self.group_dict.items():

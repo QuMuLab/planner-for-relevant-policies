@@ -1,4 +1,5 @@
 (define (domain mystery-prime-strips)
+   (:requirements :negative-preconditions :equality) ; see Malte: FIX below
    (:predicates
        (province ?x)
        (planet ?x)
