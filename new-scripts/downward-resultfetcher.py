@@ -182,6 +182,30 @@ def _get_states_pattern(attribute, name):
     return (attribute, re.compile(r'%s (\d+) state\(s\)\.' % name), int)
 
 
+ITERATIVE_PATTERNS = [
+    ('cost', re.compile(r'Plan cost: (.+)'), int),
+    _get_states_pattern('dead_ends', 'Dead ends:'),
+    _get_states_pattern('evaluations', 'Evaluated'),
+    _get_states_pattern('expansions', 'Expanded'),
+    _get_states_pattern('generated', 'Generated'),
+    ('initial_h_value',
+        re.compile(r'Initial state h value: (\d+)'), int),
+    ('plan_length', re.compile(r'Plan length: (\d+)'), int),
+    ('search_time',
+        re.compile(r'Actual search time: (.+)s \[t=.+s\]'), float)
+    ]
+
+CUMULATIVE_PATTERNS = [
+    _get_states_pattern('dead_ends', 'Dead ends:'),
+    _get_states_pattern('evaluations', 'Evaluated'),
+    _get_states_pattern('expansions', 'Expanded'),
+    _get_states_pattern('generated', 'Generated'),
+    ('search_time', re.compile(r'^Search time: (.+)s$'), float),
+    ('total_time', re.compile(r'^Total time: (.+)s$'), float),
+    ('memory', re.compile(r'Peak memory: (.+) KB'), int)
+    ]
+
+
 # TODO: What about lines like "Initial state h value: 1147184/1703241."?
 def get_iterative_results(content, old_props):
     """
@@ -190,23 +214,13 @@ def get_iterative_results(content, old_props):
     lists.
     """
     values = defaultdict(list)
-    patterns = [('cost', re.compile(r'Plan cost: (.+)'), int),
-                _get_states_pattern('dead_ends', 'Dead ends:'),
-                _get_states_pattern('evaluations', 'Evaluated'),
-                _get_states_pattern('expansions', 'Expanded'),
-                _get_states_pattern('generated', 'Generated'),
-                ('initial_h_value',
-                    re.compile(r'Initial state h value: (\d+)'), int),
-                ('plan_length', re.compile(r'Plan length: (\d+)'), int),
-                ('search_time',
-                    re.compile(r'Actual search time: (.+)s \[t=.+s\]'), float)
-               ]
+
     for line in content.splitlines():
         # At the end of iterative search some statistics are printed and we do
         # not want to parse those here.
-        if line.startswith('Cumulative statistics'):
+        if line == 'Cumulative statistics:':
             break
-        for name, pattern, cast in patterns:
+        for name, pattern, cast in ITERATIVE_PATTERNS:
             match = pattern.search(line)
             if not match:
                 continue
@@ -250,16 +264,8 @@ def get_cumulative_results(content, old_props):
     the bottom of the file we know that the values are the cumulative ones.
     """
     new_props = {}
-    patterns = [_get_states_pattern('dead_ends', 'Dead ends:'),
-                _get_states_pattern('evaluations', 'Evaluated'),
-                _get_states_pattern('expansions', 'Expanded'),
-                _get_states_pattern('generated', 'Generated'),
-                ('search_time', re.compile(r'^Search time: (.+)s$'), float),
-                ('total_time', re.compile(r'^Total time: (.+)s$'), float),
-                ('memory', re.compile(r'Peak memory: (.+) KB'), int)
-               ]
     reverse_content = list(reversed(content.splitlines()))
-    for name, pattern, cast in patterns:
+    for name, pattern, cast in CUMULATIVE_PATTERNS:
         for line in reverse_content:
             # There will be no cumulative values above this line
             if line == 'Cumulative statistics:':
