@@ -14,11 +14,14 @@ import tools
 from external.ordereddict import OrderedDict
 
 
-HELP = """\
-Base module for creating fast downward experiments.
-PLEASE NOTE: The available options depend on the selected experiment type.
-You can set the experiment type with the "--exp-type" option.
-"""
+EPILOG = """\
+--------------------------------------------------------------------------------
+PLEASE NOTE: The available options depend on the selected experiment type:
+
+global options:  %(exe)s --help
+special options: %(exe)s {local,gkigrid,argo} --help
+--------------------------------------------------------------------------------
+""" % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
                 'gkigrid': environments.GkiGridEnvironment,
@@ -29,16 +32,11 @@ DEFAULT_ABORT_ON_FAILURE = True
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, **kwargs)
+        tools.ArgParser.__init__(self, *args, epilog=EPILOG, **kwargs)
 
-        self.add_argument('-p', '--path',
-            help='path of the experiment (e.g. <initials>-<descriptive name>)')
-        self.add_argument(
-            '-t', '--timeout', type=int, default=1800,
-            help='timeout per task in seconds')
-        self.add_argument(
-            '-m', '--memory', type=int, default=2048,
-            help='memory limit per task in MB')
+        self.add_argument('--path',
+            help='path of the experiment (e.g. <initials>-<descriptive name>). '
+            'If no path is given, you will be prompted interactively for it.')
         self.add_argument(
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
@@ -80,9 +78,10 @@ class Experiment(object):
         self.environment = ENVIRONMENTS.get(self.environment_type)
         if not self.environment:
             logging.error('Unknown environment "%s"' % self.environment_type)
-            sys.exit(1)
-        while not self.path:
-            self.path = raw_input('Please enter an experiment path: ').strip()
+            sys.exit(2)
+        if not self.path:
+            logging.error('Please specify the experiment path')
+            sys.exit(2)
 
     def set_property(self, name, value):
         """
@@ -143,6 +142,26 @@ class Experiment(object):
                                  self.environment.get_end_instructions(self))
         if self.end_instructions:
             logging.info(self.end_instructions)
+
+    @property
+    def compact_exp_path(self):
+        """
+        Return the relative path if path is a subdir of the cwd else return
+        the absolute path.
+        """
+        assert os.path.isabs(self.path)
+        relpath = os.path.relpath(self.path)
+        is_subpath = not relpath.startswith('../')
+        if is_subpath:
+            return relpath
+        return self.path
+
+    @property
+    def compact_main_script_path(self):
+        """Return the path to the run script in a compact form."""
+        compact_path = self.compact_exp_path
+        prefix = "" if os.path.isabs(compact_path) else "./"
+        return os.path.join(prefix, compact_path, "run")
 
     def _get_abs_path(self, rel_path):
         """
@@ -246,10 +265,6 @@ class Run(object):
         Example:
         >>> run.set_property('domain', 'gripper')
         """
-        # id parts can only be strings
-        if name == 'id':
-            assert type(value) == list
-            value = map(str, value)
         self.properties[name] = value
 
     def require_resource(self, resource_name):
@@ -387,7 +402,8 @@ class Run(object):
                     'save_returncode("%s", retcode)\n') % (', '.join(parts), name)
             if abort_on_failure:
                 call += ('if not retcode == 0:\n'
-                         '    sys.exit("%s returned %%s" %% retcode)\n' % name)
+                         '    print_(driver_log, "%s returned %%s" %% retcode)\n'
+                         '    sys.exit(1)\n' % name)
             return call
 
         calls_text = '\n'.join(make_call(name, cmd, kwargs)
@@ -447,6 +463,16 @@ class Run(object):
                 logging.error(msg % (source, dest, err))
 
     def _build_properties_file(self):
+        # Check correctness of id property
+        run_id = self.properties.get('id')
+        if run_id is None:
+            logging.error('Each run must have an id')
+            sys.exit(1)
+        if not type(run_id) is list:
+            logging.error('id must be a list, but %s is not' % run_id)
+            sys.exit(1)
+        self.properties['id'] = [str(item) for item in run_id]
+
         self.properties.filename = self._get_abs_path('properties')
         self.properties.write()
 

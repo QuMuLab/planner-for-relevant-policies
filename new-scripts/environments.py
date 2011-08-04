@@ -6,6 +6,7 @@ import tools
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
 
+
 class Environment(object):
     @classmethod
     def add_subparser(cls, subparsers):
@@ -37,7 +38,7 @@ class LocalEnvironment(Environment):
 
         script = open(os.path.join(DATA_DIR, 'local-job-template.py')).read()
         for orig, new in replacements.items():
-            script = script.replace('***' + orig + '***', new)
+            script = script.replace('"""' + orig + '"""', new)
 
         filename = exp._get_abs_path('run')
 
@@ -48,8 +49,8 @@ class LocalEnvironment(Environment):
 
     @classmethod
     def get_end_instructions(cls, exp):
-        return ('You can run the experiment now by calling '
-            '"./%(name)s/run"' % {'name': exp.name})
+        return ('You can run the experiment now by calling %s' %
+                exp.compact_main_script_path)
 
 
 class GkiGridEnvironment(Environment):
@@ -72,7 +73,6 @@ class GkiGridEnvironment(Environment):
         job_params = {
             'logfile': exp.name + '.log',
             'errfile': exp.name + '.err',
-            'driver_timeout': exp.timeout * exp.runs_per_task + 30,
             'num_tasks': num_tasks,
             'queue': exp.queue,
             'priority': exp.priority,
@@ -108,7 +108,7 @@ class GkiGridEnvironment(Environment):
 class ArgoEnvironment(Environment):
     @classmethod
     def add_subparser(cls, subparsers):
-        parser = subparsers.add_parser('argo', help='Argo Experiment')
+        subparsers.add_parser('argo', help='Argo Experiment')
 
     @classmethod
     def write_main_script(cls, exp):

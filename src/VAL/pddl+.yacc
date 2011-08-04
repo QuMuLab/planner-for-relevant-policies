@@ -360,7 +360,7 @@ c_func_decl :
 ;
 
 c_ntype :
-    HYPHEN NUMBER {$$ = NULL;}| /* empty */ {$$=NULL;};
+    HYPHEN NUMBER {$$ = 0;}| /* empty */ {$$=0;};
     
 c_new_func_symbol :
      NAME 

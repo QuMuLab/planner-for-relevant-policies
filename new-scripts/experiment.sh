@@ -16,6 +16,26 @@ function usage() {
     exit 2
 }
 
+function run_experiment() {
+    if [[ "$EXPTYPE" == gkigrid ]]; then
+        pushd .
+        cd $1
+        if [ -e already-submitted ]; then
+            # file exists
+            echo "Experiment has already been submitted once. \
+Delete the file 'already-submitted' or submit it \
+manually if you know what you're doing."
+        else
+            qsub $1.q
+            # Do not submit an experiment more than once
+            touch already-submitted
+        fi
+        popd
+    else
+        ./$1/run
+    fi
+}
+
 if [[ "$(basename "$0")" == experiment.sh ]]; then
     echo "$(basename "$0") is supposed to be called from another script."
     echo "Are you running it as a main script?"
@@ -54,30 +74,15 @@ fi
 
 
 if [[ "$PHASE" == 1 ]]; then
-    ./downward_experiments.py --preprocess --timeout 7200 --memory 3072 \
-        -s $SUITE --path $EXPNAME $EXPTYPEOPT
+    ./downward_experiments.py --preprocess -s $SUITE --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 2 ]]; then
-    if [[ "$EXPTYPE" == gkigrid ]]; then
-        pushd .
-        cd $EXPNAME-p
-        qsub $EXPNAME-p.q
-        popd
-    else
-        ./$EXPNAME-p/run
-    fi
+    run_experiment $EXPNAME-p
 elif [[ "$PHASE" == 3 ]]; then
     ./resultfetcher.py $EXPNAME-p
 elif [[ "$PHASE" == 4 ]]; then
     ./downward_experiments.py -s $SUITE -c $CONFIGS --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 5 ]]; then
-    if [[ "$EXPTYPE" == gkigrid ]]; then
-        pushd .
-        cd $EXPNAME
-        qsub $EXPNAME.q
-        popd
-    else
-        ./$EXPNAME/run
-    fi
+    run_experiment $EXPNAME
 elif [[ "$PHASE" == 6 ]]; then
     ./downward-resultfetcher.py $EXPNAME
 elif [[ "$PHASE" == 7 ]]; then

@@ -1,18 +1,15 @@
 #! /usr/bin/env python
 
 import downward_experiments
-import checkouts
+from checkouts import TranslatorSvn, PreprocessorSvn, PlannerSvn
+
+translator = TranslatorSvn(rev=3613)
+preprocessor = PreprocessorSvn(rev='HEAD')
 
 combinations = [
-    (checkouts.TranslatorSvnCheckout(rev=3613),
-     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
-     checkouts.PlannerSvnCheckout(rev=3612)),
-    (checkouts.TranslatorSvnCheckout(rev=3613),
-     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
-     checkouts.PlannerSvnCheckout(rev=3613)),
-    (checkouts.TranslatorSvnCheckout(rev=3613),
-     checkouts.PreprocessorSvnCheckout(rev='HEAD'),
-     checkouts.PlannerSvnCheckout(rev='HEAD')),
-               ]
+    (translator, preprocessor, PlannerSvn(rev=3612)),
+    (translator, preprocessor, PlannerSvn(rev=3613)),
+    (translator, preprocessor, PlannerSvn(rev='HEAD')),
+]
 
 downward_experiments.build_experiment(combinations)

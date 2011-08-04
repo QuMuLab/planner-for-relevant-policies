@@ -7,15 +7,15 @@
 
 using namespace __gnu_cxx;
 
-LandmarkFactory::LandmarkFactory(LandmarkGraph::Options &options, Exploration *exploration) 
-    : lm_graph(new LandmarkGraph(options, exploration)) {
+LandmarkFactory::LandmarkFactory(const Options &opts) 
+    : lm_graph(new LandmarkGraph(opts)) {
 }
 
 LandmarkGraph *LandmarkFactory::compute_lm_graph() {
     ExactTimer lm_generation_timer;
     read_external_inconsistencies();
     generate_landmarks();
-    
+
     // the following replaces the old "build_lm_graph"
     generate();
     cout << "Landmarks generation time: " << lm_generation_timer << endl;

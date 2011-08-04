@@ -45,6 +45,11 @@ def parse(filename):
         assert text.endswith("."), text
         text = text[:-1]
         for fact_string in text.split("."):
+            # Comments may start with "%". Then ignore rest of line.
+            if "%" in fact_string:
+                pos_1 = fact_string.find("%")
+                pos_2 = pos_1 + fact_string[pos_1:-1].find("\n")
+                fact_string = fact_string[:pos_1] + fact_string[pos_2:]
             fact_string = fact_string.strip()
             predicate, match, args = fact_string.partition("(")
             assert match

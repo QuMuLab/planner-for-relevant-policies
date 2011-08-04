@@ -25,7 +25,7 @@ def avg(values):
     >>> print avg([20, 30, 70])
     40.0
     """
-    return round(sum(values, 0.0) / len(values), 4)
+    return round(sum(values, 0.0) / len(values), 2)
 
 
 def gm(values):
@@ -36,7 +36,7 @@ def gm(values):
     """
     assert len(values) >= 1
     exp = 1.0 / len(values)
-    return round(tools.prod([val ** exp for val in values]), 4)
+    return round(tools.prod([val ** exp for val in values]), 2)
 
 
 class ReportArgParser(tools.ArgParser):
@@ -272,8 +272,8 @@ class Report(object):
             self.data = self.orig_data.copy()
             try:
                 table = self._get_table(focus)
+                # We return None for a table if we don't want to add it
                 if table:
-                    # We return None for a table if we don't want to add it
                     print table
                     tables.append((focus, table))
             except TypeError, err:
