@@ -323,12 +323,8 @@ class Table(collections.defaultdict):
 
     @property
     def rows(self):
-        special_rows = ['SUM', 'AVG', 'GM']
-        rows = self.keys()
         # Let the sum, etc. rows be the last ones
-        rows = tools.natural_sort(['zzz' + row if row.upper() in special_rows else row for row in rows])
-        rows = [row[3:] if row.startswith('zzz') else row for row in rows]
-        return rows
+        return tools.natural_sort(self.keys())
 
     @property
     def cols(self):
@@ -416,6 +412,10 @@ class Table(collections.defaultdict):
         return text
 
     def add_summary_row(self, func):
+        """
+        This function adds a bottom row with the values func(column_values) for
+        each column. Func can be e.g. sum, reports.avg, reports.gm
+        """
         func_name = func.__name__.upper()
         for col, content in self.get_column_contents().items():
             self.summaries[func_name][col] = func(content)
