@@ -110,7 +110,7 @@ def natural_sort(alist):
         parts = re.split("([0-9]+)", text)
         return map(to_int_if_number, parts)
 
-    alist.sort(key=extract_numbers)
+    return sorted(alist, key=extract_numbers)
 
 
 def listdir(path):
