@@ -302,9 +302,7 @@ class Fetcher(object):
         properties_contents = open(combined_props_file).read()
         logging.info('Calculating properties hash')
         new_checksum = hashlib.md5(properties_contents).digest()
-        data = DataSet()
-        for run_id, run in sorted(combined_props.items()):
-            data.append(**run)
+        data = combined_props.get_dataset()
         logging.info('Finished turning properties into dataset')
         # Pickle data for faster future use
         cPickle.dump((new_checksum, data), open(dump_path, 'wb'),
