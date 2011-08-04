@@ -25,22 +25,20 @@ def check(props):
 # Preprocessing functions -----------------------------------------------------
 
 
-def parse_translator_timestamps(content, old_props):
+def parse_translator_timestamps(content, props):
     """Parse all translator output of the following forms:
 
         Computing fact groups: [0.000s CPU, 0.004s wall-clock]
         Writing output... [0.000s CPU, 0.001s wall-clock]
     """
     pattern = re.compile(r'^(.+)(\.\.\.|:) \[(.+)s CPU, .+s wall-clock\]$')
-    new_props = {}
     for line in content.splitlines():
         if line.startswith('Done!'):
             break
         match = pattern.match(line)
         if match:
             section = match.group(1).lower().replace(' ', '_')
-            new_props['translator_time_' + section] = float(match.group(3))
-    return new_props
+            props['translator_time_' + section] = float(match.group(3))
 
 
 def get_derived_vars(content):
@@ -207,7 +205,7 @@ CUMULATIVE_PATTERNS = [
 
 
 # TODO: What about lines like "Initial state h value: 1147184/1703241."?
-def get_iterative_results(content, old_props):
+def get_iterative_results(content, props):
     """
     In iterative search some attributes like plan cost can have multiple
     values, i.e. one value for each iterative search. We save those values in
@@ -244,18 +242,16 @@ def get_iterative_results(content, old_props):
     assert same_length(values[x] for x in group1), values
     assert same_length(values[x] for x in group2), values
 
-    new_props = {}
     for name, items in values.items():
-        new_props[name + '_all'] = items
+        props[name + '_all'] = items
 
     if values['cost']:
-        new_props['cost'] = values['cost'][-1]
+        props['cost'] = values['cost'][-1]
     if values['plan_length']:
-        new_props['plan_length'] = values['plan_length'][-1]
-    return new_props
+        props['plan_length'] = values['plan_length'][-1]
 
 
-def get_cumulative_results(content, old_props):
+def get_cumulative_results(content, props):
     """
     Some cumulative results are printed at the end of the logfile. We revert
     the content to make a search for those values much faster. We would have to
@@ -263,7 +259,6 @@ def get_cumulative_results(content, old_props):
     values talk about a single or a cumulative result. If we start parsing at
     the bottom of the file we know that the values are the cumulative ones.
     """
-    new_props = {}
     reverse_content = list(reversed(content.splitlines()))
     for name, pattern, cast in CUMULATIVE_PATTERNS:
         for line in reverse_content:
@@ -273,58 +268,52 @@ def get_cumulative_results(content, old_props):
             match = pattern.search(line)
             if not match:
                 continue
-            new_props[name] = cast(match.group(1))
-    return new_props
+            props[name] = cast(match.group(1))
 
 
-def set_search_time(content, old_props):
+def set_search_time(content, props):
     """
     If iterative search has accumulated single search times, but the total
     search time was not written (due to a possible timeout for example), we
     set search_time to be the sum of the single search times.
     """
+    if 'search_time' not in props:
+        if 'search_time_all' in props:
+            props['search_time'] = math.fsum(props['search_time_all'])
+
+
+def completely_explored(content, props):
+    props['completely_explored'] = ('Completely explored state space -- '
+                                    'no solution!' in content)
+
+
+def get_status(content, props):
     new_props = {}
-    if 'search_time' not in old_props:
-        if 'search_time_all' in old_props:
-            new_props['search_time'] = math.fsum(old_props['search_time_all'])
-    return new_props
-
-
-def completely_explored(content, old_props):
-    return {'completely_explored':
-            'Completely explored state space -- no solution!' in content}
-
-
-def get_status(content, old_props):
-    new_props = {}
-    if 'plan_length' in old_props or 'cost' in old_props:
-        new_props['status'] = 'ok'
-    elif old_props.get('completely_explored', False):
-        new_props['status'] = 'failure'
+    if 'plan_length' in props or 'cost' in props:
+        props['status'] = 'ok'
+    elif props.get('completely_explored', False):
+        props['status'] = 'failure'
     elif 'does not support' in content:
-        new_props['status'] = 'unsupported'
+        props['status'] = 'unsupported'
     else:
-        new_props['status'] = 'unsolved'
-    return new_props
+        props['status'] = 'unsolved'
 
 
-def coverage(content, old_props):
-    return {'coverage': int('plan_length' in old_props or 'cost' in old_props)}
+def coverage(content, props):
+    props['coverage'] = int('plan_length' in props or 'cost' in props)
 
 
-def check_memory(content, old_props):
+def check_memory(content, props):
     """
     Set "memory" to the max value if it was exceeded and "-1 KB" was reported
     """
-    new_props = {}
-    memory = old_props.get('memory')
-    memory_limit = old_props.get('memory_limit')
+    memory = props.get('memory')
+    memory_limit = props.get('memory_limit')
     if memory == -1 and memory_limit:
-        new_props['memory'] = memory_limit
-    return new_props
+        props['memory'] = memory_limit
 
 
-def scores(content, old_props):
+def scores(content, props):
     """
     Some reported results are measured via scores from the
     range 0-1, where best possible performance in a task is
@@ -343,37 +332,35 @@ def scores(content, old_props):
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
         return round(score, 4)
 
-    return {'score_expansions': log_score(old_props.get('expansions'),
+    props.update({'score_expansions': log_score(props.get('expansions'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
-            'score_evaluations': log_score(old_props.get('evaluations'),
+            'score_evaluations': log_score(props.get('evaluations'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
-            'score_total_time': log_score(old_props.get('total_time'),
+            'score_total_time': log_score(props.get('total_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
-            'score_search_time': log_score(old_props.get('search_time'),
+            'score_search_time': log_score(props.get('search_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
-           }
+           })
 
 
-def check_min_values(content, old_props):
+def check_min_values(content, props):
     """
     Ensure that times are at least 0.1s if they are present in log
     """
-    new_props = {}
     for time in ['search_time', 'total_time']:
-        sec = old_props.get(time, None)
+        sec = props.get(time, None)
         if sec is not None:
             sec = max(sec, 0.1)
-            new_props[time] = sec
-    return new_props
+            props[time] = sec
 
 
-def validate(content, old_props):
+def validate(content, props):
     """
     Check the returncode of the validate command
     """
-    assert 'coverage' in old_props
-    return {"plan_invalid": int(old_props.get('coverage') == 1 and
-                                old_props.get('validate_returncode') == '1')}
+    assert 'coverage' in props
+    return {"plan_invalid": int(props.get('coverage') == 1 and
+                                props.get('validate_returncode') == '1')}
 
 # -----------------------------------------------------------------------------
 

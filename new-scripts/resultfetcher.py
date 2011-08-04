@@ -151,11 +151,10 @@ class _FileParser(object):
     def add_function(self, function):
         self.functions.append(function)
 
-    def parse(self, orig_props):
+    def parse(self, props):
         assert self.filename
-        orig_props.update(self._search_patterns())
-        orig_props.update(self._apply_functions(orig_props))
-        return orig_props
+        props.update(self._search_patterns())
+        self._apply_functions(props)
 
     def _search_patterns(self):
         found_props = {}
@@ -166,8 +165,7 @@ class _FileParser(object):
 
     def _apply_functions(self, props):
         for function in self.functions:
-            props.update(function(self.content, props))
-        return props
+            function(self.content, props)
 
 
 class Fetcher(object):
@@ -270,7 +268,8 @@ class Fetcher(object):
                 # If filename is absolute it will not be changed here
                 filename = os.path.join(run_dir, filename)
                 file_parser.load_file(filename)
-                props = file_parser.parse(props)
+                # Subclasses directly modify the properties during parsing
+                file_parser.parse(props)
 
             if write_combined_props:
                 combined_props['-'.join(id)] = props.dict()
