@@ -64,9 +64,6 @@ class PlanningReport(Report):
         parser.add_argument('--res', default='domain', dest='resolution',
             help='resolution of the report',
             choices=['suite', 'domain', 'problem'])
-        parser.add_argument('--filter', type=tools.csv, default=[],
-            help='filters will be applied as follows: '
-                'expanded:lt:100 -> only process if run[expanded] < 100')
         parser.add_argument('--missing', default='auto',
             dest='handle_missing_attrs', choices=['include', 'ignore', 'auto'],
             help='for an attribute include or ignore problems for which not '
@@ -79,7 +76,7 @@ class PlanningReport(Report):
         self.output = ''
 
         # For some attributes only compare commonly solved tasks
-        self.commonly_solved_foci = [
+        self.commonly_solved_attributes = [
                 'cost', 'expanded', 'expansions', 'generated', 'memory',
                 'plan_length', 'search_time', 'total_time']
         info = ('The attributes %s are handled as follows:\n'
@@ -87,7 +84,7 @@ class PlanningReport(Report):
                 'the attribute, the concerning runs are only evaluated if '
                 '"``--missing``" is set to "include" or if "``--missing``" is '
                 'set to "auto" (default) and the resolution is "problem"')
-        info %= ', '.join(self.commonly_solved_foci)
+        info %= ', '.join(self.commonly_solved_attributes)
         self.add_info(info)
 
         if self.suite:
@@ -179,7 +176,7 @@ class PlanningReport(Report):
         domain-summary reports
         """
         # For some reports include all runs
-        if (focus not in self.commonly_solved_foci or
+        if (focus not in self.commonly_solved_attributes or
                 self.handle_missing_attrs == 'include' or
                 (self.handle_missing_attrs == 'auto' and
                     self.resolution == 'problem')):
@@ -237,7 +234,7 @@ class AnyAttributeReport(PlanningReport):
     def _get_table(self, focus):
         table = PlanningTable(focus, highlight=False, numeric_rows=True)
 
-        if len(self.foci) != 1:
+        if len(self.attributes) != 1:
             logging.error("Please select exactly one attribute for an "
                           "any-attribute report")
             sys.exit(1)
@@ -414,10 +411,7 @@ class SuiteReport(PlanningReport):
 
 
 if __name__ == "__main__":
-    sys.path.append(os.path.join(tools.BASE_DIR, 'src', 'translate'))
-    from timers import Timer, timing
-
-    with timing("Create report", block=True):
+    with tools.timing("Create report"):
         known_args, remaining_args = report_type_parser.parse_known_args()
 
         # delete parsed args
