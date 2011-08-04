@@ -13,6 +13,7 @@ import collections
 import cPickle
 import hashlib
 import subprocess
+from collections import defaultdict
 
 import tools
 from markup import Document
@@ -56,8 +57,8 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--group-func', default='sum',
                     help='the function used to cumulate the values of a group')
 
-        self.add_argument('--filter', type=tools.csv, default=[],
-            help='filters will be applied as follows: '
+        self.add_argument('--filter', dest='filters', type=tools.csv,
+                default=[], help='filters will be applied as follows: '
                 'expanded:lt:100 -> only process if run[expanded] < 100')
 
         self.add_argument('--dry', default=False, action='store_true',
@@ -108,7 +109,8 @@ class Report(object):
         parser.parse_args(namespace=self)
 
         self._orig_data = self._load_data()
-        self._group_dict = None
+        self.data = self._orig_data.copy()
+        #self._group_dict = None
 
         attributes = sorted(self._orig_data.get_attributes())
 
@@ -121,8 +123,11 @@ class Report(object):
         self.attributes.sort()
         logging.info('Attributes: %s' % self.attributes)
 
+        # Filters
         self.filter_funcs = []
         self.filter_pairs = {}
+        if self.filters:
+            self.parse_filters()
 
         self.grouping = []
         self.order = []
@@ -155,20 +160,21 @@ class Report(object):
         """
         self.infos.append(info)
 
-    @property
-    def group_dict(self):
-        if self._group_dict:
-            return self._group_dict
-        data = self._orig_data.copy()
+    #@property
+    #def group_dict(self):
+    #    if self._group_dict:
+    #        return self._group_dict
+    #    data = self._orig_data.copy()
 
-        self.order = self.order or ['id']
-        data.sort(*self.order)
+    #    self.order = self.order or ['id']
+    #    data.sort(*self.order)
 
-        if self.filter_funcs or self.filter_pairs:
-            data = self._orig_data.filtered(*self.filter_funcs, **self.filter_pairs)
+    #    if self.filter_funcs or self.filter_pairs:
+    #        data = self._orig_data.filtered(*self.filter_funcs,
+    #                                        **self.filter_pairs)
 
-        self._group_dict = data.group_dict(*self.grouping)
-        return self._group_dict
+    #    self._group_dict = data.group_dict(*self.grouping)
+    #    return self._group_dict
 
     def _load_data(self):
         """
@@ -208,6 +214,8 @@ class Report(object):
         name = os.path.basename(self.eval_dir)
         if len(self.attributes) == 1:
             name += '-' + self.attributes[0]
+        if self.filters:
+            name += '-' + '+'.join([f.replace(':', '_') for f in self.filters])
         return name
 
     def get_filename(self):
@@ -219,7 +227,6 @@ class Report(object):
         self.set_grouping('id-string')
         table = Table(highlight=False)
         for run_id, run_group in self.group_dict.items():
-            #run_group.dump()
             assert len(run_group) == 1, run_group
             run = run_group.items[0]
             del run['id']
@@ -275,28 +282,29 @@ class Report(object):
         for ext in extensions:
             tools.remove(filename_prefix + '.' + ext)
 
-    def __str__(self):
-        # list of (attribute, table) pairs
-        tables = []
+    def _parse_filters(self):
+        '''
+        Filter strings have the form e.g.
+        expanded:lt:100 or solved:eq:1 or generated:ge:2000
+        '''
+        for string in self.filters:
+            self._parse_filter(string)
 
-        for focus in self.attributes:
-            self.data = self.orig_data.copy()
-            try:
-                table = self._get_table(focus)
-                # We return None for a table if we don't want to add it
-                if table:
-                    print table
-                    tables.append((focus, table))
-            except TypeError, err:
-                logging.info('Omitting attribute "%s" (%s)' % (focus, err))
+    def _parse_filter(self, string):
+        attribute, op, value = string.split(':')
 
-        if not tables:
-            return ''
+        try:
+            value = float(value)
+        except ValueError:
+            pass
 
-        for attribute, table in tables:
-            res += '+ %s +\n%s\n' % (attribute, table)
+        try:
+            op = getattr(operator, op.lower())
+        except AttributeError:
+            logging.error('The operator module has no operator "%s"' % op)
+            sys.exit()
 
-        return res
+        self.add_filter(lambda run: op(run[attribute], value))
 
 
 class Table(collections.defaultdict):
@@ -308,6 +316,7 @@ class Table(collections.defaultdict):
         self.highlight = highlight
         self.min_wins = min_wins
         self.numeric_rows = numeric_rows
+        self.summaries = collections.defaultdict(dict)
 
     def add_cell(self, row, col, value):
         self[row][col] = value
@@ -317,24 +326,31 @@ class Table(collections.defaultdict):
         special_rows = ['SUM', 'AVG', 'GM']
         rows = self.keys()
         # Let the sum, etc. rows be the last ones
-        rows = ['zzz' + row if row.upper() in special_rows else row for row in rows]
-        tools.natural_sort(rows)
+        rows = tools.natural_sort(['zzz' + row if row.upper() in special_rows else row for row in rows])
         rows = [row[3:] if row.startswith('zzz') else row for row in rows]
         return rows
 
     @property
     def cols(self):
-        cols = []
+        cols = set()
         for dict in self.values():
             for key in dict.keys():
-                if key not in cols:
-                    cols.append(key)
+                cols.add(key)
 
-        tools.natural_sort(cols)
-        return cols
+        return tools.natural_sort(cols)
 
     def get_cells_in_row(self, row):
         return [self[row][col] for col in self.cols]
+
+    def get_column_contents(self):
+        """
+        Returns a mapping from column name to the list of values in that column.
+        """
+        values = defaultdict(list)
+        for row in self.rows:
+            for col, value in self[row].items():
+                values[col].append(value)
+        return values
 
     def get_comparison(self, comparator=cmp):
         """
@@ -399,6 +415,11 @@ class Table(collections.defaultdict):
         text += '|\n'
         return text
 
+    def add_summary_row(self, func):
+        func_name = func.__name__.upper()
+        for col, content in self.get_column_contents().items():
+            self.summaries[func_name][col] = func(content)
+
     def __str__(self):
         """
         {'zenotravel': {'yY': 17, 'fF': 21}, 'gripper': {'yY': 72, 'fF': 118}}
@@ -416,6 +437,8 @@ class Table(collections.defaultdict):
         text += ' | '.join('%-16s' % ('""%s""' % col) for col in cols) + ' |\n'
         for row in rows:
             text += self.get_row(row)
+        for summary, value_dict in self.summaries.items():
+            text += self.get_row(summary, value_dict.values())
         return text
 
 
