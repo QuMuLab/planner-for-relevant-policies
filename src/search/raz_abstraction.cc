@@ -5,12 +5,12 @@
 #include <iostream>
 using namespace std;
 
-#include "abstraction.h"
-#include "mas_heuristic.h" // needed for ShrinkStrategy type;
+#include "raz_abstraction.h"
+#include "raz_mas_heuristic.h" // needed for ShrinkStrategy type;
 // TODO: move that type somewhere else?
 #include "globals.h"
 #include "operator.h"
-#include "operator_registry.h"
+#include "raz_operator_registry.h"
 #include "shrink_bisimulation.h"
 #include "timer.h"
 

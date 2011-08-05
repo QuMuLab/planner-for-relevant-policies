@@ -1,6 +1,6 @@
-#include "mas_heuristic.h"
+#include "raz_mas_heuristic.h"
 
-#include "abstraction.h"
+#include "raz_abstraction.h"
 #include "globals.h"
 #include "operator.h"
 #include "option_parser.h"
@@ -9,7 +9,7 @@
 #include "shrink_fh.h"
 #include "state.h"
 #include "timer.h"
-#include "variable_order_finder.h"
+#include "raz_variable_order_finder.h"
 
 #include <cassert>
 #include <cmath>
