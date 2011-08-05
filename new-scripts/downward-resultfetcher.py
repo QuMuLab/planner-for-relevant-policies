@@ -11,6 +11,7 @@ import math
 from collections import defaultdict
 
 from resultfetcher import Fetcher, FetchOptionParser
+import tools
 
 
 def check(props):
@@ -41,62 +42,52 @@ def parse_translator_timestamps(content, props):
             props['translator_time_' + section] = float(match.group(3))
 
 
-def get_derived_vars(content):
-    """Count those variables that have an axiom_layer >= 0."""
+def _get_var_descriptions(content):
+    """Returns a list of (var_name, domain_size, axiom_layer) tuples."""
     regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M | re.S)
     match = regex.search(content)
     if not match:
+        return []
+    # var_descriptions looks like ['var0 7 -1', 'var1 4 -1', 'var2 4 -1']
+    var_descriptions = [var.split() for var in match.group(1).splitlines()]
+    return [(name, int(size), int(layer))
+            for name, size, layer in var_descriptions]
+
+
+def _get_derived_vars(content):
+    """Count those variables that have an axiom_layer >= 0."""
+    var_descriptions = _get_var_descriptions(content)
+    if not var_descriptions:
         logging.error('Number of derived vars could not be found')
-        return {}
-    """
-    var_descriptions looks like
-    ['var0 7 -1', 'var1 4 -1', 'var2 4 -1', 'var3 3 -1']
-    """
-    var_descriptions = match.group(1).splitlines()
-    derived_vars = 0
-    for var in var_descriptions:
-        var_name, domain_size, axiom_layer = var.split()
-        if int(axiom_layer) >= 0:
-            derived_vars += 1
-    return derived_vars
+        return None
+    return len([name for name, size, layer in var_descriptions if layer >= 0])
 
 
 def translator_derived_vars(content, props):
-    props['translator_derived_vars'] = get_derived_vars(content)
+    props.setdefault('translator_derived_vars', _get_derived_vars(content))
 
 
 def preprocessor_derived_vars(content, props):
-    props['preprocessor_derived_vars'] = get_derived_vars(content)
+    props.setdefault('preprocessor_derived_vars', _get_derived_vars(content))
 
 
-def get_facts(content):
-    pattern = r'begin_variables\n\d+\n(.+)end_variables'
-    vars_regex = re.compile(pattern, re.M | re.S)
-    match = vars_regex.search(content)
-    if not match:
+def _get_facts(content):
+    var_descriptions = _get_var_descriptions(content)
+    if not var_descriptions:
         logging.error('Number of facts could not be found')
-        return {}
-    """
-    var_descriptions looks like
-    ['var0 7 -1', 'var1 4 -1', 'var2 4 -1', 'var3 3 -1']
-    """
-    var_descriptions = match.group(1).splitlines()
-    total_domain_size = 0
-    for var in var_descriptions:
-        var_name, domain_size, axiom_layer = var.split()
-        total_domain_size += int(domain_size)
-    return total_domain_size
+        return None
+    return sum(size for name, size, layer in var_descriptions)
 
 
 def translator_facts(content, props):
-    props['translator_facts'] = get_facts(content)
+    props.setdefault('translator_facts', _get_facts(content))
 
 
 def preprocessor_facts(content, props):
-    props['preprocessor_facts'] = get_facts(content)
+    props.setdefault('preprocessor_facts', _get_facts(content))
 
 
-def get_axioms(content):
+def _get_axioms(content):
     """
     If |axioms| > 0:  ...end_operator\nAXIOMS\nbegin_rule...
     If |axioms| == 0: ...end_operator\n0
@@ -119,11 +110,11 @@ def get_axioms(content):
 
 
 def translator_axioms(content, props):
-    props['translator_axioms'] = get_axioms(content)
+    props.setdefault('translator_axioms', _get_axioms(content))
 
 
 def preprocessor_axioms(content, props):
-    props['preprocessor_axioms'] = get_axioms(content)
+    props.setdefault('preprocessor_axioms', _get_axioms(content))
 
 
 def cg_arcs(content, props):
@@ -147,12 +138,13 @@ def cg_arcs(content, props):
             arcs += int(parts[0])
     return {'preprocessor_cg_arcs': arcs}
 
+
 def get_problem_size(content):
     """
     Total problem size can be measured as the total number of tokens in the
     output.sas/output file.
     """
-    return content.count(' ') #len(content.split())
+    return len(content.split())
 
 
 def translator_problem_size(content, props):
@@ -163,13 +155,13 @@ def preprocessor_problem_size(content, props):
     props['preprocessor_problem_size'] = get_problem_size(content)
 
 
-def translator_invariant_groups_total_size(content, props):
+def translator_mutex_groups_total_size(content, props):
     """
-    Total invariant group sizes after translating
+    Total mutex group sizes after translating
     (sum over all numbers that follow a "group" line in the "all.groups" file)
     """
     groups = re.findall(r'group\n(\d+)', content, re.M | re.S)
-    props['translator_invariant_groups_total_size'] = sum(map(int, groups))
+    props['translator_mutex_groups_total_size'] = sum(map(int, groups))
 
 
 # Search functions ------------------------------------------------------------
@@ -286,7 +278,6 @@ def completely_explored(content, props):
 
 
 def get_status(content, props):
-    new_props = {}
     if 'plan_length' in props or 'cost' in props:
         props['status'] = 'ok'
     elif props.get('completely_explored', False):
@@ -372,11 +363,9 @@ def add_preprocess_parsing(eval):
     #eval.add_pattern('preprocess_error', r'preprocess_error = (\d)',
     #                 file='preprocess-properties', type=int, required=False)
 
-    # Number of invariant groups (second line in the "all.groups" file)
+    # Number of mutex groups (second line in the "all.groups" file)
     # The file starts with "begin_groups\n7\ngroup"
-    #eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
-    #                    file='all.groups', type=int, flags='MS')
-    eval.add_pattern('translator_invariant_groups',
+    eval.add_pattern('translator_mutex_groups',
                      r'begin_groups\n(\d+)\ngroup', file='all.groups',
                      type=int, flags='MS')
 
@@ -394,19 +383,17 @@ def add_preprocess_parsing(eval):
                            (2, 'translator_axioms', int)],
                            r'(\d+) of (\d+) axiom rules necessary')
 
-    """
-    the numbers from the following lines of translator output:
-        170 relevant atoms
-        141 auxiliary atoms
-        311 final queue length
-        364 total queue pushes
-        13 uncovered facts
-        0 implied effects removed
-        0 effect conditions simplified
-        0 implied preconditions added
-        0 operators removed
-        38 propositions removed
-    """
+    # Parse the numbers from the following lines of translator output:
+    #    170 relevant atoms
+    #    141 auxiliary atoms
+    #    311 final queue length
+    #    364 total queue pushes
+    #    13 uncovered facts
+    #    0 implied effects removed
+    #    0 effect conditions simplified
+    #    0 implied preconditions added
+    #    0 operators removed
+    #    38 propositions removed
     translator_values = [
         'relevant atoms', 'auxiliary atoms', 'final queue length',
         'total queue pushes', 'uncovered facts', 'implied effects removed',
@@ -431,10 +418,9 @@ def add_preprocess_functions(eval):
     eval.add_function(translator_problem_size, file='output.sas')
     eval.add_function(preprocessor_problem_size, file='output')
 
-    # Total invariant group sizes after translating
+    # Total mutex group sizes after translating
     # (sum over all numbers following a "group" line in the "all.groups" file)
-    eval.add_function(translator_invariant_groups_total_size,
-                      file='all.groups')
+    eval.add_function(translator_mutex_groups_total_size, file='all.groups')
 
 
 def add_search_functions(eval):
@@ -478,4 +464,5 @@ def build_fetcher(parser=FetchOptionParser()):
 
 if __name__ == '__main__':
     fetcher = build_fetcher()
-    fetcher.fetch()
+    with tools.timing('Parse files'):
+        fetcher.fetch()
