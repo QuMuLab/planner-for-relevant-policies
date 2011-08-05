@@ -12,15 +12,13 @@ from __future__ import with_statement
 import os
 import sys
 import re
-import glob
+from glob import glob
 from collections import defaultdict
 import logging
 import hashlib
 import cPickle
-import time
 
 import tools
-from external.datasets import DataSet
 
 
 class FetchOptionParser(tools.ArgParser):
@@ -74,7 +72,7 @@ class FetchOptionParser(tools.ArgParser):
 class _MultiPattern(object):
     """
     Parses a file for a pattern containing multiple match groups.
-    Each group_number has an associated attribute name and a type
+    Each group_number has an associated attribute name and a type.
     """
     def __init__(self, groups, regex, file, required, flags):
         """
@@ -117,27 +115,19 @@ class _MultiPattern(object):
         return self.regex.pattern
 
 
-class _Pattern(_MultiPattern):
-    def __init__(self, name, regex, group, file, required, type, flags):
-        groups = [(group, name, type)]
-        _MultiPattern.__init__(self, groups, regex, file, required, flags)
-
-
 class _FileParser(object):
     """
     Private class that parses a given file according to the added patterns
-    and functions
+    and functions.
     """
     def __init__(self):
         self.filename = None
         self.content = None
-
         self.patterns = []
         self.functions = []
 
     def load_file(self, filename):
         self.filename = filename
-
         try:
             with open(filename, 'rb') as file:
                 self.content = file.read()
@@ -158,7 +148,6 @@ class _FileParser(object):
 
     def _search_patterns(self):
         found_props = {}
-
         for pattern in self.patterns:
             found_props.update(pattern.search(self.content, self.filename))
         return found_props
@@ -171,10 +160,10 @@ class _FileParser(object):
 class Fetcher(object):
     """
     If copy-all is True, copies files from run dirs into a new tree under
-    <eval-dir> according to the value "id" in the run's properties file
+    <eval-dir> according to the value "id" in the run's properties file.
 
-    Parses various files and writes found results
-    into the run's properties file
+    Parses files and writes found results into the run's properties file or
+    into a global properties file.
     """
     def __init__(self, parser=FetchOptionParser(), *args, **kwargs):
         # Give all the options to the experiment instance
@@ -183,46 +172,43 @@ class Fetcher(object):
         self.file_parsers = defaultdict(_FileParser)
         self.check = None
 
-    def add_pattern(self, name, regex_string, group=1, file='run.log',
-                    required=True, type=int, flags=''):
+    def add_pattern(self, name, regex, group=1, file='run.log', required=True,
+                    type=int, flags=''):
         """
         During evaluate() look for pattern in file and add what is found in
-        group to the properties dictionary under "name"
+        group to the properties dictionary under "name":
 
-        properties[name] = re.compile(regex_str).search(file_content).group(group)
+        properties[name] = re.compile(regex).search(file_content).group(group)
 
         If required is True and the pattern is not found in file, an error
         message is printed
         """
-        pattern = _Pattern(name, regex_string, group, file, required, type, flags)
-        self.file_parsers[file].add_pattern(pattern)
+        groups = [(group, name, type)]
+        self.add_multipattern(groups, regex, file, required, flags)
 
-    def add_multipattern(self, groups, regex, file='run.log', required=True, flags=''):
+    def add_multipattern(self, groups, regex, file='run.log', required=True,
+                         flags=''):
         """
         During evaluate() look for "regex" in file. For each tuple of
         (group_number, attribute_name, type) add the results for "group_number"
-        to the properties file under "attribute_name" after casting it to "type".
+        to the properties file under "attribute_name" after casting it to
+        "type".
 
         If required is True and the pattern is not found in file, an error
         message is printed
         """
-        pattern = _MultiPattern(groups, regex, file, required, flags)
-        self.file_parsers[file].add_pattern(pattern)
-
-    def add_key_value_pattern(self, name, file='run.log'):
-        """
-        Convenience method that adds a pattern for lines containing only a
-        key:value pair
-        """
-        regex_string = r'\s*%s\s*[:=]\s*(.+)' % name
-        self.add_pattern(name, regex_string, 1, file)
+        self.file_parsers[file].add_pattern(
+                        _MultiPattern(groups, regex, file, required, flags))
 
     def add_function(self, function, file='run.log'):
         """
         After all the patterns have been evaluated and the found values have
-        been inserted into the properties files, call function(file_content, props)
-        for each added function.
-        The function is supposed to return a dictionary with new properties.
+        been inserted into the properties files, call
+        function(file_content, props) for each added function.
+        The function can directly manipulate the properties dictionary "props".
+        Functions can use the fact that all patterns have been parsed before
+        any function is run on the file content. The found values are present
+        in "props".
         """
         self.file_parsers[file].add_function(function)
 
@@ -234,7 +220,6 @@ class Fetcher(object):
         self.check = function
 
     def fetch(self):
-        start_time = time.clock()
         total_dirs = self.exp_props.get('runs')
 
         # Only write the combined properties when we are not copying preprocess
@@ -246,7 +231,7 @@ class Fetcher(object):
             combined_props = tools.Properties(combined_props_filename)
 
         # Get all run_dirs
-        run_dirs = sorted(glob.glob(os.path.join(self.exp_dir, 'runs-*-*', '*')))
+        run_dirs = sorted(glob(os.path.join(self.exp_dir, 'runs-*-*', '*')))
         for index, run_dir in enumerate(run_dirs, 1):
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
@@ -293,7 +278,6 @@ class Fetcher(object):
         if write_combined_props:
             combined_props.write()
             self.write_data_dump(combined_props)
-        logging.info('Parsing took %s CPU secs' % (time.clock() - start_time))
 
     def write_data_dump(self, combined_props):
         combined_props_file = combined_props.filename
@@ -312,7 +296,6 @@ class Fetcher(object):
 
 if __name__ == "__main__":
     logging.info('Import this module if you want to parse the output files')
-    logging.info('Started copying files')
-    fetcher = Fetcher()
-    fetcher.fetch()
-    logging.info('Finished copying files')
+    with tools.timing('Copy files'):
+        fetcher = Fetcher()
+        fetcher.fetch()
