@@ -148,10 +148,8 @@ class Report(object):
         """
         This method should be overwritten in subclasses.
         """
-        self.set_order('id-string')
-        self.set_grouping('id-string')
         table = Table(highlight=False)
-        for run_id, run_group in self.group_dict.items():
+        for run_id, run_group in sorted(self.data.group_dict('id-string').items()):
             assert len(run_group) == 1, run_group
             run = run_group.items[0]
             del run['id']
@@ -167,7 +165,7 @@ class Report(object):
     def build(self):
         doc = Document(title=self.get_name())
         for info in self.infos:
-            doc.add_text('- %s\n' % info)
+            doc.add_text('- %s' % info)
         if self.infos:
             doc.add_text('\n\n====================\n')
 
