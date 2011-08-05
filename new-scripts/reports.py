@@ -65,7 +65,7 @@ class ReportArgParser(tools.ArgParser):
         self.add_argument('--dry', default=False, action='store_true',
                     help='do not write anything to the filesystem')
 
-        self.add_argument('--show_attributes', action='store_true',
+        self.add_argument('--show-attributes', action='store_true',
                     help='show a list of available attributes and exit')
 
         self.add_argument('--open', default=False, action='store_true',
