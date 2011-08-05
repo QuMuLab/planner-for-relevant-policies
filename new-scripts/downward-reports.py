@@ -60,8 +60,6 @@ class PlanningReport(Report):
 
         Report.__init__(self, parser)
 
-        self.output = ''
-
         # For some attributes only compare commonly solved tasks
         self.commonly_solved_attributes = [
                 'cost', 'expanded', 'expansions', 'generated', 'memory',
