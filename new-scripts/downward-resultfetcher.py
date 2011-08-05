@@ -87,36 +87,6 @@ def preprocessor_facts(content, props):
     props.setdefault('preprocessor_facts', _get_facts(content))
 
 
-def _get_axioms(content):
-    """
-    If |axioms| > 0:  ...end_operator\nAXIOMS\nbegin_rule...
-    If |axioms| == 0: ...end_operator\n0
-    """
-    regex = re.compile(r'end_operator\n(\d+)\nbegin_rule', re.M | re.S)
-    match = regex.search(content)
-    if not match:
-        # make sure we have a valid file here
-        regex = re.compile(r'end_operator\n(\d+)', re.M | re.S)
-        match = regex.search(content)
-
-        if match is None:
-            # Some mystery problems don't have any operators
-            assert 'begin_rule' not in content, content
-            return 0
-        else:
-            assert match.group(1) == '0'
-    axioms = int(match.group(1))
-    return axioms
-
-
-def translator_axioms(content, props):
-    props.setdefault('translator_axioms', _get_axioms(content))
-
-
-def preprocessor_axioms(content, props):
-    props.setdefault('preprocessor_axioms', _get_axioms(content))
-
-
 def cg_arcs(content, props):
     """
     Sums up the number of outgoing arcs for each vertex
