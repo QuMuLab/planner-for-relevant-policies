@@ -31,6 +31,10 @@ class MissingType(object):
 missing = MissingType()
 
 
+def not_missing(val):
+    return val is not missing
+
+
 class ascending(object):
     def __init__(self, value):
         self.wrapped_value = value
@@ -87,7 +91,7 @@ class DataSet(Bunch):
             return [Bunch.__getitem__(self, key)]
         else:
             return [item.get(key, default) for item in self.items]
-    
+
     def get_single_value(self, key, default=missing):
         """
         Convenience method for a dataset with only one entry
@@ -182,7 +186,7 @@ class DataSet(Bunch):
         for item in self.items:
             key_to_page[item.key(*attrs)].append(item)
         return pages
-        
+
     def get_attributes(self):
         """
         """
@@ -190,12 +194,12 @@ class DataSet(Bunch):
         for item in self.items:
             attrs |= set(item.keys())
         return sorted(list(attrs))
-        
+
     def copy(self):
         """
         """
         return DataSet(self)
-    
+
 
 
 def testme():

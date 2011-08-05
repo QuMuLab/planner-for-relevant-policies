@@ -5,9 +5,12 @@ import subprocess
 import re
 import traceback
 import logging
+import contextlib
+import time
 
 from external import argparse
 from external.configobj import ConfigObj
+from external.datasets import DataSet
 
 # Patch configobj's unrepr method. Our version is much faster, but depends on
 # Python 2.6.
@@ -107,7 +110,7 @@ def natural_sort(alist):
         parts = re.split("([0-9]+)", text)
         return map(to_int_if_number, parts)
 
-    alist.sort(key=extract_numbers)
+    return sorted(alist, key=extract_numbers)
 
 
 def listdir(path):
@@ -182,6 +185,13 @@ class Properties(ConfigObj):
     def __init__(self, *args, **kwargs):
         kwargs['unrepr'] = True
         ConfigObj.__init__(self, *args, interpolation=False, **kwargs)
+
+    def get_dataset(self):
+        data = DataSet()
+        for run_id, run in sorted(self.items()):
+            run['id-string'] = run_id
+            data.append(**run)
+        return data
 
 
 def fast_updatetree(src, dst):
@@ -315,3 +325,28 @@ class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
             return '%s [environment-specific options]' % get_metavar(1)
         else:
             return argparse.HelpFormatter._format_args(self, action, default_metavar)
+
+
+class Timer(object):
+    def __init__(self):
+        self.start_time = time.time()
+        self.start_clock = self._clock()
+
+    def _clock(self):
+        times = os.times()
+        return times[0] + times[1]
+
+    def __str__(self):
+        return "[%.3fs CPU, %.3fs wall-clock]" % (
+            self._clock() - self.start_clock,
+            time.time() - self.start_time)
+
+
+@contextlib.contextmanager
+def timing(text):
+    timer = Timer()
+    logging.info("%s..." % text)
+    sys.stdout.flush()
+    yield
+    logging.info("%s: %s" % (text, timer))
+    sys.stdout.flush()

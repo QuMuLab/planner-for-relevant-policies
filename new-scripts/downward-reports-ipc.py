@@ -59,8 +59,7 @@ class IpcReport(Report):
                      self.best_value_column)
 
         # Get set of configs
-        self.configs = self.data.group_dict('config').keys()
-        tools.natural_sort(self.configs)
+        self.configs = tools.natural_sort(self.data.group_dict('config').keys())
         self.total_scores = self._compute_total_scores()
 
     def name(self):
