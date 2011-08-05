@@ -7,7 +7,6 @@ from __future__ import with_statement, division
 
 import os
 import sys
-from itertools import combinations
 import logging
 import collections
 import cPickle
@@ -272,7 +271,8 @@ class Table(collections.defaultdict):
         self.highlight = highlight
         self.min_wins = min_wins
         self.numeric_rows = numeric_rows
-        self.summaries = collections.defaultdict(dict)
+
+        self.summary_funcs = []
 
     def add_cell(self, row, col, value):
         self[row][col] = value
@@ -304,14 +304,17 @@ class Table(collections.defaultdict):
                 values[col].append(value)
         return values
 
-    def get_row(self, row, values=None):
-        '''
-        values has to be sorted by the corresponding column names
-        '''
-        if values is None:
-            values = []
-            for col in self.cols:
-                values.append(self.get(row).get(col))
+    def get_row(self, row_name, row=None):
+        """
+        If given, row must be a dictionary mapping column names to the value in
+        row "row_name".
+        """
+        if row is None:
+            row = self[row_name]
+
+        values = []
+        for col in self.cols:
+            values.append(row.get(col))
 
         only_one_value = len(set(values)) == 1
 
@@ -328,9 +331,9 @@ class Table(collections.defaultdict):
 
         text = ''
         if self.numeric_rows:
-            text += '| %-30s ' % (row)
+            text += '| %-30s ' % (row_name)
         else:
-            text += '| %-30s ' % ('**' + row + '**')
+            text += '| %-30s ' % ('**' + row_name + '**')
         for value in values:
             is_min = (value == min_value)
             is_max = (value == max_value)
@@ -345,14 +348,12 @@ class Table(collections.defaultdict):
         text += '|\n'
         return text
 
-    def add_summary_row(self, func):
+    def add_summary_function(self, func):
         """
         This function adds a bottom row with the values func(column_values) for
         each column. Func can be e.g. sum, reports.avg, reports.gm
         """
-        func_name = func.__name__.upper()
-        for col, content in self.get_column_contents().items():
-            self.summaries[func_name][col] = func(content)
+        self.summary_funcs.append(func)
 
     def __str__(self):
         """
@@ -364,15 +365,14 @@ class Table(collections.defaultdict):
         """
         text = '|| %-29s | ' % self.title
 
-        rows = self.rows
-        cols = self.cols
-
         # Escape config names to prevent unvoluntary markup
-        text += ' | '.join('%-16s' % ('""%s""' % col) for col in cols) + ' |\n'
-        for row in rows:
+        text += ' | '.join('%-16s' % ('""%s""' % col) for col in self.cols) + ' |\n'
+        for row in self.rows:
             text += self.get_row(row)
-        for summary, value_dict in self.summaries.items():
-            text += self.get_row(summary, value_dict.values())
+        for func in self.summary_funcs:
+            summary_row = dict([(col, func(content)) for col, content in
+                                self.get_column_contents().items()])
+            text += self.get_row(func.__name__.upper(), summary_row)
         return text
 
 

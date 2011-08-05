@@ -36,11 +36,11 @@ class PlanningTable(Table):
         Table.__init__(self, *args, **kwargs)
 
     def __str__(self):
-        self.add_summary_row(sum)
+        self.add_summary_function(sum)
         if 'score' in self.title:
             # When summarising score results from multiple domains we show
             # normalised averages so that each domain is weighed equally.
-            self.add_summary_row(reports.avg)
+            self.add_summary_function(reports.avg)
         return Table.__str__(self)
 
 
