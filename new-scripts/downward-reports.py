@@ -137,17 +137,6 @@ class PlanningReport(Report):
         name += '-' + self.report_type
         return name
 
-    def get_configs(self):
-        """
-        Return the list of configs
-
-        Either they have been set on the commandline, or we take all configs
-        found in the runs
-        """
-        if self.configs:
-            return self.configs
-        return list(set([run['config'] for run in self._orig_data]))
-
     def _must_filter_common_attributes(self, attribute):
         """For some reports include all runs"""
         return not (attribute not in self.commonly_solved_attributes or

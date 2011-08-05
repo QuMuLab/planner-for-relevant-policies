@@ -45,18 +45,21 @@ class ReportArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, add_help=True, **kwargs)
 
-        self.add_argument('source', help='path to results directory',
-                    type=self.directory)
+        self.add_argument('eval_dir', type=self.directory,
+                    help='path to results directory')
 
-        self.add_argument('-d', '--dest', dest='report_dir', default='reports',
-                    help='path to report directory')
+        self.add_argument('--outfile', default=None,
+                    help='if not set, the report will be written to a file '
+                    'in %s.' % tools.REPORTS_DIR)
+
+        self.add_argument('-a', '--attributes', type=tools.csv,
+                    metavar='ATTR',
+                    help='the analyzed attributes (e.g. "expanded"). '
+                    'If omitted, use all found numerical attributes')
 
         self.add_argument('--format', dest='output_format', default='html',
                     help='format of the output file',
                     choices=sorted(txt2tags.TARGETS))
-
-        self.add_argument('--group-func', default='sum',
-                    help='the function used to cumulate the values of a group')
 
         self.add_argument('--filter', dest='filters', type=tools.csv,
                 default=[], help='filters will be applied as follows: '
@@ -72,15 +75,8 @@ class ReportArgParser(tools.ArgParser):
                     dest='open_report',
                     help='open the report file after writing it')
 
-        self.add_argument('-a', '--attributes', type=tools.csv,
-                    metavar='ATTR',
-                    help='the analyzed attributes (e.g. "expanded"). '
-                    'If omitted, use all found numerical attributes')
-
     def parse_args(self, *args, **kwargs):
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
-
-        args.eval_dir = args.source
 
         args.eval_dir = os.path.normpath(os.path.abspath(args.eval_dir))
         logging.info('Eval dir: "%s"' % args.eval_dir)
@@ -91,12 +87,6 @@ class ReportArgParser(tools.ArgParser):
             answer = raw_input(msg)
             if not answer.upper() == 'Y':
                 sys.exit()
-
-        if not os.path.exists(args.report_dir):
-            os.makedirs(args.report_dir)
-
-        # Turn e.g. the string 'max' into the function max()
-        args.group_func = eval(args.group_func)
 
         return args
 
@@ -142,7 +132,7 @@ class Report(object):
 
     def get_filename(self):
         ext = self.output_format.replace('xhtml', 'html')
-        return os.path.join(self.report_dir, self.get_name() + '.' + ext)
+        return os.path.join(tools.REPORTS_DIR, self.get_name() + '.' + ext)
 
     def get_text(self):
         """
@@ -184,8 +174,10 @@ class Report(object):
 
     def write_to_disk(self, content):
         if not self.dry:
-            with open(self.get_filename(), 'w') as file:
-                output_uri = 'file://' + os.path.abspath(self.get_filename())
+            filename = self.outfile or self.get_filename()
+            tools.makedirs(os.path.dirname(filename))
+            with open(filename, 'w') as file:
+                output_uri = 'file://' + os.path.abspath(filename)
                 logging.info('Writing output to %s' % output_uri)
                 file.write(content)
 

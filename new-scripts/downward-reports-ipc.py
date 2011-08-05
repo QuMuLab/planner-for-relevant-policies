@@ -26,8 +26,6 @@ def remove_missing(iterable):
 
 
 class IpcReport(Report):
-    """
-    """
     def __init__(self, parser=ReportArgParser()):
         parser.set_defaults(output_format='tex')
         parser.add_argument('focus', choices=SCORES,
@@ -42,7 +40,7 @@ class IpcReport(Report):
                             default='a4',
                             help='Set the page size for the latex report')
         Report.__init__(self, parser)
-        self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
+
         self.focus_name = self.focus
         self.normalize = True
 
@@ -62,7 +60,7 @@ class IpcReport(Report):
         self.configs = tools.natural_sort(self.data.group_dict('config').keys())
         self.total_scores = self._compute_total_scores()
 
-    def name(self):
+    def get_name(self):
         name = os.path.basename(self.eval_dir)
         name += '-ipc-' + self.focus
         return name
@@ -93,12 +91,13 @@ class IpcReport(Report):
             self.print_report()
             return
 
-        with open(self.output_file, 'w') as file:
+        filename = self.outfile or os.path.join(tools.REPORTS_DIR,
+                                                self.get_name() + '.tex')
+        with open(filename, 'w') as file:
             sys.stdout = file
             self.print_report()
             sys.stdout = sys.__stdout__
-        output_uri = 'file://' + os.path.abspath(self.output_file)
-        logging.info('Wrote file %s' % output_uri)
+        logging.info('Wrote file %s' % 'file://' + os.path.abspath(filename))
 
     def print_report(self):
         self.print_header()
