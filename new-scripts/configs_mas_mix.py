@@ -7,7 +7,7 @@ def mas_mix():
        ("mas-5", "--search 'astar(mas(shrink_strategy=shrink_fh(Low, High)))'"),
        ("mas-6", "--search 'astar(mas(shrink_strategy=shrink_fh(High, High)))'"),
         ("mas-7", "--search 'astar(mas(shrink_strategy=shrink_dfp(Default)))'"),
-        ("mas-8", "--search 'astar(mas(shrink_strategy=shrink_bisimulation(true,true)))'"),
-        ("mas-8", "--search 'astar(mas(max_states=1000))'")
+        ("mas-8", "--search 'astar(mas(shrink_strategy=shrink_bisimulation(false,false)))'"),
+        ("mas-9", "--search 'astar(mas(max_states=1000))'"),
 ]
 
