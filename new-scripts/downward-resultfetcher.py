@@ -160,7 +160,10 @@ CUMULATIVE_PATTERNS = [
     _get_states_pattern('generated', 'Generated'),
     ('search_time', re.compile(r'^Search time: (.+)s$'), float),
     ('total_time', re.compile(r'^Total time: (.+)s$'), float),
-    ('memory', re.compile(r'Peak memory: (.+) KB'), int)
+    ('memory', re.compile(r'Peak memory: (.+) KB'), int),
+    ('landmarks', re.compile(r'Discovered (\d+) landmarks'), int),
+    ('landmarks_generation_time',
+        re.compile(r'Landmarks generation time: (.+)s'), float),
     ]
 
 
