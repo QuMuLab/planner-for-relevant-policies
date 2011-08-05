@@ -61,12 +61,12 @@ def get_derived_vars(content):
     return derived_vars
 
 
-def translator_derived_vars(content, old_props):
-    return {'translator_derived_vars': get_derived_vars(content)}
+def translator_derived_vars(content, props):
+    props['translator_derived_vars'] = get_derived_vars(content)
 
 
-def preprocessor_derived_vars(content, old_props):
-    return {'preprocessor_derived_vars': get_derived_vars(content)}
+def preprocessor_derived_vars(content, props):
+    props['preprocessor_derived_vars'] = get_derived_vars(content)
 
 
 def get_facts(content):
@@ -88,12 +88,12 @@ def get_facts(content):
     return total_domain_size
 
 
-def translator_facts(content, old_props):
-    return {'translator_facts': get_facts(content)}
+def translator_facts(content, props):
+    props['translator_facts'] = get_facts(content)
 
 
-def preprocessor_facts(content, old_props):
-    return {'preprocessor_facts': get_facts(content)}
+def preprocessor_facts(content, props):
+    props['preprocessor_facts'] = get_facts(content)
 
 
 def get_axioms(content):
@@ -118,15 +118,15 @@ def get_axioms(content):
     return axioms
 
 
-def translator_axioms(content, old_props):
-    return {'translator_axioms': get_axioms(content)}
+def translator_axioms(content, props):
+    props['translator_axioms'] = get_axioms(content)
 
 
-def preprocessor_axioms(content, old_props):
-    return {'preprocessor_axioms': get_axioms(content)}
+def preprocessor_axioms(content, props):
+    props['preprocessor_axioms'] = get_axioms(content)
 
 
-def cg_arcs(content, old_props):
+def cg_arcs(content, props):
     """
     Sums up the number of outgoing arcs for each vertex
     """
@@ -147,31 +147,29 @@ def cg_arcs(content, old_props):
             arcs += int(parts[0])
     return {'preprocessor_cg_arcs': arcs}
 
-
 def get_problem_size(content):
     """
     Total problem size can be measured as the total number of tokens in the
     output.sas/output file.
     """
-    return sum([len(line.split()) for line in content.splitlines()])
+    return content.count(' ') #len(content.split())
 
 
-def translator_problem_size(content, old_props):
-    return {'translator_problem_size': get_problem_size(content)}
+def translator_problem_size(content, props):
+    props['translator_problem_size'] = get_problem_size(content)
 
 
-def preprocessor_problem_size(content, old_props):
-    return {'preprocessor_problem_size': get_problem_size(content)}
+def preprocessor_problem_size(content, props):
+    props['preprocessor_problem_size'] = get_problem_size(content)
 
 
-def translator_invariant_groups_total_size(content, old_props):
+def translator_invariant_groups_total_size(content, props):
     """
     Total invariant group sizes after translating
     (sum over all numbers that follow a "group" line in the "all.groups" file)
     """
     groups = re.findall(r'group\n(\d+)', content, re.M | re.S)
-    total = sum(map(int, groups))
-    return {'translator_invariant_groups_total_size': total}
+    props['translator_invariant_groups_total_size'] = sum(map(int, groups))
 
 
 # Search functions ------------------------------------------------------------
@@ -421,7 +419,6 @@ def add_preprocess_parsing(eval):
 
 def add_preprocess_functions(eval):
     eval.add_function(parse_translator_timestamps)
-    return
 
     eval.add_function(translator_facts, file='output.sas')
     eval.add_function(preprocessor_facts, file='output')
@@ -431,8 +428,8 @@ def add_preprocess_functions(eval):
 
     #eval.add_function(cg_arcs, file='output')
 
-    #eval.add_function(translator_problem_size, file='output.sas')
-    #eval.add_function(preprocessor_problem_size, file='output')
+    eval.add_function(translator_problem_size, file='output.sas')
+    eval.add_function(preprocessor_problem_size, file='output')
 
     # Total invariant group sizes after translating
     # (sum over all numbers following a "group" line in the "all.groups" file)
