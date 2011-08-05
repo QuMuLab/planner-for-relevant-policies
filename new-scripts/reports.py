@@ -271,6 +271,9 @@ class Report(object):
 class Table(collections.defaultdict):
     def __init__(self, title='', highlight=True, min_wins=True,
                  numeric_rows=False):
+        """
+        If numeric_rows is True, we do not make the first column bold.
+        """
         collections.defaultdict.__init__(self, dict)
 
         self.title = title
@@ -308,28 +311,6 @@ class Table(collections.defaultdict):
             for col, value in self[row].items():
                 values[col].append(value)
         return values
-
-    def get_comparison(self, comparator=cmp):
-        """
-        || expanded                      | fF               | yY              |
-        | **prob01.pddl**                | 21               | 16              |
-        | **prob02.pddl**                | 38               | 24              |
-        | **prob03.pddl**                | 59               | 32              |
-        ==>
-        returns ((fF, yY), (0, 0, 3)) [wins, draws, losses]
-        """
-        assert len(self.cols) == 2, 'Please specify 2 configs'
-
-        sums = [0, 0, 0]
-
-        for row in self.rows:
-            for col1, col2 in combinations(self.cols, 2):
-                val1 = self[row][col1]
-                val2 = self[row][col2]
-                cmp_value = comparator(val1, val2)
-                sums[cmp_value + 1] += 1
-
-        return (self.cols, sums)
 
     def get_row(self, row, values=None):
         '''

@@ -17,7 +17,6 @@ from reports import Report, ReportArgParser, Table
 
 
 REPORT_TYPES = {'abs': 'AbsolutePlanningReport',
-                'cmp': 'ComparativePlanningReport',
                 'any': 'AnyAttributeReport',
                 'suite': 'SuiteReport'
                 }
@@ -260,6 +259,9 @@ class AnyAttributeReport(PlanningReport):
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
         parser.set_defaults(attributes='search_time')
+        parser.add_argument('--min-value', type=int, default=0)
+        parser.add_argument('--max-value', type=int, default=1800)
+        parser.add_argument('--step', type=int, default=5)
         PlanningReport.__init__(self, parser)
 
     def _get_table(self, attribute):
@@ -270,68 +272,12 @@ class AnyAttributeReport(PlanningReport):
                           "any-attribute report")
             sys.exit(1)
 
-        min_value = 0
-        max_value = 1800
-        step = 5
-
         for config, group in self.data.group_dict('config').items():
             group.filter(coverage=1)
             group.sort(attribute)
-            for time_limit in xrange(min_value, max_value + step, step):
+            for time_limit in xrange(self.min_value, self.max_value + 1, self.step):
                 table.add_cell(str(time_limit), config,
                     len(group.filtered(lambda di: di[attribute] <= time_limit)))
-        return table
-
-
-class ComparativePlanningReport(PlanningReport):
-    """
-    Write a comparative report about the attribute attribute, e.g.
-
-    ||                               | fF/yY            |
-    | **grid**                       | 0 - 1 - 0        |
-    | **gripper**                    | 0 - 0 - 3        |
-    | **zenotravel**                 | 0 - 1 - 1        |
-    """
-    def __init__(self, *args, **kwargs):
-        PlanningReport.__init__(self, *args, **kwargs)
-
-    def _get_table(self, attribute):
-        table = PlanningReport._get_table(self, attribute)
-
-        if self.resolution == 'domain':
-            self.set_grouping('domain')
-            for domain, group in self.group_dict.items():
-                values = Table()
-                config_prob_to_group = group.group_dict('config', 'problem')
-                for (config, problem), subgroup in config_prob_to_group.items():
-                    vals = subgroup[attribute]
-                    assert len(vals) == 1
-                    val = vals[0]
-                    values.add_cell(problem, config, val)
-                (config1, config2), sums = values.get_comparison()
-                table.add_cell(domain, config1 + '/' + config2,
-                                        '%d - %d - %d' % tuple(sums))
-        elif self.resolution == 'problem':
-            logging.error('Comparative reports only make sense for domains and suites')
-            sys.exit(1)
-
-        if self.resolution == 'suite' or not self.hide_sum_row:
-            if self.resolution == 'suite':
-                row_name = '-'.join(self.suite) if self.suite else 'Suite'
-            else:
-                row_name = 'SUM'
-            self.set_grouping()
-            for group in self.group_dict.values():
-                values = Table()
-                config_prob_to_group = group.group_dict('config', 'domain', 'problem')
-                for (config, domain, problem), subgroup in config_prob_to_group.items():
-                    vals = subgroup[attribute]
-                    assert len(vals) == 1
-                    val = vals[0]
-                    values.add_cell(domain + ':' + problem, config, val)
-                (config1, config2), sums = values.get_comparison()
-                table.add_cell(row_name, config1 + '/' + config2,
-                               '%d - %d - %d' % tuple(sums))
         return table
 
 
