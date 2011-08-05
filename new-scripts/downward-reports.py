@@ -107,6 +107,20 @@ class PlanningReport(Report):
             self.orig_group_dict = self.data.group_dict('config', 'domain', 'problem')
         self.orig_group_dict_domain_prob = self.data.group_dict('domain', 'problem')
 
+    def get_text(self):
+        # list of (attribute, table) pairs
+        tables = []
+        for attribute in self.attributes:
+            try:
+                table = self._get_table(attribute)
+                # We return None for a table if we don't want to add it
+                if table:
+                    tables.append((attribute, table))
+            except TypeError, err:
+                logging.info('Omitting attribute "%s" (%s)' % (attribute, err))
+
+        return ''.join(['+ %s +\n%s\n' % (attr, table) for (attr, table) in tables])
+
     def get_name(self):
         name = Report.get_name(self)
         if self.configs:
@@ -201,9 +215,8 @@ class AnyAttributeReport(PlanningReport):
         max_value = 1800
         step = 5
 
-        self.set_grouping('config')
-        for config, group in self.group_dict.items():
-            group.filter(solved=1)
+        for config, group in self.data.group_dict('config').items():
+            group.filter(coverage=1)
             group.sort(attribute)
             for time_limit in xrange(min_value, max_value + step, step):
                 table.add_cell(str(time_limit), config,
@@ -221,20 +234,6 @@ class AbsolutePlanningReport(PlanningReport):
     """
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
-
-    def get_text(self):
-        # list of (attribute, table) pairs
-        tables = []
-        for attribute in self.attributes:
-            try:
-                table = self._get_table(attribute)
-                # We return None for a table if we don't want to add it
-                if table:
-                    tables.append((attribute, table))
-            except TypeError, err:
-                logging.info('Omitting attribute "%s" (%s)' % (attribute, err))
-
-        return ''.join(['+ %s +\n%s\n' % (attr, table) for (attr, table) in tables])
 
     def _get_table(self, attribute):
         table = PlanningReport._get_empty_table(self, attribute)
