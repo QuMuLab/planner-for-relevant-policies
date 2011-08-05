@@ -8,7 +8,6 @@ from __future__ import with_statement, division
 import sys
 import os
 import logging
-import operator
 
 import tools
 import downward_suites
@@ -346,38 +345,25 @@ class SuiteReport(PlanningReport):
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
 
-        self.resolution = 'problem'
-        self.set_grouping(None)
-
-    def write(self):
-        self.data = self.orig_data.copy()
-        data = self.data.filtered(*self.filter_funcs, **self.filter_pairs)
-        if len(data) == 0:
+    def build(self):
+        if len(self.data) == 0:
             sys.exit('No problems match those filters')
-        problems = [run['domain'] + ':' + run['problem'] for run in data]
+        problems = [run['domain'] + ':' + run['problem'] for run in self.data]
         # Sort and remove duplicates
         problems = sorted(set(problems))
         problems = ['        "%s",\n' % problem for problem in problems]
-        self.output = ('def suite():\n    return [\n%s    ]\n' %
-                       ''.join(problems))
+        output = ('def suite():\n    return [\n%s    ]\n' % ''.join(problems))
         print '\nSUITE:'
-        print self.output
+        print output
+        return output
 
-        if not self.dry:
-            exp_name = os.path.basename(self.eval_dir).replace('-eval', '')
-            filters = '_'.join(self.filter)
-            filters = filters.replace(':', '')
-            parts = [exp_name, 'suite']
-            if filters:
-                parts.append(filters)
-            filename = '_'.join(parts) + '.py'
-            output_file = os.path.join(self.report_dir, filename)
-            with open(output_file, 'w') as file:
-                output_uri = 'file://' + os.path.abspath(output_file)
-                logging.info('Writing output to %s' % output_uri)
-                file.write(self.output)
-
-        logging.info('Finished writing report')
+    def get_filename(self):
+        exp_name = os.path.basename(self.eval_dir).replace('-eval', '')
+        filters = '_'.join(self.filters).replace(':', '')
+        parts = [exp_name, 'suite']
+        if filters:
+            parts.append(filters)
+        return '_'.join(parts) + '.py'
 
 
 if __name__ == "__main__":

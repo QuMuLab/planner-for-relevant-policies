@@ -13,6 +13,7 @@ import collections
 import cPickle
 import hashlib
 import subprocess
+import operator
 from collections import defaultdict
 
 import tools
@@ -144,6 +145,9 @@ class Report(object):
         return os.path.join(self.report_dir, self.get_name() + '.' + ext)
 
     def get_text(self):
+        """
+        This method should be overwritten in subclasses.
+        """
         self.set_order('id-string')
         self.set_grouping('id-string')
         table = Table(highlight=False)
@@ -158,6 +162,9 @@ class Report(object):
         return str(table)
 
     def write(self):
+        self.write_to_disk(self.build())
+
+    def build(self):
         doc = Document(title=self.get_name())
         for info in self.infos:
             doc.add_text('- %s\n' % info)
@@ -175,13 +182,14 @@ class Report(object):
         doc.add_text(text)
         print 'REPORT MARKUP:\n'
         print doc
-        self.output = doc.render(self.output_format, {'toc': 1})
+        return doc.render(self.output_format, {'toc': 1})
 
+    def write_to_disk(self, content):
         if not self.dry:
             with open(self.get_filename(), 'w') as file:
                 output_uri = 'file://' + os.path.abspath(self.get_filename())
                 logging.info('Writing output to %s' % output_uri)
-                file.write(self.output)
+                file.write(content)
 
     def open(self):
         """
