@@ -16,12 +16,19 @@ import reports
 from reports import Report, ReportArgParser, Table
 
 
+REPORT_TYPES = {'abs': 'AbsolutePlanningReport',
+                'cmp': 'ComparativePlanningReport',
+                'any': 'AnyAttributeReport',
+                'suite': 'SuiteReport'
+                }
+
+
 # Create a parser only for parsing the report type
 report_type_parser = tools.ArgParser(add_help=False)
 report_type_parser.epilog = ('Note: The help output may depend on the already '
                              'selected options')
 report_type_parser.add_argument('-r', '--report', default='abs',
-            choices=['abs', 'any', 'suite'],
+            choices=sorted(REPORT_TYPES.keys()),
             help='Select a report type')
 
 
@@ -193,37 +200,6 @@ class PlanningReport(Report):
         return sum
 
 
-class AnyAttributeReport(PlanningReport):
-    """
-    Write an any-attribute (anytime, any-expanded, ...) report
-    || time            | fF               | yY               |
-    | 10               | 10               | 12               |
-    | 20               | 21               | 17               |
-    """
-    def __init__(self, *args, **kwargs):
-        PlanningReport.__init__(self, *args, **kwargs)
-
-    def _get_table(self, attribute):
-        table = PlanningTable(attribute, highlight=False, numeric_rows=True)
-
-        if len(self.attributes) != 1:
-            logging.error("Please select exactly one attribute for an "
-                          "any-attribute report")
-            sys.exit(1)
-
-        min_value = 0
-        max_value = 1800
-        step = 5
-
-        for config, group in self.data.group_dict('config').items():
-            group.filter(coverage=1)
-            group.sort(attribute)
-            for time_limit in xrange(min_value, max_value + step, step):
-                table.add_cell(str(time_limit), config,
-                    len(group.filtered(lambda di: di[attribute] <= time_limit)))
-        return table
-
-
 class AbsolutePlanningReport(PlanningReport):
     """
     Write an absolute report about the attribute attribute, e.g.
@@ -272,6 +248,38 @@ class AbsolutePlanningReport(PlanningReport):
                     '%s occurs in results more than once' % name
                 table.add_cell(name, config, func(values))
 
+        return table
+
+
+class AnyAttributeReport(PlanningReport):
+    """
+    Write an any-attribute (anytime, any-expanded, ...) report
+    || time            | fF               | yY               |
+    | 10               | 10               | 12               |
+    | 20               | 21               | 17               |
+    """
+    def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
+        parser.set_defaults(attributes='search_time')
+        PlanningReport.__init__(self, parser)
+
+    def _get_table(self, attribute):
+        table = PlanningTable(attribute, highlight=False, numeric_rows=True)
+
+        if len(self.attributes) != 1:
+            logging.error("Please select exactly one attribute for an "
+                          "any-attribute report")
+            sys.exit(1)
+
+        min_value = 0
+        max_value = 1800
+        step = 5
+
+        for config, group in self.data.group_dict('config').items():
+            group.filter(coverage=1)
+            group.sort(attribute)
+            for time_limit in xrange(min_value, max_value + step, step):
+                table.add_cell(str(time_limit), config,
+                    len(group.filtered(lambda di: di[attribute] <= time_limit)))
         return table
 
 
@@ -370,25 +378,14 @@ if __name__ == "__main__":
         # delete parsed args
         sys.argv = [sys.argv[0]] + remaining_args
 
-        report_type = known_args.report
-        logging.info('Report type: %s' % report_type)
+        report_name = REPORT_TYPES[known_args.report]
+        logging.info('Report: %s' % report_name)
 
-        if report_type == 'abs':
-            report = AbsolutePlanningReport()
-        elif report_type == 'cmp':
-            report = ComparativePlanningReport()
-        elif report_type == 'any':
-            report = AnyAttributeReport()
-        elif report_type == 'suite':
-            report = SuiteReport()
+        # Instantiate selected Report
+        report = globals().get(report_name)()
 
         # Copy the report type
-        report.report_type = report_type
+        report.report_type = known_args.report
 
         report.write()
         report.open()
-
-
-    #report.add_filter(domain='gripper')
-    #report.add_filter(lambda item: item['expanded'] == '21')
-    #report.add_filter(lambda item: item['expanded'] < 10)
