@@ -13,12 +13,6 @@ ParseError::ParseError(string m, ParseTree pt)
       parse_tree(pt) {
 }
 
-HelpElement::HelpElement(string k, string h, string t_n)
-    : kwd(k),
-      help(h),
-      type_name(t_n) {
-}
-
 void OptionParser::error(string msg) {
     throw ParseError(msg, *this->get_parse_tree());
 }
@@ -32,6 +26,8 @@ void OptionParser::warning(string msg) {
 Functions for printing help:
 */
 
+DocStore *DocStore::instance_ = 0;
+
 void OptionParser::set_help_mode(bool m) {
     dry_run_ = dry_run_ && m;
     help_mode_ = m;
@@ -41,12 +37,9 @@ void OptionParser::set_help_mode(bool m) {
 template <class T>
 static void get_help_templ(const ParseTree &pt) {
     if (Registry<T>::instance()->contains(pt.begin()->value)) {
-        cout << pt.begin()->value << " is a " << TypeNamer<T>::name()
-             << endl << "Usage: " << endl;
         OptionParser p(pt, true);
         p.set_help_mode(true);
         p.start_parsing<T>();
-        cout << endl;
     }
 }
 
@@ -64,7 +57,6 @@ static void get_help(string k) {
 
 template <class T>
 static void get_full_help_templ() {
-    cout << endl << "Help for " << TypeNamer<T>::name() << "s:" << endl << endl;
     vector<string> keys = Registry<T>::instance()->get_keys();
     for (size_t i(0); i != keys.size(); ++i) {
         ParseTree pt;
@@ -82,6 +74,95 @@ static void get_full_help() {
     Plugin<OpenList<int> >::register_open_lists();
     get_full_help_templ<OpenList<int> *>();
 }
+
+static void plain_help_output() {
+    DocStore *ds = DocStore::instance();
+    vector<string> keys = ds->get_keys();
+    vector<string> types = ds->get_types();
+    for(size_t n(0); n != types.size(); ++n) {
+        cout << "Help for " << types[n] << "s" << endl << endl;
+        for(size_t i(0); i != keys.size(); ++i) {
+            DocStruct info = ds->get(keys[i]);
+            if(info.type.compare(types[n]) != 0)
+                continue;
+            cout << keys[i] << " is a " << info.type << "." << endl
+                 << "Usage:" << endl
+                 << keys[i] << "(";
+            for(size_t j(0); j != info.arg_help.size(); ++j){
+                cout << info.arg_help[j].kwd;
+                if(info.arg_help[j].default_value.compare("") != 0){
+                    cout << " = " << info.arg_help[j].default_value;
+                }
+                if(j != info.arg_help.size() - 1)
+                    cout << ", ";
+            }
+            cout << ")" << endl;
+            for(size_t j(0); j != info.arg_help.size(); ++j){
+                cout << info.arg_help[j].kwd
+                     << " (" << info.arg_help[j].type_name << "):"
+                     << info.arg_help[j].help << endl;            
+            }
+            cout << endl;
+        }
+    }
+}
+
+
+static void moin_help_output() {
+    cout << "Experimental automatically generated documentation." << endl
+         << "<<TableOfContents>>" << endl;
+    DocStore *ds = DocStore::instance();
+    vector<string> keys = ds->get_keys();
+    vector<string> types = ds->get_types();
+    for(size_t n(0); n != types.size(); ++n) {
+        cout << "= " << types[n] << "s" << " =" << endl;
+        for(size_t i(0); i != keys.size(); ++i) {
+            DocStruct info = ds->get(keys[i]);
+            if(info.type.compare(types[n]) != 0)
+                continue;
+            cout << "== " << info.full_name << " ==" << endl
+                 << info.synopsis << endl
+                 << "{{{" << endl            
+                 << keys[i] << "(";
+            for(size_t j(0); j != info.arg_help.size(); ++j){
+                cout << info.arg_help[j].kwd;
+                if(info.arg_help[j].default_value.compare("") != 0){
+                    cout << " = " << info.arg_help[j].default_value;
+                }
+                if(j != info.arg_help.size() - 1)
+                    cout << ", ";
+            }
+            cout << ")" << endl
+                 << "}}}" << endl << endl;
+
+            for(size_t j(0); j != info.arg_help.size(); ++j){
+                cout << " * `" << info.arg_help[j].kwd << "` (" 
+                     << info.arg_help[j].type_name << "): "
+                     << info.arg_help[j].help << endl;            
+            }
+            //language features:
+            if(!info.support_help.empty()) {
+                cout << "Language features supported:" << endl;
+            }
+            for(size_t j(0); j != info.support_help.size(); ++j) {
+                LanguageSupportInfo ls = info.support_help[j];
+                cout << " * '''" << ls.feature << ": '''"
+                     << ls.description << endl;
+            }
+            //properties:
+            if(!info.property_help.empty()) {
+                cout << "Properties:" << endl;
+            }
+            for(size_t j(0); j != info.property_help.size(); ++j) {
+                PropertyInfo p = info.property_help[j];
+                cout << " * '''" << p.property << ": '''"
+                     << p.description << endl;
+            }
+            cout << endl;
+        }
+    }        
+}
+
 
 
 /*
@@ -183,11 +264,34 @@ SearchEngine *OptionParser::parse_cmd_line(
             cout << "random seed " << argv[i] << endl;
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;
+            string format = "plain";
+            bool got_help = false;
             if (i + 1 < argc) {
-                string helpiand = string(argv[i + 1]);
-                get_help(helpiand);
-            } else {
+                for(int j = i+1; j < argc; ++j) {
+                    if (string(argv[j]).compare("--format") == 0) {
+                        if(argc < j+1) {
+                            cout << "Missing format option" << endl;
+                            exit(1);
+                        }
+                        format = argv[j+1];
+                        ++j;
+                    } else {
+                        string helpiand = string(argv[i + 1]);
+                        get_help(helpiand);
+                        got_help = true;
+                    }
+                }
+            }
+            if(!got_help){
                 get_full_help();
+            }
+            if(format.compare("plain")==0){
+                plain_help_output();
+            }else if (format.compare("moinmoin")==0){
+                moin_help_output();
+            } else {
+                cout << "unknown help format option" << endl;
+                exit(1);
             }
             cout << "Help output finished." << endl;
             exit(0);
@@ -336,10 +440,9 @@ void OptionParser::add_enum_option(string k,
         }
         enum_descr += "}";
 
-        helpers.push_back(HelpElement(k, h, enum_descr));
-        if (def_val.compare("") != 0) {
-            helpers.back().default_value = def_val;
-        }
+        DocStore::instance()->add_arg(parse_tree.begin()->value,
+                                      k, h,
+                                      enum_descr, def_val);
         return;
     }
 
@@ -380,23 +483,6 @@ void OptionParser::add_enum_option(string k,
 }
 
 Options OptionParser::parse() {
-    if (help_mode_) {
-        //print out collected help information
-        cout << parse_tree.begin()->value << "(";
-        for (size_t i(0); i != helpers.size(); ++i) {
-            cout << helpers[i].kwd
-                 << (helpers[i].default_value.compare("") != 0 ? " = " : "")
-                 << helpers[i].default_value;
-            if (i != helpers.size() - 1) {
-                cout << ", ";
-            }
-        }
-        cout << ")" << endl;
-        for (size_t i(0); i != helpers.size(); ++i) {
-            cout << helpers[i].kwd << "(" << helpers[i].type_name << "): "
-                 << helpers[i].help << endl;
-        }
-    }
     //check if there were any arguments with invalid keywords,
     //or positional arguments after keyword arguments
     string last_key = "";
@@ -424,6 +510,23 @@ Options OptionParser::parse() {
     }
     return opts;
 }
+
+void OptionParser::document_synopsis(string name, string note) const {
+    DocStore::instance()->set_synopsis(parse_tree.begin()->value,
+                                       name, note);
+}
+
+void OptionParser::document_property(string property, string note) const {
+    DocStore::instance()->add_property(parse_tree.begin()->value,
+                                       property, note);
+}
+
+void OptionParser::document_language_support(string feature, 
+                                             string note) const {
+    DocStore::instance()->add_feature(parse_tree.begin()->value,
+                                      feature, note);
+}
+
 
 bool OptionParser::dry_run() const {
     return dry_run_;
