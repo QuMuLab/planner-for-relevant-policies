@@ -18,4 +18,5 @@ done
 ./downward-reports-ipc.py $EXPNAME-eval coverage
 ./downward-reports.py $EXPNAME-eval -r any --min-value 10 --max-value 50 --step 15
 ./downward-reports.py $EXPNAME-eval -r suite --filter domain:eq:gripper --outfile exp_test_suite.py
+./downward-reports.py $EXPNAME-eval -r rel --dry -a coverage --change 0
 ./downward-reports.py $EXPNAME-eval -r abs --dry -a search_time,coverage
