@@ -290,7 +290,8 @@ class RelativeReport(AbsoluteReport):
             logging.info('No changes above %d%% for "%s"' % (self.change,
                                                              attribute))
             return None
-        table.add_col('Factor', quotient_col)
+
+        table.add_col('ZZZ-SORT:Factor', quotient_col)
         table.highlight = False
         table.summary_funcs = []
         return table

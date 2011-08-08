@@ -273,6 +273,7 @@ class Table(collections.defaultdict):
         self.numeric_rows = numeric_rows
 
         self.summary_funcs = []
+        self.column_order = {}
 
     def add_cell(self, row, col, value):
         self[row][col] = value
@@ -293,12 +294,10 @@ class Table(collections.defaultdict):
 
     @property
     def cols(self):
-        cols = set()
-        for dict in self.values():
-            for key in dict.keys():
-                cols.add(key)
-
-        return tools.natural_sort(cols)
+        col_names = set()
+        for row in self.values():
+            col_names |= set(row.keys())
+        return tools.natural_sort(col_names)
 
     def get_cells_in_row(self, row):
         return [self[row].get(col, None) for col in self.cols]
@@ -313,7 +312,7 @@ class Table(collections.defaultdict):
                 values[col].append(value)
         return values
 
-    def get_row(self, row_name, row=None):
+    def get_row_markup(self, row_name, row=None):
         """
         If given, row must be a dictionary mapping column names to the value in
         row "row_name".
@@ -374,14 +373,20 @@ class Table(collections.defaultdict):
         """
         text = '|| %-29s | ' % self.title
 
-        # Escape config names to prevent unvoluntary markup
-        text += ' | '.join('%-16s' % ('""%s""' % col) for col in self.cols) + ' |\n'
+        def get_col_markup(col):
+            # Allow custom sorting of the column names
+            if '-SORT:' in col:
+                sorting, col = col.split('-SORT:')
+            # Escape config names to prevent unvoluntary markup
+            return '%-16s' % ('""%s""' % col)
+
+        text += ' | '.join(get_col_markup(col) for col in self.cols) + ' |\n'
         for row in self.rows:
-            text += self.get_row(row)
+            text += self.get_row_markup(row)
         for func in self.summary_funcs:
             summary_row = dict([(col, func(content)) for col, content in
                                 self.get_column_contents().items()])
-            text += self.get_row(func.__name__.upper(), summary_row)
+            text += self.get_row_markup(func.__name__.upper(), summary_row)
         return text
 
 
