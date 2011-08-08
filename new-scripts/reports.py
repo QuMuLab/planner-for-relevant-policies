@@ -163,8 +163,8 @@ class Report(object):
         if not text:
             logging.info('No tables generated. '
                          'This happens when no significant changes occured. '
-                         'Therefore no output file has been created')
-            return
+                         'Therefore no output file is created')
+            return ''
 
         doc.add_text(text)
         print 'REPORT MARKUP:\n'
@@ -172,7 +172,7 @@ class Report(object):
         return doc.render(self.output_format, {'toc': 1})
 
     def write_to_disk(self, content):
-        if not self.dry:
+        if content and not self.dry:
             filename = self.outfile or self.get_filename()
             tools.makedirs(os.path.dirname(filename))
             with open(filename, 'w') as file:
@@ -277,6 +277,15 @@ class Table(collections.defaultdict):
     def add_cell(self, row, col, value):
         self[row][col] = value
 
+    def add_row(self, row_name, row):
+        """row must map column names to the value in row "row_name"."""
+        self[row_name] = row
+
+    def add_col(self, col_name, col):
+        """col must map row names to values."""
+        for row_name, value in col.items():
+            self[row_name][col_name] = value
+
     @property
     def rows(self):
         # Let the sum, etc. rows be the last ones
@@ -292,7 +301,7 @@ class Table(collections.defaultdict):
         return tools.natural_sort(cols)
 
     def get_cells_in_row(self, row):
-        return [self[row][col] for col in self.cols]
+        return [self[row].get(col, None) for col in self.cols]
 
     def get_column_contents(self):
         """
