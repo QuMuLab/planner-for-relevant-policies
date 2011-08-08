@@ -12,16 +12,16 @@ mkdir $RESULTS_DIR || exit
 
 
 echo Creating Preprocessing Experiment
-python downward_experiments.py exp-p -l WARNING -s `cat $3` --preprocess
+./downward_experiments.py --path exp-p -l WARNING -s `cat $3` --preprocess local
 
 echo Running Preprocessing Experiment
 exp-p/run
 
 echo Fetching Preprocessing Results
-python downward-resultfetcher.py exp-p -l WARNING 
+./downward-resultfetcher.py exp-p -l WARNING 
 
 echo Creating Experiment
-python downward_experiments.py exp -l WARNING -c `cat $2` -s `cat $3`
+./downward_experiments.py --path exp -l WARNING -c `cat $2` -s `cat $3` local
 
 echo Running Experiment
 exp/run
@@ -33,23 +33,23 @@ mv preprocessed-tasks $RESULTS_DIR
 
 echo Fetching Results
 rm -fr exp-eval
-python downward-resultfetcher.py $RESULTS_DIR/exp -l WARNING --dest `pwd`/exp-eval
-python downward-resultfetcher.py $BASELINE_DIR/exp -l WARNING --dest `pwd`/exp-eval
+./downward-resultfetcher.py $RESULTS_DIR/exp -l WARNING --dest `pwd`/exp-eval
+./downward-resultfetcher.py $BASELINE_DIR/exp -l WARNING --dest `pwd`/exp-eval
 
 rm -f test.exp.output
 
 echo Comparing Results to Baseline
 for c in `sed -e 's/,/ /g' $2`; do
     echo Comparing Configuration $c;
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a expanded -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output; 
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a initial_h_value -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output; 
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a plan_length -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;        
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a search_time -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a total_time -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_vars -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_vars -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_ops -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    python downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_ops -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;       
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a expanded -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output; 
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a initial_h_value -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output; 
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a plan_length -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;        
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a search_time -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a total_time -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_vars -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_vars -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_ops -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_ops -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;       
 done
 
 rm -fr `pwd`/exp-eval
