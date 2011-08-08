@@ -67,9 +67,12 @@ CXXFLAGS  = ${DEPENDFLAGS} -ansi -Wall
 %.o : %.cxx
 	${CXX} ${CPPFLAGS} ${CXXFLAGS} -c $< -o $@
 
+# Note: We use the flex executable with the -+ option rather than the flex++
+#       executable (which does the same thing) because flex++ is not available
+#       in at least some Mandriva Linux versions.
 %.cpp : %.yacc pddl+.lex
-	@hash flex++ 2>&- || { echo >&2 "flex++ is not installed -- aborting. If you are using Ubuntu Linux, try 'sudo apt-get install flex'."; exit 1; }
-	flex++ pddl+.lex
+	@hash flex 2>&- || { echo >&2 "flex is not installed -- aborting. If you are using Ubuntu Linux, try 'sudo apt-get install flex'."; exit 1; }
+	flex -+ pddl+.lex
 	@hash bison 2>&- || { echo >&2 "bison is not installed -- aborting. If you are using Ubuntu Linux, try 'sudo apt-get install bison'."; exit 1; }
 	bison $< -o $@
 

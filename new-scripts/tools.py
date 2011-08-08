@@ -105,7 +105,7 @@ def natural_sort(alist):
         if text.isdigit():
             return int(text)
         else:
-            return text
+            return text.lower()
 
     def extract_numbers(text):
         parts = re.split("([0-9]+)", text)
