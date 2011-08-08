@@ -41,15 +41,15 @@ rm -f test.exp.output
 echo Comparing Results to Baseline
 for c in `sed -e 's/,/ /g' $2`; do
     echo Comparing Configuration $c;
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a expanded -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output; 
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a initial_h_value -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output; 
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a plan_length -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;        
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a search_time -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a total_time -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_vars -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_vars -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_ops -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;
-    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_ops -c BASELINE-BASELINE-BASELINE-$c,WORK-WORK-WORK-$c >> test.exp.output;       
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a expanded -c BASELINE-$c,WORK-$c >> test.exp.output; 
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a initial_h_value -c BASELINE-$c,WORK-$c >> test.exp.output; 
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a plan_length -c BASELINE-$c,WORK-$c >> test.exp.output;        
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a search_time -c BASELINE-$c,WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a total_time -c BASELINE-$c,WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_vars -c BASELINE-$c,WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_vars -c BASELINE-$c,WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a translator_ops -c BASELINE-$c,WORK-$c >> test.exp.output;
+    ./downward-reports.py -l WARNING `pwd`/exp-eval -r rel --change 5 -a preprocessor_ops -c BASELINE-$c,WORK-$c >> test.exp.output;       
 done
 
 rm -fr `pwd`/exp-eval
