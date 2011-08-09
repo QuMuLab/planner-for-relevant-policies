@@ -100,22 +100,22 @@ class Report(object):
 
         self.data = self._load_data()
 
-        available_attributes = sorted(self.data.get_attributes())
+        self.all_attributes = sorted(self.data.get_attributes())
 
         if self.show_attributes:
-            print '\nAvailable attributes: %s' % available_attributes
+            print '\nAvailable attributes: %s' % self.all_attributes
             sys.exit()
 
         if not self.attributes:
-            self.attributes = available_attributes
+            self.attributes = self.all_attributes
         else:
             # Make sure that all selected attributes are present in the dataset
-            not_found = set(self.attributes) - set(available_attributes)
+            not_found = set(self.attributes) - set(self.all_attributes)
             if not_found:
                 logging.error('The following attributes are not present in '
                               'the dataset: %s' % sorted(not_found))
                 sys.exit(1)
-        logging.info('Attributes: %s' % self.attributes)
+        logging.info('Selected Attributes: %s' % self.attributes)
 
         if self.filters:
             self._apply_filters()
