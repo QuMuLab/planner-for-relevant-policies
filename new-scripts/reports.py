@@ -145,7 +145,7 @@ class Report(object):
 
     def get_filename(self):
         if self.outfile:
-            return self.outfile
+            return os.path.abspath(self.outfile)
         ext = self.extension or self.output_format.replace('xhtml', 'html')
         return os.path.join(tools.REPORTS_DIR, '%s.%s' % (self.get_name(), ext))
 
@@ -195,7 +195,7 @@ class Report(object):
         tools.makedirs(os.path.dirname(filename))
         with open(filename, 'w') as file:
             file.write(content)
-            logging.info('Wrote file://%s' % os.path.abspath(filename))
+            logging.info('Wrote file://%s' % filename)
 
     def open(self):
         """

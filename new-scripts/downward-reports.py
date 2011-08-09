@@ -378,7 +378,7 @@ class ScatterPlotReport(PlanningReport):
 
         filename = self.get_filename()
         self.write_plot(self.attributes[0], filename)
-        logging.info('Wrote file://%s' % os.path.abspath(filename))
+        logging.info('Wrote file://%s' % filename)
 
 
 class SuiteReport(PlanningReport):
