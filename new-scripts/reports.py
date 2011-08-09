@@ -195,8 +195,7 @@ class Report(object):
         tools.makedirs(os.path.dirname(filename))
         with open(filename, 'w') as file:
             file.write(content)
-            logging.info('Wrote file %s' % ('file://' +
-                                            os.path.abspath(filename)))
+            logging.info('Wrote file://%s' % os.path.abspath(filename))
 
     def open(self):
         """

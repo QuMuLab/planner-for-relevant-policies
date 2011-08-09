@@ -56,9 +56,9 @@ class PlanningReport(Report):
         Report.__init__(self, parser)
 
         if self.configs:
-            name_parts.append('+'.join(self.configs))
+            self.name_parts.append('+'.join(self.configs))
         if self.suite:
-            name_parts.append('+'.join(self.suite))
+            self.name_parts.append('+'.join(self.suite))
 
         if self.suite:
             self.problems = downward_suites.build_suite(self.suite)
@@ -232,9 +232,12 @@ class RelativeReport(AbsoluteReport):
     | **zenotravel  ** | 1.0              | 0.8095           |
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
-        parser.add_argument('--change', default=0, type=int,
+        parser.add_argument('--rel-change', default=0, type=int,
             help='percentage that the value must have changed between two '
                 'configs to be appended to the result table')
+        parser.add_argument('--abs-change', default=0.0, type=float,
+            help='only add pairs of values to the result if their absolute '
+                 'difference is bigger than this number')
 
         AbsoluteReport.__init__(self, parser=parser)
 
@@ -246,6 +249,7 @@ class RelativeReport(AbsoluteReport):
     def _get_table(self, attribute):
         table = AbsoluteReport._get_table(self, attribute)
         quotient_col = {}
+        percent_col = {}
 
         # Filter those rows which have no significant changes
         for row in table.rows:
@@ -258,9 +262,12 @@ class RelativeReport(AbsoluteReport):
 
             quotient = val2 / val1
             percent_change = abs(quotient - 1.0) * 100
+            abs_change = abs(val1 - val2)
 
-            if percent_change >= self.change:
+            if (percent_change >= self.rel_change and
+                abs_change >= self.abs_change):
                 quotient_col[row] = round(quotient, 4)
+                percent_col[row] = round(percent_change, 4)
             else:
                 del table[row]
 
@@ -270,7 +277,8 @@ class RelativeReport(AbsoluteReport):
                                                              attribute))
             return None
 
-        table.add_col('ZZZ-SORT:Factor', quotient_col)
+        table.add_col('ZZ1-SORT:Factor', quotient_col)
+        #table.add_col('ZZ2-SORT:%-Change', percent_col)
         table.highlight = False
         table.summary_funcs = []
         return table
@@ -370,7 +378,7 @@ class ScatterPlotReport(PlanningReport):
 
         filename = self.get_filename()
         self.write_plot(self.attributes[0], filename)
-        logging.info('Wrote file %s' % ('file://' + os.path.abspath(filename)))
+        logging.info('Wrote file://%s' % os.path.abspath(filename))
 
 
 class SuiteReport(PlanningReport):
