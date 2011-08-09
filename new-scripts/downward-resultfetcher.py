@@ -396,7 +396,6 @@ def add_search_functions(eval):
     eval.add_function(get_status)
     eval.add_function(scores)
     eval.add_function(check_memory)
-    eval.add_function(validate)
 
 
 def build_fetcher(parser=FetchOptionParser()):
