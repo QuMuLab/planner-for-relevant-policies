@@ -49,8 +49,6 @@ def setup_logging(level):
     root_logger.addHandler(console)
     root_logger.setLevel(level)
 
-setup_logging(logging.INFO)
-
 
 def prod(values):
     """Computes the product of a list of numbers.
@@ -270,6 +268,34 @@ def csv(string):
     return string.split(',')
 
 
+class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
+    """
+    Help message formatter which retains any formatting in descriptions and adds
+    default values to argument help.
+    """
+    def _fill_text(self, text, width, indent):
+        return ''.join([indent + line for line in text.splitlines(True)])
+
+    def _get_help_string(self, action):
+        help = action.help
+        if '%(default)' not in action.help:
+            if action.default is not argparse.SUPPRESS:
+                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+                if action.option_strings or action.nargs in defaulting_nargs:
+                    help += ' (default: %(default)s)'
+        return help
+
+    def _format_args(self, action, default_metavar):
+        """
+        We want to show "[environment-specific options]" instead of "...".
+        """
+        get_metavar = self._metavar_formatter(action, default_metavar)
+        if action.nargs == argparse.PARSER:
+            return '%s [environment-specific options]' % get_metavar(1)
+        else:
+            return argparse.HelpFormatter._format_args(self, action, default_metavar)
+
+
 class ArgParser(argparse.ArgumentParser):
     def __init__(self, add_log_option=True, *args, **kwargs):
         argparse.ArgumentParser.__init__(self, *args, formatter_class=
@@ -307,32 +333,8 @@ class ArgParser(argparse.ArgumentParser):
         return string
 
 
-class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
-    """
-    Help message formatter which retains any formatting in descriptions and adds
-    default values to argument help.
-    """
-    def _fill_text(self, text, width, indent):
-        return ''.join([indent + line for line in text.splitlines(True)])
-
-    def _get_help_string(self, action):
-        help = action.help
-        if '%(default)' not in action.help:
-            if action.default is not argparse.SUPPRESS:
-                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
-                if action.option_strings or action.nargs in defaulting_nargs:
-                    help += ' (default: %(default)s)'
-        return help
-
-    def _format_args(self, action, default_metavar):
-        """
-        We want to show "[environment-specific options]" instead of "...".
-        """
-        get_metavar = self._metavar_formatter(action, default_metavar)
-        if action.nargs == argparse.PARSER:
-            return '%s [environment-specific options]' % get_metavar(1)
-        else:
-            return argparse.HelpFormatter._format_args(self, action, default_metavar)
+# Parse the log-level and set it
+ArgParser().parse_known_args()
 
 
 class Timer(object):

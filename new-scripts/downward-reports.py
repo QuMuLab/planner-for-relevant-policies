@@ -273,8 +273,7 @@ class RelativeReport(AbsoluteReport):
 
         # Add table also if there were missing cells
         if len(quotient_col) == 0:
-            logging.info('No changes above %d%% for "%s"' % (self.change,
-                                                             attribute))
+            logging.info('No changes above for "%s"' % attribute)
             return None
 
         table.add_col('ZZ1-SORT:Factor', quotient_col)
