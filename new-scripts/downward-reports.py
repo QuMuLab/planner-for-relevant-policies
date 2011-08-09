@@ -8,6 +8,7 @@ from __future__ import with_statement, division
 import sys
 import os
 import logging
+from collections import defaultdict
 
 import tools
 import downward_suites
@@ -19,6 +20,7 @@ from reports import Report, ReportArgParser, Table
 REPORT_TYPES = {'abs': 'AbsoluteReport',
                 'rel': 'RelativeReport',
                 'any': 'AnyAttributeReport',
+                'scatter': 'ScatterPlotReport',
                 'suite': 'SuiteReport'
                 }
 
@@ -41,9 +43,6 @@ class PlanningTable(Table):
             # When summarising score results from multiple domains we show
             # normalised averages so that each domain is weighed equally.
             self.add_summary_function(reports.avg)
-
-    #def __str__(self):
-    #    return Table.__str__(self)
 
 
 class PlanningReport(Report):
@@ -327,6 +326,77 @@ class AnyAttributeReport(PlanningReport):
                 table.add_cell(str(time_limit), config,
                     len(group.filtered(lambda di: di[attribute] <= time_limit)))
         return table
+
+
+class ScatterPlotReport(PlanningReport):
+    def __init__(self, parser=ReportArgParser()):
+        PlanningReport.__init__(self, parser)
+
+        assert len(self.get_configs()) == 2, self.get_configs()
+        assert len(self.attributes) == 1, self.attributes
+
+    def get_name(self):
+        name = os.path.basename(self.eval_dir)
+        name += '-scatter-' + '+'.join(self.attributes)
+        return name
+
+    def write_plot(self, attribute, filename):
+        try:
+            from matplotlib.backends.backend_agg import FigureCanvasAgg
+            from matplotlib.figure import Figure
+        except ImportError, err:
+            logging.error('matplotlib could not be found: %s' % err)
+            sys.exit(1)
+
+        cfg1, cfg2 = self.get_configs()
+        all_values = defaultdict(list)
+        for (domain, problem), group in self.data.group_dict('domain',
+                                                             'problem').items():
+            # Only add values if both configs have them
+            prob_values = {}
+            for (config), config_group in group.group_dict('config').items():
+                val = config_group.get_single_value(attribute)
+                if val is not missing:
+                    prob_values[config] = val
+            if len(prob_values) == 2:
+                all_values[cfg1].append(prob_values[cfg1])
+                all_values[cfg2].append(prob_values[cfg2])
+
+        if not all_values:
+            logging.info('Attribute "%s" was not found in any pair of runs' %
+                         attribute)
+            sys.exit(1)
+
+        # Create a figure with size 6 x 6 inches
+        fig = Figure(figsize=(10, 10))
+
+        # Create a canvas and add the figure to it
+        canvas = FigureCanvasAgg(fig)
+        ax = fig.add_subplot(111)
+
+        ax.set_title(attribute, fontsize=14)
+        ax.set_xlabel(cfg1, fontsize=10)
+        ax.set_ylabel(cfg2, fontsize=10)
+
+        # Display grid
+        ax.grid(b=True, linestyle='-', color='0.75')
+
+        # Generate the scatter plot
+        ax.scatter(*all_values.values(), s=20, marker='+');
+
+        # Save the generated scatter plot to a PNG file
+        canvas.print_figure(filename, dpi=500)
+
+    def get_filename(self):
+        return os.path.join(tools.REPORTS_DIR, self.get_name() + '.png')
+
+    def write(self):
+        if self.dry:
+            return
+
+        filename = self.outfile or self.get_filename()
+        self.write_plot(self.attributes[0], filename)
+        logging.info('Wrote file %s' % 'file://' + os.path.abspath(filename))
 
 
 class SuiteReport(PlanningReport):
