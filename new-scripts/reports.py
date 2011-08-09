@@ -98,6 +98,7 @@ class Report(object):
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
 
+        self.report_type = 'report'
         self.data = self._load_data()
 
         self.all_attributes = sorted(self.data.get_attributes())
@@ -122,6 +123,16 @@ class Report(object):
 
         self.infos = []
 
+        self.extension = None
+
+        self.name_parts = []
+        if len(self.attributes) == 1:
+            self.name_parts.append(self.attributes[0])
+        if self.filters:
+            self.name_parts.append('+'.join([f.replace(':', '_')
+                                             for f in self.filters]))
+
+
     def add_info(self, info):
         """
         Add strings of additional info to the report
@@ -129,23 +140,21 @@ class Report(object):
         self.infos.append(info)
 
     def get_name(self):
-        name = os.path.basename(self.eval_dir)
-        if len(self.attributes) == 1:
-            name += '-' + self.attributes[0]
-        if self.filters:
-            name += '-' + '+'.join([f.replace(':', '_') for f in self.filters])
-        return name
+        return ('%s-%s-%s' % (os.path.basename(self.eval_dir), self.report_type,
+                             '-'.join(self.name_parts))).rstrip('-')
 
     def get_filename(self):
-        ext = self.output_format.replace('xhtml', 'html')
-        return os.path.join(tools.REPORTS_DIR, self.get_name() + '.' + ext)
+        if self.outfile:
+            return self.outfile
+        ext = self.extension or self.output_format.replace('xhtml', 'html')
+        return os.path.join(tools.REPORTS_DIR, '%s.%s' % (self.get_name(), ext))
 
     def get_text(self):
         """
         This method should be overwritten in subclasses.
         """
         table = Table(highlight=False)
-        for run_id, run_group in sorted(self.data.group_dict('id-string').items()):
+        for run_id, run_group in sorted(self.data.groups('id-string')):
             assert len(run_group) == 1, run_group
             run = run_group.items[0]
             del run['id']
@@ -179,23 +188,25 @@ class Report(object):
         return doc.render(self.output_format, {'toc': 1})
 
     def write_to_disk(self, content):
-        if content and not self.dry:
-            filename = self.outfile or self.get_filename()
-            tools.makedirs(os.path.dirname(filename))
-            with open(filename, 'w') as file:
-                output_uri = 'file://' + os.path.abspath(filename)
-                logging.info('Writing output to %s' % output_uri)
-                file.write(content)
+        if self.dry or not content:
+            return
+
+        filename = self.get_filename()
+        tools.makedirs(os.path.dirname(filename))
+        with open(filename, 'w') as file:
+            file.write(content)
+            logging.info('Wrote file %s' % ('file://' +
+                                            os.path.abspath(filename)))
 
     def open(self):
         """
         If the --open parameter is set, tries to open the report
         """
-        filename = self.outfile or self.get_filename()
+        filename = self.get_filename()
         if not self.open_report or not os.path.exists(filename):
             return
 
-        dir, filename = os.path.split(self.get_filename())
+        dir, filename = os.path.split(filename)
         os.chdir(dir)
         if self.output_format == 'tex':
             subprocess.call(['pdflatex', filename])

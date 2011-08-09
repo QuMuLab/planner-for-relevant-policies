@@ -27,11 +27,11 @@ REPORT_TYPES = {'abs': 'AbsoluteReport',
 
 # Create a parser only for parsing the report type
 report_type_parser = tools.ArgParser(add_help=False)
-report_type_parser.epilog = ('Note: The help output may depend on the already '
+report_type_parser.epilog = ('NOTE: The help output may depend on the already '
                              'selected options')
 report_type_parser.add_argument('-r', '--report', default='abs',
-            choices=sorted(REPORT_TYPES.keys()),
-            help='Select a report type')
+                                choices=sorted(REPORT_TYPES.keys()),
+                                help='Select a report type')
 
 
 class PlanningTable(Table):
@@ -50,34 +50,15 @@ class PlanningReport(Report):
         parser.add_argument('-c', '--configs', type=tools.csv,
             help='only use specified configurations (e.g. WORK-ou,WORK-yY). '
                  'If none specified, use all found configs')
-
         parser.add_argument('-s', '--suite', type=tools.csv,
             help=downward_suites.HELP)
 
-        parser.add_argument('--res', default='domain', dest='resolution',
-            help='resolution of the report',
-            choices=['domain', 'problem'])
-
-        parser.add_argument('--missing', default='auto',
-            dest='handle_missing_attrs', choices=['include', 'ignore', 'auto'],
-            help='for an attribute include or ignore problems for which not '
-                'all configs have this attribute. "auto" includes those '
-                'problems in the detailed view and ignores them in the '
-                'domain-summary reports')
-
         Report.__init__(self, parser)
 
-        # For some attributes only compare commonly solved tasks
-        self.commonly_solved_attributes = [
-                'cost', 'expanded', 'expansions', 'generated', 'memory',
-                'plan_length', 'search_time', 'total_time']
-        info = ('The attributes %s are handled as follows:\n'
-                'If in a group of configs not all configs have a value for '
-                'the attribute, the concerning runs are only evaluated if '
-                '"``--missing``" is set to "include" or if "``--missing``" is '
-                'set to "auto" (default) and the resolution is "problem"')
-        info %= ', '.join(self.commonly_solved_attributes)
-        self.add_info(info)
+        if self.configs:
+            name_parts.append('+'.join(self.configs))
+        if self.suite:
+            name_parts.append('+'.join(self.suite))
 
         if self.suite:
             self.problems = downward_suites.build_suite(self.suite)
@@ -107,13 +88,6 @@ class PlanningReport(Report):
         if filter_funcs:
             self.data.filter(*filter_funcs)
 
-        # Save the unfiltered group_dicts for faster retrieval
-        if self.resolution == 'domain':
-            self.orig_group_dict = self.data.group_dict('config', 'domain')
-        else:
-            self.orig_group_dict = self.data.group_dict('config', 'domain', 'problem')
-        self.orig_group_dict_domain_prob = self.data.group_dict('domain', 'problem')
-
     def get_text(self):
         # list of (attribute, table) pairs
         tables = []
@@ -126,50 +100,12 @@ class PlanningReport(Report):
             except TypeError, err:
                 logging.info('Omitting attribute "%s" (%s)' % (attribute, err))
 
-        return ''.join(['+ %s +\n%s\n' % (attr, table) for (attr, table) in tables])
-
-    def get_name(self):
-        name = Report.get_name(self)
-        if self.configs:
-            name += '-' + '+'.join(self.configs)
-        if self.suite:
-            name += '-' + '+'.join(self.suite)
-        name += '-' + self.resolution[0]
-        name += '-' + self.report_type
-        return name
+        return ''.join(['+ %s +\n%s\n' % (attr, table)
+                        for (attr, table) in tables])
 
     def get_configs(self):
         """Return the list of configs."""
         return list(set([run['config'] for run in self.data]))
-
-    def _must_filter_common_attributes(self, attribute):
-        """For some reports include all runs"""
-        return not (attribute not in self.commonly_solved_attributes or
-                    self.handle_missing_attrs == 'include' or
-                    (self.handle_missing_attrs == 'auto' and
-                     self.resolution == 'problem'))
-
-    def _filter_common_attributes(self, attribute):
-        """
-        for an attribute include or ignore problems for which not
-        all configs have this attribute. --missing=auto includes those
-        problems in the detailed view and ignores them in the
-        domain-summary reports
-        """
-        # For some reports include all runs
-        if not self._must_filter_common_attributes(attribute):
-            return self.data
-
-        logging.info('Filtering problems with missing attributes for runs')
-        del_probs = set()
-        for (domain, problem), group in self.orig_group_dict_domain_prob.items():
-            if any(value is missing for value in group[attribute]):
-                del_probs.add(domain + problem)
-
-        def delete_runs_with_missing_attributes(run):
-            return not run['domain'] + run['problem'] in del_probs
-
-        return self.data.filtered(delete_runs_with_missing_attributes)
 
     def _get_empty_table(self, attribute):
         '''
@@ -184,14 +120,6 @@ class PlanningReport(Report):
         table = PlanningTable(attribute, min_wins=min_wins)
         return table
 
-    def get_group_func(self, attribute):
-        """Decide on a group function for this attribute."""
-        if 'score' in attribute:
-            return reports.avg
-        elif attribute in ['search_time', 'total_time']:
-            return reports.gm
-        return sum
-
 
 class AbsoluteReport(PlanningReport):
     """
@@ -201,37 +129,89 @@ class AbsoluteReport(PlanningReport):
     | **gripper     ** | 118              | 72               |
     | **zenotravel  ** | 21               | 17               |
     """
-    def __init__(self, *args, **kwargs):
-        PlanningReport.__init__(self, *args, **kwargs)
+    def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
+        parser.add_argument('--res', default='domain', dest='resolution',
+            help='resolution of the report',
+            choices=['domain', 'problem'])
+
+        PlanningReport.__init__(self, parser)
+
+        self.name_parts.append(self.resolution[0])
+
+        # The domain-wise sum of the values for coverage and *_error even makes
+        # sense if not all configs have values for those attributes.
+        self.absolute_attributes = [attr for attr in self.all_attributes
+                                    if attr.endswith('_error')]
+        self.absolute_attributes.append('coverage')
+
+        if self.resolution == 'domain':
+            self.add_info('If in a group of configs not all configs have a '
+                'value for an attribute, the concerning runs are not '
+                'evaluated. However, for the attributes %s we include all '
+                'runs unconditionally.' % ', '.join(self.absolute_attributes))
+
+        # Save the unfiltered groups for faster retrieval
+        if self.resolution == 'domain':
+            self.orig_groups = self.data.groups('config', 'domain')
+        else:
+            self.orig_groups = self.data.groups('config', 'domain', 'problem')
+        self.orig_groups_domain_prob = self.data.groups('domain', 'problem')
+
+    def _get_filtered_groups(self, attribute):
+        """
+        for an attribute include or ignore problems for which not all configs
+        have this attribute.
+        """
+        logging.info('Filtering problems with missing attributes for runs')
+        del_probs = set()
+        for (domain, problem), group in self.orig_groups_domain_prob:
+            if any(value is missing for value in group[attribute]):
+                del_probs.add(domain + problem)
+
+        def delete_runs_with_missing_attributes(run):
+            return not run['domain'] + run['problem'] in del_probs
+
+        data = self.data.filtered(delete_runs_with_missing_attributes)
+
+        if self.resolution == 'domain':
+            return data.groups('config', 'domain')
+        else:
+            return data.groups('config', 'domain', 'problem')
+
+    def _get_group_func(self, attribute):
+        """Decide on a group function for this attribute."""
+        if 'score' in attribute:
+            return reports.avg
+        elif attribute in ['search_time', 'total_time']:
+            return reports.gm
+        return sum
 
     def _get_table(self, attribute):
         table = PlanningReport._get_empty_table(self, attribute)
-        func = self.get_group_func(attribute)
+        func = self._get_group_func(attribute)
 
         # If we don't have to filter the runs, we can use the saved group_dict
-        if self._must_filter_common_attributes(attribute):
-            data = self._filter_common_attributes(attribute)
-            if self.resolution == 'domain':
-                group_dict = data.group_dict('config', 'domain')
-            else:
-                group_dict = data.group_dict('config', 'domain', 'problem')
+        if (self.resolution == 'domain' and
+            not attribute in self.absolute_attributes):
+            groups = self._get_filtered_groups(attribute)
         else:
-            group_dict = self.orig_group_dict
+            groups = self.orig_groups
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, attribute)
             logging.debug(msg)
 
         if self.resolution == 'domain':
-            for (config, domain), group in group_dict.items():
+            for (config, domain), group in groups:
                 values = filter(not_missing, group[attribute])
                 if not values:
                     show_missing_attribute_msg(config + '-' + domain)
                     continue
                 num_instances = len(group.group_dict('problem'))
-                table.add_cell('%s (%s)' % (domain, num_instances), config, func(values))
+                table.add_cell('%s (%s)' % (domain, num_instances), config,
+                                            func(values))
         elif self.resolution == 'problem':
-            for (config, domain, problem), group in group_dict.items():
+            for (config, domain, problem), group in groups:
                 values = filter(not_missing, group[attribute])
                 name = domain + ':' + problem
                 if not values:
@@ -322,7 +302,8 @@ class AnyAttributeReport(PlanningReport):
         for config, group in self.data.group_dict('config').items():
             group.filter(coverage=1)
             group.sort(attribute)
-            for time_limit in xrange(self.min_value, self.max_value + 1, self.step):
+            for time_limit in xrange(self.min_value, self.max_value + 1,
+                                     self.step):
                 table.add_cell(str(time_limit), config,
                     len(group.filtered(lambda di: di[attribute] <= time_limit)))
         return table
@@ -335,10 +316,7 @@ class ScatterPlotReport(PlanningReport):
         assert len(self.get_configs()) == 2, self.get_configs()
         assert len(self.attributes) == 1, self.attributes
 
-    def get_name(self):
-        name = os.path.basename(self.eval_dir)
-        name += '-scatter-' + '+'.join(self.attributes)
-        return name
+        self.extension = 'png'
 
     def write_plot(self, attribute, filename):
         try:
@@ -350,8 +328,7 @@ class ScatterPlotReport(PlanningReport):
 
         cfg1, cfg2 = self.get_configs()
         all_values = defaultdict(list)
-        for (domain, problem), group in self.data.group_dict('domain',
-                                                             'problem').items():
+        for (domain, problem), group in self.data.groups('domain', 'problem'):
             # Only add values if both configs have them
             prob_values = {}
             for (config), config_group in group.group_dict('config').items():
@@ -387,16 +364,13 @@ class ScatterPlotReport(PlanningReport):
         # Save the generated scatter plot to a PNG file
         canvas.print_figure(filename, dpi=500)
 
-    def get_filename(self):
-        return os.path.join(tools.REPORTS_DIR, self.get_name() + '.png')
-
     def write(self):
         if self.dry:
             return
 
-        filename = self.outfile or self.get_filename()
+        filename = self.get_filename()
         self.write_plot(self.attributes[0], filename)
-        logging.info('Wrote file %s' % 'file://' + os.path.abspath(filename))
+        logging.info('Wrote file %s' % ('file://' + os.path.abspath(filename)))
 
 
 class SuiteReport(PlanningReport):
@@ -413,6 +387,7 @@ class SuiteReport(PlanningReport):
     """
     def __init__(self, *args, **kwargs):
         PlanningReport.__init__(self, *args, **kwargs)
+        self.extension = 'py'
 
     def build(self):
         if len(self.data) == 0:
@@ -425,14 +400,6 @@ class SuiteReport(PlanningReport):
         print '\nSUITE:'
         print output
         return output
-
-    def get_filename(self):
-        exp_name = os.path.basename(self.eval_dir).replace('-eval', '')
-        filters = '_'.join(self.filters).replace(':', '')
-        parts = [exp_name, 'suite']
-        if filters:
-            parts.append(filters)
-        return '_'.join(parts) + '.py'
 
 
 if __name__ == "__main__":

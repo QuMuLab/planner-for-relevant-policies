@@ -96,7 +96,7 @@ elif [[ "$PHASE" == 8 ]]; then
         BASEDIR=~
     fi
     echo "copying reports to .public_html -- to view, run:"
-    for REPORT in "$EXPNAME"-eval-{d,p}-abs.html; do
+    for REPORT in "$EXPNAME"-eval-abs-{d,p}.html; do
         cp "reports/$REPORT" "$BASEDIR/.public_html/"
         echo "firefox $BASEURL/$REPORT &"
     done
