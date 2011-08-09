@@ -98,6 +98,13 @@ def overwrite_dir(dir):
     os.makedirs(dir)
 
 
+def remove(filename):
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
+
 def natural_sort(alist):
     """Sort alist alphabetically, but special-case numbers to get
     file2.txt before file10.ext."""
