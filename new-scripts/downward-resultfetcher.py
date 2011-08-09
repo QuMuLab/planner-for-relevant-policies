@@ -315,15 +315,6 @@ def check_min_values(content, props):
             sec = max(sec, 0.1)
             props[time] = sec
 
-
-def validate(content, props):
-    """
-    Check the returncode of the validate command
-    """
-    assert 'coverage' in props
-    return {"plan_invalid": int(props.get('coverage') == 1 and
-                                props.get('validate_returncode') == '1')}
-
 # -----------------------------------------------------------------------------
 
 
