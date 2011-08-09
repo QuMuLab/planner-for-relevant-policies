@@ -9,6 +9,7 @@ import sys
 import os
 import logging
 from collections import defaultdict
+import itertools
 
 import tools
 import downward_suites
@@ -351,6 +352,8 @@ class ScatterPlotReport(PlanningReport):
                          attribute)
             sys.exit(1)
 
+        max_value = max(itertools.chain(*all_values.values())) * 1.1
+
         # Create a figure with size 6 x 6 inches
         fig = Figure(figsize=(10, 10))
 
@@ -367,6 +370,17 @@ class ScatterPlotReport(PlanningReport):
 
         # Generate the scatter plot
         ax.scatter(*all_values.values(), s=20, marker='+');
+
+        # Plot a diagonal black line
+        ax.plot([0, max_value], [0, max_value], 'k')
+
+        if max_value > 10**5:
+            logging.info('Using logarithmic scaling')
+            ax.set_xscale('symlog')
+            ax.set_yscale('symlog')
+
+        ax.set_xlim(0, max_value)
+        ax.set_ylim(0, max_value)
 
         # Save the generated scatter plot to a PNG file
         canvas.print_figure(filename, dpi=500)
