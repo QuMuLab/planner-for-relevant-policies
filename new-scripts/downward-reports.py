@@ -317,9 +317,9 @@ class AnyAttributeReport(PlanningReport):
         return table
 
 
-class ScatterPlotReport(PlanningReport):
+class ScatterPlotReport(AbsoluteReport):
     def __init__(self, parser=ReportArgParser()):
-        PlanningReport.__init__(self, parser)
+        AbsoluteReport.__init__(self, parser)
 
         assert len(self.get_configs()) == 2, self.get_configs()
         assert len(self.attributes) == 1, self.attributes
@@ -334,25 +334,26 @@ class ScatterPlotReport(PlanningReport):
             logging.error('matplotlib could not be found: %s' % err)
             sys.exit(1)
 
-        cfg1, cfg2 = self.get_configs()
-        all_values = defaultdict(list)
-        for (domain, problem), group in self.data.groups('domain', 'problem'):
-            # Only add values if both configs have them
-            prob_values = {}
-            for (config), config_group in group.group_dict('config').items():
-                val = config_group.get_single_value(attribute)
-                if val is not missing:
-                    prob_values[config] = val
-            if len(prob_values) == 2:
-                all_values[cfg1].append(prob_values[cfg1])
-                all_values[cfg2].append(prob_values[cfg2])
+        table = self._get_table(attribute)
 
-        if not all_values:
+        if not len(table.cols) == 2:
             logging.info('Attribute "%s" was not found in any pair of runs' %
                          attribute)
-            sys.exit(1)
+            sys.exit()
 
-        max_value = max(itertools.chain(*all_values.values())) * 1.1
+        cfg1, cfg2 = table.cols
+        columns = table.get_column_contents()
+        max_value = 0
+        values1 = []
+        values2 = []
+        for val1, val2 in zip(columns[cfg1], columns[cfg2]):
+            if val1 is not None and val2 is not None:
+                values1.append(val1)
+                values2.append(val2)
+                max_value = max(max_value, val1, val2)
+
+        # Make the value a little bigger to have a complete diagonal
+        max_value *= 1.1
 
         # Create a figure with size 6 x 6 inches
         fig = Figure(figsize=(10, 10))
@@ -369,7 +370,7 @@ class ScatterPlotReport(PlanningReport):
         ax.grid(b=True, linestyle='-', color='0.75')
 
         # Generate the scatter plot
-        ax.scatter(*all_values.values(), s=20, marker='+');
+        ax.scatter(values1, values2, s=20, marker='o', c='r');
 
         # Plot a diagonal black line
         ax.plot([0, max_value], [0, max_value], 'k')
