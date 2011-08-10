@@ -233,6 +233,7 @@ class Fetcher(object):
         # Get all run_dirs
         run_dirs = sorted(glob(os.path.join(self.exp_dir, 'runs-*-*', '*')))
         for index, run_dir in enumerate(run_dirs, 1):
+            logging.info('Evaluating: %6d/%d' % (index, total_dirs))
             prop_file = os.path.join(run_dir, 'properties')
             props = tools.Properties(prop_file)
 
@@ -272,7 +273,6 @@ class Fetcher(object):
                     print '*' * 60
                     props.write(sys.stdout)
                     print '*' * 60
-            logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
 
         tools.makedirs(self.eval_dir)
         if write_combined_props:
