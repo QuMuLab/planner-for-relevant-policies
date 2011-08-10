@@ -200,8 +200,7 @@ def get_iterative_results(content, props):
         return len(set(len(x) for x in group)) == 1
 
     group1 = ('cost', 'plan_length')
-    group2 = ('expansions', 'evaluations', 'generated', 'initial_h_value',
-              'search_time')
+    group2 = ('expansions', 'evaluations', 'generated', 'search_time')
     assert same_length(values[x] for x in group1), values
     assert same_length(values[x] for x in group2), values
 
