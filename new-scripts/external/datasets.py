@@ -143,7 +143,6 @@ class DataSet(Bunch):
         predicates = list(predicates)
         for key, val in pairs.iteritems():
             predicates.append(lambda item, k=key, v=val: item[k] == v)
-        ##result = DataSet(**self)
         new_items = []
         for item in self.items:
             if all(predicate(item) for predicate in predicates):

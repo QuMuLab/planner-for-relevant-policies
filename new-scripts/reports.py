@@ -161,7 +161,7 @@ class Report(object):
             for key, value in run.items():
                 if type(value) is list:
                     run[key] = '-'.join([str(item) for item in value])
-            table[run_id] = run
+            table.add_row(run_id, run)
         return str(table)
 
     def write(self):
@@ -293,17 +293,22 @@ class Table(collections.defaultdict):
         self.summary_funcs = []
         self.column_order = {}
 
+        self._cols = None
+
     def add_cell(self, row, col, value):
         self[row][col] = value
+        self._cols = None
 
     def add_row(self, row_name, row):
         """row must map column names to the value in row "row_name"."""
         self[row_name] = row
+        self._cols = None
 
     def add_col(self, col_name, col):
         """col must map row names to values."""
         for row_name, value in col.items():
             self[row_name][col_name] = value
+        self._cols = None
 
     @property
     def rows(self):
@@ -312,10 +317,13 @@ class Table(collections.defaultdict):
 
     @property
     def cols(self):
+        if self._cols:
+            return self._cols
         col_names = set()
         for row in self.values():
             col_names |= set(row.keys())
-        return tools.natural_sort(col_names)
+        self._cols = tools.natural_sort(col_names)
+        return self._cols
 
     def get_cells_in_row(self, row):
         return [self[row].get(col, None) for col in self.cols]
