@@ -362,6 +362,7 @@ class ScatterPlotReport(AbsoluteReport):
         canvas = FigureCanvasAgg(fig)
         ax = fig.add_subplot(111)
 
+        # Make a descriptive title and set axis labels
         suite = '(%s)' % ','.join(self.suite) if self.suite else ''
         title = ' '.join([attribute, suite, 'by', self.resolution])
         ax.set_title(title, fontsize=14)
@@ -396,7 +397,7 @@ class ScatterPlotReport(AbsoluteReport):
             formatter.__call__ = new_format_call
 
         # Save the generated scatter plot to a PNG file
-        canvas.print_figure(filename, dpi=500)
+        canvas.print_figure(filename, dpi=100)
 
     def write(self):
         if self.dry:
