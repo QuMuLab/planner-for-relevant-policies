@@ -362,7 +362,9 @@ class ScatterPlotReport(AbsoluteReport):
         canvas = FigureCanvasAgg(fig)
         ax = fig.add_subplot(111)
 
-        ax.set_title(attribute, fontsize=14)
+        suite = '(%s)' % ','.join(self.suite) if self.suite else ''
+        title = ' '.join([attribute, suite, 'by', self.resolution])
+        ax.set_title(title, fontsize=14)
         ax.set_xlabel(cfg1, fontsize=10)
         ax.set_ylabel(cfg2, fontsize=10)
 
@@ -375,13 +377,23 @@ class ScatterPlotReport(AbsoluteReport):
         # Plot a diagonal black line
         ax.plot([0, max_value], [0, max_value], 'k')
 
-        if max_value > 10**5:
-            logging.info('Using logarithmic scaling')
-            ax.set_xscale('symlog')
-            ax.set_yscale('symlog')
+        # Use log scaling by default for now
+        logging.info('Using logarithmic scaling')
+        ax.set_xscale('symlog')
+        ax.set_yscale('symlog')
 
         ax.set_xlim(0, max_value)
         ax.set_ylim(0, max_value)
+
+        # We do not want the default formatting that gives zeros a special font
+        for axis in (ax.xaxis, ax.yaxis):
+            formatter = axis.get_major_formatter()
+            old_format_call = formatter.__call__
+            def new_format_call(x, pos):
+                if x == 0:
+                    return 0
+                return old_format_call(x, pos)
+            formatter.__call__ = new_format_call
 
         # Save the generated scatter plot to a PNG file
         canvas.print_figure(filename, dpi=500)
