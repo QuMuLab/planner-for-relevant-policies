@@ -319,6 +319,7 @@ class AnyAttributeReport(PlanningReport):
 
 class ScatterPlotReport(AbsoluteReport):
     def __init__(self, parser=ReportArgParser()):
+        parser.set_defaults(resolution='problem')
         AbsoluteReport.__init__(self, parser)
 
         assert len(self.get_configs()) == 2, self.get_configs()
@@ -348,6 +349,8 @@ class ScatterPlotReport(AbsoluteReport):
         values2 = []
         for val1, val2 in zip(columns[cfg1], columns[cfg2]):
             if val1 is not None and val2 is not None:
+                assert val1 > 0, val1
+                assert val2 > 0, val2
                 values1.append(val1)
                 values2.append(val2)
                 max_value = max(max_value, val1, val2)
@@ -375,8 +378,8 @@ class ScatterPlotReport(AbsoluteReport):
         # Generate the scatter plot
         ax.scatter(values1, values2, s=20, marker='o', c='r');
 
-        # Plot a diagonal black line
-        ax.plot([0, max_value], [0, max_value], 'k')
+        # Plot a diagonal black line. Starting at (0,0) often raises errors.
+        ax.plot([0.001, max_value], [0.001, max_value], 'k')
 
         # Use log scaling by default for now
         logging.info('Using logarithmic scaling')
