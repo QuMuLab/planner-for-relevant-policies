@@ -177,9 +177,12 @@ class Report(object):
         text = self.get_text()
 
         if not text:
-            logging.info('No tables generated. '
-                         'This happens when no significant changes occured. '
-                         'Therefore no output file is created')
+            logging.info('No tables were generated. '
+                         'This happens when no significant changes occured or '
+                         'if for all attributes and all problems never all '
+                         'configs had a value for this attribute in a '
+                         'domain-wise report. Therefore no output file is '
+                         'created.')
             return ''
 
         doc.add_text(text)
@@ -325,10 +328,13 @@ class Table(collections.defaultdict):
         self._cols = tools.natural_sort(col_names)
         return self._cols
 
-    def get_cells_in_row(self, row):
+    def get_row(self, row):
         return [self[row].get(col, None) for col in self.cols]
 
-    def get_column_contents(self):
+    def get_rows(self):
+        return [(row, self.get_row(row)) for row in self.rows]
+
+    def get_columns(self):
         """
         Returns a mapping from column name to the list of values in that column.
         """
@@ -382,12 +388,12 @@ class Table(collections.defaultdict):
         text += '|\n'
         return text
 
-    def add_summary_function(self, func):
+    def add_summary_function(self, name, func):
         """
         This function adds a bottom row with the values func(column_values) for
         each column. Func can be e.g. sum, reports.avg, reports.gm
         """
-        self.summary_funcs.append(func)
+        self.summary_funcs.append((name, func))
 
     def __str__(self):
         """
@@ -409,10 +415,10 @@ class Table(collections.defaultdict):
         text += ' | '.join(get_col_markup(col) for col in self.cols) + ' |\n'
         for row in self.rows:
             text += self.get_row_markup(row)
-        for func in self.summary_funcs:
+        for name, func in self.summary_funcs:
             summary_row = dict([(col, func(content)) for col, content in
-                                self.get_column_contents().items()])
-            text += self.get_row_markup(func.__name__.upper(), summary_row)
+                                self.get_columns().items()])
+            text += self.get_row_markup(name, summary_row)
         return text
 
 
