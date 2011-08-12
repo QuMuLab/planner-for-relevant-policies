@@ -39,11 +39,15 @@ class PlanningTable(Table):
     def __init__(self, *args, **kwargs):
         Table.__init__(self, *args, **kwargs)
 
-        self.add_summary_function(sum)
+        def sum_without_none_values(iterable):
+            # filter out None values and return sum
+            return sum(x for x in iterable if x is not None)
+
+        self.add_summary_function('SUM', sum_without_none_values)
         if 'score' in self.title:
             # When summarising score results from multiple domains we show
             # normalised averages so that each domain is weighed equally.
-            self.add_summary_function(reports.avg)
+            self.add_summary_function('AVG', reports.avg)
 
 
 class PlanningReport(Report):
@@ -213,14 +217,13 @@ class AbsoluteReport(PlanningReport):
                                             func(values))
         elif self.resolution == 'problem':
             for (config, domain, problem), group in groups:
-                values = filter(not_missing, group[attribute])
+                value = group.get_single_value(attribute)
                 name = domain + ':' + problem
-                if not values:
+                if value is missing:
                     show_missing_attribute_msg(name)
-                    continue
-                assert len(values) <= 1, \
-                    '%s occurs in results more than once' % name
-                table.add_cell(name, config, func(values))
+                    table.add_cell(name, config, None)
+                else:
+                    table.add_cell(name, config, value)
         return table
 
 
@@ -254,7 +257,7 @@ class RelativeReport(AbsoluteReport):
 
         # Filter those rows which have no significant changes
         for row in table.rows:
-            val1, val2 = table.get_cells_in_row(row)
+            val1, val2 = table.get_row(row)
 
             # Handle cases where one value is not present (None) or zero
             if not val1 or not val2:
@@ -336,14 +339,8 @@ class ScatterPlotReport(AbsoluteReport):
             sys.exit(1)
 
         table = self._get_table(attribute)
-
-        if not len(table.cols) == 2:
-            logging.info('Attribute "%s" was not found in any pair of runs' %
-                         attribute)
-            sys.exit()
-
         cfg1, cfg2 = table.cols
-        columns = table.get_column_contents()
+        columns = table.get_columns()
         assert len(columns[cfg1]) == len(columns[cfg2]), columns
 
         # It may be the case that no values are found
@@ -353,7 +350,7 @@ class ScatterPlotReport(AbsoluteReport):
             max_value = max(columns[cfg1] + columns[cfg2])
 
         # Make the value bigger to separate it from normal values
-        missing_val = tools.round_to_next_power_of_ten(max_value)
+        missing_val = tools.round_to_next_power_of_ten(max_value * 10)
 
         values1 = []
         values2 = []
@@ -380,8 +377,8 @@ class ScatterPlotReport(AbsoluteReport):
         suite = ' (%s)' % ','.join(self.suite) if self.suite else ''
         title = ''.join([attribute, suite, ' by ', self.resolution])
         ax.set_title(title, fontsize=14)
-        ax.set_xlabel(cfg1, fontsize=10)
-        ax.set_ylabel(cfg2, fontsize=10)
+        ax.set_xlabel(cfg1, fontsize=12)
+        ax.set_ylabel(cfg2, fontsize=12)
 
         # Display grid
         ax.grid(b=True, linestyle='-', color='0.75')
