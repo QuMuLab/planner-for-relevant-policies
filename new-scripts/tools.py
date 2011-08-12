@@ -340,7 +340,7 @@ class ArgParser(argparse.ArgumentParser):
 
 
 # Parse the log-level and set it
-ArgParser().parse_known_args()
+ArgParser(add_help=False).parse_known_args()
 
 
 class Timer(object):
