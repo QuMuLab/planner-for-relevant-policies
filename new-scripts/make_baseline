@@ -4,10 +4,9 @@
 
 
 # change from WORK to BASELINE in properties files
-for p in `find $1/exp -name properties`
-do
-    mv $p $p.old
-    sed -e 's/WORK/BASELINE/g' $p.old > $p
-done
+
+mv $1/exp-eval/properties $1/exp-eval/properties.old
+sed -e 's/WORK/BASELINE/g' $1/exp-eval/properties.old > $1/exp-eval/properties
+rm $1/exp-eval/data_dump
 
 mv $1 `dirname $1`/baseline

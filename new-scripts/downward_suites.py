@@ -29,8 +29,9 @@ class Domain(object):
         self.domain = domain
         self.directory = os.path.join(BENCHMARKS_DIR, domain)
         problems = os.listdir(self.directory)
-        problems = [p for p in problems if "domain" not in p
-                    and not p.startswith(".")]
+        problems = tools.natural_sort([p for p in problems
+                                       if "domain" not in p and
+                                          not p.startswith(".")])
         tools.natural_sort(problems)
         self.problems = [Problem(domain, problem) for problem in problems]
     def __str__(self):
@@ -81,15 +82,8 @@ def generate_problems(description):
     TEST_FIRST5
     mysuitefile.py:MYTEST_FIRST5
     """
-    if description.upper().endswith('FIRST'):
-        # Allow writing SUITE_NAME_FIRST
-        # This will work for all suites that only list domains and will
-        # return the first problem of each domain
-        description += '1'
-
-    number_expr = re.compile(r'.*FIRST([-]?\d+)', re.IGNORECASE)
-    number_result = number_expr.search(description)
-
+    range_expr = re.compile(r'.+_([-]?\d+)TO([-]?\d+)', re.IGNORECASE)
+    range_result = range_expr.search(description)
 
     if '.py:' in description:
         filename, rest = description.split(':', 1)
@@ -100,21 +94,24 @@ def generate_problems(description):
     module = tools.import_python_file(filename)
     module_dict = module.__dict__
 
-    if number_result:
-        # Allow writing SUITE_NAME_FIRSTn
+    if range_result:
+        # Allow writing SUITE_NAME_<NUMBER>TO<NUMBER>
         # This will work for all suites that only list domains and will
-        # return the first n problems of each domain
-        number = int(number_result.group(1))
-        assert number >= 1, number
-        suite_name, first_text = description.rsplit('_', 1)
+        # return the problems in that range of each domain
+        start = int(range_result.group(1))
+        end = int(range_result.group(2))
+        #assert start >= 1, start
+        #assert end >= start, (start, end)
+        suite_name, numbers = description.rsplit('_', 1)
         suite_func = module_dict.get(suite_name, None)
+        func_name = "suite_%s" % suite_name.lower()
         if suite_func is None:
-            suite_func = module_dict.get("suite_%s" % suite_name.lower(), None)
+            suite_func = module_dict.get(func_name, None)
         if not suite_func:
-            raise SystemExit("unknown suite: %s" % suite_funcname)
+            raise SystemExit("unknown suite: %s" % func_name)
         for domain_name in suite_func():
             domain = Domain(domain_name)
-            for problem in domain.problems[:number]:
+            for problem in domain.problems[start - 1:end]:
                 yield problem
     elif isinstance(description, Problem):
         yield description
@@ -123,10 +120,11 @@ def generate_problems(description):
             yield problem
     elif description.isupper() or description in module_dict:
         suite_func = module_dict.get(description, None)
+        func_name = "suite_%s" % description.lower()
         if suite_func is None:
-            suite_func = module_dict.get("suite_%s" % description.lower(), None)
+            suite_func = module_dict.get(func_name, None)
         if suite_func is None:
-            raise SystemExit("unknown suite: %s" % description)
+            raise SystemExit("unknown suite: %s" % func_name)
         for element in suite_func():
             for problem in generate_problems(element):
                 yield problem
@@ -226,6 +224,16 @@ def suite_ipc08_all_strips():
             suite_ipc08_opt_only_strips() +
             suite_ipc08_sat_only_strips())
 
+def suite_landmark_tests():
+    return [
+        "logistics00",
+        "blocks",
+        "sokoban-opt08-strips",
+        "parcprinter-08-strips",
+        "pipesworld-notankage",
+        "woodworking-opt08-strips",
+        ]
+
 def suite_interesting():
     # A domain is boring if all planners solve all tasks in < 1 sec.
     # We include logistics00 even though it has that property because
@@ -289,6 +297,10 @@ def suite_lmcut_domains():
 def suite_strips():
     return suite_lmcut_domains() + suite_ipc08_all_strips()
 
+def suite_strips_ipc12345():
+    ipc08 = set(suite_ipc08_all())
+    return [domain for domain in suite_strips() if domain not in ipc08]
+
 def suite_optimal():
     return suite_lmcut_domains() + suite_ipc08_opt_strips()
 
@@ -306,22 +318,22 @@ def suite_five_per_domain():
 
 
 def select_evenly_spread(seq, num_items):
-   """Return num_items many items of seq, spread evenly.
-   If seq is shorter than num_items, include all items.
-   Otherwise, include first and last items and spread evenly in between.
-   (If num_items is 1, only include first item.)
+    """Return num_items many items of seq, spread evenly.
+    If seq is shorter than num_items, include all items.
+    Otherwise, include first and last items and spread evenly in between.
+    (If num_items is 1, only include first item.)
 
-   Example:
-   >>> select_evenly_spread("abcdef", 3)
-   ['a', 'd', 'f']
-   """
-   if len(seq) <= num_items:
-      return seq
-   if num_items == 1:
-      return [seq[0]]
-   step_size = (len(seq) - 1) / float(num_items - 1)
-   float_indices = [i * step_size for i in range(num_items)]
-   return [seq[int(round(index))] for index in float_indices]
+    Example:
+    >>> select_evenly_spread("abcdef", 3)
+    ['a', 'd', 'f']
+    """
+    if len(seq) <= num_items:
+        return seq
+    if num_items == 1:
+        return [seq[0]]
+    step_size = (len(seq) - 1) / float(num_items - 1)
+    float_indices = [i * step_size for i in range(num_items)]
+    return [seq[int(round(index))] for index in float_indices]
 
 
 if __name__ == '__main__':

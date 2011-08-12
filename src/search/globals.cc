@@ -54,8 +54,13 @@ void save_plan(const vector<const Operator *> &plan, int iter) {
         outfile << "(" << plan[i]->get_name() << ")" << endl;
     }
     outfile.close();
+    int plan_cost = calculate_plan_cost(plan);
+    ofstream statusfile;
+    statusfile.open("plan_numbers_and_cost", ios::out | ios::app);
+    statusfile << iter << " " << plan_cost << endl;
+    statusfile.close();
     cout << "Plan length: " << plan.size() << " step(s)." << endl;
-    cout << "Plan cost: " << calculate_plan_cost(plan) << endl;
+    cout << "Plan cost: " << plan_cost << endl;
 }
 
 bool peek_magic(istream &in, string magic) {
@@ -196,7 +201,6 @@ AxiomEvaluator *g_axiom_evaluator;
 SuccessorGenerator *g_successor_generator;
 vector<DomainTransitionGraph *> g_transition_graphs;
 CausalGraph *g_causal_graph;
-HeuristicOptions g_default_heuristic_options;
 
 Timer g_timer;
 string g_plan_filename = "sas_plan";

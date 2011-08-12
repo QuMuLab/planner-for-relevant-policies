@@ -3,69 +3,71 @@
 
 import sys
 import os
-from operator import itemgetter
 import logging
+from collections import defaultdict
 
-from reports import Report, ReportArgParser, existing
+from reports import Report, ReportArgParser
+from external.datasets import missing
+import tools
 
 SCORES = ['expansions', 'evaluations', 'search_time', 'total_time',
-            'coverage',
-            #'quality'
-        ]
+          'coverage', 'quality']
+
 
 def get_date_and_time():
     return r"\today\ \thistime"
 
 
+def escape(text):
+    return text.replace('_', r'\_')
+
+def remove_missing(iterable):
+    return [value for value in iterable if value is not missing]
+
+
 class IpcReport(Report):
-    """
-    """
     def __init__(self, parser=ReportArgParser()):
         parser.set_defaults(output_format='tex')
-        parser.add_argument('focus', choices=SCORES,# metavar='FOCUS',
+        parser.add_argument('focus', choices=SCORES,
                     help='the analyzed attribute (e.g. "expanded"). '
                         'The "attributes" parameter is ignored')
-        parser.add_argument('--normalize', action='store_true',
-                            help='Add a summary table with normalized values')
         parser.add_argument('--squeeze', action='store_true',
                             help='Use small fonts to fit in more data')
         parser.add_argument('--no-best', action='store_false',
                             dest='best_value_column',
-                            help='Do not add a column with the best known score')
+                            help='Do not add a column with best known score')
+        parser.add_argument('--page-size', choices=['a2', 'a3', 'a4'],
+                            default='a4',
+                            help='Set the page size for the latex report')
         Report.__init__(self, parser)
-        self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
+
+        self.extension = 'tex'
+        self.name_parts.append(self.focus)
+
         self.focus_name = self.focus
+        self.normalize = True
 
         self.score = 'score_' + self.focus
         if self.focus == 'coverage':
-            self.focus = 'plan_length'
+            self.focus = 'cost'
             self.score = 'coverage'
         elif self.focus == 'quality':
-            self.focus = 'plan_length'
+            self.focus = 'cost'
             self.score = 'quality'
 
         logging.info('Using score attribute "%s"' % self.score)
-        logging.info('Adding column with best value: %s' % self.best_value_column)
-        # Get set of configs
-        self.configs = sorted(self.data.group_dict('config').keys())
-        self.total_scores = self._compute_total_scores()
+        logging.info('Adding column with best value: %s' %
+                     self.best_value_column)
 
-    def name(self):
-        name = ''
-        eval_dir = os.path.basename(self.eval_dir)
-        name += eval_dir.replace('-', '')
-        name = name.replace('eval', '')
-        name += '-ipc-' + self.focus
-        return name
+        # Get set of configs
+        self.configs = tools.natural_sort(self.data.group_dict('config').keys())
+        self.total_scores = self._compute_total_scores()
 
     def _tiny_if_squeeze(self):
         if self.squeeze:
             return r"\tiny"
         else:
             return ""
-
-    def escape(self, text):
-        return text.replace('_', r'\_')
 
     def _compute_total_scores(self):
         total_scores = {}
@@ -74,10 +76,10 @@ class IpcReport(Report):
             config_dict = runs.group_dict('config')
             for config in self.configs:
                 config_group = config_dict.get(config)
-                assert config_group, 'Config %s was not found in dict %s' % (
-                        config, config_dict)
+                assert config_group, ('Config %s was not found in dict %s' %
+                        (config, config_dict))
                 scores = config_group[self.score]
-                scores = filter(existing, scores)
+                scores = remove_missing(scores)
                 total_score = sum(scores)
                 total_scores[config, domain] = total_score
         return total_scores
@@ -87,18 +89,19 @@ class IpcReport(Report):
             self.print_report()
             return
 
-        with open(self.output_file, 'w') as file:
+        filename = self.get_filename()
+        with open(filename, 'w') as file:
             sys.stdout = file
             self.print_report()
             sys.stdout = sys.__stdout__
-        logging.info('Wrote file %s' % self.output_file)
+        logging.info('Wrote file://%s' % filename)
 
     def print_report(self):
         self.print_header()
         # Group by domain
         self.data.sort('domain', 'problem', 'config')
         domain_dict = self.data.group_dict('domain')
-        for index, (domain, group) in enumerate(domain_dict.items()):
+        for index, (domain, group) in enumerate(sorted(domain_dict.items())):
             if index:
                 self.print_between_domains()
             self.print_domain(domain, group)
@@ -111,7 +114,8 @@ class IpcReport(Report):
             margin = "0.5cm"
         else:
             margin = "2.5cm"
-        print r"\usepackage[a4paper,landscape,margin=%s]{geometry}" % margin
+        print (r"\usepackage[%spaper,landscape,margin=%s]{geometry}" %
+                (self.page_size, margin))
         print r"\usepackage{supertabular}"
         print r"\usepackage{scrtime}"
         print r"\begin{document}"
@@ -140,11 +144,12 @@ class IpcReport(Report):
 
     def print_domain(self, domain, runs):
         print r"\section*{%s %s --- %s}" % (
-            self.escape(self.focus_name), domain, get_date_and_time())
+            escape(self.focus_name), escape(domain), get_date_and_time())
         print r"\tablehead{\hline"
         print r"\textbf{prob}"
         for config in self.configs:
-            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
+            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(),
+                                        escape(config))
         if self.best_value_column:
             print r"& %s\textbf{BEST}" % self._tiny_if_squeeze()
         print r"\\ \hline}"
@@ -154,24 +159,31 @@ class IpcReport(Report):
             column_desc += "r|"
         print r"\begin{supertabular}{%s}" % column_desc
 
+        quality_total_scores = defaultdict(float)
+
         for problem, probgroup in sorted(runs.group_dict('problem').items()):
             print r"\textbf{%s}" % problem.replace('.pddl', '')
             scores = []
             # Compute best value if we are comparing quality
             if self.score == 'quality':
-                # self.focus is "plan_length"
+                # self.focus is "cost"
                 lengths = probgroup.get(self.focus)
-                lengths = filter(existing, lengths)
-                best_length = max(lengths) if lengths else None
+                lengths = remove_missing(lengths)
+                best_length = min(lengths) if lengths else None
             config_dict = probgroup.group_dict('config')
             for config in self.configs:
                 run = config_dict.get(config)
                 assert len(run) == 1, run
                 if self.score == 'quality':
-                    length = run.get_single_value('plan_length')
+                    length = run.get_single_value('cost')
                     quality = None
-                    if length and best_length and not length == 0:
-                        quality = float(best_length) / length
+                    if length is not missing:
+                        if length == 0:
+                            assert best_length == 0
+                            quality = 1.0
+                        else:
+                            quality = float(best_length) / length
+                        quality_total_scores[config] += quality
                     run['quality'] = quality
                     scores.append(quality)
                 print r"& %s" % self._format_result(run)
@@ -180,13 +192,16 @@ class IpcReport(Report):
                     best = max(scores) if scores else None
                 else:
                     values = probgroup.get(self.focus)
-                    values = filter(existing, values)
-                    best = max(values) if values else None
+                    values = remove_missing(values)
+                    best = min(values) if values else None
                 print r"& %s" % ("---" if best is None else best)
             print r"\\"
         print r"\hline"
         print r"\textbf{total}"
         for config in self.configs:
+            if self.score == 'quality':
+                score = quality_total_scores[config]
+                self.total_scores[config, domain] = score
             print r"& \textbf{%.2f}" % self.total_scores[config, domain]
         if self.best_value_column:
             print r"&"
@@ -207,20 +222,22 @@ class IpcReport(Report):
         overall = defaultdict(float)
 
         print r"\section*{%s %s --- %s}" % (
-            self.escape(self.focus_name), title, get_date_and_time())
-        print r"\begin{tabular}{|l|%s|}" % ("r" * len(self.configs))
-        print r"\hline"
+            escape(self.focus_name), escape(title), get_date_and_time())
+        print r"\tablehead{\hline"
         print r"\textbf{domain}"
         for config in self.configs:
-            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(), config)
-        print r"\\ \hline"
+            print r"& %s\textbf{%s}" % (self._tiny_if_squeeze(),
+                                        escape(config))
+        print r"\\ \hline}"
+        print r"\tabletail{\hline}"
+        print r"\begin{supertabular}{|l|%s|}" % ("r" * len(self.configs))
         domain_dict = self.data.group_dict('domain')
         for domain, group in sorted(domain_dict.items()):
-            print r"\textbf{%s}" % domain
+            num_instances = len(group.group_dict('problem'))
+            print r"\textbf{%s} {\scriptsize(%s)}" % (domain, num_instances)
             for config in self.configs:
                 score = self.total_scores[config, domain]
                 if normalize:
-                    num_instances = len(group.group_dict('problem'))
                     score = float(score) * 100 / num_instances
                 overall[config] += score
                 entry = "%.2f" % score
@@ -235,7 +252,7 @@ class IpcReport(Report):
                 overall_score = float(overall_score) / num_domains
             print r"& \textbf{%.2f}" % overall_score
         print r"\\ \hline"
-        print r"\end{tabular}"
+        print r"\end{supertabular}"
 
     def print_footer(self):
         print r"\end{document}"

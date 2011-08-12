@@ -5,18 +5,13 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <limits>
 
 using namespace std;
 
-Heuristic::Heuristic(const HeuristicOptions &options) {
+Heuristic::Heuristic(const Options &opts)
+    : cost_type(OperatorCost(opts.get_enum("cost_type"))) {
     heuristic = NOT_INITIALIZED;
-
-    if (options.cost_type < 0 || options.cost_type >= MAX_OPERATOR_COST) {
-        cerr << "error: unknown operator cost type: " << options.cost_type << endl;
-        exit(2);
-    }
-
-    cost_type = static_cast<OperatorCost>(options.cost_type);
 }
 
 Heuristic::~Heuristic() {
@@ -63,7 +58,23 @@ int Heuristic::get_heuristic() {
     // The -1 value for dead ends is an implementation detail which is
     // not supposed to leak. Thus, calling this for dead ends is an
     // error. Call "is_dead_end()" first.
-    assert(heuristic >= 0);
+
+    /*
+      TODO: I've commented the assertion out for now because there is
+      currently code that calls get_heuristic for dead ends. For
+      example, if we use alternation with h^FF and h^cea and have an
+      instance where the initial state has infinite h^cea value, we
+      should expand this state since h^cea is unreliable. The search
+      progress class will then want to print the h^cea value of the
+      initial state since this is the "best know h^cea state" so far.
+
+      However, we should clean up the code again so that the assertion
+      is valid or rethink the interface so that we don't need it.
+     */
+
+    // assert(heuristic >= 0);
+    if (heuristic == DEAD_END)
+        return numeric_limits<int>::max();
     return heuristic;
 }
 
@@ -101,13 +112,20 @@ int Heuristic::get_adjusted_cost(const Operator &op) const {
     return get_adjusted_action_cost(op, cost_type);
 }
 
-
-HeuristicOptions::HeuristicOptions()
-    : cost_type(NORMAL) {
+void Heuristic::add_options_to_parser(OptionParser &parser) {
+    vector<string> cost_types;
+    cost_types.push_back("NORMAL");
+    cost_types.push_back("ONE");
+    cost_types.push_back("PLUSONE");
+    parser.add_enum_option("cost_type",
+                           cost_types,
+                           "NORMAL",
+                           "operator cost adjustment type");
 }
 
-void HeuristicOptions::add_option_to_parser(NamedOptionParser &option_parser) {
-    option_parser.add_int_option("cost_type",
-                                 &cost_type,
-                                 "operator cost adjustment type");
+//this solution to get default values seems not optimal:
+Options Heuristic::default_options() {
+    Options opts = Options();
+    opts.set<int>("cost_type", 0);
+    return opts;
 }

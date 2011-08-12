@@ -1,5 +1,6 @@
 #include "search_progress.h"
 
+using namespace std;
 
 SearchProgress::SearchProgress() {
     expanded_states = 0;
@@ -7,6 +8,7 @@ SearchProgress::SearchProgress() {
     evaluated_states = 0;
     evaluations = 0;
     generated_states = 0;
+    dead_end_states = 0;
     generated_ops = 0;
     pathmax_corrections = 0;
 
@@ -103,6 +105,7 @@ void SearchProgress::print_statistics() const {
     cout << "Evaluated " << evaluated_states << " state(s)." << endl;
     cout << "Evaluations: " << evaluations << endl;
     cout << "Generated " << generated_states << " state(s)." << endl;
+    cout << "Dead ends: " << dead_end_states << " state(s)." << endl;
     if (pathmax_corrections > 0) {
         cout << "Pathmax corrections: " << pathmax_corrections << endl;
     }

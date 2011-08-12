@@ -7,24 +7,17 @@ from __future__ import with_statement, division
 
 import os
 import sys
-import shutil
-import re
-from glob import glob
-from collections import defaultdict
-from itertools import combinations
 import logging
-import datetime
 import collections
 import cPickle
-
-
+import hashlib
+import subprocess
+import operator
+from collections import defaultdict
 
 import tools
 from markup import Document
-from external.configobj import ConfigObj
-from external.datasets import DataSet, MissingType
 from external import txt2tags
-from external import argparse
 
 
 def avg(values):
@@ -33,7 +26,7 @@ def avg(values):
     >>> print avg([20, 30, 70])
     40.0
     """
-    return round(sum(values, 0.0) / len(values), 4)
+    return round(sum(values, 0.0) / len(values), 2)
 
 
 def gm(values):
@@ -43,81 +36,58 @@ def gm(values):
     4.0
     """
     assert len(values) >= 1
-    return round(tools.prod(values) ** (1/len(values)), 4)
-
-
-def existing(val):
-    return not type(val) == MissingType
+    exp = 1.0 / len(values)
+    return round(tools.prod([val ** exp for val in values]), 2)
 
 
 class ReportArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, add_help=True, **kwargs)
 
-        self.add_argument('source', help='path to results directory',
-                    type=self.directory)
+        self.add_argument('eval_dir', type=self.directory,
+                    help='path to results directory')
 
-        self.add_argument('-d', '--dest', dest='report_dir', default='reports',
-                    help='path to report directory')
+        self.add_argument('--outfile', default=None,
+                    help='if not set, the report will be written to a file '
+                    'in %s.' % tools.REPORTS_DIR)
+
+        self.add_argument('-a', '--attributes', type=tools.csv,
+                    metavar='ATTR',
+                    help='the analyzed attributes (e.g. "expanded"). '
+                    'If omitted, use all found numerical attributes')
 
         self.add_argument('--format', dest='output_format', default='html',
                     help='format of the output file',
                     choices=sorted(txt2tags.TARGETS))
 
-        self.add_argument('--group-func', default='sum',
-                    help='the function used to cumulate the values of a group')
-
-        self.add_argument('--hide-sum', dest='hide_sum_row',
-                    default=False, action='store_true',
-                    help='do not add a row that sums up each column')
+        self.add_argument('--filter', dest='filters', type=tools.csv,
+                default=[], help='filters will be applied as follows: '
+                'expanded:lt:100 -> only process if run[expanded] < 100')
 
         self.add_argument('--dry', default=False, action='store_true',
                     help='do not write anything to the filesystem')
 
-        self.add_argument('--reload', default=False, action='store_true',
-                    help='rescan the directory and reload the properties files')
-
-        self.add_argument('--show_attributes', default=False, action='store_true',
+        self.add_argument('--show-attributes', action='store_true',
                     help='show a list of available attributes and exit')
 
         self.add_argument('--open', default=False, action='store_true',
                     dest='open_report',
                     help='open the report file after writing it')
 
-        self.add_argument('-a', '--attributes', dest='foci', type=tools.csv,
-                    metavar='ATTR',
-                    help='the analyzed attributes (e.g. "expanded"). '
-                    'If omitted, use all found numerical attributes')
-
-
     def parse_args(self, *args, **kwargs):
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
-
-        args.eval_dir = args.source
 
         args.eval_dir = os.path.normpath(os.path.abspath(args.eval_dir))
         logging.info('Eval dir: "%s"' % args.eval_dir)
 
         if not args.eval_dir.endswith('eval'):
-            answer = raw_input('The source directory does not end with eval. '
-                        'Are you sure you this is an evaluation directory? (Y/N): ')
+            msg = ('The source directory does not end with eval. '
+                   'Are you sure you this is an evaluation directory? (Y/N): ')
+            answer = raw_input(msg)
             if not answer.upper() == 'Y':
                 sys.exit()
 
-        if not os.path.exists(args.report_dir):
-            os.makedirs(args.report_dir)
-
-        # Turn e.g. the string 'max' into the function max()
-        args.group_func = eval(args.group_func)
-
-        #if not args.report_dir:
-        #    parent_dir = os.path.dirname(args.eval_dir)
-        #    dir_name = os.path.basename(args.eval_dir)
-        #    args.report_dir = os.path.join(parent_dir, dir_name + '-report')
-        #    logging.info('Report dir: "%s"' % args.report_dir)
-
         return args
-
 
 
 class Report(object):
@@ -125,53 +95,43 @@ class Report(object):
     Base class for all reports
     """
     def __init__(self, parser=ReportArgParser()):
-        #Define which attribute the report should be about
-        #self.focus = None
-
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
 
-        self.data = None
-        self.orig_data = self._get_data()
-        self.data = self.orig_data.copy()
+        self.report_type = 'report'
+        self.data = self._load_data()
+
+        self.all_attributes = sorted(self.data.get_attributes())
 
         if self.show_attributes:
-            print
-            print 'Available attributes:'
-            print self.orig_data.get_attributes()
+            print '\nAvailable attributes: %s' % self.all_attributes
             sys.exit()
 
-        if not self.foci or self.foci == 'all':
-            self.foci = sorted(self.orig_data.get_attributes())
-        logging.info('Attributes: %s' % self.foci)
+        if not self.attributes:
+            self.attributes = self.all_attributes
+        else:
+            # Make sure that all selected attributes are present in the dataset
+            not_found = set(self.attributes) - set(self.all_attributes)
+            if not_found:
+                logging.error('The following attributes are not present in '
+                              'the dataset: %s' % sorted(not_found))
+                sys.exit(1)
+        logging.info('Selected Attributes: %s' % self.attributes)
 
-        self.filter_funcs = []
-        self.filter_pairs = {}
-
-        self.grouping = []
-        self.order = []
+        if self.filters:
+            self._apply_filters()
 
         self.infos = []
 
+        self.extension = None
 
-    def add_filter(self, *filter_funcs, **filter_pairs):
-        self.filter_funcs.extend(filter_funcs)
-        self.filter_pairs.update(filter_pairs)
+        self.name_parts = []
+        if len(self.attributes) == 1:
+            self.name_parts.append(self.attributes[0])
+        if self.filters:
+            self.name_parts.append('+'.join([f.replace(':', '_')
+                                             for f in self.filters]))
 
-
-    def set_grouping(self, *grouping):
-        """
-        Set by which attributes the runs should be separated into groups
-
-        grouping = None/[]: Use only one big group (default)
-        grouping = 'domain': group by domain
-        grouping = ['domain', 'problem']: Use one group for each problem
-        """
-        self.grouping = grouping
-
-
-    def set_order(self, *order):
-        self.order = order
 
     def add_info(self, info):
         """
@@ -179,132 +139,150 @@ class Report(object):
         """
         self.infos.append(info)
 
+    def get_name(self):
+        return ('%s-%s-%s' % (os.path.basename(self.eval_dir), self.report_type,
+                             '-'.join(self.name_parts))).rstrip('-')
 
-    @property
-    def group_dict(self):
-        data = DataSet(self.data)
+    def get_filename(self):
+        if self.outfile:
+            return os.path.abspath(self.outfile)
+        ext = self.extension or self.output_format.replace('xhtml', 'html')
+        return os.path.join(tools.REPORTS_DIR, '%s.%s' % (self.get_name(), ext))
 
-        if not self.order:
-            self.order = ['id']
-        data.sort(*self.order)
-        #print 'SORTED'
-        #data.dump()
-
-        if self.filter_funcs or self.filter_pairs:
-            data = data.filtered(*self.filter_funcs, **self.filter_pairs)
-            #print 'FILTERED'
-            #data.dump()
-
-        group_dict = data.group_dict(*self.grouping)
-        #print 'GROUPED'
-        #print group_dict
-
-        return group_dict
-
-
-    def _get_data(self):
+    def get_text(self):
         """
-        The data is reloaded for every attribute, but read only once from disk
+        This method should be overwritten in subclasses.
         """
-        combined_props_file = os.path.join(self.eval_dir, 'properties')
-        if not os.path.exists(combined_props_file):
-            logging.error('Properties file not found at %s' % combined_props_file)
-            sys.exit(1)
-        data = DataSet()
-        logging.info('Started collecting data')
-        combined_props = tools.Properties(combined_props_file)
-        logging.info('Finished reading props file')
-        for run_id, run in sorted(combined_props.items()):
-            data.append(**run)
-        logging.info('Finished collecting data')
-        return data
-
-
-    def name(self):
-        name = ''
-        eval_dir = os.path.basename(self.eval_dir)
-        name += eval_dir.replace('-', '')
-        if len(self.foci) == 1:
-            name += '-' + self.foci[0]
-        return name
-
-
-    def _get_table(self):
-        raise Error('Not implemented')
-
+        table = Table(highlight=False)
+        for run_id, run_group in sorted(self.data.groups('id-string')):
+            assert len(run_group) == 1, run_group
+            run = run_group.items[0]
+            del run['id']
+            for key, value in run.items():
+                if type(value) is list:
+                    run[key] = '-'.join([str(item) for item in value])
+            table.add_row(run_id, run)
+        return str(table)
 
     def write(self):
-        doc = Document(title=self.name())
-        string = str(self)
+        self.write_to_disk(self.build())
 
-        if not string:
-            logging.info('No tables generated. ' \
-                        'This happens when no significant changes occured. ' \
-                        'Therefore no output file has been created')
+    def build(self):
+        doc = Document(title=self.get_name())
+        for info in self.infos:
+            doc.add_text('- %s' % info)
+        if self.infos:
+            doc.add_text('\n\n====================\n')
+
+        text = self.get_text()
+
+        if not text:
+            logging.info('No tables generated. '
+                         'This happens when no significant changes occured. '
+                         'Therefore no output file is created')
+            return ''
+
+        doc.add_text(text)
+        print 'REPORT MARKUP:\n'
+        print doc
+        return doc.render(self.output_format, {'toc': 1})
+
+    def write_to_disk(self, content):
+        if self.dry or not content:
             return
 
-        doc.add_text(string)
-
-        self.output = doc.render(self.output_format, {'toc': 1})
-
-        if not self.dry:
-            ext = 'html' if self.output_format == 'xhtml' else self.output_format
-            self.output_file = os.path.join(self.report_dir, self.name() + '.' + ext)
-            with open(self.output_file, 'w') as file:
-                logging.info('Writing output to "%s"' % self.output_file)
-                file.write(self.output)
+        filename = self.get_filename()
+        tools.makedirs(os.path.dirname(filename))
+        with open(filename, 'w') as file:
+            file.write(content)
+            logging.info('Wrote file://%s' % filename)
 
     def open(self):
         """
         If the --open parameter is set, tries to open the report
         """
-        if not self.open_report or not os.path.exists(self.output_file):
+        filename = self.get_filename()
+        if not self.open_report or not os.path.exists(filename):
             return
 
-        import subprocess
-        dir, filename = os.path.split(self.output_file)
+        dir, filename = os.path.split(filename)
         os.chdir(dir)
         if self.output_format == 'tex':
             subprocess.call(['pdflatex', filename])
             filename = filename.replace('tex', 'pdf')
         subprocess.call(['xdg-open', filename])
 
+        # Remove unnecessary files
+        extensions = ['aux', 'log']
+        filename_prefix, old_ext = os.path.splitext(os.path.basename(filename))
+        for ext in extensions:
+            tools.remove(filename_prefix + '.' + ext)
 
-    def __str__(self):
-        res = ''
-        for info in self.infos:
-            res += '- %s\n' % info
-        if self.infos:
-            res += '\n\n====================\n'
+    def _load_data(self):
+        """
+        The data is reloaded for every attribute, but read only once from disk
+        """
+        combined_props_file = os.path.join(self.eval_dir, 'properties')
+        if not os.path.exists(combined_props_file):
+            msg = 'Properties file not found at %s'
+            logging.error(msg % combined_props_file)
+            sys.exit(1)
+        dump_path = os.path.join(self.eval_dir, 'data_dump')
+        logging.info('Reading properties file without parsing')
+        properties_contents = open(combined_props_file).read()
+        logging.info('Calculating properties hash')
+        new_checksum = hashlib.md5(properties_contents).digest()
+        # Reload when the properties file changed or when no dump exists
+        reload = True
+        if os.path.exists(dump_path):
+            logging.info('Reading data dump')
+            old_checksum, data = cPickle.load(open(dump_path, 'rb'))
+            logging.info('Reading data dump finished')
+            reload = (not old_checksum == new_checksum)
+            logging.info('Reloading: %s' % reload)
+        if reload:
+            logging.info('Reading properties file')
+            combined_props = tools.Properties(combined_props_file)
+            logging.info('Reading properties file finished')
+            data = combined_props.get_dataset()
+            logging.info('Finished turning properties into dataset')
+            # Pickle data for faster future use
+            cPickle.dump((new_checksum, data), open(dump_path, 'wb'),
+                         cPickle.HIGHEST_PROTOCOL)
+            logging.info('Wrote data dump')
+        return data
 
-        # maps from attribute to table
-        tables = {}
+    def _apply_filters(self):
+        """
+        Filter strings have the form e.g.
+        expanded:lt:100 or solved:eq:1 or generated:ge:2000
+        """
+        filter_funcs = []
+        for s in self.filters:
+            attribute, op, value = s.split(':')
 
-        for focus in self.foci:
-            self.data = self.orig_data.copy()
-            self.focus = focus
             try:
-                table = self._get_table()
-                if table:
-                    # We return None for a table if we don't want to add it
-                    print table
-                    tables[self.focus] = table
-            except TypeError, err:
-                logging.info('Omitting attribute "%s" (%s)' % (focus, err))
+                value = float(value)
+            except ValueError:
+                pass
 
-        if not tables:
-            return ''
+            try:
+                op = getattr(operator, op.lower())
+            except AttributeError:
+                logging.error('The operator module has no operator "%s"' % op)
+                sys.exit()
 
-        for attribute, table in sorted(tables.iteritems()):
-            res += '+ %s +\n%s\n' % (attribute, table)
+            filter_funcs.append(lambda run: op(run[attribute], value))
 
-        return res
-
-
+        self.data.filter(*filter_funcs)
 
 
 class Table(collections.defaultdict):
-    def __init__(self, title='', highlight=True, min_wins=True, numeric_rows=False):
+    def __init__(self, title='', highlight=True, min_wins=True,
+                 numeric_rows=False):
+        """
+        If numeric_rows is True, we do not make the first column bold.
+        """
         collections.defaultdict.__init__(self, dict)
 
         self.title = title
@@ -312,88 +290,65 @@ class Table(collections.defaultdict):
         self.min_wins = min_wins
         self.numeric_rows = numeric_rows
 
+        self.summary_funcs = []
+        self.column_order = {}
+
+        self._cols = None
 
     def add_cell(self, row, col, value):
         self[row][col] = value
+        self._cols = None
 
+    def add_row(self, row_name, row):
+        """row must map column names to the value in row "row_name"."""
+        self[row_name] = row
+        self._cols = None
+
+    def add_col(self, col_name, col):
+        """col must map row names to values."""
+        for row_name, value in col.items():
+            self[row_name][col_name] = value
+        self._cols = None
 
     @property
     def rows(self):
-        special_rows = ['SUM', 'AVG', 'GM']
-        rows = self.keys()
         # Let the sum, etc. rows be the last ones
-        if self.numeric_rows:
-            key = lambda row: int(row)
-        else:
-            key = lambda row: 'zzz'+row.lower() if row.upper() in special_rows else row.lower()
-        rows = sorted(rows, key=key)
-        return rows
-
+        return tools.natural_sort(self.keys())
 
     @property
     def cols(self):
-        cols = []
-        for dict in self.values():
-            for key in dict.keys():
-                if key not in cols:
-                    cols.append(key)
-        # Put special columns at the end
-        key = lambda col: 'zzz'+col.lower() if col.lower() in ['quotient'] else col.lower()
-        return sorted(cols, key=key)
-
+        if self._cols:
+            return self._cols
+        col_names = set()
+        for row in self.values():
+            col_names |= set(row.keys())
+        self._cols = tools.natural_sort(col_names)
+        return self._cols
 
     def get_cells_in_row(self, row):
-        return [self[row][col] for col in self.cols]
+        return [self[row].get(col, None) for col in self.cols]
 
-
-    def get_relative(self):
+    def get_column_contents(self):
         """
-        Take the first value of each row and divide every value in the row by it
-        Returns a new table
-
-        Unused for now
+        Returns a mapping from column name to the list of values in that column.
         """
-        rel_table = Table(self.title)
-        col1 = self.cols[0]
+        values = defaultdict(list)
         for row in self.rows:
-            val1 = self[row][col1]
-            for col, cell in self[row].iteritems():
-                rel_value = 0 if val1 == 0 else round(cell / val1, 4)
-                rel_table.add_cell(row, col, rel_value)
-        return rel_table
+            for col, value in self[row].items():
+                values[col].append(value)
+        return values
 
-
-    def get_comparison(self, comparator=cmp):
+    def get_row_markup(self, row_name, row=None):
         """
-        || expanded                      | fF               | yY               |
-        | **prob01.pddl**                | 21               | 16               |
-        | **prob02.pddl**                | 38               | 24               |
-        | **prob03.pddl**                | 59               | 32               |
-        ==>
-        returns ((fF, yY), (0, 0, 3)) [wins, draws, losses]
+        If given, row must be a dictionary mapping column names to the value in
+        row "row_name".
         """
-        assert len(self.cols) == 2, 'For comparative reports please specify 2 configs'
+        if row is None:
+            row = self[row_name]
 
-        sums = [0, 0, 0]
-
-        for row in self.rows:
-            for col1, col2 in combinations(self.cols, 2):
-                val1 = self[row][col1]
-                val2 = self[row][col2]
-                cmp_value = comparator(val1, val2)
-                sums[cmp_value + 1] += 1
-
-        return (self.cols, sums)
-
-
-    def get_row(self, row, values=None):
-        '''
-        values has to be sorted by the corresponding column names
-        '''
-        if values is None:
-            values = []
-            for col in self.cols:
-                values.append(self.get(row).get(col))
+        values = []
+        for col in self.cols:
+            values.append(row.get(col))
 
         only_one_value = len(set(values)) == 1
 
@@ -410,9 +365,9 @@ class Table(collections.defaultdict):
 
         text = ''
         if self.numeric_rows:
-            text += '| %-30s ' % (row)
+            text += '| %-30s ' % (row_name)
         else:
-            text += '| %-30s ' % ('**'+row+'**')
+            text += '| %-30s ' % ('**' + row_name + '**')
         for value in values:
             is_min = (value == min_value)
             is_max = (value == max_value)
@@ -427,6 +382,12 @@ class Table(collections.defaultdict):
         text += '|\n'
         return text
 
+    def add_summary_function(self, func):
+        """
+        This function adds a bottom row with the values func(column_values) for
+        each column. Func can be e.g. sum, reports.avg, reports.gm
+        """
+        self.summary_funcs.append(func)
 
     def __str__(self):
         """
@@ -438,15 +399,23 @@ class Table(collections.defaultdict):
         """
         text = '|| %-29s | ' % self.title
 
-        rows = self.rows
-        cols = self.cols
+        def get_col_markup(col):
+            # Allow custom sorting of the column names
+            if '-SORT:' in col:
+                sorting, col = col.split('-SORT:')
+            # Escape config names to prevent unvoluntary markup
+            return '%-16s' % ('""%s""' % col)
 
-        text += ' | '.join(map(lambda col: '%-16s' % col, cols)) + ' |\n'
-        for row in rows:
-            text += self.get_row(row)
+        text += ' | '.join(get_col_markup(col) for col in self.cols) + ' |\n'
+        for row in self.rows:
+            text += self.get_row_markup(row)
+        for func in self.summary_funcs:
+            summary_row = dict([(col, func(content)) for col, content in
+                                self.get_column_contents().items()])
+            text += self.get_row_markup(func.__name__.upper(), summary_row)
         return text
 
 
-
 if __name__ == "__main__":
-    logging.error('Please import this module from another script')
+    report = Report()
+    report.write()
