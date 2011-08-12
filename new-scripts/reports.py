@@ -334,8 +334,8 @@ class Table(collections.defaultdict):
         """
         values = defaultdict(list)
         for row in self.rows:
-            for col, value in self[row].items():
-                values[col].append(value)
+            for col in self.cols:
+                values[col].append(self[row].get(col))
         return values
 
     def get_row_markup(self, row_name, row=None):
