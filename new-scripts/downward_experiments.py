@@ -328,7 +328,8 @@ class DownwardExperiment(experiments.Experiment):
 
                     run.set_property('preprocess_dir', preprocess_dir)
 
-                    # This resource is used by the landmarks code.
+                    # This resource is used by the landmarks code. We cannot
+                    # just link to it, it has to be copied.
                     run.add_resource('ALL_GROUPS', path('all.groups'),
                                      'all.groups', required=False)
 

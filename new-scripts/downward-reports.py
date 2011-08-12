@@ -344,17 +344,30 @@ class ScatterPlotReport(AbsoluteReport):
 
         cfg1, cfg2 = table.cols
         columns = table.get_column_contents()
-        max_value = 0
+        assert len(columns[cfg1]) == len(columns[cfg2]), columns
+
+        # It may be the case that no values are found
+        if not columns[cfg1]:
+            max_value = 0
+        else:
+            max_value = max(columns[cfg1] + columns[cfg2])
+
+        # Make the value bigger to separate it from normal values
+        missing_val = tools.round_to_next_power_of_ten(max_value)
+
         values1 = []
         values2 = []
         for val1, val2 in zip(columns[cfg1], columns[cfg2]):
-            if val1 is not None and val2 is not None:
-                values1.append(val1)
-                values2.append(val2)
-                max_value = max(max_value, val1, val2)
+            if val1 is None and val2 is None:
+                continue
+            if val1 is None:
+                val1 = missing_val
+            if val2 is None:
+                val2 = missing_val
+            values1.append(val1)
+            values2.append(val2)
 
-        # Make the value a little bigger to have a complete diagonal
-        max_value *= 1.1
+        plot_size = missing_val * 1.25
 
         # Create a figure with size 6 x 6 inches
         fig = Figure(figsize=(10, 10))
@@ -364,8 +377,8 @@ class ScatterPlotReport(AbsoluteReport):
         ax = fig.add_subplot(111)
 
         # Make a descriptive title and set axis labels
-        suite = '(%s)' % ','.join(self.suite) if self.suite else ''
-        title = ' '.join([attribute, suite, 'by', self.resolution])
+        suite = ' (%s)' % ','.join(self.suite) if self.suite else ''
+        title = ''.join([attribute, suite, ' by ', self.resolution])
         ax.set_title(title, fontsize=14)
         ax.set_xlabel(cfg1, fontsize=10)
         ax.set_ylabel(cfg2, fontsize=10)
@@ -377,7 +390,7 @@ class ScatterPlotReport(AbsoluteReport):
         ax.scatter(values1, values2, s=20, marker='o', c='r');
 
         # Plot a diagonal black line. Starting at (0,0) often raises errors.
-        ax.plot([0.001, max_value], [0.001, max_value], 'k')
+        ax.plot([0.001, plot_size], [0.001, plot_size], 'k')
 
         linear_attributes = ['cost', 'coverage', 'plan_length']
         if attribute not in linear_attributes:
@@ -385,8 +398,8 @@ class ScatterPlotReport(AbsoluteReport):
             ax.set_xscale('symlog')
             ax.set_yscale('symlog')
 
-        ax.set_xlim(0, max_value)
-        ax.set_ylim(0, max_value)
+        ax.set_xlim(0, plot_size)
+        ax.set_ylim(0, plot_size)
 
         # We do not want the default formatting that gives zeros a special font
         for axis in (ax.xaxis, ax.yaxis):
@@ -395,6 +408,8 @@ class ScatterPlotReport(AbsoluteReport):
             def new_format_call(x, pos):
                 if x == 0:
                     return 0
+                if x == missing_val:
+                    return 'Missing' # '$\mathdefault{None^{\/}}$' no effect
                 return old_format_call(x, pos)
             formatter.__call__ = new_format_call
 
