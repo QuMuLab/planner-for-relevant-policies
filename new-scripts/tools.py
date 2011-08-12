@@ -7,6 +7,7 @@ import traceback
 import logging
 import contextlib
 import time
+import math
 
 from external import argparse
 from external.configobj import ConfigObj
@@ -69,6 +70,11 @@ def divide_list(seq, size):
     [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9]]
     """
     return [seq[i:i + size] for i  in range(0, len(seq), size)]
+
+
+def round_to_next_power_of_ten(i):
+    assert i > 0
+    return 10**math.ceil(math.log10(i))
 
 
 def makedirs(dir):
