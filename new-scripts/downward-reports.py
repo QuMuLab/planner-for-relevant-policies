@@ -344,10 +344,15 @@ class ScatterPlotReport(AbsoluteReport):
         assert len(columns[cfg1]) == len(columns[cfg2]), columns
 
         # It may be the case that no values are found
-        if not columns[cfg1]:
-            max_value = 0
-        else:
+        try:
             max_value = max(columns[cfg1] + columns[cfg2])
+        except ValueError:
+            pass
+
+        if max_value is None or max_value <= 0:
+            logging.info('Found no valid datapoints for the plot.')
+            print table
+            sys.exit()
 
         # Make the value bigger to separate it from normal values
         missing_val = tools.round_to_next_power_of_ten(max_value * 10)
