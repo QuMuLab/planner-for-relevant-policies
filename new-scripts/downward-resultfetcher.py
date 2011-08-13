@@ -152,7 +152,7 @@ ITERATIVE_PATTERNS = [
     # We cannot include " \[t=.+s\]" in the regex, because older versions don't
     # have this information in the log.
     ('search_time',
-        re.compile(r'Actual search time: (.+)s'), float)
+        re.compile(r'Actual search time: (.+?)s'), float)
     ]
 
 CUMULATIVE_PATTERNS = [
