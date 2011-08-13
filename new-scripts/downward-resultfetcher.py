@@ -164,9 +164,6 @@ CUMULATIVE_PATTERNS = [
     ('search_time', re.compile(r'^Search time: (.+)s$'), float),
     ('total_time', re.compile(r'^Total time: (.+)s$'), float),
     ('memory', re.compile(r'Peak memory: (.+) KB'), int),
-    ('landmarks', re.compile(r'Discovered (\d+) landmarks'), int),
-    ('landmarks_generation_time',
-        re.compile(r'Landmarks generation time: (.+)s'), float),
     ]
 
 
@@ -388,6 +385,12 @@ def add_preprocess_functions(eval):
     eval.add_function(translator_mutex_groups_total_size, file='all.groups')
 
 
+def add_search_parsing(eval):
+    eval.add_pattern('landmarks', r'Discovered (\d+?) landmarks', type=int)
+    eval.add_pattern('landmarks_generation_time',
+                     r'Landmarks generation time: (.+)s', type=float)
+
+
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
     eval.add_function(get_iterative_results)
@@ -418,6 +421,7 @@ def build_fetcher(parser=FetchOptionParser()):
             add_preprocess_parsing(eval)
             add_preprocess_functions(eval)
     if not eval.no_search:
+        add_search_parsing(eval)
         add_search_functions(eval)
 
     eval.add_function(check_min_values)
