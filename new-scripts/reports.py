@@ -18,6 +18,7 @@ from collections import defaultdict
 import tools
 from markup import Document
 from external import txt2tags
+from external.datasets import missing
 
 
 def avg(values):
@@ -108,7 +109,7 @@ class Report(object):
             sys.exit()
 
         if not self.attributes:
-            self.attributes = self.all_attributes
+            self.attributes = self.get_numerical_attributes()
         else:
             # Make sure that all selected attributes are present in the dataset
             not_found = set(self.attributes) - set(self.all_attributes)
@@ -132,6 +133,17 @@ class Report(object):
             self.name_parts.append('+'.join([f.replace(':', '_')
                                              for f in self.filters]))
 
+    def get_numerical_attributes(self):
+        def is_numerical(attribute):
+            for val in self.data.key(attribute)[0]:
+                if val is missing:
+                    continue
+                return type(val) in [int, float]
+            logging.info("Attribute %s is missing in all runs." % attribute)
+            # Include the attribute nonetheless
+            return True
+
+        return [attr for attr in self.all_attributes if is_numerical(attr)]
 
     def add_info(self, info):
         """
