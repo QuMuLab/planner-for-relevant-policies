@@ -149,11 +149,14 @@ ITERATIVE_PATTERNS = [
     ('initial_h_value',
         re.compile(r'Initial state h value: (\d+)'), int),
     ('plan_length', re.compile(r'Plan length: (\d+)'), int),
+    # We cannot include " \[t=.+s\]" in the regex, because older versions don't
+    # have this information in the log.
     ('search_time',
-        re.compile(r'Actual search time: (.+)s \[t=.+s\]'), float)
+        re.compile(r'Actual search time: (.+?)s'), float)
     ]
 
 CUMULATIVE_PATTERNS = [
+    # This time we parse the cumulative values
     _get_states_pattern('dead_ends', 'Dead ends:'),
     _get_states_pattern('evaluations', 'Evaluated'),
     _get_states_pattern('expansions', 'Expanded'),
@@ -207,10 +210,9 @@ def get_iterative_results(content, props):
     for name, items in values.items():
         props[name + '_all'] = items
 
-    if values['cost']:
-        props['cost'] = values['cost'][-1]
-    if values['plan_length']:
-        props['plan_length'] = values['plan_length'][-1]
+    for attr in ['cost', 'plan_length']:
+        if values[attr]:
+            props[attr] = min(values[attr])
 
 
 def get_cumulative_results(content, props):

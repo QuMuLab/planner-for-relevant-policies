@@ -20,4 +20,5 @@ done
 ./downward-reports.py $EXPNAME-eval -r suite --filter domain:eq:gripper --outfile exp_test_suite.py
 ./downward-reports.py $EXPNAME-eval -r rel --dry -a coverage --rel-change 0
 ./downward-reports.py $EXPNAME-eval -r scatter -a search_time
+#./downward-reports.py $EXPNAME-eval -r abs --dry -a expansions,initial_h_value --res problem
 ./downward-reports.py $EXPNAME-eval -r abs --dry -a search_time,coverage

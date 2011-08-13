@@ -97,13 +97,10 @@ class PlanningReport(Report):
         # list of (attribute, table) pairs
         tables = []
         for attribute in self.attributes:
-            try:
-                table = self._get_table(attribute)
-                # We return None for a table if we don't want to add it
-                if table:
-                    tables.append((attribute, table))
-            except TypeError, err:
-                logging.info('Omitting attribute "%s" (%s)' % (attribute, err))
+            table = self._get_table(attribute)
+            # We return None for a table if we don't want to add it
+            if table:
+                tables.append((attribute, table))
 
         return ''.join(['+ %s +\n%s\n' % (attr, table)
                         for (attr, table) in tables])
@@ -423,6 +420,8 @@ class ScatterPlotReport(AbsoluteReport):
             return
 
         filename = self.get_filename()
+        if not filename.endswith('.png'):
+            filename += '.png'
         self.write_plot(self.attributes[0], filename)
         logging.info('Wrote file://%s' % filename)
 
