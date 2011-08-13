@@ -159,6 +159,7 @@ class Report(object):
         if self.outfile:
             return os.path.abspath(self.outfile)
         ext = self.extension or self.output_format.replace('xhtml', 'html')
+        tools.makedirs(tools.REPORTS_DIR)
         return os.path.join(tools.REPORTS_DIR, '%s.%s' % (self.get_name(), ext))
 
     def get_text(self):
