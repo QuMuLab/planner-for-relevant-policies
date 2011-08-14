@@ -464,6 +464,12 @@ lazy_wastar([hff,hlm],preferred=[hff,hlm],w=2)],\
 repeat_last=false)"\
 """
 
+iterated_search = """\
+--heuristic "hadd=add()" \
+--search "iterated([lazy_greedy([hadd]),lazy_wastar([hadd])],\
+repeat_last=false)"\
+"""
+
 
 def get_configs(configs_strings):
     """

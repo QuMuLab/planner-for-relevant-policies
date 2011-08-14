@@ -146,13 +146,14 @@ ITERATIVE_PATTERNS = [
     _get_states_pattern('evaluations', 'Evaluated'),
     _get_states_pattern('expansions', 'Expanded'),
     _get_states_pattern('generated', 'Generated'),
+    # We exclude lines like "Initial state h value: 1147184/1703241." that stem
+    # from multi-heuristic search.
     ('initial_h_value',
-        re.compile(r'Initial state h value: (\d+)'), int),
+        re.compile(r'Initial state h value: (\d+)\.'), int),
     ('plan_length', re.compile(r'Plan length: (\d+)'), int),
     # We cannot include " \[t=.+s\]" in the regex, because older versions don't
     # have this information in the log.
-    ('search_time',
-        re.compile(r'Actual search time: (.+?)s'), float)
+    ('search_time', re.compile(r'Actual search time: (.+?)s'), float)
     ]
 
 CUMULATIVE_PATTERNS = [
@@ -172,7 +173,6 @@ CUMULATIVE_PATTERNS = [
     ]
 
 
-# TODO: What about lines like "Initial state h value: 1147184/1703241."?
 def get_iterative_results(content, props):
     """
     In iterative search some attributes like plan cost can have multiple
