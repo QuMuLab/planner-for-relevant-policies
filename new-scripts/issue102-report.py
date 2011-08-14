@@ -3,7 +3,7 @@
 import sys
 import subprocess
 
-configs = ['bjolp', 'autotune', 'lmcut selmax', 'lama-2011-nonunit',
+configs = ['bjolp', 'autotune', 'lmcut', 'selmax', 'lama-2011-nonunit',
            'lama-2011-unit']
 
 def make_report(params):
