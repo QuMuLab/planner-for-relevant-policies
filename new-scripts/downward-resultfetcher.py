@@ -148,8 +148,7 @@ ITERATIVE_PATTERNS = [
     _get_states_pattern('generated', 'Generated'),
     # We exclude lines like "Initial state h value: 1147184/1703241." that stem
     # from multi-heuristic search.
-    ('initial_h_value',
-        re.compile(r'Initial state h value: (\d+)\.'), int),
+    ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
     ('plan_length', re.compile(r'Plan length: (\d+)'), int),
     # We cannot include " \[t=.+s\]" in the regex, because older versions don't
     # have this information in the log.
@@ -165,11 +164,10 @@ CUMULATIVE_PATTERNS = [
     ('search_time', re.compile(r'^Search time: (.+)s$'), float),
     ('total_time', re.compile(r'^Total time: (.+)s$'), float),
     ('memory', re.compile(r'Peak memory: (.+) KB'), int),
-    # We try to find the h value here. For iterative searches we will not find
-    # anything before the "cumulative" line, for single searches this should
-    # return a value.
-    ('initial_h_value',
-        re.compile(r'Initial state h value: (\d+)\.'), int),
+    # For iterated searches we discard any h values. Here we will not find
+    # anything before the "cumulative" line and stop the search. For single
+    # searches we will find the h value if it isn't a multi-heuristic search.
+    ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
     ]
 
 
