@@ -133,12 +133,8 @@ def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
 
     In the code we use the fact that "os.path.join('', 'filename') = filename".
     """
-    run.config_nick = config_nick
-    run.planner_config = config
-
     run.require_resource(run.planner.shell_name)
-    run.add_command('search', [run.planner.shell_name] +
-                              shlex.split(run.planner_config),
+    run.add_command('search', [run.planner.shell_name] + shlex.split(config),
                     stdin=os.path.join(preprocess_dir, 'output'),
                     time_limit=LIMIT_SEARCH_TIME,
                     mem_limit=LIMIT_SEARCH_MEMORY)
@@ -152,7 +148,8 @@ def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
     run.add_command('validate', ['DOWNWARD_VALIDATE', 'VALIDATE', domain,
                                  problem])
 
-    run.set_property('commandline_config', run.planner_config)
+    run.set_property('config_nick', config_nick)
+    run.set_property('commandline_config', config)
 
     # If all three parts have the same revision don't clutter the reports
     names = [run.translator.name, run.preprocessor.name, run.planner.name]
