@@ -164,6 +164,11 @@ CUMULATIVE_PATTERNS = [
     ('search_time', re.compile(r'^Search time: (.+)s$'), float),
     ('total_time', re.compile(r'^Total time: (.+)s$'), float),
     ('memory', re.compile(r'Peak memory: (.+) KB'), int),
+    # We try to find the h value here. For iterative searches we will not find
+    # anything before the "cumulative" line, for single searches this should
+    # return a value.
+    ('initial_h_value',
+        re.compile(r'Initial state h value: (\d+)\.'), int),
     ]
 
 
