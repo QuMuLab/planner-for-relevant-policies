@@ -136,6 +136,9 @@ class AbsoluteReport(PlanningReport):
             help='resolution of the report',
             choices=['domain', 'problem'])
 
+        # Apply previously set defaults
+        parser.set_defaults(**parser._defaults)
+
         PlanningReport.__init__(self, parser)
 
         self.name_parts.append(self.resolution[0])
