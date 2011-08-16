@@ -239,8 +239,8 @@ def alternation_configs():
 
 def raz_ipc():
     return [
-        ("mas-1", "--search 'astar(mas(max_states=1,merge_strategy=6,shrink_strategy=shrink_bisimulation(true, false)))'"),
-        ("mas-2", "--search 'astar(mas(max_states=200000,merge_strategy=6,shrink_strategy=shrink_dfp(enable_greedy_bisimulation)))'"),
+        ("mas-1", "--search 'astar(mas(max_states=1,merge_strategy=merge_linear_reverse_level,shrink_strategy=shrink_bisimulation(true, false)))'"),
+        ("mas-2", "--search 'astar(mas(max_states=200000,merge_strategy=merge_linear_reverse_level,shrink_strategy=shrink_dfp(enable_greedy_bisimulation)))'"),
         ]
 
 
