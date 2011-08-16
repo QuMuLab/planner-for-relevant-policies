@@ -87,28 +87,6 @@ def preprocessor_facts(content, props):
     props.setdefault('preprocessor_facts', _get_facts(content))
 
 
-def cg_arcs(content, props):
-    """
-    Sums up the number of outgoing arcs for each vertex
-    """
-    regex = re.compile(r'begin_CG\n(.+)end_CG', re.M | re.S)
-    match = regex.search(content)
-    if not match:
-        logging.error('Number of arcs could not be determined')
-        return {}
-    # cg looks like ['6', '1 16', '2 16', '3 8', '4 8', '5 8', '6 8', '4', ...]
-    cg = match.group(1).splitlines()
-    arcs = 0
-    for line in cg:
-        parts = line.split()
-        parts = map(str.strip, parts)
-        parts = filter(bool, parts)
-        if len(parts) == 1:
-            # We have a line containing the number of arcs for one node
-            arcs += int(parts[0])
-    return {'preprocessor_cg_arcs': arcs}
-
-
 def get_problem_size(content):
     """
     Total problem size can be measured as the total number of tokens in the
@@ -377,8 +355,6 @@ def add_preprocess_functions(eval):
 
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
-
-    #eval.add_function(cg_arcs, file='output')
 
     eval.add_function(translator_problem_size, file='output.sas')
     eval.add_function(preprocessor_problem_size, file='output')
