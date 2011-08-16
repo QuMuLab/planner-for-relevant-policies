@@ -80,13 +80,13 @@ fi
 
 
 if [[ "$PHASE" == 1 ]]; then
-    ./downward_experiments.py --preprocess -s $SUITE --path $EXPNAME $EXPTYPEOPT
+    ./$EXPMODULE --preprocess -s $SUITE --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 2 ]]; then
     run_experiment $EXPNAME-p
 elif [[ "$PHASE" == 3 ]]; then
     ./resultfetcher.py $EXPNAME-p
 elif [[ "$PHASE" == 4 ]]; then
-    ./downward_experiments.py -s $SUITE -c $CONFIGS --path $EXPNAME $EXPTYPEOPT
+    ./$EXPMODULE -s $SUITE -c $CONFIGS --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 5 ]]; then
     run_experiment $EXPNAME
 elif [[ "$PHASE" == 6 ]]; then
