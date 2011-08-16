@@ -389,9 +389,11 @@ def add_preprocess_functions(eval):
 
 
 def add_search_parsing(eval):
-    eval.add_pattern('landmarks', r'Discovered (\d+?) landmarks', type=int)
+    eval.add_pattern('landmarks', r'Discovered (\d+?) landmarks', type=int,
+                     required=False)
     eval.add_pattern('landmarks_generation_time',
-                     r'Landmarks generation time: (.+)s', type=float)
+                     r'Landmarks generation time: (.+)s', type=float,
+                     required=False)
 
 
 def add_search_functions(eval):
