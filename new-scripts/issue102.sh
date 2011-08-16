@@ -1,5 +1,6 @@
 #! /bin/bash
 
+EXPNAME=exp-js-102
 CONFIGS=ipc11
 QUEUE=opteron_core.q
 
