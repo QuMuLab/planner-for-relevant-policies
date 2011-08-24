@@ -312,7 +312,7 @@ def add_preprocess_parsing(eval):
                      r'begin_groups\n(\d+)\ngroup', file='all.groups',
                      type=int, flags='MS')
 
-    # Preprocessor output:
+    # Parse the preprocessor output. We keep this code for older revisions:
     # 19 variables of 19 necessary
     # 2384 of 2384 operators necessary.
     # 0 of 0 axiom rules necessary
