@@ -14,11 +14,14 @@ import tools
 from external.ordereddict import OrderedDict
 
 
-HELP = """\
-Base module for creating fast downward experiments.
-PLEASE NOTE: The available options depend on the selected experiment type.
-You can set the experiment type with the "--exp-type" option.
-"""
+EPILOG = """\
+--------------------------------------------------------------------------------
+PLEASE NOTE: The available options depend on the selected experiment type:
+
+global options:  %(exe)s --help
+special options: %(exe)s {local,gkigrid,argo} --help
+--------------------------------------------------------------------------------
+""" % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
                 'gkigrid': environments.GkiGridEnvironment,
@@ -29,13 +32,16 @@ DEFAULT_ABORT_ON_FAILURE = True
 
 class ExpArgParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
-        tools.ArgParser.__init__(self, *args, **kwargs)
+        tools.ArgParser.__init__(self, *args, epilog=EPILOG, **kwargs)
 
-        self.add_argument('-p', '--path',
-            help='path of the experiment (e.g. <initials>-<descriptive name>)')
+        self.add_argument('--path',
+            help='path of the experiment (e.g. <initials>-<descriptive name>). '
+            'If no path is given, you will be prompted interactively for it.')
         self.add_argument(
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
+        self.add_argument('--build-main-script-only', action='store_true',
+            help='Only write the main experiment script to disk and exit.')
 
 
 class Experiment(object):
@@ -74,9 +80,10 @@ class Experiment(object):
         self.environment = ENVIRONMENTS.get(self.environment_type)
         if not self.environment:
             logging.error('Unknown environment "%s"' % self.environment_type)
-            sys.exit(1)
-        while not self.path:
-            self.path = raw_input('Please enter an experiment path: ').strip()
+            sys.exit(2)
+        if not self.path:
+            logging.error('Please specify the experiment path')
+            sys.exit(2)
 
     def set_property(self, name, value):
         """
@@ -86,10 +93,6 @@ class Experiment(object):
         Example:
         >>> exp.set_property('translator', '4321')
         """
-        # id parts can only be strings
-        if name == 'id':
-            assert type(value) == list, value
-            value = map(str, value)
         self.properties[name] = value
 
     def add_resource(self, resource_name, source, dest, required=True):
@@ -127,7 +130,11 @@ class Experiment(object):
                               for (var, path) in self.env_vars.items()])
 
         self._set_run_dirs()
+
         self._build_main_script()
+        if self.build_main_script_only:
+            sys.exit()
+
         self._build_resources()
         self._build_runs()
         self._build_properties_file()
@@ -170,8 +177,7 @@ class Experiment(object):
 
     def _set_run_dirs(self):
         """
-        Sets the relative run directories as instance
-        variables for all runs
+        Sets the relative run directories as instance variables for all runs
         """
         def run_number(number):
             return str(number).zfill(5)
@@ -182,12 +188,10 @@ class Experiment(object):
             return 'runs-%s-%s' % (run_number(first_run), run_number(last_run))
 
         current_run = 0
-
         shards = tools.divide_list(self.runs, self.shard_size)
 
         for shard_number, shard in enumerate(shards, start=1):
             shard_dir = os.path.join(self.path, get_shard_dir(shard_number))
-            tools.overwrite_dir(shard_dir)
 
             for run in shard:
                 current_run += 1

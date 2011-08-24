@@ -26,8 +26,6 @@ def remove_missing(iterable):
 
 
 class IpcReport(Report):
-    """
-    """
     def __init__(self, parser=ReportArgParser()):
         parser.set_defaults(output_format='tex')
         parser.add_argument('focus', choices=SCORES,
@@ -42,7 +40,10 @@ class IpcReport(Report):
                             default='a4',
                             help='Set the page size for the latex report')
         Report.__init__(self, parser)
-        self.output_file = os.path.join(self.report_dir, self.name() + '.tex')
+
+        self.extension = 'tex'
+        self.name_parts.append(self.focus)
+
         self.focus_name = self.focus
         self.normalize = True
 
@@ -59,14 +60,8 @@ class IpcReport(Report):
                      self.best_value_column)
 
         # Get set of configs
-        self.configs = self.data.group_dict('config').keys()
-        tools.natural_sort(self.configs)
+        self.configs = tools.natural_sort(self.data.group_dict('config').keys())
         self.total_scores = self._compute_total_scores()
-
-    def name(self):
-        name = os.path.basename(self.eval_dir)
-        name += '-ipc-' + self.focus
-        return name
 
     def _tiny_if_squeeze(self):
         if self.squeeze:
@@ -94,12 +89,12 @@ class IpcReport(Report):
             self.print_report()
             return
 
-        with open(self.output_file, 'w') as file:
+        filename = self.get_filename()
+        with open(filename, 'w') as file:
             sys.stdout = file
             self.print_report()
             sys.stdout = sys.__stdout__
-        output_uri = 'file://' + os.path.abspath(self.output_file)
-        logging.info('Wrote file %s' % output_uri)
+        logging.info('Wrote file://%s' % filename)
 
     def print_report(self):
         self.print_header()

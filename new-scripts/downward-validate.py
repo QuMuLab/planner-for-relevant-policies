@@ -13,9 +13,7 @@ import glob
 from subprocess import Popen
 
 
-DOMAIN = "domain.pddl"
-PROBLEM = "problem.pddl"
-VALIDATE = sys.argv[1]
+VALIDATE, DOMAIN, PROBLEM = sys.argv[1:4]
 
 
 retcodes = []

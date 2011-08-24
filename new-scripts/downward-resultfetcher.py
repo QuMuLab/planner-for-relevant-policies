@@ -8,209 +8,253 @@ from __future__ import with_statement, division
 import logging
 import re
 import math
+from collections import defaultdict
 
 from resultfetcher import Fetcher, FetchOptionParser
+import tools
 
 
 def check(props):
-    if props.get('translator_error') == 1:
+    if props.get('translate_error') == 1:
         msg = 'Translator error without preprocessor error'
-        assert props.get('preprocessor_error') == 1, msg
+        assert props.get('preprocess_error') == 1, msg
+
+    if props.get('cost') is not None:
+        assert props.get('search_time') is not None
 
 
 # Preprocessing functions -----------------------------------------------------
 
-# TODO: Is there a better way to parse this?
-# Are the returncodes enough already?
-def translator_error(content, old_props):
-    error = not 'Done! [' in content
-    return {'translator_error': int(error)}
 
+def parse_translator_timestamps(content, props):
+    """Parse all translator output of the following forms:
 
-def preprocessor_error(content, old_props):
-    error = not 'Writing output...\ndone' in content
-    return {'preprocessor_error': int(error)}
-
-
-def get_derived_vars(content):
+        Computing fact groups: [0.000s CPU, 0.004s wall-clock]
+        Writing output... [0.000s CPU, 0.001s wall-clock]
     """
-    Count those variables that have an axiom_layer >= 0
-    """
+    pattern = re.compile(r'^(.+)(\.\.\.|:) \[(.+)s CPU, .+s wall-clock\]$')
+    for line in content.splitlines():
+        if line.startswith('Done!'):
+            break
+        match = pattern.match(line)
+        if match:
+            section = match.group(1).lower().replace(' ', '_')
+            props['translator_time_' + section] = float(match.group(3))
+
+
+def _get_var_descriptions(content):
+    """Returns a list of (var_name, domain_size, axiom_layer) tuples."""
     regex = re.compile(r'begin_variables\n\d+\n(.+)end_variables', re.M | re.S)
     match = regex.search(content)
     if not match:
+        return []
+    # var_descriptions looks like ['var0 7 -1', 'var1 4 -1', 'var2 4 -1']
+    var_descriptions = [var.split() for var in match.group(1).splitlines()]
+    return [(name, int(size), int(layer))
+            for name, size, layer in var_descriptions]
+
+
+def _get_derived_vars(content):
+    """Count those variables that have an axiom_layer >= 0."""
+    var_descriptions = _get_var_descriptions(content)
+    if not var_descriptions:
         logging.error('Number of derived vars could not be found')
-        return {}
-    """
-    var_descriptions looks like
-    ['var0 7 -1', 'var1 4 -1', 'var2 4 -1', 'var3 3 -1']
-    """
-    var_descriptions = match.group(1).splitlines()
-    derived_vars = 0
-    for var in var_descriptions:
-        var_name, domain_size, axiom_layer = var.split()
-        if int(axiom_layer) >= 0:
-            derived_vars += 1
-    return derived_vars
+        return None
+    return len([name for name, size, layer in var_descriptions if layer >= 0])
 
 
-def translator_derived_vars(content, old_props):
-    return {'translator_derived_vars': get_derived_vars(content)}
+def translator_derived_vars(content, props):
+    props.setdefault('translator_derived_vars', _get_derived_vars(content))
 
 
-def preprocessor_derived_vars(content, old_props):
-    return {'preprocessor_derived_vars': get_derived_vars(content)}
+def preprocessor_derived_vars(content, props):
+    props.setdefault('preprocessor_derived_vars', _get_derived_vars(content))
 
 
-def get_facts(content):
-    pattern = r'begin_variables\n\d+\n(.+)end_variables'
-    vars_regex = re.compile(pattern, re.M | re.S)
-    match = vars_regex.search(content)
-    if not match:
+def _get_facts(content):
+    var_descriptions = _get_var_descriptions(content)
+    if not var_descriptions:
         logging.error('Number of facts could not be found')
-        return {}
-    """
-    var_descriptions looks like
-    ['var0 7 -1', 'var1 4 -1', 'var2 4 -1', 'var3 3 -1']
-    """
-    var_descriptions = match.group(1).splitlines()
-    total_domain_size = 0
-    for var in var_descriptions:
-        var_name, domain_size, axiom_layer = var.split()
-        total_domain_size += int(domain_size)
-    return total_domain_size
+        return None
+    return sum(size for name, size, layer in var_descriptions)
 
 
-def translator_facts(content, old_props):
-    return {'translator_facts': get_facts(content)}
+def translator_facts(content, props):
+    props.setdefault('translator_facts', _get_facts(content))
 
 
-def preprocessor_facts(content, old_props):
-    return {'preprocessor_facts': get_facts(content)}
-
-
-def get_axioms(content):
-    """
-    If |axioms| > 0:  ...end_operator\nAXIOMS\nbegin_rule...
-    If |axioms| == 0: ...end_operator\n0
-    """
-    regex = re.compile(r'end_operator\n(\d+)\nbegin_rule', re.M | re.S)
-    match = regex.search(content)
-    if not match:
-        # make sure we have a valid file here
-        regex = re.compile(r'end_operator\n(\d+)', re.M | re.S)
-        match = regex.search(content)
-
-        if match is None:
-            # Some mystery problems don't have any operators
-            assert 'begin_rule' not in content, content
-            return 0
-        else:
-            assert match.group(1) == '0'
-    axioms = int(match.group(1))
-    return axioms
-
-
-def translator_axioms(content, old_props):
-    return {'translator_axioms': get_axioms(content)}
-
-
-def preprocessor_axioms(content, old_props):
-    return {'preprocessor_axioms': get_axioms(content)}
-
-
-def cg_arcs(content, old_props):
-    """
-    Sums up the number of outgoing arcs for each vertex
-    """
-    regex = re.compile(r'begin_CG\n(.+)end_CG', re.M | re.S)
-    match = regex.search(content)
-    if not match:
-        logging.error('Number of arcs could not be determined')
-        return {}
-    # cg looks like ['6', '1 16', '2 16', '3 8', '4 8', '5 8', '6 8', '4', ...]
-    cg = match.group(1).splitlines()
-    arcs = 0
-    for line in cg:
-        parts = line.split()
-        parts = map(str.strip, parts)
-        parts = filter(bool, parts)
-        if len(parts) == 1:
-            # We have a line containing the number of arcs for one node
-            arcs += int(parts[0])
-    return {'preprocessor_cg_arcs': arcs}
+def preprocessor_facts(content, props):
+    props.setdefault('preprocessor_facts', _get_facts(content))
 
 
 def get_problem_size(content):
     """
     Total problem size can be measured as the total number of tokens in the
-    output.sas/output file (sum(len(line.split()) for line in lines)).
+    output.sas/output file.
     """
-    return sum([len(line.split()) for line in content.splitlines()])
+    return len(content.split())
 
 
-def translator_problem_size(content, old_props):
-    return {'translator_problem_size': get_problem_size(content)}
+def translator_problem_size(content, props):
+    props['translator_problem_size'] = get_problem_size(content)
 
 
-def preprocessor_problem_size(content, old_props):
-    return {'preprocessor_problem_size': get_problem_size(content)}
+def preprocessor_problem_size(content, props):
+    props['preprocessor_problem_size'] = get_problem_size(content)
 
 
-def translator_invariant_groups_total_size(content, old_props):
+def translator_mutex_groups_total_size(content, props):
     """
-    Total invariant group sizes after translating
+    Total mutex group sizes after translating
     (sum over all numbers that follow a "group" line in the "all.groups" file)
     """
     groups = re.findall(r'group\n(\d+)', content, re.M | re.S)
-    total = sum(map(int, groups))
-    return {'translator_invariant_groups_total_size': total}
+    props['translator_mutex_groups_total_size'] = sum(map(int, groups))
 
 
 # Search functions ------------------------------------------------------------
 
-def completely_explored(content, old_props):
-    new_props = {}
-    if 'Completely explored state space -- no solution!' in content:
-        new_props['completely_explored'] = True
-    return new_props
+def _get_states_pattern(attribute, name):
+    return (attribute, re.compile(r'%s (\d+) state\(s\)\.' % name), int)
 
 
-def get_status(content, old_props):
-    new_props = {}
-    if 'does not support' in content:
-        new_props['status'] = 'unsupported'
-    elif 'plan_length' in old_props or 'cost' in old_props:
-        new_props['status'] = 'ok'
-    elif 'completely_explored' in old_props:
-        new_props['status'] = 'failure'
+ITERATIVE_PATTERNS = [
+    ('cost', re.compile(r'Plan cost: (.+)'), int),
+    _get_states_pattern('dead_ends', 'Dead ends:'),
+    _get_states_pattern('evaluations', 'Evaluated'),
+    _get_states_pattern('expansions', 'Expanded'),
+    _get_states_pattern('generated', 'Generated'),
+    # We exclude lines like "Initial state h value: 1147184/1703241." that stem
+    # from multi-heuristic search.
+    ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
+    ('plan_length', re.compile(r'Plan length: (\d+)'), int),
+    # We cannot include " \[t=.+s\]" in the regex, because older versions don't
+    # have this information in the log.
+    ('search_time', re.compile(r'Actual search time: (.+?)s'), float)
+    ]
+
+CUMULATIVE_PATTERNS = [
+    # This time we parse the cumulative values
+    _get_states_pattern('dead_ends', 'Dead ends:'),
+    _get_states_pattern('evaluations', 'Evaluated'),
+    _get_states_pattern('expansions', 'Expanded'),
+    _get_states_pattern('generated', 'Generated'),
+    ('search_time', re.compile(r'^Search time: (.+)s$'), float),
+    ('total_time', re.compile(r'^Total time: (.+)s$'), float),
+    ('memory', re.compile(r'Peak memory: (.+) KB'), int),
+    # For iterated searches we discard any h values. Here we will not find
+    # anything before the "cumulative" line and stop the search. For single
+    # searches we will find the h value if it isn't a multi-heuristic search.
+    ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
+    ]
+
+
+def get_iterative_results(content, props):
+    """
+    In iterative search some attributes like plan cost can have multiple
+    values, i.e. one value for each iterative search. We save those values in
+    lists.
+    """
+    values = defaultdict(list)
+
+    for line in content.splitlines():
+        # At the end of iterative search some statistics are printed and we do
+        # not want to parse those here.
+        if line == 'Cumulative statistics:':
+            break
+        for name, pattern, cast in ITERATIVE_PATTERNS:
+            match = pattern.search(line)
+            if not match:
+                continue
+            values[name].append(cast(match.group(1)))
+            # We can break here, because each line contains only one value
+            break
+
+    # After iterative search completes there is another line starting with
+    # "Actual search time" that just states the cumulative search time.
+    # In order to let all lists have the same length, we omit that value here.
+    if len(values['search_time']) > len(values['expansions']):
+        values['search_time'].pop()
+
+    # Check that some lists have the same length
+    def same_length(group):
+        return len(set(len(x) for x in group)) == 1
+
+    group1 = ('cost', 'plan_length')
+    group2 = ('expansions', 'evaluations', 'generated', 'search_time')
+    assert same_length(values[x] for x in group1), values
+    assert same_length(values[x] for x in group2), values
+
+    for name, items in values.items():
+        props[name + '_all'] = items
+
+    for attr in ['cost', 'plan_length']:
+        if values[attr]:
+            props[attr] = min(values[attr])
+
+
+def get_cumulative_results(content, props):
+    """
+    Some cumulative results are printed at the end of the logfile. We revert
+    the content to make a search for those values much faster. We would have to
+    convert the content anyways, because there's no real telling if those
+    values talk about a single or a cumulative result. If we start parsing at
+    the bottom of the file we know that the values are the cumulative ones.
+    """
+    reverse_content = list(reversed(content.splitlines()))
+    for name, pattern, cast in CUMULATIVE_PATTERNS:
+        for line in reverse_content:
+            # There will be no cumulative values above this line
+            if line == 'Cumulative statistics:':
+                break
+            match = pattern.search(line)
+            if not match:
+                continue
+            props[name] = cast(match.group(1))
+
+
+def set_search_time(content, props):
+    """
+    If iterative search has accumulated single search times, but the total
+    search time was not written (due to a possible timeout for example), we
+    set search_time to be the sum of the single search times.
+    """
+    if 'search_time' not in props:
+        if 'search_time_all' in props:
+            props['search_time'] = math.fsum(props['search_time_all'])
+
+
+def completely_explored(content, props):
+    props['completely_explored'] = ('Completely explored state space -- '
+                                    'no solution!' in content)
+
+
+def get_status(content, props):
+    if 'plan_length' in props or 'cost' in props:
+        props['status'] = 'ok'
+    elif props.get('completely_explored', False):
+        props['status'] = 'failure'
+    elif 'does not support' in content:
+        props['status'] = 'unsupported'
     else:
-        new_props['status'] = 'unsolved'
-    return new_props
+        props['status'] = 'unsolved'
 
 
-def coverage(content, old_props):
-    new_props = {}
-    if 'plan_length' in old_props or 'cost' in old_props:
-        new_props['coverage'] = 1
-    else:
-        new_props['coverage'] = 0
-    return new_props
+def coverage(content, props):
+    props['coverage'] = int('plan_length' in props or 'cost' in props)
 
 
-def check_memory(content, old_props):
+def check_memory(content, props):
     """
     Set "memory" to the max value if it was exceeded and "-1 KB" was reported
     """
-    new_props = {}
-    memory = old_props.get('memory')
-    memory_limit = old_props.get('memory_limit')
+    memory = props.get('memory')
+    memory_limit = props.get('memory_limit')
     if memory == -1 and memory_limit:
-        new_props['memory'] = memory_limit
-    return new_props
+        props['memory'] = memory_limit
 
 
-def scores(content, old_props):
+def scores(content, props):
     """
     Some reported results are measured via scores from the
     range 0-1, where best possible performance in a task is
@@ -229,73 +273,49 @@ def scores(content, old_props):
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
         return round(score, 4)
 
-    return {'score_expansions': log_score(old_props.get('expansions'),
+    props.update({'score_expansions': log_score(props.get('expansions'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
-            'score_evaluations': log_score(old_props.get('evaluations'),
+            'score_evaluations': log_score(props.get('evaluations'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
-            'score_total_time': log_score(old_props.get('total_time'),
+            'score_total_time': log_score(props.get('total_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
-            'score_search_time': log_score(old_props.get('search_time'),
+            'score_search_time': log_score(props.get('search_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
-            }
+           })
 
 
-def check_min_values(content, old_props):
+def check_min_values(content, props):
     """
     Ensure that times are at least 0.1s if they are present in log
     """
-    new_props = {}
     for time in ['search_time', 'total_time']:
-        sec = old_props.get(time, None)
+        sec = props.get(time, None)
         if sec is not None:
             sec = max(sec, 0.1)
-            new_props[time] = sec
-    return new_props
-
-
-def validate(content, old_props):
-    """
-    Scan the returncode of the postprocess command
-    Count everything that is not validated as invalid
-    """
-    return {"plan_valid": int('Plan valid' in content)}
+            props[time] = sec
 
 # -----------------------------------------------------------------------------
 
 
 def add_preprocess_parsing(eval):
-    """
-    Add some preprocess specific parsing:
+    """Add some preprocess specific parsing"""
 
-    TODO: translator time
-    """
-    #eval.add_pattern('translator_vars', r'begin_variables\n(\d+)',
-    #                 file='output.sas', type=int, flags='M')
-    #eval.add_pattern('translator_ops', r'end_goal\n(\d+)', file='output.sas',
-    #                 type=int, flags='M')
+    # TODO: Set required to True
+    #eval.add_pattern('translate_error', r'translate_error = (\d)',
+    #                 file='preprocess-properties', type=int, required=False)
+    #eval.add_pattern('preprocess_error', r'preprocess_error = (\d)',
+    #                 file='preprocess-properties', type=int, required=False)
 
-    #eval.add_pattern('preprocessor_vars', r'begin_variables\n(\d+)',
-    #                 file='output', type=int, flags='M')
-    #eval.add_pattern('preprocessor_ops', r'end_goal\n(\d+)', file='output',
-    #                 type=int, flags='M')
+    # Number of mutex groups (second line in the "all.groups" file)
+    # The file starts with "begin_groups\n7\ngroup"
+    eval.add_pattern('translator_mutex_groups',
+                     r'begin_groups\n(\d+)\ngroup', file='all.groups',
+                     type=int, flags='MS')
 
     # Preprocessor output:
     # 19 variables of 19 necessary
     # 2384 of 2384 operators necessary.
     # 0 of 0 axiom rules necessary
-
-    # What does "rules" stand for?
-    #eval.add_pattern('rules', r'Generated (\d+) rules', type=int)
-
-    # Number of invariant groups (second line in the "all.groups" file)
-    # The file starts with "begin_groups\n7\ngroup"
-    #eval.add_pattern('translator_invariant_groups', r'begin_groups\n(\d+)\n',
-    #                    file='all.groups', type=int, flags='MS')
-    eval.add_pattern('translator_invariant_groups',
-                     r'group\n(\d+)\nbegin_groups', file='all.groups',
-                     type=int, flags='MS')
-
-    # number of variables
     eval.add_multipattern([(1, 'preprocessor_vars', int),
                           (2, 'translator_vars', int)],
                           r'(\d+) variables of (\d+) necessary')
@@ -306,41 +326,17 @@ def add_preprocess_parsing(eval):
                            (2, 'translator_axioms', int)],
                            r'(\d+) of (\d+) axiom rules necessary')
 
-    # translator time
-
-    # all detailed translator timings (lines of the form "XXX.YYYs CPU")
-    sections = [
-        'Parsing', 'Normalizing task', 'Generating Datalog program',
-        'Normalizing Datalog program', 'Preparing model', 'Computing model',
-        'Completing instantiation', 'Instantiating',
-        #'Finding invariants',
-        'Checking invariant weight', 'Instantiating groups',
-        'Collecting mutex groups', 'Choosing groups',
-        'Building translation key', 'Computing fact groups',
-        'Building STRIPS to SAS dictionary',
-        'Building dictionary for full mutex groups', 'Simplifying axioms',
-        'Processing axioms', 'Translating task', 'Building mutex information',
-        'Detecting unreachable propositions', 'Writing translation key',
-        'Writing mutex key', 'Writing output', 'Done!']
-    for sec in sections:
-        attribute = 'translator_time_' + sec.lower()
-        for orig, repl in [(' ', '_'), ('!', '')]:
-            attribute = attribute.replace(orig, repl)
-        eval.add_pattern(attribute, r'%s.* \[(.+)s CPU' % sec, type=float)
-
-    """
-    the numbers from the following lines of translator output:
-        170 relevant atoms
-        141 auxiliary atoms
-        311 final queue length
-        364 total queue pushes
-        13 uncovered facts
-        0 implied effects removed
-        0 effect conditions simplified
-        0 implied preconditions added
-        0 operators removed
-        38 propositions removed
-    """
+    # Parse the numbers from the following lines of translator output:
+    #    170 relevant atoms
+    #    141 auxiliary atoms
+    #    311 final queue length
+    #    364 total queue pushes
+    #    13 uncovered facts
+    #    0 implied effects removed
+    #    0 effect conditions simplified
+    #    0 implied preconditions added
+    #    0 operators removed
+    #    38 propositions removed
     translator_values = [
         'relevant atoms', 'auxiliary atoms', 'final queue length',
         'total queue pushes', 'uncovered facts', 'implied effects removed',
@@ -352,59 +348,39 @@ def add_preprocess_parsing(eval):
 
 
 def add_preprocess_functions(eval):
-    eval.add_function(translator_error)
-    eval.add_function(preprocessor_error)
+    eval.add_function(parse_translator_timestamps)
 
     eval.add_function(translator_facts, file='output.sas')
     eval.add_function(preprocessor_facts, file='output')
 
-    #eval.add_function(translator_axioms, file='output.sas')
-    #eval.add_function(preprocessor_axioms, file='output')
-
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
-
-    #eval.add_function(cg_arcs, file='output')
 
     eval.add_function(translator_problem_size, file='output.sas')
     eval.add_function(preprocessor_problem_size, file='output')
 
-    # Total invariant group sizes after translating
+    # Total mutex group sizes after translating
     # (sum over all numbers following a "group" line in the "all.groups" file)
-    eval.add_function(translator_invariant_groups_total_size,
-                      file='all.groups')
+    eval.add_function(translator_mutex_groups_total_size, file='all.groups')
 
 
 def add_search_parsing(eval):
-    #eval.add_key_value_pattern('run_start_time')
-    eval.add_pattern('initial_h_value', r'Initial state h value: (\d+)\.',
-                     type=int, required=False)
-    eval.add_pattern('plan_length', r'Plan length: (\d+)', type=int,
+    eval.add_pattern('landmarks', r'Discovered (\d+?) landmarks', type=int,
                      required=False)
-    eval.add_pattern('expansions', r'Expanded (\d+)', type=int, required=False)
-    eval.add_pattern('evaluations', r'Evaluated (\d+)', type=int,
-                     required=False)
-    eval.add_pattern('generated', r'Generated (\d+) state', type=int,
-                     required=False)
-    eval.add_pattern('search_time', r'^Search time: (.+)s', type=float,
-                     required=False, flags='MI')
-    eval.add_pattern('total_time', r'Total time: (.+)s', type=float,
-                     required=False)
-    eval.add_pattern('memory', r'Peak memory: (.+) KB', type=int,
-                     required=False)
-    eval.add_pattern('cost', r'Plan cost: (.+)', type=int, required=False)
-    eval.add_pattern('pdb_time', r'PDB construction time: (.+)s', type=float, required=False)
-    eval.add_pattern('dead_ends', r'Dead ends: (.+) state\(s\)\.', type=int,
+    eval.add_pattern('landmarks_generation_time',
+                     r'Landmarks generation time: (.+)s', type=float,
                      required=False)
 
 
 def add_search_functions(eval):
     #eval.add_function(completely_explored)
-    eval.add_function(get_status)
+    eval.add_function(get_iterative_results)
+    eval.add_function(get_cumulative_results)
+    eval.add_function(set_search_time)
     eval.add_function(coverage)
+    eval.add_function(get_status)
     eval.add_function(scores)
     eval.add_function(check_memory)
-    eval.add_function(validate)
 
 
 def build_fetcher(parser=FetchOptionParser()):
@@ -415,9 +391,16 @@ def build_fetcher(parser=FetchOptionParser()):
 
     eval = Fetcher(parser)
 
+    # Do not parse preprocess files if it has been disabled on the commandline
     if not eval.no_preprocess:
-        add_preprocess_parsing(eval)
-        add_preprocess_functions(eval)
+        if eval.exp_props.get('compact', False):
+            # For compact experiments the preprocess files do not reside in the
+            # run's directory so we can't parse them
+            logging.info('You are parsing a compact experiment, so preprocess '
+                         'files will not be parsed')
+        else:
+            add_preprocess_parsing(eval)
+            add_preprocess_functions(eval)
     if not eval.no_search:
         add_search_parsing(eval)
         add_search_functions(eval)
@@ -430,4 +413,5 @@ def build_fetcher(parser=FetchOptionParser()):
 
 if __name__ == '__main__':
     fetcher = build_fetcher()
-    fetcher.fetch()
+    with tools.timing('Parse files'):
+        fetcher.fetch()

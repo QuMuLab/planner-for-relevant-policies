@@ -29,8 +29,9 @@ class Domain(object):
         self.domain = domain
         self.directory = os.path.join(BENCHMARKS_DIR, domain)
         problems = os.listdir(self.directory)
-        problems = [p for p in problems if "domain" not in p
-                    and not p.startswith(".")]
+        problems = tools.natural_sort([p for p in problems
+                                       if "domain" not in p and
+                                          not p.startswith(".")])
         tools.natural_sort(problems)
         self.problems = [Problem(domain, problem) for problem in problems]
     def __str__(self):
