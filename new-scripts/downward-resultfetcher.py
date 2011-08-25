@@ -305,10 +305,13 @@ def add_preprocess_parsing(eval):
     #eval.add_pattern('preprocess_error', r'preprocess_error = (\d)',
     #                 file='preprocess-properties', type=int, required=False)
 
-    # Parse the preprocessor output. We keep this code for older revisions:
+    # Parse the preprocessor output. We need to parse the translator values
+    # from the preprocessor output for older revisions. In newer revisions the
+    # values are overwritten by values from the translator output.
+    # The preprocessor log looks like:
     # 19 variables of 19 necessary
     # 2384 of 2384 operators necessary.
-    # 0 of 0 axiom rules necessary
+    # 0 of 0 axiom rules necessary.
     eval.add_multipattern([(1, 'preprocessor_variables', int),
                           (2, 'translator_variables', int)],
                           r'(\d+) variables of (\d+) necessary')
