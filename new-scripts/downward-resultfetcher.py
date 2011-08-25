@@ -132,6 +132,7 @@ ITERATIVE_PATTERNS = [
     ('search_time', re.compile(r'Actual search time: (.+?)s'), float)
     ]
 
+
 CUMULATIVE_PATTERNS = [
     # This time we parse the cumulative values
     _get_states_pattern('dead_ends', 'Dead ends:'),
