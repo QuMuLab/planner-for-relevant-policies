@@ -14,7 +14,7 @@ def make_report(params):
 
 for config in configs:
     for res in ['domain', 'problem']:
-        params = ['./downward-reports.py', 'exp-js-issue102-eval/',
+        params = ['./downward-reports.py', 'exp-js-102-eval/',
                   '--filter', 'config:contains:%s' % config, '--outfile',
                   'reports/issue102-abs-%s-%s.html' % (config, res[0]),
                   '--res', res]
