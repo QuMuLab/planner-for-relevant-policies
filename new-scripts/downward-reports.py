@@ -19,8 +19,9 @@ from reports import Report, ReportArgParser, Table
 
 
 REPORT_TYPES = {'abs': 'AbsoluteReport',
-                'rel': 'RelativeReport',
                 'any': 'AnyAttributeReport',
+                'iter': 'IterativeReport',
+                'rel': 'RelativeReport',
                 'scatter': 'ScatterPlotReport',
                 'suite': 'SuiteReport'
                 }
@@ -295,7 +296,7 @@ class AnyAttributeReport(PlanningReport):
     | 20               | 21               | 17               |
     """
     def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
-        parser.set_defaults(attributes='search_time')
+        parser.set_defaults(commandline_attributes=['search_time'])
         parser.add_argument('--min-value', type=int, default=0)
         parser.add_argument('--max-value', type=int, default=1800)
         parser.add_argument('--step', type=int, default=5)
@@ -317,6 +318,30 @@ class AnyAttributeReport(PlanningReport):
                                      self.step):
                 table.add_cell(str(time_limit), config,
                     len(group.filtered(lambda di: di[attribute] <= time_limit)))
+        return table
+
+
+class IterativeReport(AbsoluteReport):
+    def __init__(self, parser=ReportArgParser(parents=[report_type_parser])):
+        parser.set_defaults(resolution='problem')
+        AbsoluteReport.__init__(self, parser=parser)
+        assert self.resolution == 'problem'
+        if not self.commandline_attributes:
+            self.attributes = self._get_iterative_attributes()
+
+    def _get_iterative_attributes(self):
+        return [attr for attr in self.all_attributes if attr.endswith('_all')]
+
+    def _get_table(self, attribute):
+        table = AbsoluteReport._get_table(self, attribute)
+
+        # Turn all lists of values into comma separated strings
+        for row in table.rows:
+            for col in table.cols:
+                table[row][col] = ', '.join(str(val) for val in table[row][col])
+
+        table.highlight = False
+        table.summary_funcs = []
         return table
 
 

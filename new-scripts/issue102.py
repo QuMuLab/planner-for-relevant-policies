@@ -15,6 +15,7 @@ def change_makefile(makefile_path, setting, replacements):
     with open(makefile_path, 'w') as f:
         f.write(makefile)
 
+
 def build_makefile_exp(settings):
     """Make sure that the replacements are idempotent."""
     # We use "tip" here to have a new folder be created each time

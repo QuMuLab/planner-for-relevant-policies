@@ -53,7 +53,7 @@ class ReportArgParser(tools.ArgParser):
                     'in %s.' % tools.REPORTS_DIR)
 
         self.add_argument('-a', '--attributes', type=tools.csv,
-                    metavar='ATTR',
+                    metavar='ATTR', dest='commandline_attributes',
                     help='the analyzed attributes (e.g. "expanded"). '
                     'If omitted, use all found numerical attributes')
 
@@ -108,8 +108,9 @@ class Report(object):
             print '\nAvailable attributes: %s' % self.all_attributes
             sys.exit()
 
+        self.attributes = self.commandline_attributes
         if not self.attributes:
-            self.attributes = self.get_numerical_attributes()
+            self.attributes = self._get_numerical_attributes()
         else:
             # Make sure that all selected attributes are present in the dataset
             not_found = set(self.attributes) - set(self.all_attributes)
@@ -133,7 +134,7 @@ class Report(object):
             self.name_parts.append('+'.join([f.replace(':', '_')
                                              for f in self.filters]))
 
-    def get_numerical_attributes(self):
+    def _get_numerical_attributes(self):
         def is_numerical(attribute):
             for val in self.data.key(attribute)[0]:
                 if val is missing:
