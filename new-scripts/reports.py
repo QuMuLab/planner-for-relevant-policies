@@ -28,7 +28,7 @@ def avg(values):
     >>> avg([20, 30, 70])
     40.0
     """
-    return round(math.fsum(values, 0.0) / len(values), 4)
+    return round(math.fsum(values) / len(values), 4)
 
 
 def gm(values):
