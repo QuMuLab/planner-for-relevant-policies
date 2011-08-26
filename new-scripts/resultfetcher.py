@@ -257,7 +257,7 @@ class Fetcher(object):
                 print '*' * 60
                 props.write(sys.stdout)
                 print '*' * 60
-        return '-'.join(id), props.dict()
+        return '-'.join(id), props
 
     def fetch(self):
         total_dirs = self.exp_props.get('runs')
