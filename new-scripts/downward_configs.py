@@ -108,15 +108,19 @@ blind = """\
 """
 
 oa10000 = """\
---search "astar(mas(max_states=10000))"\
+--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=10000)))"\
 """
 
 oa50000 = """\
---search "astar(mas())"\
+--search "astar(merge_and_shrink())"\
+"""
+
+oa100000 = """\
+--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=100000)))"\
 """
 
 oa200000 = """\
---search "astar(mas(max_states=200000))"\
+--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=200000)))"\
 """
 
 pdb = """\
@@ -201,9 +205,9 @@ def ipc_optimal():
         ("bjolp", lmopt_rhw_hm1),
         ("lmopt_rhw", lmopt_rhw),
         ("lmopt_hm1", lmopt_hm1),
-        ("mas10000", "--search 'astar(mas(max_states=10000))'"),
-        ("mas50000", "--search 'astar(mas(max_states=50000))'"),
-        ("mas100000", "--search 'astar(mas(max_states=100000))'"),
+        ("mas10000", '--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=10000)))"'),
+        ("mas50000", '--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=50000)))"'),
+        ("mas100000", '--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=100000)))"'),
         ]
 
 
@@ -243,8 +247,8 @@ def alternation_configs():
 
 def raz_ipc():
     return [
-        ("mas-1", "--search 'astar(mas(max_states=1,merge_strategy=merge_linear_reverse_level,shrink_strategy=shrink_bisimulation(greedy=true,memory_limit=false)))'"),
-        ("mas-2", "--search 'astar(mas(max_states=200000,merge_strategy=merge_linear_reverse_level,shrink_strategy=shrink_dfp(enable_greedy_bisimulation)))'"),
+        ("mas-1", "--search 'astar(merge_and_shrink(merge_strategy=merge_linear_reverse_level,shrink_strategy=shrink_bisimulation(max_states=infinity,threshold=1,greedy=true,initialize_by_h=false,group_by_h=false)))'"),
+        ("mas-2", "--search 'astar(merge_and_shrink(merge_strategy=merge_linear_reverse_level,shrink_strategy=shrink_bisimulation(max_states=200000,greedy=false,initialize_by_h=true,group_by_h=true)))'"),
         ]
 
 
