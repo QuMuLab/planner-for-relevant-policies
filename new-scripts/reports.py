@@ -13,6 +13,7 @@ import cPickle
 import hashlib
 import subprocess
 import operator
+import math
 from collections import defaultdict
 
 import tools
@@ -24,21 +25,21 @@ from external.datasets import missing
 def avg(values):
     """Computes the arithmetic mean of a list of numbers.
 
-    >>> print avg([20, 30, 70])
+    >>> avg([20, 30, 70])
     40.0
     """
-    return round(sum(values, 0.0) / len(values), 2)
+    return round(math.fsum(values, 0.0) / len(values), 4)
 
 
 def gm(values):
     """Computes the geometric mean of a list of numbers.
 
-    >>> print gm([2, 8])
+    >>> gm([2, 8])
     4.0
     """
     assert len(values) >= 1
     exp = 1.0 / len(values)
-    return round(tools.prod([val ** exp for val in values]), 2)
+    return round(tools.prod([val ** exp for val in values]), 4)
 
 
 class ReportArgParser(tools.ArgParser):

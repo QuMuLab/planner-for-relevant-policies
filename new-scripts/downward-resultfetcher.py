@@ -271,7 +271,7 @@ def scores(content, props):
         raw_score = math.log(value) - math.log(max_bound)
         best_raw_score = math.log(min_bound) - math.log(max_bound)
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
-        return round(score, 4)
+        return round(score * 100, 2)
 
     props.update({'score_expansions': log_score(props.get('expansions'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
