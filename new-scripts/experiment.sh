@@ -20,7 +20,16 @@ function run_experiment() {
     if [[ "$EXPTYPE" == gkigrid ]]; then
         pushd .
         cd $1
-        qsub $1.q
+        if [ -e already-submitted ]; then
+            # file exists
+            echo "Experiment has already been submitted once. \
+Delete the file 'already-submitted' or submit it \
+manually if you know what you're doing."
+        else
+            qsub $1.q
+            # Do not submit an experiment more than once
+            touch already-submitted
+        fi
         popd
     else
         ./$1/run
@@ -44,6 +53,12 @@ if [[ -z $REPORTATTRS ]]; then
     REPORTATTRS=""
 fi
 
+# Support specifying an the module that is used for experiment creation.
+# This is useful for the issue*.py scripts.
+if [[ -z $EXPMODULE ]]; then
+    EXPMODULE=downward_experiments.py
+fi
+
 ## You can set EXPNAME manually or it will be derived from the
 ## basename of the script that called this one.
 
@@ -65,13 +80,13 @@ fi
 
 
 if [[ "$PHASE" == 1 ]]; then
-    ./downward_experiments.py --preprocess -s $SUITE --path $EXPNAME $EXPTYPEOPT
+    ./$EXPMODULE --preprocess -s $SUITE --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 2 ]]; then
     run_experiment $EXPNAME-p
 elif [[ "$PHASE" == 3 ]]; then
     ./resultfetcher.py $EXPNAME-p
 elif [[ "$PHASE" == 4 ]]; then
-    ./downward_experiments.py -s $SUITE -c $CONFIGS --path $EXPNAME $EXPTYPEOPT
+    ./$EXPMODULE -s $SUITE -c $CONFIGS --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 5 ]]; then
     run_experiment $EXPNAME
 elif [[ "$PHASE" == 6 ]]; then
@@ -87,7 +102,7 @@ elif [[ "$PHASE" == 8 ]]; then
         BASEDIR=~
     fi
     echo "copying reports to .public_html -- to view, run:"
-    for REPORT in "$EXPNAME"-eval-{d,p}-abs.html; do
+    for REPORT in "$EXPNAME"-eval-abs-{d,p}.html; do
         cp "reports/$REPORT" "$BASEDIR/.public_html/"
         echo "firefox $BASEURL/$REPORT &"
     done

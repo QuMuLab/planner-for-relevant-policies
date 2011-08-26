@@ -28,6 +28,13 @@ LIMIT_PREPROCESS_MEMORY = 8192
 LIMIT_SEARCH_TIME = 1800
 LIMIT_SEARCH_MEMORY = 2048
 
+# At least one of those must be found (First is taken if many are present)
+PLANNER_BINARIES = ['downward', 'downward-debug', 'downward-profile',
+                    'release-search', 'search']
+# The following are added only if they are present
+PLANNER_HELPERS = ['downward-1', 'downward-2', 'downward-4',
+                   'dispatch', 'downward-seq-opt-fdss-1.py', 'unitcost']
+
 
 def _get_configs(planner_rev, config_list):
     """
@@ -55,8 +62,8 @@ def require_src_dirs(exp, combinations):
     import itertools
     checkouts = set(itertools.chain(*combinations))
     for checkout in checkouts:
-        exp.add_resource('SRC_%s' % checkout.rev, checkout.src_dir,
-                         'CODE-%s' % checkout.rev)
+        exp.add_resource('SRC_%s' % checkout.name, checkout.src_dir,
+                         'code-%s' % checkout.name)
 
 
 class DownwardRun(experiments.Run):
@@ -109,7 +116,7 @@ def _prepare_preprocess_run(exp, run):
                     time_limit=LIMIT_PREPROCESS_TIME,
                     mem_limit=LIMIT_PREPROCESS_MEMORY)
 
-    ext_config = '-'.join([run.translator.rev, run.preprocessor.rev])
+    ext_config = '-'.join([run.translator.name, run.preprocessor.name])
     run.set_property('config', ext_config)
     run.set_property('id', [ext_config, run.domain_name, run.problem_name])
 
@@ -117,13 +124,18 @@ def _prepare_preprocess_run(exp, run):
         run.declare_optional_output(output_file)
 
 
-def _prepare_search_run(exp, run, config_nick, config):
-    run.config_nick = config_nick
-    run.planner_config = config
+def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
+    """
+    If preprocess_dir is None we are assuming all relevant files are present
+    in the dir (output, domain.pddl, problem.pddl).
+    Else we use the absolute paths to the preprocess_dir to specify these
+    files.
 
+    In the code we use the fact that "os.path.join('', 'filename') = filename".
+    """
     run.require_resource(run.planner.shell_name)
-    run.add_command('search', [run.planner.shell_name] +
-                              shlex.split(run.planner_config), stdin='output',
+    run.add_command('search', [run.planner.shell_name] + shlex.split(config),
+                    stdin=os.path.join(preprocess_dir, 'output'),
                     time_limit=LIMIT_SEARCH_TIME,
                     mem_limit=LIMIT_SEARCH_MEMORY)
     run.declare_optional_output("sas_plan")
@@ -131,15 +143,19 @@ def _prepare_search_run(exp, run, config_nick, config):
     # Validation
     run.require_resource('VALIDATE')
     run.require_resource('DOWNWARD_VALIDATE')
-    run.add_command('validate', ['DOWNWARD_VALIDATE', 'VALIDATE'])
+    domain = os.path.join(preprocess_dir, 'domain.pddl')
+    problem = os.path.join(preprocess_dir, 'problem.pddl')
+    run.add_command('validate', ['DOWNWARD_VALIDATE', 'VALIDATE', domain,
+                                 problem])
 
-    run.set_property('commandline_config', run.planner_config)
+    run.set_property('config_nick', config_nick)
+    run.set_property('commandline_config', config)
 
     # If all three parts have the same revision don't clutter the reports
-    revs = [run.translator.rev, run.preprocessor.rev, run.planner.rev]
-    if len(set(revs)) == 1:
-        revs = [run.translator.rev]
-    ext_config = '-'.join(revs + [config_nick])
+    names = [run.translator.name, run.preprocessor.name, run.planner.name]
+    if len(set(names)) == 1:
+        names = [run.translator.name]
+    ext_config = '-'.join(names + [config_nick])
 
     run.set_property('config', ext_config)
     run.set_property('id', [ext_config, run.domain_name, run.problem_name])
@@ -153,6 +169,13 @@ class DownwardExperiment(experiments.Experiment):
                             help='build preprocessing experiment')
         parser.add_argument('--complete', action='store_true',
                             help='build complete experiment (overrides -p)')
+        compact_help = ('link to preprocessing files instead of copying them. '
+                        'Only use this option if the preprocessed files will '
+                        'NOT be changed during the experiment. This option '
+                        'only has an effect if neither --preprocess nor '
+                        '--complete are set.')
+        parser.add_argument('--compact', action='store_true',
+                            help=compact_help)
         parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
         parser.add_argument('-c', '--configs', default=[], type=tools.csv,
@@ -165,19 +188,16 @@ class DownwardExperiment(experiments.Experiment):
             logging.error('Please specify at least one planner configuration')
             sys.exit(2)
 
-        checkouts.make_checkouts(combinations)
+        # Save if this is a compact experiment i.e. preprocess files are copied
+        compact = self.compact and not self.preprocess and not self.complete
+        self.set_property('compact', compact)
+
+        checkouts.checkout(combinations)
+        checkouts.compile(combinations)
         #require_src_dirs(self, combinations)
         self.problems = downward_suites.build_suite(self.suite)
 
-        self.prepare()
         self.make_runs()
-
-    def _require_checkout(self, part):
-        self.add_resource(part.shell_name, part.binary, part.rel_dest)
-
-    def prepare(self):
-        if self.preprocess:
-            self._prepare_preprocess()
 
     def _prepare_preprocess(self):
         """
@@ -208,11 +228,12 @@ class DownwardExperiment(experiments.Experiment):
             self.end_instructions = ('Preprocess experiment has been created. '
                 'Before you can create the search experiment you have to run\n'
                 '%(run_script)s\n'
-                './resultfetcher.py %(exp_path)s' % {'run_script': self.compact_main_script_path,
-                    'exp_path': self.compact_exp_path})
+                './resultfetcher.py %(exp_path)s' %
+                {'run_script': self.compact_main_script_path,
+                 'exp_path': self.compact_exp_path})
 
-        # Set the eval directory already here, we don't want the results to land
-        # in the default testname-eval
+        # Set the eval directory already here, we don't want the results to
+        # land in the default testname-eval
         self.set_property('eval_dir', os.path.relpath(PREPROCESSED_TASKS_DIR))
 
         # We need the "output" file, not only the properties file
@@ -220,26 +241,42 @@ class DownwardExperiment(experiments.Experiment):
 
     def _prepare_translator_and_preprocessor(self, translator, preprocessor):
         # Copy the whole translate directory
-        self.add_resource(translator.shell_name + '_DIR', translator.exe_dir,
-                         translator.rel_dest)
+        self.add_resource(translator.shell_name + '_DIR', translator.bin_dir,
+                          translator.get_path_dest('translate'))
         # In order to set an environment variable, overwrite the executable
         self.add_resource(translator.shell_name,
-                         os.path.join(translator.exe_dir, 'translate.py'),
-                         os.path.join(translator.rel_dest, 'translate.py'))
-        self._require_checkout(preprocessor)
+                          translator.get_bin('translate.py'),
+                          translator.get_path_dest('translate', 'translate.py'))
+        self.add_resource(preprocessor.shell_name,
+                          preprocessor.get_bin('preprocess'),
+                          preprocessor.get_bin_dest())
 
     def _prepare_planner(self, planner):
-        self._require_checkout(planner)
-        for bin in ['downward-1', 'downward-2', 'downward-4', 'dispatch',
-                    'downward-seq-opt-fdss-1.py', 'unitcost']:
-            src_path = os.path.join(planner.exe_dir, bin)
+        # Get the planner binary
+        bin = None
+        for name in PLANNER_BINARIES:
+            path = os.path.join(planner.get_bin(name))
+            if os.path.isfile(path):
+                bin = path
+                break
+        if not bin:
+            logging.error('None of the binaries %s could be found in %s' %
+                          PLANNER_BINARIES, planner.bin_dir)
+            sys.exit(1)
+        self.add_resource(planner.shell_name, bin, planner.get_bin_dest())
+        for bin in PLANNER_HELPERS:
+            src_path = planner.get_bin(bin)
             if not os.path.isfile(src_path):
+                logging.warning('File %s could not be found. Is it required?' %
+                                src_path)
                 continue
-            code_subdir = os.path.dirname(planner.rel_dest)
-            self.add_resource('UNUSEDNAME', src_path,
-                            os.path.join(code_subdir, bin))
+            self.add_resource('NONAME', src_path, planner.get_path_dest(bin))
 
-        validate = os.path.join(planner.exe_dir, '..', 'validate')
+        # The tip changeset has the newest validator version so we use this one
+        validate = os.path.join(tools.SCRIPTS_DIR, '..', 'src', 'validate')
+        if not os.path.exists(validate):
+            logging.error('Please run ./build_all in the src directory first '
+                          'to compile the validator')
         self.add_resource('VALIDATE', validate, 'validate')
 
         downward_validate = os.path.join(tools.SCRIPTS_DIR, 'downward-validate.py')
@@ -249,11 +286,16 @@ class DownwardExperiment(experiments.Experiment):
         return _get_configs(rev, self.configs)
 
     def make_runs(self):
+        # Save the experiment stage in the properties
         if self.complete:
+            self.set_property('stage', 'complete')
             self._make_complete_runs()
         elif self.preprocess:
+            self.set_property('stage', 'preprocess')
+            self._prepare_preprocess()
             self._make_preprocess_runs()
         else:
+            self.set_property('stage', 'search')
             self._make_search_runs()
 
     def _make_preprocess_runs(self):
@@ -271,24 +313,36 @@ class DownwardExperiment(experiments.Experiment):
 
             for config_nick, config in self._get_configs(planner.rev):
                 for prob in self.problems:
-                    run = DownwardRun(self, translator, preprocessor, planner, prob)
-                    _prepare_search_run(self, run, config_nick, config)
-                    self.add_run(run)
-
                     preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
-                                    translator.rev + '-' + preprocessor.rev,
-                                    prob.domain, prob.problem)
-
+                                                  translator.name + '-' +
+                                                  preprocessor.name,
+                                                  prob.domain, prob.problem)
                     def path(filename):
                         return os.path.join(preprocess_dir, filename)
+
+                    run = DownwardRun(self, translator, preprocessor, planner, prob)
+                    self.add_run(run)
+
+                    run.set_property('preprocess_dir', preprocess_dir)
+
+                    # This resource is used by the landmarks code. We cannot
+                    # just link to it, it has to be copied.
+                    run.add_resource('ALL_GROUPS', path('all.groups'),
+                                     'all.groups', required=False)
+
+                    if self.compact:
+                        run.set_property('compact', True)
+                        _prepare_search_run(self, run, config_nick, config,
+                                            preprocess_dir)
+                        continue
+
+                    _prepare_search_run(self, run, config_nick, config)
 
                     # Add the preprocess files for later parsing
                     run.add_resource('OUTPUT', path('output'), 'output',
                                      required=False)
                     run.add_resource('TEST_GROUPS', path('test.groups'),
                                      'test.groups', required=False)
-                    run.add_resource('ALL_GROUPS', path('all.groups'),
-                                     'all.groups', required=False)
                     run.add_resource('OUTPUT_SAS', path('output.sas'),
                                      'output.sas', required=False)
                     run.add_resource('RUN_LOG', path('run.log'), 'run.log')
@@ -297,6 +351,8 @@ class DownwardExperiment(experiments.Experiment):
                                      'domain.pddl')
                     run.add_resource('PROBLEM', path('problem.pddl'),
                                      'problem.pddl')
+                    run.add_resource('PREPROCESS_PROPERTIES', path('properties'),
+                                     'preprocess-properties')
 
     def _make_complete_runs(self):
         for translator, preprocessor, planner in self.combinations:
@@ -322,8 +378,8 @@ def build_experiment(combinations):
 
 
 if __name__ == '__main__':
-    combinations = [(checkouts.TranslatorHgCheckout(rev='WORK'),
-                     checkouts.PreprocessorHgCheckout(rev='WORK'),
-                     checkouts.PlannerHgCheckout(rev='WORK'))]
+    combinations = [(checkouts.Translator(rev='WORK'),
+                     checkouts.Preprocessor(rev='WORK'),
+                     checkouts.Planner(rev='WORK'))]
 
     build_experiment(combinations)

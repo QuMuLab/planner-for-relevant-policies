@@ -107,6 +107,10 @@ blind = """\
 --search "astar(blind())"\
 """
 
+oa10000 = """\
+--search "astar(mas(max_states=10000))"\
+"""
+
 oa50000 = """\
 --search "astar(mas())"\
 """
@@ -407,34 +411,48 @@ def astar_searches():
     return [('blind', blind), ('oa50000', oa50000)]
 
 
-def arch_comp_configs():
-    return [('blind', blind), ('oa200000', oa200000), ('yY', yY),
-            ('yY_eager', yY_eager)]
-
-
-def get_old_and_new_greedy(pairs):
-    return pairs + [(nick.replace('lg', 'og'),
-        config.replace('lazy_greedy', 'old_greedy')) for nick, config in pairs]
-
-
-def issue154a():
-    return get_old_and_new_greedy([
-        ('lg_blind', '--search "lazy_greedy(blind())"'),
-        ('lg_ff', '--search "lazy_greedy(ff())"'),
-        ('lg_cea', '--search "lazy_greedy(cea())"'),
-        ('lg_ff_cea', '--search "lazy_greedy([ff(), cea()])"')])
-
-
-def issue154b():
-    return get_old_and_new_greedy([
-        ('lg_hff', '--heuristic "hff=ff()" '
-            '--search "lazy_greedy(hff, preferred=hff)"'),
-        ('lg_hcea', '--heuristic "hcea=cea()" '
-            '--search "lazy_greedy(hcea, preferred=hcea)"'),
-        ('lg_hff_hcea', '--heuristic "hff=ff()" --heuristic "hcea=cea()" '
-            '--search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"'),
-        ('lg_hlm_hff', '--heuristic "hlm,hff=lm_ff_syn(lm_rhw())" '
-            '--search "lazy_greedy([hlm, hff], preferred=[hlm, hff])"')])
+def ipc11():
+    return [
+        ('seq-sat-lama-2011-unit', """\
+--heuristic "hlm,hff=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated([\
+    lazy_greedy([hff,hlm],preferred=[hff,hlm]),\
+    lazy_wastar([hff,hlm],preferred=[hff,hlm],w=5),\
+    lazy_wastar([hff,hlm],preferred=[hff,hlm],w=3),\
+    lazy_wastar([hff,hlm],preferred=[hff,hlm],w=2),\
+    lazy_wastar([hff,hlm],preferred=[hff,hlm],w=1)],\
+    repeat_last=true,continue_on_fail=true)"\
+"""),
+        ('seq-sat-lama-2011-nonunit', """\
+--heuristic "hlm1,hff1=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=1,cost_type=1))" \
+--heuristic "hlm2,hff2=lm_ff_syn(lm_rhw(reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+--search "iterated([\
+    lazy_greedy([hff1,hlm1],preferred=[hff1,hlm1],cost_type=1,reopen_closed=false),\
+    lazy_greedy([hff2,hlm2],preferred=[hff2,hlm2],reopen_closed=false),\
+    lazy_wastar([hff2,hlm2],preferred=[hff2,hlm2],w=5),\
+    lazy_wastar([hff2,hlm2],preferred=[hff2,hlm2],w=3),\
+    lazy_wastar([hff2,hlm2],preferred=[hff2,hlm2],w=2),\
+    lazy_wastar([hff2,hlm2],preferred=[hff2,hlm2],w=1)],\
+    repeat_last=true,continue_on_fail=true)"\
+"""),
+        ('seq-opt-fd-autotune', """\
+--heuristic "hLMCut=lmcut()" \
+--heuristic "hHMax=hmax()" \
+--heuristic "hCombinedSelMax=selmax(\
+    [hLMCut,hHMax],alpha=4,classifier=0,conf_threshold=0.85,\
+    training_set=10,sample=0,uniform=true)" \
+--search "astar(hCombinedSelMax,mpd=false,pathmax=true,cost_type=0)"\
+"""),
+        ('seq-opt-selmax', """\
+--search "astar(selmax([lmcut(),lmcount(lm_merged([lm_hm(m=1),lm_rhw()]),admissible=true)],\
+                       training_set=1000),mpd=true)"\
+"""),
+        ('seq-opt-bjolp', """\
+--search "astar(lmcount(lm_merged([lm_rhw(),lm_hm(m=1)]),admissible=true),mpd=true)"\
+"""),
+        ('seq-opt-lmcut', """\
+--search "astar(lmcut())"\
+"""),]
 
 
 # Used for debugging purposes
@@ -443,6 +461,13 @@ multiple_plans = """\
 --heuristic "hadd=add()" \
 --search "iterated([lazy_greedy([hadd]),\
 lazy_wastar([hff,hlm],preferred=[hff,hlm],w=2)],\
+repeat_last=false)"\
+"""
+
+
+iterated_search = """\
+--heuristic "hadd=add()" \
+--search "iterated([lazy_greedy([hadd]),lazy_wastar([hadd])],\
 repeat_last=false)"\
 """
 

@@ -38,7 +38,7 @@ class LocalEnvironment(Environment):
 
         script = open(os.path.join(DATA_DIR, 'local-job-template.py')).read()
         for orig, new in replacements.items():
-            script = script.replace('***' + orig + '***', new)
+            script = script.replace('"""' + orig + '"""', new)
 
         filename = exp._get_abs_path('run')
 
@@ -58,7 +58,7 @@ class GkiGridEnvironment(Environment):
     def add_subparser(cls, subparsers):
         parser = subparsers.add_parser('gkigrid', help='Gkigrid experiment')
         parser.add_argument(
-            '-q', '--queue', default='athlon_core.q',
+            '-q', '--queue', default='opteron_core.q',
             help='name of the queue to use for the experiment')
         parser.add_argument(
             '--runs-per-task', type=int, default=1,
@@ -108,7 +108,7 @@ class GkiGridEnvironment(Environment):
 class ArgoEnvironment(Environment):
     @classmethod
     def add_subparser(cls, subparsers):
-        parser = subparsers.add_parser('argo', help='Argo Experiment')
+        subparsers.add_parser('argo', help='Argo Experiment')
 
     @classmethod
     def write_main_script(cls, exp):

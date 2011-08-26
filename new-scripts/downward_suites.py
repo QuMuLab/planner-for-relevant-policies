@@ -29,8 +29,9 @@ class Domain(object):
         self.domain = domain
         self.directory = os.path.join(BENCHMARKS_DIR, domain)
         problems = os.listdir(self.directory)
-        problems = [p for p in problems if "domain" not in p
-                    and not p.startswith(".")]
+        problems = tools.natural_sort([p for p in problems
+                                       if "domain" not in p and
+                                          not p.startswith(".")])
         tools.natural_sort(problems)
         self.problems = [Problem(domain, problem) for problem in problems]
     def __str__(self):
@@ -222,6 +223,16 @@ def suite_ipc08_all_strips():
     return (suite_ipc08_common() +
             suite_ipc08_opt_only_strips() +
             suite_ipc08_sat_only_strips())
+
+def suite_landmark_tests():
+    return [
+        "logistics00",
+        "blocks",
+        "sokoban-opt08-strips",
+        "parcprinter-08-strips",
+        "pipesworld-notankage",
+        "woodworking-opt08-strips",
+        ]
 
 def suite_interesting():
     # A domain is boring if all planners solve all tasks in < 1 sec.
