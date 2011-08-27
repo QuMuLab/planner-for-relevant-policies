@@ -1,0 +1,8 @@
+MatchTree ersetzt bei der Regression die Anwendung der Operatoren und 
+das Hin- und Herrechnen von Zuaenden in Indizes und zueck. sserdem sind 
+abstrakte Operatoren jetzt nur noch als Regressionsbedingung und 
+Hash-Effekt gespeichert.
+Nochmals geringe Speicherplatzoptimierung, aber haupaechlich eine 
+enorme Senkung der PDB Konstruktionsdauer.
+
+Revision: 1878:654fb98bf627

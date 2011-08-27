@@ -1,0 +1,104 @@
+von Patrik Haslum
+
+Hi again,
+
+Sorry for the delayed response (today was a public holiday, and we went
+to a beach; had to get up very early - and leave in a hurry - in the
+morning for that ;))
+
+I'll try to answer some questions in a bit more detail, in no particular
+order:
+
+A new sample (state) is taken every time a sample is asked for, i.e.,
+there is no reuse of sampled states at all. I remember we had a
+discussion about this in your coffee room this summer, and someone
+(probably you ;)) pointed out that one really should use the same set of
+samples to evaluate each "competing" PDB extension, since otherwise the
+use of a different sample set for each introduces some unnecessary
+random noise in the evaluation. (Though I think one should certainly use
+different sample sets in each local search iteration, since they do
+depend on current estimates, and perhaps also in successive "trials"
+within the same iteration.)
+
+The length of the random walk is chosen (approximately) according to a
+binomial distribution with mean at 2*h(s0), where h is the current PDB
+heuristic (I think this is the only way that sampling is influenced by
+the PDB, though). The procedure used is RandomWalk2::sample_bin (in
+random.cc). There are two "implicit" parameters (class members), called
+"irreducible" and "ergodic" (and probably misnamed), which it appears
+are both always set to true. Thus, the behaviour of the random walk
+procedure should be: At each step, pick an applicable action or no-op,
+with uniform probability (i.e., the prob. of picking a no-op depends on
+the number of applicable actions, which is probably stupid). If there is
+no applicable action (except the no-op), reset to initial state and
+continue (thus, if a reset occurs, the depth of the selected state is
+likely to be very different from the target depth).
+
+The branching factor estimate I think is done by simply keeping track of
+the summed number of applicable actions and the total number of rw steps
+taken, and dividing them. So there is no adjustment for transpositions;
+it's simply an estimate of the search tree branching factor.
+
+The statistical pruning thing works as follows: The evaluation of
+candidate extensions is divided into "trials", say NT trials of NS
+samples each. After each NS samples, we have an estimate of the
+"improvement" of each candidate (e.g., for the counting case, this is
+simply the fraction of "positive" samples, i.e., #samples where
+candidate gives a higher h-value than current PDB / NS), and a
+confidence interval on this improvement is computed. The method used for
+this is different between the counting and the weighted case. For the
+counting case, it uses "Wilson's formula" (which, honestly, I have no
+memory of what it is or why it works, but I think there was a very good
+wikipedia article on it ;) if not, let me know and I can send you the
+paper (which I also remember as being fairly understandable)). For the
+weighted case, I think the improvement is assumed to be normally
+distributed and a standard ci is calculated from that. Then, we simply
+throw away any candidate X such that there exists another candidate X'
+such that the lower bound of the ci for X' is > the upper bound of the
+ci for X. The justification for this is basically: we believe, with a
+probability of 0.95 or so, that the "true" improvement value of each
+candidate lies in its calculated ci; thus, if the lower bound of the ci
+for X' is greater than the upper bound of the ci for X, it looks very
+unlikely that the true value of X will turn out to be better than that
+of X', and since we're only interested in the candidate with the best
+(true) improvement, we don't bother with evaluating X any more. The code
+for this is in eval_extension_vec and prune_extension_vec (in pdb.cc).
+
+Anything I missed? (or any follow-on/other question...) Just let me know.
+
+Btw, does the m&s heuristic support action costs yet? Do you expect that
+it will sometime in the near (or far) future?
+
+cheers,
+			/P@trik
+
+
+Malte Helmert wrote:
+> > Hi Patrik,
+> > 
+> > as you know, some students here are implementing our pattern generation
+> > algorithm in Fast Downward, for which I have a few technical questions.
+> > 
+> > One question is how exactly the random walk works (how is the branching
+> > factor estimated? how is the length of the walk determined? Anything
+> > else? I remember something about sometimes applying a no-op, but I may
+> > be misremembering).
+> > 
+> > Another is how the statistical criterion to prune bad candidates early
+> > works exactly.
+> > 
+> > For both questions, I could look at the code myself, but it'd be nice if
+> > you could give me a pointer where to look. (Is the code downloadable
+> > from your IDA website?)
+> > 
+> > Cheers,
+> > 
+> > Malte
+
+Re: more iPDB questions.eml
+	
+Content-Type:
+	message/rfc822
+Content-Encoding:
+	7bit
+

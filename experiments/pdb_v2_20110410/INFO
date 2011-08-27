@@ -1,0 +1,5 @@
+Kanten nun nicht mehr explizit gespeichert, sondern durch 
+Regressionssuche ersetzt.
+Weniger Speicherbedarf, geringfügige Laufzeiterhöhungen
+
+Revision: 1631:e06d5f129793
