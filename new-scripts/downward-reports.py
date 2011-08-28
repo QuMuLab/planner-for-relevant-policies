@@ -44,11 +44,15 @@ class PlanningTable(Table):
             # filter out None values and return sum
             return sum(x for x in iterable if x is not None)
 
+        def avg_without_none_values(iterable):
+            # filter out None values and return sum
+            return reports.avg(x for x in iterable if x is not None)
+
         self.add_summary_function('SUM', sum_without_none_values)
         if 'score' in self.title:
             # When summarising score results from multiple domains we show
             # normalised averages so that each domain is weighed equally.
-            self.add_summary_function('AVG', reports.avg)
+            self.add_summary_function('AVG', avg_without_none_values)
 
 
 class PlanningReport(Report):
