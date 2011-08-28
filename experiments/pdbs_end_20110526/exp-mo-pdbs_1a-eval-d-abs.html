@@ -1,0 +1,2164 @@
+<?xml version="1.0"
+      encoding="UTF-8"
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>exp-mo-pdbs_1a-eval-d-abs</title>
+<meta name="generator" content="http://txt2tags.sf.net" />
+</head>
+<body>
+
+<div class="header" id="header">
+<h1>exp-mo-pdbs_1a-eval-d-abs</h1>
+<h3>2011-05-26</h3>
+</div>
+
+<div class="toc">
+
+  <ul>
+  <li><a href="#toc1">1. cost</a>
+  </li>
+  <li><a href="#toc2">2. coverage</a>
+  </li>
+  <li><a href="#toc3">3. dead_ends</a>
+  </li>
+  <li><a href="#toc4">4. evaluations</a>
+  </li>
+  <li><a href="#toc5">5. expansions</a>
+  </li>
+  <li><a href="#toc6">6. generated</a>
+  </li>
+  <li><a href="#toc7">7. initial_h_value</a>
+  </li>
+  <li><a href="#toc8">8. memory</a>
+  </li>
+  <li><a href="#toc9">9. memory_limit</a>
+  </li>
+  <li><a href="#toc10">10. plan_length</a>
+  </li>
+  <li><a href="#toc11">11. plan_valid</a>
+  </li>
+  <li><a href="#toc12">12. preprocessor_axioms</a>
+  </li>
+  <li><a href="#toc13">13. preprocessor_error</a>
+  </li>
+  <li><a href="#toc14">14. preprocessor_ops</a>
+  </li>
+  <li><a href="#toc15">15. preprocessor_problem_size</a>
+  </li>
+  <li><a href="#toc16">16. preprocessor_vars</a>
+  </li>
+  <li><a href="#toc17">17. score_evaluations</a>
+  </li>
+  <li><a href="#toc18">18. score_expansions</a>
+  </li>
+  <li><a href="#toc19">19. score_search_time</a>
+  </li>
+  <li><a href="#toc20">20. score_total_time</a>
+  </li>
+  <li><a href="#toc21">21. search_error</a>
+  </li>
+  <li><a href="#toc22">22. search_time</a>
+  </li>
+  <li><a href="#toc23">23. total_time</a>
+  </li>
+  <li><a href="#toc24">24. translator_auxiliary_atoms</a>
+  </li>
+  <li><a href="#toc25">25. translator_axioms</a>
+  </li>
+  <li><a href="#toc26">26. translator_effect_conditions_simplified</a>
+  </li>
+  <li><a href="#toc27">27. translator_error</a>
+  </li>
+  <li><a href="#toc28">28. translator_final_queue_length</a>
+  </li>
+  <li><a href="#toc29">29. translator_implied_effects_removed</a>
+  </li>
+  <li><a href="#toc30">30. translator_implied_preconditions_added</a>
+  </li>
+  <li><a href="#toc31">31. translator_invariant_groups</a>
+  </li>
+  <li><a href="#toc32">32. translator_invariant_groups_total_size</a>
+  </li>
+  <li><a href="#toc33">33. translator_operators_removed</a>
+  </li>
+  <li><a href="#toc34">34. translator_ops</a>
+  </li>
+  <li><a href="#toc35">35. translator_problem_size</a>
+  </li>
+  <li><a href="#toc36">36. translator_propositions_removed</a>
+  </li>
+  <li><a href="#toc37">37. translator_relevant_atoms</a>
+  </li>
+  <li><a href="#toc38">38. translator_time_building_dictionary_for_full_mutex_groups</a>
+  </li>
+  <li><a href="#toc39">39. translator_time_building_mutex_information</a>
+  </li>
+  <li><a href="#toc40">40. translator_time_building_strips_to_sas_dictionary</a>
+  </li>
+  <li><a href="#toc41">41. translator_time_building_translation_key</a>
+  </li>
+  <li><a href="#toc42">42. translator_time_checking_invariant_weight</a>
+  </li>
+  <li><a href="#toc43">43. translator_time_choosing_groups</a>
+  </li>
+  <li><a href="#toc44">44. translator_time_collecting_mutex_groups</a>
+  </li>
+  <li><a href="#toc45">45. translator_time_completing_instantiation</a>
+  </li>
+  <li><a href="#toc46">46. translator_time_computing_fact_groups</a>
+  </li>
+  <li><a href="#toc47">47. translator_time_computing_model</a>
+  </li>
+  <li><a href="#toc48">48. translator_time_detecting_unreachable_propositions</a>
+  </li>
+  <li><a href="#toc49">49. translator_time_done</a>
+  </li>
+  <li><a href="#toc50">50. translator_time_generating_datalog_program</a>
+  </li>
+  <li><a href="#toc51">51. translator_time_instantiating</a>
+  </li>
+  <li><a href="#toc52">52. translator_time_instantiating_groups</a>
+  </li>
+  <li><a href="#toc53">53. translator_time_normalizing_datalog_program</a>
+  </li>
+  <li><a href="#toc54">54. translator_time_normalizing_task</a>
+  </li>
+  <li><a href="#toc55">55. translator_time_parsing</a>
+  </li>
+  <li><a href="#toc56">56. translator_time_preparing_model</a>
+  </li>
+  <li><a href="#toc57">57. translator_time_processing_axioms</a>
+  </li>
+  <li><a href="#toc58">58. translator_time_simplifying_axioms</a>
+  </li>
+  <li><a href="#toc59">59. translator_time_translating_task</a>
+  </li>
+  <li><a href="#toc60">60. translator_time_writing_mutex_key</a>
+  </li>
+  <li><a href="#toc61">61. translator_time_writing_output</a>
+  </li>
+  <li><a href="#toc62">62. translator_time_writing_translation_key</a>
+  </li>
+  <li><a href="#toc63">63. translator_total_queue_pushes</a>
+  </li>
+  <li><a href="#toc64">64. translator_uncovered_facts</a>
+  </li>
+  <li><a href="#toc65">65. translator_vars</a>
+  </li>
+  <li><a href="#toc66">66. validate_error</a>
+  </li>
+  </ul>
+
+</div>
+<div class="body" id="body">
+
+<ul>
+<li>The attributes cost, expanded, expansions, generated, memory, plan_length, search_time, total_time are handled as follows:
+If in a group of configs not all configs have a value for the attribute, the concerning runs are only evaluated if "<code>--missing</code>" is set to "include" or if "<code>--missing</code>" is set to "auto" (default) and the resolution is "problem"
+</li>
+</ul>
+
+<hr class="heavy" />
+
+<a id="toc1" name="toc1"></a>
+<h1>1. cost</h1>
+
+<table border="1">
+<tr>
+<th>cost</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">415</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">847</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">85</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">82</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">1429</span></td>
+</tr>
+</table>
+
+<a id="toc2" name="toc2"></a>
+<h1>2. coverage</h1>
+
+<table border="1">
+<tr>
+<th>coverage</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">16</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">49</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">6</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">6</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">77</span></td>
+</tr>
+</table>
+
+<a id="toc3" name="toc3"></a>
+<h1>3. dead_ends</h1>
+
+<table border="1">
+<tr>
+<th>dead_ends</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">452765</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">452765</span></td>
+</tr>
+</table>
+
+<a id="toc4" name="toc4"></a>
+<h1>4. evaluations</h1>
+
+<table border="1">
+<tr>
+<th>evaluations</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">35497852</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">15014008</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">10269551</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">9229838</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">70011249</span></td>
+</tr>
+</table>
+
+<a id="toc5" name="toc5"></a>
+<h1>5. expansions</h1>
+
+<table border="1">
+<tr>
+<th>expansions</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">15920468</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">11969198</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">5337257</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">5917122</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">39144045</span></td>
+</tr>
+</table>
+
+<a id="toc6" name="toc6"></a>
+<h1>6. generated</h1>
+
+<table border="1">
+<tr>
+<th>generated</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">182225263</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">46187018</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">180154413</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">42889321</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">451456015</span></td>
+</tr>
+</table>
+
+<a id="toc7" name="toc7"></a>
+<h1>7. initial_h_value</h1>
+
+<table border="1">
+<tr>
+<th>initial_h_value</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">322</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">119</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">35</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">22</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">498</span></td>
+</tr>
+</table>
+
+<a id="toc8" name="toc8"></a>
+<h1>8. memory</h1>
+
+<table border="1">
+<tr>
+<th>memory</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">27171488</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">3528076</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">58950408</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">50792260</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">140442232</span></td>
+</tr>
+</table>
+
+<a id="toc9" name="toc9"></a>
+<h1>9. memory_limit</h1>
+
+<table border="1">
+<tr>
+<th>memory_limit</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">58720256</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">104857600</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">75497472</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">62914560</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">301989888</span></td>
+</tr>
+</table>
+
+<a id="toc10" name="toc10"></a>
+<h1>10. plan_length</h1>
+
+<table border="1">
+<tr>
+<th>plan_length</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">415</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">847</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">85</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">82</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">1429</span></td>
+</tr>
+</table>
+
+<a id="toc11" name="toc11"></a>
+<h1>11. plan_valid</h1>
+
+<table border="1">
+<tr>
+<th>plan_valid</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">16</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">49</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">6</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">6</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">77</span></td>
+</tr>
+</table>
+
+<a id="toc12" name="toc12"></a>
+<h1>12. preprocessor_axioms</h1>
+
+<table border="1">
+<tr>
+<th>preprocessor_axioms</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+</table>
+
+<a id="toc13" name="toc13"></a>
+<h1>13. preprocessor_error</h1>
+
+<table border="1">
+<tr>
+<th>preprocessor_error</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">2</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">2</span></td>
+</tr>
+</table>
+
+<a id="toc14" name="toc14"></a>
+<h1>14. preprocessor_ops</h1>
+
+<table border="1">
+<tr>
+<th>preprocessor_ops</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">6972</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">14546</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">2105036</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">281351</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">2407905</span></td>
+</tr>
+</table>
+
+<a id="toc15" name="toc15"></a>
+<h1>15. preprocessor_problem_size</h1>
+
+<table border="1">
+<tr>
+<th>preprocessor_problem_size</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">205920</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">700889</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">38488893</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">11926610</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">51322312</span></td>
+</tr>
+</table>
+
+<a id="toc16" name="toc16"></a>
+<h1>16. preprocessor_vars</h1>
+
+<table border="1">
+<tr>
+<th>preprocessor_vars</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">375</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">915</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">3019</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">3683</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">7992</span></td>
+</tr>
+</table>
+
+<a id="toc17" name="toc17"></a>
+<h1>17. score_evaluations</h1>
+
+<table border="1">
+<tr>
+<th>score_evaluations</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.22</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.72</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.07</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.14</span></td>
+</tr>
+<tr>
+<td><b>AVG</b></td>
+<td><span style="color:Gray">0.34</span></td>
+</tr>
+<tr>
+<td><b>NORMALIZED AVG</b></td>
+<td><span style="color:Gray">0.3</span></td>
+</tr>
+</table>
+
+<a id="toc18" name="toc18"></a>
+<h1>18. score_expansions</h1>
+
+<table border="1">
+<tr>
+<th>score_expansions</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.26</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.74</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.08</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.14</span></td>
+</tr>
+<tr>
+<td><b>AVG</b></td>
+<td><span style="color:Gray">0.36</span></td>
+</tr>
+<tr>
+<td><b>NORMALIZED AVG</b></td>
+<td><span style="color:Gray">0.32</span></td>
+</tr>
+</table>
+
+<a id="toc19" name="toc19"></a>
+<h1>19. score_search_time</h1>
+
+<table border="1">
+<tr>
+<th>score_search_time</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.5</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.96</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.14</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.18</span></td>
+</tr>
+<tr>
+<td><b>AVG</b></td>
+<td><span style="color:Gray">0.5</span></td>
+</tr>
+<tr>
+<td><b>NORMALIZED AVG</b></td>
+<td><span style="color:Gray">0.46</span></td>
+</tr>
+</table>
+
+<a id="toc20" name="toc20"></a>
+<h1>20. score_total_time</h1>
+
+<table border="1">
+<tr>
+<th>score_total_time</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.5</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.96</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.14</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.18</span></td>
+</tr>
+<tr>
+<td><b>AVG</b></td>
+<td><span style="color:Gray">0.5</span></td>
+</tr>
+<tr>
+<td><b>NORMALIZED AVG</b></td>
+<td><span style="color:Gray">0.46</span></td>
+</tr>
+</table>
+
+<a id="toc21" name="toc21"></a>
+<h1>21. search_error</h1>
+
+<table border="1">
+<tr>
+<th>search_error</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">12</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">1</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">25</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">24</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">62</span></td>
+</tr>
+</table>
+
+<a id="toc22" name="toc22"></a>
+<h1>22. search_time</h1>
+
+<table border="1">
+<tr>
+<th>search_time</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.62</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.17</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">1.04</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.3</span></td>
+</tr>
+<tr>
+<td><b>GM</b></td>
+<td><span style="color:Gray">0.26</span></td>
+</tr>
+</table>
+
+<a id="toc23" name="toc23"></a>
+<h1>23. total_time</h1>
+
+<table border="1">
+<tr>
+<th>total_time</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.62</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.17</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">1.04</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.3</span></td>
+</tr>
+<tr>
+<td><b>GM</b></td>
+<td><span style="color:Gray">0.27</span></td>
+</tr>
+</table>
+
+<a id="toc24" name="toc24"></a>
+<h1>24. translator_auxiliary_atoms</h1>
+
+<table border="1">
+<tr>
+<th>translator_auxiliary_atoms</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">15876</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">148592</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">599839</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">764307</span></td>
+</tr>
+</table>
+
+<a id="toc25" name="toc25"></a>
+<h1>25. translator_axioms</h1>
+
+<table border="1">
+<tr>
+<th>translator_axioms</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+</table>
+
+<a id="toc26" name="toc26"></a>
+<h1>26. translator_effect_conditions_simplified</h1>
+
+<table border="1">
+<tr>
+<th>translator_effect_conditions_simplified</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">226</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">534</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">760</span></td>
+</tr>
+</table>
+
+<a id="toc27" name="toc27"></a>
+<h1>27. translator_error</h1>
+
+<table border="1">
+<tr>
+<th>translator_error</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">2</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">2</span></td>
+</tr>
+</table>
+
+<a id="toc28" name="toc28"></a>
+<h1>28. translator_final_queue_length</h1>
+
+<table border="1">
+<tr>
+<th>translator_final_queue_length</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">29824</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">17685</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">4013038</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">905183</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">4965730</span></td>
+</tr>
+</table>
+
+<a id="toc29" name="toc29"></a>
+<h1>29. translator_implied_effects_removed</h1>
+
+<table border="1">
+<tr>
+<th>translator_implied_effects_removed</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">306</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">19935</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">20241</span></td>
+</tr>
+</table>
+
+<a id="toc30" name="toc30"></a>
+<h1>30. translator_implied_preconditions_added</h1>
+
+<table border="1">
+<tr>
+<th>translator_implied_preconditions_added</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+</table>
+
+<a id="toc31" name="toc31"></a>
+<h1>31. translator_invariant_groups</h1>
+
+<table border="1">
+<tr>
+<th>translator_invariant_groups</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">402</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">1252</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">10026</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">3683</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">15363</span></td>
+</tr>
+</table>
+
+<a id="toc32" name="toc32"></a>
+<h1>32. translator_invariant_groups_total_size</h1>
+
+<table border="1">
+<tr>
+<th>translator_invariant_groups_total_size</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">3732</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">2415</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">26665</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">18807</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">51619</span></td>
+</tr>
+</table>
+
+<a id="toc33" name="toc33"></a>
+<h1>33. translator_operators_removed</h1>
+
+<table border="1">
+<tr>
+<th>translator_operators_removed</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">306</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">19935</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">20241</span></td>
+</tr>
+</table>
+
+<a id="toc34" name="toc34"></a>
+<h1>34. translator_ops</h1>
+
+<table border="1">
+<tr>
+<th>translator_ops</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">7572</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">15220</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">2164361</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">281351</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">2468504</span></td>
+</tr>
+</table>
+
+<a id="toc35" name="toc35"></a>
+<h1>35. translator_problem_size</h1>
+
+<table border="1">
+<tr>
+<th>translator_problem_size</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">115130</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">577966</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">28699708</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">6464305</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">35857109</span></td>
+</tr>
+</table>
+
+<a id="toc36" name="toc36"></a>
+<h1>36. translator_propositions_removed</h1>
+
+<table border="1">
+<tr>
+<th>translator_propositions_removed</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">402</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">835</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">226</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">7127</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">8590</span></td>
+</tr>
+</table>
+
+<a id="toc37" name="toc37"></a>
+<h1>37. translator_relevant_atoms</h1>
+
+<table border="1">
+<tr>
+<th>translator_relevant_atoms</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">13948</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">17685</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">3864446</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">305344</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">4201423</span></td>
+</tr>
+</table>
+
+<a id="toc38" name="toc38"></a>
+<h1>38. translator_time_building_dictionary_for_full_mutex_groups</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_building_dictionary_for_full_mutex_groups</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.01</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.16</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.09</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.26</span></td>
+</tr>
+</table>
+
+<a id="toc39" name="toc39"></a>
+<h1>39. translator_time_building_mutex_information</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_building_mutex_information</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.03</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.02</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">15.31</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.18</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">15.54</span></td>
+</tr>
+</table>
+
+<a id="toc40" name="toc40"></a>
+<h1>40. translator_time_building_strips_to_sas_dictionary</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_building_strips_to_sas_dictionary</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.01</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.14</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.14</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.29</span></td>
+</tr>
+</table>
+
+<a id="toc41" name="toc41"></a>
+<h1>41. translator_time_building_translation_key</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_building_translation_key</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.01</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.03</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.12</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.06</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.22</span></td>
+</tr>
+</table>
+
+<a id="toc42" name="toc42"></a>
+<h1>42. translator_time_checking_invariant_weight</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_checking_invariant_weight</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.02</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.02</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.02</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.08</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.14</span></td>
+</tr>
+</table>
+
+<a id="toc43" name="toc43"></a>
+<h1>43. translator_time_choosing_groups</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_choosing_groups</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.03</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.03</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">7.23</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.27</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">7.56</span></td>
+</tr>
+</table>
+
+<a id="toc44" name="toc44"></a>
+<h1>44. translator_time_collecting_mutex_groups</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_collecting_mutex_groups</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.02</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.04</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.08</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.08</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.22</span></td>
+</tr>
+</table>
+
+<a id="toc45" name="toc45"></a>
+<h1>45. translator_time_completing_instantiation</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_completing_instantiation</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.78</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">6.55</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">2022.91</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">109.0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">2139.24</span></td>
+</tr>
+</table>
+
+<a id="toc46" name="toc46"></a>
+<h1>46. translator_time_computing_fact_groups</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_computing_fact_groups</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.18</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">9.22</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">7.81</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">1.53</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">18.74</span></td>
+</tr>
+</table>
+
+<a id="toc47" name="toc47"></a>
+<h1>47. translator_time_computing_model</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_computing_model</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.95</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">1.72</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">188.29</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">33.09</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">224.05</span></td>
+</tr>
+</table>
+
+<a id="toc48" name="toc48"></a>
+<h1>48. translator_time_detecting_unreachable_propositions</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_detecting_unreachable_propositions</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.13</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.54</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">30.56</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">7.1</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">38.33</span></td>
+</tr>
+</table>
+
+<a id="toc49" name="toc49"></a>
+<h1>49. translator_time_done</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_done</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">3.63</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">52.8</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">2450.98</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">219.22</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">2726.63</span></td>
+</tr>
+</table>
+
+<a id="toc50" name="toc50"></a>
+<h1>50. translator_time_generating_datalog_program</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_generating_datalog_program</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.1</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">1.47</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.19</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.19</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">1.95</span></td>
+</tr>
+</table>
+
+<a id="toc51" name="toc51"></a>
+<h1>51. translator_time_instantiating</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_instantiating</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.04</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.01</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.16</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.75</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.96</span></td>
+</tr>
+</table>
+
+<a id="toc52" name="toc52"></a>
+<h1>52. translator_time_instantiating_groups</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_instantiating_groups</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.04</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.01</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.16</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.75</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.96</span></td>
+</tr>
+</table>
+
+<a id="toc53" name="toc53"></a>
+<h1>53. translator_time_normalizing_datalog_program</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_normalizing_datalog_program</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.28</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">3.16</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.22</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.25</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">3.91</span></td>
+</tr>
+</table>
+
+<a id="toc54" name="toc54"></a>
+<h1>54. translator_time_normalizing_task</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_normalizing_task</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.01</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">1.79</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.01</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">1.81</span></td>
+</tr>
+</table>
+
+<a id="toc55" name="toc55"></a>
+<h1>55. translator_time_parsing</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_parsing</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.2</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">10.1</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.4</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.33</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">11.03</span></td>
+</tr>
+</table>
+
+<a id="toc56" name="toc56"></a>
+<h1>56. translator_time_preparing_model</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_preparing_model</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.1</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">11.97</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.21</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.09</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">12.37</span></td>
+</tr>
+</table>
+
+<a id="toc57" name="toc57"></a>
+<h1>57. translator_time_processing_axioms</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_processing_axioms</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.09</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.28</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">16.3</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">3.15</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">19.82</span></td>
+</tr>
+</table>
+
+<a id="toc58" name="toc58"></a>
+<h1>58. translator_time_simplifying_axioms</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_simplifying_axioms</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.0</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.0</span></td>
+</tr>
+</table>
+
+<a id="toc59" name="toc59"></a>
+<h1>59. translator_time_translating_task</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_translating_task</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.55</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">4.91</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">1461.59</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">58.14</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">1525.19</span></td>
+</tr>
+</table>
+
+<a id="toc60" name="toc60"></a>
+<h1>60. translator_time_writing_mutex_key</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_writing_mutex_key</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.01</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.03</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.3</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.21</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.55</span></td>
+</tr>
+</table>
+
+<a id="toc61" name="toc61"></a>
+<h1>61. translator_time_writing_output</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_writing_output</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.1</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.33</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">16.46</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">3.22</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">20.11</span></td>
+</tr>
+</table>
+
+<a id="toc62" name="toc62"></a>
+<h1>62. translator_time_writing_translation_key</h1>
+
+<table border="1">
+<tr>
+<th>translator_time_writing_translation_key</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0.03</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0.04</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0.1</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0.07</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0.24</span></td>
+</tr>
+</table>
+
+<a id="toc63" name="toc63"></a>
+<h1>63. translator_total_queue_pushes</h1>
+
+<table border="1">
+<tr>
+<th>translator_total_queue_pushes</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">34372</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">32615</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">7793557</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">1450509</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">9311053</span></td>
+</tr>
+</table>
+
+<a id="toc64" name="toc64"></a>
+<h1>64. translator_uncovered_facts</h1>
+
+<table border="1">
+<tr>
+<th>translator_uncovered_facts</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">417</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">10900</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">1722</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">13039</span></td>
+</tr>
+</table>
+
+<a id="toc65" name="toc65"></a>
+<h1>65. translator_vars</h1>
+
+<table border="1">
+<tr>
+<th>translator_vars</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">402</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">1252</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">10026</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">3683</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">15363</span></td>
+</tr>
+</table>
+
+<a id="toc66" name="toc66"></a>
+<h1>66. validate_error</h1>
+
+<table border="1">
+<tr>
+<th>validate_error</th>
+<th>WORK-pdbs</th>
+</tr>
+<tr>
+<td><b>logistics00</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>psr-small</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>satellite</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>tpp</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+<tr>
+<td><b>SUM</b></td>
+<td><span style="color:Gray">0</span></td>
+</tr>
+</table>
+
+</div>
+<!-- xhtml code generated by txt2tags 2.6b (http://txt2tags.sf.net) -->
+<!-- cmdline: txt2tags  -->
+</body></html>

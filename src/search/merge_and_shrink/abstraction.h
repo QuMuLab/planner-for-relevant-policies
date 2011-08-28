@@ -1,5 +1,5 @@
-#ifndef ABSTRACTION_H
-#define ABSTRACTION_H
+#ifndef MERGE_AND_SHRINK_ABSTRACTION_H
+#define MERGE_AND_SHRINK_ABSTRACTION_H
 
 #include "shrink_strategy.h"
 
@@ -97,8 +97,8 @@ public:
     std::string tag() const;
 
     static void build_atomic_abstractions(
-            bool is_unit_cost, OperatorCost cost_type,
-            std::vector<Abstraction *> &result);
+        bool is_unit_cost, OperatorCost cost_type,
+        std::vector<Abstraction *> &result);
     bool is_solvable() const;
 
     int get_cost(const State &state) const;
