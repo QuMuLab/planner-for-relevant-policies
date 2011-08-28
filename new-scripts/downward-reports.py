@@ -46,7 +46,7 @@ class PlanningTable(Table):
 
         def avg_without_none_values(iterable):
             # filter out None values and return sum
-            return reports.avg(x for x in iterable if x is not None)
+            return reports.avg([x for x in iterable if x is not None])
 
         self.add_summary_function('SUM', sum_without_none_values)
         if 'score' in self.title:
