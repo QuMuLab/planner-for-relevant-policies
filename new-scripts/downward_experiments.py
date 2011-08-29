@@ -313,45 +313,43 @@ class DownwardExperiment(experiments.Experiment):
 
             for config_nick, config in self._get_configs(planner.rev):
                 for prob in self.problems:
-                    preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
-                                                  translator.name + '-' +
-                                                  preprocessor.name,
-                                                  prob.domain, prob.problem)
-                    def path(filename):
-                        return os.path.join(preprocess_dir, filename)
+                    self._make_search_run(translator, preprocessor, planner,
+                                          config_nick, config, prob)
 
-                    run = DownwardRun(self, translator, preprocessor, planner, prob)
-                    self.add_run(run)
+    def _make_search_run(self, translator, preprocessor, planner, config_nick,
+                         config, prob):
+        preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
+                                      translator.name + '-' + preprocessor.name,
+                                      prob.domain, prob.problem)
+        def path(filename):
+            return os.path.join(preprocess_dir, filename)
 
-                    run.set_property('preprocess_dir', preprocess_dir)
+        run = DownwardRun(self, translator, preprocessor, planner, prob)
+        self.add_run(run)
 
-                    # This resource is used by the landmarks code. We cannot
-                    # just link to it, it has to be copied.
-                    run.add_resource('ALL_GROUPS', path('all.groups'),
-                                     'all.groups')
+        run.set_property('preprocess_dir', preprocess_dir)
 
-                    if self.compact:
-                        run.set_property('compact', True)
-                        _prepare_search_run(self, run, config_nick, config,
-                                            preprocess_dir)
-                        continue
+        # This resource is used by the landmarks code. We cannot
+        # just link to it, it has to be copied.
+        run.add_resource('ALL_GROUPS', path('all.groups'), 'all.groups')
 
-                    _prepare_search_run(self, run, config_nick, config)
+        if self.compact:
+            run.set_property('compact', True)
+            _prepare_search_run(self, run, config_nick, config, preprocess_dir)
+            return
 
-                    # Add the preprocess files for later parsing
-                    run.add_resource('OUTPUT', path('output'), 'output')
-                    run.add_resource('TEST_GROUPS', path('test.groups'),
-                                     'test.groups')
-                    run.add_resource('OUTPUT_SAS', path('output.sas'),
-                                     'output.sas')
-                    run.add_resource('RUN_LOG', path('run.log'), 'run.log')
-                    run.add_resource('RUN_ERR', path('run.err'), 'run.err')
-                    run.add_resource('DOMAIN', path('domain.pddl'),
-                                     'domain.pddl')
-                    run.add_resource('PROBLEM', path('problem.pddl'),
-                                     'problem.pddl')
-                    run.add_resource('PREPROCESS_PROPERTIES', path('properties'),
-                                     'preprocess-properties')
+        _prepare_search_run(self, run, config_nick, config)
+
+        # Add the preprocess files for later parsing
+        run.add_resource('OUTPUT', path('output'), 'output')
+        run.add_resource('TEST_GROUPS', path('test.groups'), 'test.groups')
+        run.add_resource('OUTPUT_SAS', path('output.sas'), 'output.sas')
+        run.add_resource('RUN_LOG', path('run.log'), 'run.log')
+        run.add_resource('RUN_ERR', path('run.err'), 'run.err')
+        run.add_resource('DOMAIN', path('domain.pddl'), 'domain.pddl')
+        run.add_resource('PROBLEM', path('problem.pddl'), 'problem.pddl')
+        run.add_resource('PREPROCESS_PROPERTIES', path('properties'),
+                         'preprocess-properties')
 
     def _make_complete_runs(self):
         for translator, preprocessor, planner in self.combinations:
