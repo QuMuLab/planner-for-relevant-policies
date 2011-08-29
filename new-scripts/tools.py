@@ -253,17 +253,18 @@ def copy(src, dest, required=True):
     elif os.path.isdir(src):
         func = fast_updatetree
     elif required:
-        logging.error('Required path %s cannot be copied to %s' % (src, dest))
+        logging.error('Required path %s cannot be copied to %s' %
+                      (os.path.abspath(src), os.path.abspath(dest)))
         sys.exit(1)
     else:
-        msg = 'Optional path %s cannot be copied to %s'
-        logging.warning(msg % (src, dest))
+        logging.warning('Optional path %s cannot be copied to %s' %
+                        (os.path.abspath(src), os.path.abspath(dest)))
         return
     try:
         func(src, dest)
     except IOError, err:
-        logging.error('Error: The file "%s" could not be copied to "%s": %s' %
-                      (src, dest, err))
+        logging.error('The file "%s" could not be copied to "%s": %s' %
+                      (os.path.abspath(src), os.path.abspath(dest), err))
         if required:
             sys.exit(1)
 
