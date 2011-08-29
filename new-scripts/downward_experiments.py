@@ -328,7 +328,7 @@ class DownwardExperiment(experiments.Experiment):
                     # This resource is used by the landmarks code. We cannot
                     # just link to it, it has to be copied.
                     run.add_resource('ALL_GROUPS', path('all.groups'),
-                                     'all.groups', required=False)
+                                     'all.groups')
 
                     if self.compact:
                         run.set_property('compact', True)
@@ -339,12 +339,11 @@ class DownwardExperiment(experiments.Experiment):
                     _prepare_search_run(self, run, config_nick, config)
 
                     # Add the preprocess files for later parsing
-                    run.add_resource('OUTPUT', path('output'), 'output',
-                                     required=False)
+                    run.add_resource('OUTPUT', path('output'), 'output')
                     run.add_resource('TEST_GROUPS', path('test.groups'),
-                                     'test.groups', required=False)
+                                     'test.groups')
                     run.add_resource('OUTPUT_SAS', path('output.sas'),
-                                     'output.sas', required=False)
+                                     'output.sas')
                     run.add_resource('RUN_LOG', path('run.log'), 'run.log')
                     run.add_resource('RUN_ERR', path('run.err'), 'run.err')
                     run.add_resource('DOMAIN', path('domain.pddl'),
