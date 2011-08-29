@@ -284,17 +284,18 @@ class Run(object):
         """
         self.linked_resources.append(resource_name)
 
-    def add_resource(self, resource_name, source, dest, required=True):
+    def add_resource(self, resource_name, source, dest, required=True,
+                     symlink=False):
         """
         Example:
         >>> run.add_resource('DOMAIN', '../benchmarks/gripper/domain.pddl',
-                                'domain.pddl')
+                             'domain.pddl')
 
         Copy "../benchmarks/gripper/domain.pddl" into the run
         directory under name "domain.pddl" and make it available as
         resource "DOMAIN" (usable as environment variable $DOMAIN).
         """
-        self.resources.append((source, dest, required))
+        self.resources.append((source, dest, required, symlink))
         self.env_vars[resource_name] = dest
 
     def add_command(self, name, command, **kwargs):
@@ -386,14 +387,14 @@ class Run(object):
 
             # Support running globally installed binaries
             def format_arg(arg):
-                if arg in self.env_vars:
-                    return arg
-                return '"%s"' % arg
+                return arg if arg in self.env_vars else '"%s"' % arg
+
+            def format_key_value_pair(key, val):
+                return '%s=%s' % (key, val if val in self.env_vars else repr(val))
 
             cmd_string = '[%s]' % ', '.join([format_arg(arg) for arg in cmd])
-            kw_pairs = [(key, repr(value)) for
-                        (key, value) in kwargs.items()]
-            kwargs_string = ', '.join('%s=%s' % pair for pair in kw_pairs)
+            kwargs_string = ', '.join(format_key_value_pair(key, value)
+                                      for key, value in kwargs.items())
             parts = [cmd_string]
             if kwargs_string:
                 parts.append(kwargs_string)
@@ -412,7 +413,7 @@ class Run(object):
             env_vars_text = ''
             for var, filename in sorted(self.env_vars.items()):
                 abs_filename = self._get_abs_path(filename)
-                rel_filename = os.path.relpath(abs_filename, self.dir)
+                rel_filename = self._get_rel_path(abs_filename)
                 env_vars_text += ('%s = "%s"\n' % (var, rel_filename))
         else:
             env_vars_text = '"Here you would find variable declarations"'
@@ -440,7 +441,7 @@ class Run(object):
                     sys.exit(1)
                 basename = os.path.basename(source)
                 dest = self._get_abs_path(basename)
-                self.resources.append((source, dest))
+                self.resources.append((source, dest, True, False))
 
     def _build_resources(self):
         for name, content in self.new_files:
@@ -452,14 +453,20 @@ class Run(object):
                     # Make run script executable
                     os.chmod(filename, 0755)
 
-        for source, dest, required in self.resources:
+        for source, dest, required, symlink in self.resources:
+            if required and not os.path.exists(source):
+                logging.error('The required resource can not be found: %s' %
+                              source)
+                sys.exit(1)
             dest = self._get_abs_path(dest)
+            if symlink:
+                source = self._get_rel_path(source)
+                os.symlink(source, dest)
+                logging.debug('Linking from %s to %s' % (source, dest))
+                continue
+
             logging.debug('Copying %s to %s' % (source, dest))
-            try:
-                tools.copy(source, dest, required)
-            except IOError, err:
-                msg = 'Error: The file "%s" could not be copied to "%s": %s'
-                logging.error(msg % (source, dest, err))
+            tools.copy(source, dest, required)
 
     def _build_properties_file(self):
         # Check correctness of id property
@@ -482,6 +489,9 @@ class Run(object):
         /home/user/mytestjob/runs-00001-00100/run
         """
         return os.path.join(self.dir, rel_path)
+
+    def _get_rel_path(self, abs_path):
+        return os.path.relpath(abs_path, start=self.dir)
 
 
 if __name__ == '__main__':
