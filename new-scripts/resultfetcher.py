@@ -276,7 +276,7 @@ class Fetcher(object):
             logging.info('Evaluating: %6d/%d' % (index, total_dirs))
             id_string, props = self.fetch_dir(run_dir)
             if write_combined_props:
-                combined_props[id_string] = props
+                combined_props[id_string] = props.dict()
 
         tools.makedirs(self.eval_dir)
         if write_combined_props:

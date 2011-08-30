@@ -119,6 +119,7 @@ class Report(object):
                 logging.error('The following attributes are not present in '
                               'the dataset: %s' % sorted(not_found))
                 sys.exit(1)
+        self.attributes.sort()
         logging.info('Selected Attributes: %s' % self.attributes)
 
         if self.filters:

@@ -102,10 +102,11 @@ class PlanningReport(Report):
         # list of (attribute, table) pairs
         tables = []
         for attribute in self.attributes:
+            logging.info('Creating table for %s' % attribute)
             table = self._get_table(attribute)
             # We return None for a table if we don't want to add it
             if table:
-                tables.append((attribute, table))
+                tables.append((attribute, str(table)))
 
         return ''.join(['+ %s +\n%s\n' % (attr, table)
                         for (attr, table) in tables])
@@ -172,7 +173,7 @@ class AbsoluteReport(PlanningReport):
         for an attribute include or ignore problems for which not all configs
         have this attribute.
         """
-        logging.info('Filtering problems with missing attributes for runs')
+        logging.info('Filtering run groups where %s is missing' % attribute)
         del_probs = set()
         for (domain, problem), group in self.orig_groups_domain_prob:
             if any(value is missing for value in group[attribute]):
