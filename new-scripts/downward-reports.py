@@ -102,11 +102,11 @@ class PlanningReport(Report):
         # list of (attribute, table) pairs
         tables = []
         for attribute in self.attributes:
-            logging.debug('Creating table for %s' % attribute)
+            logging.info('Creating table for %s' % attribute)
             table = self._get_table(attribute)
             # We return None for a table if we don't want to add it
             if table:
-                tables.append((attribute, table))
+                tables.append((attribute, str(table)))
 
         return ''.join(['+ %s +\n%s\n' % (attr, table)
                         for (attr, table) in tables])
