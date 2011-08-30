@@ -28,6 +28,8 @@ def avg(values):
     >>> avg([20, 30, 70])
     40.0
     """
+    if not values:
+        return None
     return round(math.fsum(values) / len(values), 4)
 
 
