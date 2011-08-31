@@ -28,8 +28,7 @@ def avg(values):
     >>> avg([20, 30, 70])
     40.0
     """
-    if not values:
-        return None
+    assert len(values) >= 1
     return round(math.fsum(values) / len(values), 4)
 
 
@@ -434,8 +433,13 @@ class Table(collections.defaultdict):
         for row in self.rows:
             text += self.get_row_markup(row)
         for name, func in self.summary_funcs:
-            summary_row = dict([(col, func(content)) for col, content in
-                                self.get_columns().items()])
+            summary_row = {}
+            for col, content in self.get_columns().items():
+                content = [val for val in content if val is not None]
+                if content:
+                    summary_row[col] = func(content)
+                else:
+                    summary_row[col] = None
             text += self.get_row_markup(name, summary_row)
         return text
 
