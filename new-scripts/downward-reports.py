@@ -45,10 +45,18 @@ class PlanningTable(Table):
             return sum(x for x in iterable if x is not None)
 
         def avg_without_none_values(iterable):
-            # filter out None values and return sum
+            # filter out None values and return average
             return reports.avg([x for x in iterable if x is not None])
 
-        self.add_summary_function('SUM', sum_without_none_values)
+        def gm_without_none_values(iterable):
+            # filter out None values and return geometric mean
+            return reports.gm([x for x in iterable if x is not None])
+
+        if self.title in ['search_time', 'total_time']:
+            self.add_summary_function('GM', gm_without_none_values)
+        else:
+            self.add_summary_function('SUM', sum_without_none_values)
+
         if 'score' in self.title:
             # When summarising score results from multiple domains we show
             # normalised averages so that each domain is weighed equally.
