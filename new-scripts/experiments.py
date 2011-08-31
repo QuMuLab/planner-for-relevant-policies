@@ -40,8 +40,10 @@ class ExpArgParser(tools.ArgParser):
         self.add_argument(
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
-        self.add_argument('--build-main-script-only', action='store_true',
+        self.add_argument('--only-main-script', action='store_true',
             help='Only write the main experiment script to disk and exit.')
+        self.add_argument('--no-main-script', action='store_true',
+            help='Write a normal experiment, but omit the main script.')
 
 
 class Experiment(object):
@@ -123,18 +125,21 @@ class Experiment(object):
         """
         Apply all the actions to the filesystem
         """
-        tools.overwrite_dir(self.path)
-
         # Make the variables absolute
         self.env_vars = dict([(var, self._get_abs_path(path))
                               for (var, path) in self.env_vars.items()])
 
         self._set_run_dirs()
 
-        self._build_main_script()
-        if self.build_main_script_only:
+        if not self.no_main_script:
+            # This is the first part where we only write the main script.
+            # We only overwrite the exp dir in the first part.
+            tools.overwrite_dir(self.path)
+            self._build_main_script()
+        if self.only_main_script:
             sys.exit()
 
+        # This is the second part where we write everything else
         self._build_resources()
         self._build_runs()
         self._build_properties_file()
