@@ -312,6 +312,7 @@ class Table(collections.defaultdict):
 
         self.summary_funcs = []
         self.column_order = {}
+        self.info = []
 
         self._cols = None
 
@@ -441,6 +442,7 @@ class Table(collections.defaultdict):
                 else:
                     summary_row[col] = None
             text += self.get_row_markup(name, summary_row)
+        text += ' '.join(self.info)
         return text
 
 

@@ -188,21 +188,33 @@ class AbsoluteReport(PlanningReport):
     def _get_group_func(self, attribute):
         """Decide on a group function for this attribute."""
         if 'score' in attribute:
-            return reports.avg
+            return 'average', reports.avg
         elif attribute in ['search_time', 'total_time']:
-            return reports.gm
-        return sum
+            return 'geometric mean', reports.gm
+        return 'sum', sum
 
     def _get_table(self, attribute):
         table = PlanningReport._get_empty_table(self, attribute)
-        func = self._get_group_func(attribute)
+        func_name, func = self._get_group_func(attribute)
 
         # If we don't have to filter the runs, we can use the saved group_dict
-        if (self.resolution == 'domain' and
-            not attribute in self.absolute_attributes):
-            groups = self._get_filtered_groups(attribute)
-        else:
+        if (self.resolution == 'problem' or
+            attribute in self.absolute_attributes):
             groups = self.orig_groups
+        else:
+            groups = self._get_filtered_groups(attribute)
+            table.info.append('Only instances where all configurations have a '
+                              'value for "%s" are considered.' % attribute)
+            table.info.append('Each table entry gives the %s of "%s" for that '
+                              'domain.' % (func_name, attribute))
+            summary_names = [name.lower()
+                             for name, sum_func in table.summary_funcs]
+            if len(summary_names) == 1:
+                table.info.append('The last row gives the %s across all '
+                                  'domains.' % summary_names[0])
+            elif len(summary_names) > 1:
+                table.info.append('The last rows give the %s across all '
+                                  'domains.' % ' and '.join(summary_names))
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, attribute)
