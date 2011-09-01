@@ -151,12 +151,6 @@ class AbsoluteReport(PlanningReport):
                                     if attr.endswith('_error')]
         self.absolute_attributes.append('coverage')
 
-        if self.resolution == 'domain':
-            self.add_info('If in a group of configs not all configs have a '
-                'value for an attribute, the concerning runs are not '
-                'evaluated. However, for the attributes %s we include all '
-                'runs unconditionally.' % ', '.join(self.absolute_attributes))
-
         # Save the unfiltered groups for faster retrieval
         if self.resolution == 'domain':
             self.orig_groups = self.data.groups('config', 'domain')
