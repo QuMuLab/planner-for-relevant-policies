@@ -220,9 +220,12 @@ def set_search_time(content, props):
     search time was not written (due to a possible timeout for example), we
     set search_time to be the sum of the single search times.
     """
-    if 'search_time' not in props:
-        if 'search_time_all' in props:
-            props['search_time'] = math.fsum(props['search_time_all'])
+    if 'search_time' in props:
+        return
+    search_time_all = props.get('search_time_all', [])
+    # Do not write search_time if no iterative search_time has been found.
+    if search_time_all:
+        props['search_time'] = math.fsum(search_time_all)
 
 
 def completely_explored(content, props):
