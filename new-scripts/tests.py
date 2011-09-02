@@ -11,6 +11,7 @@ from tools import copy, prod
 from reports import gm
 import checkouts
 import downward_experiments
+import tools
 
 base = os.path.join('/tmp', str(datetime.datetime.now()))
 os.mkdir(base)
@@ -60,6 +61,14 @@ def test_gm1():
     lists = [1, 2, 4, 5], [0.4, 0.8], [2, 8], [10 ** (-5), 5000]
     for l in lists:
         assert gm_old(l) == gm(l)
+
+
+def test_rounding():
+    assert tools.round_to_next_power_of_ten(1) == 1
+    assert tools.round_to_next_power_of_ten(2) == 10
+    assert tools.round_to_next_power_of_ten(10) == 10
+    assert tools.round_to_next_power_of_ten(11) == 100
+
 
 def make_checkouts():
     combinations = [

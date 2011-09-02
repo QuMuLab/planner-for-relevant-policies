@@ -25,7 +25,7 @@ combinations = [
     (Translator(), Preprocessor(), Planner(rev=1600, dest='copy2')),
 ]
 
-# These combinations show how to check the impacts of you uncommited changes
+# These combinations show how to check the impacts of your uncommited changes
 combinations = [
     (Translator(rev='tip'), Preprocessor(rev='tip'), Planner(rev='tip')),
     (Translator(rev='WORK'), Preprocessor(rev='WORK'), Planner(rev='WORK')),

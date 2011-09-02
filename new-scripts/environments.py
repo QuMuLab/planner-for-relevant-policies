@@ -58,7 +58,7 @@ class GkiGridEnvironment(Environment):
     def add_subparser(cls, subparsers):
         parser = subparsers.add_parser('gkigrid', help='Gkigrid experiment')
         parser.add_argument(
-            '-q', '--queue', default='athlon_core.q',
+            '-q', '--queue', default='opteron_core.q',
             help='name of the queue to use for the experiment')
         parser.add_argument(
             '--runs-per-task', type=int, default=1,

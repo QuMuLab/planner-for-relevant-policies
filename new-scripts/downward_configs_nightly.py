@@ -26,5 +26,5 @@ blind = """\
 """
 
 oa50000 = """\
---search "astar(mas())"\
+--search "astar(merge_and_shrink())"\
 """

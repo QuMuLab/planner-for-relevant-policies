@@ -64,11 +64,13 @@ def _get_derived_vars(content):
 
 
 def translator_derived_vars(content, props):
-    props.setdefault('translator_derived_vars', _get_derived_vars(content))
+    if 'translator_derived_variables' not in props:
+        props['translator_derived_variables'] = _get_derived_vars(content)
 
 
 def preprocessor_derived_vars(content, props):
-    props.setdefault('preprocessor_derived_vars', _get_derived_vars(content))
+    if 'preprocessor_derived_variables' not in props:
+        props['preprocessor_derived_variables'] = _get_derived_vars(content)
 
 
 def _get_facts(content):
@@ -80,49 +82,23 @@ def _get_facts(content):
 
 
 def translator_facts(content, props):
-    props.setdefault('translator_facts', _get_facts(content))
+    if not 'translator_facts' in props:
+        props['translator_facts'] = _get_facts(content)
 
 
 def preprocessor_facts(content, props):
-    props.setdefault('preprocessor_facts', _get_facts(content))
+    if not 'preprocessor_facts' in props:
+        props['preprocessor_facts'] = _get_facts(content)
 
 
-def cg_arcs(content, props):
-    """
-    Sums up the number of outgoing arcs for each vertex
-    """
-    regex = re.compile(r'begin_CG\n(.+)end_CG', re.M | re.S)
-    match = regex.search(content)
-    if not match:
-        logging.error('Number of arcs could not be determined')
-        return {}
-    # cg looks like ['6', '1 16', '2 16', '3 8', '4 8', '5 8', '6 8', '4', ...]
-    cg = match.group(1).splitlines()
-    arcs = 0
-    for line in cg:
-        parts = line.split()
-        parts = map(str.strip, parts)
-        parts = filter(bool, parts)
-        if len(parts) == 1:
-            # We have a line containing the number of arcs for one node
-            arcs += int(parts[0])
-    return {'preprocessor_cg_arcs': arcs}
-
-
-def get_problem_size(content):
-    """
-    Total problem size can be measured as the total number of tokens in the
-    output.sas/output file.
-    """
-    return len(content.split())
-
-
-def translator_problem_size(content, props):
-    props['translator_problem_size'] = get_problem_size(content)
-
-
-def preprocessor_problem_size(content, props):
-    props['preprocessor_problem_size'] = get_problem_size(content)
+def translator_mutex_groups(content, props):
+    if 'translator_mutex_groups' in props:
+        return
+    # Number of mutex groups (second line in the "all.groups" file).
+    # The file normally starts with "begin_groups\n7\ngroup", but if no groups
+    # are found, it has the form "begin_groups\n0\nend_groups".
+    match = re.search(r'begin_groups\n(\d+)$', content, re.M | re.S)
+    props['translator_mutex_groups'] = int(match.group(1))
 
 
 def translator_mutex_groups_total_size(content, props):
@@ -130,8 +106,10 @@ def translator_mutex_groups_total_size(content, props):
     Total mutex group sizes after translating
     (sum over all numbers that follow a "group" line in the "all.groups" file)
     """
+    if 'translator_total_mutex_groups_size' in props:
+        return
     groups = re.findall(r'group\n(\d+)', content, re.M | re.S)
-    props['translator_mutex_groups_total_size'] = sum(map(int, groups))
+    props['translator_total_mutex_groups_size'] = sum(map(int, groups))
 
 
 # Search functions ------------------------------------------------------------
@@ -146,14 +124,18 @@ ITERATIVE_PATTERNS = [
     _get_states_pattern('evaluations', 'Evaluated'),
     _get_states_pattern('expansions', 'Expanded'),
     _get_states_pattern('generated', 'Generated'),
-    ('initial_h_value',
-        re.compile(r'Initial state h value: (\d+)'), int),
+    # We exclude lines like "Initial state h value: 1147184/1703241." that stem
+    # from multi-heuristic search.
+    ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
     ('plan_length', re.compile(r'Plan length: (\d+)'), int),
-    ('search_time',
-        re.compile(r'Actual search time: (.+)s \[t=.+s\]'), float)
+    # We cannot include " \[t=.+s\]" in the regex, because older versions don't
+    # have this information in the log.
+    ('search_time', re.compile(r'Actual search time: (.+?)s'), float)
     ]
 
+
 CUMULATIVE_PATTERNS = [
+    # This time we parse the cumulative values
     _get_states_pattern('dead_ends', 'Dead ends:'),
     _get_states_pattern('evaluations', 'Evaluated'),
     _get_states_pattern('expansions', 'Expanded'),
@@ -161,13 +143,13 @@ CUMULATIVE_PATTERNS = [
     ('search_time', re.compile(r'^Search time: (.+)s$'), float),
     ('total_time', re.compile(r'^Total time: (.+)s$'), float),
     ('memory', re.compile(r'Peak memory: (.+) KB'), int),
-    ('landmarks', re.compile(r'Discovered (\d+) landmarks'), int),
-    ('landmarks_generation_time',
-        re.compile(r'Landmarks generation time: (.+)s'), float),
+    # For iterated searches we discard any h values. Here we will not find
+    # anything before the "cumulative" line and stop the search. For single
+    # searches we will find the h value if it isn't a multi-heuristic search.
+    ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
     ]
 
 
-# TODO: What about lines like "Initial state h value: 1147184/1703241."?
 def get_iterative_results(content, props):
     """
     In iterative search some attributes like plan cost can have multiple
@@ -200,18 +182,16 @@ def get_iterative_results(content, props):
         return len(set(len(x) for x in group)) == 1
 
     group1 = ('cost', 'plan_length')
-    group2 = ('dead_ends', 'expansions', 'evaluations', 'generated',
-              'initial_h_value', 'search_time')
+    group2 = ('expansions', 'generated', 'search_time')
     assert same_length(values[x] for x in group1), values
     assert same_length(values[x] for x in group2), values
 
     for name, items in values.items():
         props[name + '_all'] = items
 
-    if values['cost']:
-        props['cost'] = values['cost'][-1]
-    if values['plan_length']:
-        props['plan_length'] = values['plan_length'][-1]
+    for attr in ['cost', 'plan_length']:
+        if values[attr]:
+            props[attr] = min(values[attr])
 
 
 def get_cumulative_results(content, props):
@@ -292,7 +272,7 @@ def scores(content, props):
         raw_score = math.log(value) - math.log(max_bound)
         best_raw_score = math.log(min_bound) - math.log(max_bound)
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
-        return round(score, 4)
+        return round(score * 100, 2)
 
     props.update({'score_expansions': log_score(props.get('expansions'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
@@ -315,15 +295,6 @@ def check_min_values(content, props):
             sec = max(sec, 0.1)
             props[time] = sec
 
-
-def validate(content, props):
-    """
-    Check the returncode of the validate command
-    """
-    assert 'coverage' in props
-    return {"plan_invalid": int(props.get('coverage') == 1 and
-                                props.get('validate_returncode') == '1')}
-
 # -----------------------------------------------------------------------------
 
 
@@ -336,21 +307,18 @@ def add_preprocess_parsing(eval):
     #eval.add_pattern('preprocess_error', r'preprocess_error = (\d)',
     #                 file='preprocess-properties', type=int, required=False)
 
-    # Number of mutex groups (second line in the "all.groups" file)
-    # The file starts with "begin_groups\n7\ngroup"
-    eval.add_pattern('translator_mutex_groups',
-                     r'begin_groups\n(\d+)\ngroup', file='all.groups',
-                     type=int, flags='MS')
-
-    # Preprocessor output:
+    # Parse the preprocessor output. We need to parse the translator values
+    # from the preprocessor output for older revisions. In newer revisions the
+    # values are overwritten by values from the translator output.
+    # The preprocessor log looks like:
     # 19 variables of 19 necessary
     # 2384 of 2384 operators necessary.
-    # 0 of 0 axiom rules necessary
-    eval.add_multipattern([(1, 'preprocessor_vars', int),
-                          (2, 'translator_vars', int)],
+    # 0 of 0 axiom rules necessary.
+    eval.add_multipattern([(1, 'preprocessor_variables', int),
+                          (2, 'translator_variables', int)],
                           r'(\d+) variables of (\d+) necessary')
-    eval.add_multipattern([(1, 'preprocessor_ops', int),
-                           (2, 'translator_ops', int)],
+    eval.add_multipattern([(1, 'preprocessor_operators', int),
+                           (2, 'translator_operators', int)],
                            r'(\d+) of (\d+) operators necessary')
     eval.add_multipattern([(1, 'preprocessor_axioms', int),
                            (2, 'translator_axioms', int)],
@@ -367,33 +335,60 @@ def add_preprocess_parsing(eval):
     #    0 implied preconditions added
     #    0 operators removed
     #    38 propositions removed
-    translator_values = [
-        'relevant atoms', 'auxiliary atoms', 'final queue length',
-        'total queue pushes', 'uncovered facts', 'implied effects removed',
-        'effect conditions simplified', 'implied preconditions added',
-        'operators removed', 'propositions removed']
-    for value_name in translator_values:
-        attribute = 'translator_' + value_name.lower().replace(' ', '_')
-        eval.add_pattern(attribute, r'(.+) %s' % value_name, type=int)
+    for value in ['relevant atoms', 'auxiliary atoms', 'final queue length',
+            'total queue pushes', 'uncovered facts', 'implied effects removed',
+            'effect conditions simplified', 'implied preconditions added',
+            'operators removed', 'propositions removed']:
+        attribute = 'translator_' + value.lower().replace(' ', '_')
+        # Those lines are not required, because they were not always printed
+        eval.add_pattern(attribute, r'(.+) %s' % value, type=int,
+                         required=False)
+
+    # Parse the numbers from the following lines of translator output:
+    #   Translator variables: 7
+    #   Translator derived variables: 0
+    #   Translator facts: 24
+    #   Translator mutex groups: 7
+    #   Translator total mutex groups size: 28
+    #   Translator operators: 34
+    #   Translator task size: 217
+    for value in ['variables', 'derived variables', 'facts', 'mutex groups',
+                  'total mutex groups size', 'operators', 'task size']:
+        attribute = 'translator_' + value.lower().replace(' ', '_')
+        # Those lines are not required, because they were not always printed
+        eval.add_pattern(attribute, r'Translator %s: (.+)' % value, type=int,
+                         required=False)
+
+    # Parse the numbers from the following lines of preprocessor output:
+    #   Preprocessor facts: 24
+    #   Preprocessor derived variables: 0
+    #   Preprocessor task size: 217
+    for value in ['facts', 'derived variables', 'task size']:
+        attribute = 'preprocessor_' + value.lower().replace(' ', '_')
+        # Those lines are not required, because they were not always printed
+        eval.add_pattern(attribute, r'Preprocessor %s: (.+)' % value, type=int,
+                         required=False)
 
 
 def add_preprocess_functions(eval):
     eval.add_function(parse_translator_timestamps)
 
+    # Those functions will only parse the output files if we haven't found the
+    # values in the log.
     eval.add_function(translator_facts, file='output.sas')
     eval.add_function(preprocessor_facts, file='output')
-
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
-
-    #eval.add_function(cg_arcs, file='output')
-
-    eval.add_function(translator_problem_size, file='output.sas')
-    eval.add_function(preprocessor_problem_size, file='output')
-
-    # Total mutex group sizes after translating
-    # (sum over all numbers following a "group" line in the "all.groups" file)
+    eval.add_function(translator_mutex_groups, file='all.groups')
     eval.add_function(translator_mutex_groups_total_size, file='all.groups')
+
+
+def add_search_parsing(eval):
+    eval.add_pattern('landmarks', r'Discovered (\d+?) landmarks', type=int,
+                     required=False)
+    eval.add_pattern('landmarks_generation_time',
+                     r'Landmarks generation time: (.+)s', type=float,
+                     required=False)
 
 
 def add_search_functions(eval):
@@ -405,7 +400,6 @@ def add_search_functions(eval):
     eval.add_function(get_status)
     eval.add_function(scores)
     eval.add_function(check_memory)
-    eval.add_function(validate)
 
 
 def build_fetcher(parser=FetchOptionParser()):
@@ -427,6 +421,7 @@ def build_fetcher(parser=FetchOptionParser()):
             add_preprocess_parsing(eval)
             add_preprocess_functions(eval)
     if not eval.no_search:
+        add_search_parsing(eval)
         add_search_functions(eval)
 
     eval.add_function(check_min_values)

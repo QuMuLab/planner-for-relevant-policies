@@ -219,6 +219,46 @@ class Fetcher(object):
         """
         self.check = function
 
+    def fetch_dir(self, run_dir):
+        prop_file = os.path.join(run_dir, 'properties')
+        props = tools.Properties(prop_file)
+
+        id = props.get('id')
+        # Abort if an id cannot be read.
+        if not id:
+            logging.error('id is not set in %s.' % prop_file)
+            sys.exit(1)
+
+        dest_dir = os.path.join(self.eval_dir, *id)
+        if self.copy_all:
+            tools.makedirs(dest_dir)
+            tools.fast_updatetree(run_dir, dest_dir)
+
+        props['run_dir'] = os.path.relpath(run_dir, self.exp_dir)
+
+        for filename, file_parser in self.file_parsers.items():
+            # If filename is absolute it will not be changed here
+            filename = os.path.join(run_dir, filename)
+            file_parser.load_file(filename)
+            # Subclasses directly modify the properties during parsing
+            file_parser.parse(props)
+
+        if self.copy_all:
+            # Write new properties file
+            props.filename = os.path.join(dest_dir, 'properties')
+            props.write()
+
+        if self.check:
+            try:
+                self.check(props)
+            except AssertionError, e:
+                msg = 'Parsed properties not valid in %s: %s'
+                logging.error(msg % (prop_file, e))
+                print '*' * 60
+                props.write(sys.stdout)
+                print '*' * 60
+        return '-'.join(id), props
+
     def fetch(self):
         total_dirs = self.exp_props.get('runs')
 
@@ -233,46 +273,10 @@ class Fetcher(object):
         # Get all run_dirs
         run_dirs = sorted(glob(os.path.join(self.exp_dir, 'runs-*-*', '*')))
         for index, run_dir in enumerate(run_dirs, 1):
-            prop_file = os.path.join(run_dir, 'properties')
-            props = tools.Properties(prop_file)
-
-            id = props.get('id')
-            # Abort if an id cannot be read.
-            if not id:
-                logging.error('id is not set in %s.' % prop_file)
-                sys.exit(1)
-
-            dest_dir = os.path.join(self.eval_dir, *id)
-            if self.copy_all:
-                tools.makedirs(dest_dir)
-                tools.fast_updatetree(run_dir, dest_dir)
-
-            props['run_dir'] = os.path.relpath(run_dir, self.exp_dir)
-
-            for filename, file_parser in self.file_parsers.items():
-                # If filename is absolute it will not be changed here
-                filename = os.path.join(run_dir, filename)
-                file_parser.load_file(filename)
-                # Subclasses directly modify the properties during parsing
-                file_parser.parse(props)
-
+            logging.info('Evaluating: %6d/%d' % (index, total_dirs))
+            id_string, props = self.fetch_dir(run_dir)
             if write_combined_props:
-                combined_props['-'.join(id)] = props.dict()
-            if self.copy_all:
-                # Write new properties file
-                props.filename = os.path.join(dest_dir, 'properties')
-                props.write()
-
-            if self.check:
-                try:
-                    self.check(props)
-                except AssertionError, e:
-                    msg = 'Parsed properties not valid in %s: %s'
-                    logging.error(msg % (prop_file, e))
-                    print '*' * 60
-                    props.write(sys.stdout)
-                    print '*' * 60
-            logging.info('Done Evaluating: %6d/%d' % (index, total_dirs))
+                combined_props[id_string] = props.dict()
 
         tools.makedirs(self.eval_dir)
         if write_combined_props:

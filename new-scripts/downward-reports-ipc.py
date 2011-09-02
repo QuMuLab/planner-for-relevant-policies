@@ -41,6 +41,9 @@ class IpcReport(Report):
                             help='Set the page size for the latex report')
         Report.__init__(self, parser)
 
+        self.extension = 'tex'
+        self.name_parts.append(self.focus)
+
         self.focus_name = self.focus
         self.normalize = True
 
@@ -59,11 +62,6 @@ class IpcReport(Report):
         # Get set of configs
         self.configs = tools.natural_sort(self.data.group_dict('config').keys())
         self.total_scores = self._compute_total_scores()
-
-    def get_name(self):
-        name = os.path.basename(self.eval_dir)
-        name += '-ipc-' + self.focus
-        return name
 
     def _tiny_if_squeeze(self):
         if self.squeeze:
@@ -91,13 +89,12 @@ class IpcReport(Report):
             self.print_report()
             return
 
-        filename = self.outfile or os.path.join(tools.REPORTS_DIR,
-                                                self.get_name() + '.tex')
+        filename = self.get_filename()
         with open(filename, 'w') as file:
             sys.stdout = file
             self.print_report()
             sys.stdout = sys.__stdout__
-        logging.info('Wrote file %s' % 'file://' + os.path.abspath(filename))
+        logging.info('Wrote file://%s' % filename)
 
     def print_report(self):
         self.print_header()

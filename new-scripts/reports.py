@@ -13,31 +13,34 @@ import cPickle
 import hashlib
 import subprocess
 import operator
+import math
 from collections import defaultdict
 
 import tools
 from markup import Document
 from external import txt2tags
+from external.datasets import missing
 
 
 def avg(values):
     """Computes the arithmetic mean of a list of numbers.
 
-    >>> print avg([20, 30, 70])
+    >>> avg([20, 30, 70])
     40.0
     """
-    return round(sum(values, 0.0) / len(values), 2)
+    assert len(values) >= 1
+    return round(math.fsum(values) / len(values), 4)
 
 
 def gm(values):
     """Computes the geometric mean of a list of numbers.
 
-    >>> print gm([2, 8])
+    >>> gm([2, 8])
     4.0
     """
     assert len(values) >= 1
     exp = 1.0 / len(values)
-    return round(tools.prod([val ** exp for val in values]), 2)
+    return round(tools.prod([val ** exp for val in values]), 4)
 
 
 class ReportArgParser(tools.ArgParser):
@@ -52,7 +55,7 @@ class ReportArgParser(tools.ArgParser):
                     'in %s.' % tools.REPORTS_DIR)
 
         self.add_argument('-a', '--attributes', type=tools.csv,
-                    metavar='ATTR',
+                    metavar='ATTR', dest='commandline_attributes',
                     help='the analyzed attributes (e.g. "expanded"). '
                     'If omitted, use all found numerical attributes')
 
@@ -98,22 +101,53 @@ class Report(object):
         # Give all the options to the report instance
         parser.parse_args(namespace=self)
 
+        self.report_type = 'report'
         self.data = self._load_data()
 
-        attributes = sorted(self.data.get_attributes())
+        self.all_attributes = sorted(self.data.get_attributes())
 
         if self.show_attributes:
-            print '\nAvailable attributes: %s' % attributes
+            print '\nAvailable attributes: %s' % self.all_attributes
             sys.exit()
 
-        if not self.attributes or self.attributes == 'all':
-            self.attributes = attributes
-        logging.info('Attributes: %s' % self.attributes)
+        self.attributes = self.commandline_attributes
+        if not self.attributes:
+            self.attributes = self._get_numerical_attributes()
+        else:
+            # Make sure that all selected attributes are present in the dataset
+            not_found = set(self.attributes) - set(self.all_attributes)
+            if not_found:
+                logging.error('The following attributes are not present in '
+                              'the dataset: %s' % sorted(not_found))
+                sys.exit(1)
+        self.attributes.sort()
+        logging.info('Selected Attributes: %s' % self.attributes)
 
         if self.filters:
             self._apply_filters()
 
         self.infos = []
+
+        self.extension = None
+
+        self.name_parts = []
+        if len(self.attributes) == 1:
+            self.name_parts.append(self.attributes[0])
+        if self.filters:
+            self.name_parts.append('+'.join([f.replace(':', '_')
+                                             for f in self.filters]))
+
+    def _get_numerical_attributes(self):
+        def is_numerical(attribute):
+            for val in self.data.key(attribute)[0]:
+                if val is missing:
+                    continue
+                return type(val) in [int, float]
+            logging.info("Attribute %s is missing in all runs." % attribute)
+            # Include the attribute nonetheless
+            return True
+
+        return [attr for attr in self.all_attributes if is_numerical(attr)]
 
     def add_info(self, info):
         """
@@ -122,30 +156,29 @@ class Report(object):
         self.infos.append(info)
 
     def get_name(self):
-        name = os.path.basename(self.eval_dir)
-        if len(self.attributes) == 1:
-            name += '-' + self.attributes[0]
-        if self.filters:
-            name += '-' + '+'.join([f.replace(':', '_') for f in self.filters])
-        return name
+        return ('%s-%s-%s' % (os.path.basename(self.eval_dir), self.report_type,
+                             '-'.join(self.name_parts))).rstrip('-')
 
     def get_filename(self):
-        ext = self.output_format.replace('xhtml', 'html')
-        return os.path.join(tools.REPORTS_DIR, self.get_name() + '.' + ext)
+        if self.outfile:
+            return os.path.abspath(self.outfile)
+        ext = self.extension or self.output_format.replace('xhtml', 'html')
+        tools.makedirs(tools.REPORTS_DIR)
+        return os.path.join(tools.REPORTS_DIR, '%s.%s' % (self.get_name(), ext))
 
     def get_text(self):
         """
         This method should be overwritten in subclasses.
         """
         table = Table(highlight=False)
-        for run_id, run_group in sorted(self.data.group_dict('id-string').items()):
+        for run_id, run_group in sorted(self.data.groups('id-string')):
             assert len(run_group) == 1, run_group
             run = run_group.items[0]
             del run['id']
             for key, value in run.items():
                 if type(value) is list:
                     run[key] = '-'.join([str(item) for item in value])
-            table[run_id] = run
+            table.add_row(run_id, run)
         return str(table)
 
     def write(self):
@@ -161,10 +194,13 @@ class Report(object):
         text = self.get_text()
 
         if not text:
-            logging.info('No tables generated. '
-                         'This happens when no significant changes occured. '
-                         'Therefore no output file has been created')
-            return
+            logging.info('No tables were generated. '
+                         'This happens when no significant changes occured or '
+                         'if for all attributes and all problems never all '
+                         'configs had a value for this attribute in a '
+                         'domain-wise report. Therefore no output file is '
+                         'created.')
+            return ''
 
         doc.add_text(text)
         print 'REPORT MARKUP:\n'
@@ -172,22 +208,24 @@ class Report(object):
         return doc.render(self.output_format, {'toc': 1})
 
     def write_to_disk(self, content):
-        if not self.dry:
-            filename = self.outfile or self.get_filename()
-            tools.makedirs(os.path.dirname(filename))
-            with open(filename, 'w') as file:
-                output_uri = 'file://' + os.path.abspath(filename)
-                logging.info('Writing output to %s' % output_uri)
-                file.write(content)
+        if self.dry or not content:
+            return
+
+        filename = self.get_filename()
+        tools.makedirs(os.path.dirname(filename))
+        with open(filename, 'w') as file:
+            file.write(content)
+            logging.info('Wrote file://%s' % filename)
 
     def open(self):
         """
         If the --open parameter is set, tries to open the report
         """
-        if not self.open_report or not os.path.exists(self.get_filename()):
+        filename = self.get_filename()
+        if not self.open_report or not os.path.exists(filename):
             return
 
-        dir, filename = os.path.split(self.get_filename())
+        dir, filename = os.path.split(filename)
         os.chdir(dir)
         if self.output_format == 'tex':
             subprocess.call(['pdflatex', filename])
@@ -273,9 +311,25 @@ class Table(collections.defaultdict):
         self.numeric_rows = numeric_rows
 
         self.summary_funcs = []
+        self.column_order = {}
+        self.info = []
+
+        self._cols = None
 
     def add_cell(self, row, col, value):
         self[row][col] = value
+        self._cols = None
+
+    def add_row(self, row_name, row):
+        """row must map column names to the value in row "row_name"."""
+        self[row_name] = row
+        self._cols = None
+
+    def add_col(self, col_name, col):
+        """col must map row names to values."""
+        for row_name, value in col.items():
+            self[row_name][col_name] = value
+        self._cols = None
 
     @property
     def rows(self):
@@ -284,27 +338,31 @@ class Table(collections.defaultdict):
 
     @property
     def cols(self):
-        cols = set()
-        for dict in self.values():
-            for key in dict.keys():
-                cols.add(key)
+        if self._cols:
+            return self._cols
+        col_names = set()
+        for row in self.values():
+            col_names |= set(row.keys())
+        self._cols = tools.natural_sort(col_names)
+        return self._cols
 
-        return tools.natural_sort(cols)
+    def get_row(self, row):
+        return [self[row].get(col, None) for col in self.cols]
 
-    def get_cells_in_row(self, row):
-        return [self[row][col] for col in self.cols]
+    def get_rows(self):
+        return [(row, self.get_row(row)) for row in self.rows]
 
-    def get_column_contents(self):
+    def get_columns(self):
         """
         Returns a mapping from column name to the list of values in that column.
         """
         values = defaultdict(list)
         for row in self.rows:
-            for col, value in self[row].items():
-                values[col].append(value)
+            for col in self.cols:
+                values[col].append(self[row].get(col))
         return values
 
-    def get_row(self, row_name, row=None):
+    def get_row_markup(self, row_name, row=None):
         """
         If given, row must be a dictionary mapping column names to the value in
         row "row_name".
@@ -348,12 +406,12 @@ class Table(collections.defaultdict):
         text += '|\n'
         return text
 
-    def add_summary_function(self, func):
+    def add_summary_function(self, name, func):
         """
         This function adds a bottom row with the values func(column_values) for
         each column. Func can be e.g. sum, reports.avg, reports.gm
         """
-        self.summary_funcs.append(func)
+        self.summary_funcs.append((name, func))
 
     def __str__(self):
         """
@@ -365,14 +423,26 @@ class Table(collections.defaultdict):
         """
         text = '|| %-29s | ' % self.title
 
-        # Escape config names to prevent unvoluntary markup
-        text += ' | '.join('%-16s' % ('""%s""' % col) for col in self.cols) + ' |\n'
+        def get_col_markup(col):
+            # Allow custom sorting of the column names
+            if '-SORT:' in col:
+                sorting, col = col.split('-SORT:')
+            # Escape config names to prevent unvoluntary markup
+            return '%-16s' % ('""%s""' % col)
+
+        text += ' | '.join(get_col_markup(col) for col in self.cols) + ' |\n'
         for row in self.rows:
-            text += self.get_row(row)
-        for func in self.summary_funcs:
-            summary_row = dict([(col, func(content)) for col, content in
-                                self.get_column_contents().items()])
-            text += self.get_row(func.__name__.upper(), summary_row)
+            text += self.get_row_markup(row)
+        for name, func in self.summary_funcs:
+            summary_row = {}
+            for col, content in self.get_columns().items():
+                content = [val for val in content if val is not None]
+                if content:
+                    summary_row[col] = func(content)
+                else:
+                    summary_row[col] = None
+            text += self.get_row_markup(name, summary_row)
+        text += ' '.join(self.info)
         return text
 
 
