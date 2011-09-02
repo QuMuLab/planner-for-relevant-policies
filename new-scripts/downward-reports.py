@@ -40,19 +40,15 @@ class PlanningTable(Table):
     def __init__(self, *args, **kwargs):
         Table.__init__(self, *args, **kwargs)
 
-        def sum_without_none_values(iterable):
-            # filter out None values and return sum
-            return sum(x for x in iterable if x is not None)
+        if self.title in ['search_time', 'total_time']:
+            self.add_summary_function('GEOMETRIC MEAN', reports.gm)
+        else:
+            self.add_summary_function('SUM', sum)
 
-        def avg_without_none_values(iterable):
-            # filter out None values and return sum
-            return reports.avg([x for x in iterable if x is not None])
-
-        self.add_summary_function('SUM', sum_without_none_values)
         if 'score' in self.title:
             # When summarising score results from multiple domains we show
             # normalised averages so that each domain is weighed equally.
-            self.add_summary_function('AVG', avg_without_none_values)
+            self.add_summary_function('AVERAGE', reports.avg)
 
 
 class PlanningReport(Report):
@@ -102,10 +98,11 @@ class PlanningReport(Report):
         # list of (attribute, table) pairs
         tables = []
         for attribute in self.attributes:
+            logging.info('Creating table for %s' % attribute)
             table = self._get_table(attribute)
             # We return None for a table if we don't want to add it
             if table:
-                tables.append((attribute, table))
+                tables.append((attribute, str(table)))
 
         return ''.join(['+ %s +\n%s\n' % (attr, table)
                         for (attr, table) in tables])
@@ -154,12 +151,6 @@ class AbsoluteReport(PlanningReport):
                                     if attr.endswith('_error')]
         self.absolute_attributes.append('coverage')
 
-        if self.resolution == 'domain':
-            self.add_info('If in a group of configs not all configs have a '
-                'value for an attribute, the concerning runs are not '
-                'evaluated. However, for the attributes %s we include all '
-                'runs unconditionally.' % ', '.join(self.absolute_attributes))
-
         # Save the unfiltered groups for faster retrieval
         if self.resolution == 'domain':
             self.orig_groups = self.data.groups('config', 'domain')
@@ -172,7 +163,7 @@ class AbsoluteReport(PlanningReport):
         for an attribute include or ignore problems for which not all configs
         have this attribute.
         """
-        logging.info('Filtering problems with missing attributes for runs')
+        logging.info('Filtering run groups where %s is missing' % attribute)
         del_probs = set()
         for (domain, problem), group in self.orig_groups_domain_prob:
             if any(value is missing for value in group[attribute]):
@@ -191,21 +182,33 @@ class AbsoluteReport(PlanningReport):
     def _get_group_func(self, attribute):
         """Decide on a group function for this attribute."""
         if 'score' in attribute:
-            return reports.avg
+            return 'average', reports.avg
         elif attribute in ['search_time', 'total_time']:
-            return reports.gm
-        return sum
+            return 'geometric mean', reports.gm
+        return 'sum', sum
 
     def _get_table(self, attribute):
         table = PlanningReport._get_empty_table(self, attribute)
-        func = self._get_group_func(attribute)
+        func_name, func = self._get_group_func(attribute)
 
         # If we don't have to filter the runs, we can use the saved group_dict
-        if (self.resolution == 'domain' and
-            not attribute in self.absolute_attributes):
-            groups = self._get_filtered_groups(attribute)
-        else:
+        if (self.resolution == 'problem' or
+            attribute in self.absolute_attributes):
             groups = self.orig_groups
+        else:
+            groups = self._get_filtered_groups(attribute)
+            table.info.append('Only instances where all configurations have a '
+                              'value for "%s" are considered.' % attribute)
+            table.info.append('Each table entry gives the %s of "%s" for that '
+                              'domain.' % (func_name, attribute))
+            summary_names = [name.lower()
+                             for name, sum_func in table.summary_funcs]
+            if len(summary_names) == 1:
+                table.info.append('The last row gives the %s across all '
+                                  'domains.' % summary_names[0])
+            elif len(summary_names) > 1:
+                table.info.append('The last rows give the %s across all '
+                                  'domains.' % ' and '.join(summary_names))
 
         def show_missing_attribute_msg(name):
             msg = '%s: The attribute "%s" was not found. ' % (name, attribute)

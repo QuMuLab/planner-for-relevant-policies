@@ -94,10 +94,11 @@ def preprocessor_facts(content, props):
 def translator_mutex_groups(content, props):
     if 'translator_mutex_groups' in props:
         return
-    # Number of mutex groups (second line in the "all.groups" file)
-    # The file starts with "begin_groups\n7\ngroup"
-    match = re.search(r'begin_groups\n(\d+)\ngroup', content, re.M | re.S)
-    props['translator_mutex_groups'] = match.group(1)
+    # Number of mutex groups (second line in the "all.groups" file).
+    # The file normally starts with "begin_groups\n7\ngroup", but if no groups
+    # are found, it has the form "begin_groups\n0\nend_groups".
+    match = re.search(r'begin_groups\n(\d+)$', content, re.M | re.S)
+    props['translator_mutex_groups'] = int(match.group(1))
 
 
 def translator_mutex_groups_total_size(content, props):

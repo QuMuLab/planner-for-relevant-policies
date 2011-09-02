@@ -28,6 +28,7 @@ def avg(values):
     >>> avg([20, 30, 70])
     40.0
     """
+    assert len(values) >= 1
     return round(math.fsum(values) / len(values), 4)
 
 
@@ -119,6 +120,7 @@ class Report(object):
                 logging.error('The following attributes are not present in '
                               'the dataset: %s' % sorted(not_found))
                 sys.exit(1)
+        self.attributes.sort()
         logging.info('Selected Attributes: %s' % self.attributes)
 
         if self.filters:
@@ -310,6 +312,7 @@ class Table(collections.defaultdict):
 
         self.summary_funcs = []
         self.column_order = {}
+        self.info = []
 
         self._cols = None
 
@@ -431,9 +434,15 @@ class Table(collections.defaultdict):
         for row in self.rows:
             text += self.get_row_markup(row)
         for name, func in self.summary_funcs:
-            summary_row = dict([(col, func(content)) for col, content in
-                                self.get_columns().items()])
+            summary_row = {}
+            for col, content in self.get_columns().items():
+                content = [val for val in content if val is not None]
+                if content:
+                    summary_row[col] = func(content)
+                else:
+                    summary_row[col] = None
             text += self.get_row_markup(name, summary_row)
+        text += ' '.join(self.info)
         return text
 
 
