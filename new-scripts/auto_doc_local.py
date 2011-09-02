@@ -38,9 +38,12 @@ def send_pages(pages):
 def insert_wiki_links(text):
     keywords = dict({'shrink strategy' : 'ShrinkStrategies',
                      'heuristic' : 'HeuristicSpecification',
-                     'scalar evaluator' : 'ScalarEvaluator'})
+                     'scalar evaluator' : 'ScalarEvaluator',
+                     'landmark graph' : 'LandmarksDefinition'})
     for key, target in keywords.iteritems():
-        text = text.replace(key, "[[" + key + "|" + "target" + "]]")
+        link_inserter = re.compile(key + '\):')
+        text = link_inserter.sub("[[AUTODOC" + target + "|" + key + "]]):", text)
+    return text
 
 if __name__ == '__main__':
     #update the planner executable if necessary
@@ -69,9 +72,11 @@ if __name__ == '__main__':
     #introductions for help pages
     introductions = dict({'heuristics': "A heuristic specification is either a newly created heuristic instance or a heuristic that has been defined previously. This page describes how one can specify a new heuristic instance. For re-using heuristics, see ReusingHeuristics."})
 
-    #send to wiki
+    #send to wiki:
+    pagetitles = [];
     for page in pages:
         title = "AUTODOC"+categories[page[0]]
+        pagetitles.append(title);
         text = page[1]
         text = "<<TableOfContents>>\n" + text
         if(page[0] in introductions):
@@ -79,8 +84,14 @@ if __name__ == '__main__':
         doc = markup.Document()
         doc.add_text(text)
         text = doc.render("moin")
-        insert_wiki_links(text)
+        text = insert_wiki_links(text)
         print "updating ", title
         send_pages([(title, text)])
-
+    #update overview page:
+    title = "AUTODOCOverview"
+    text = "";
+    for pagetitle in pagetitles:
+        text = text + "\n * [[" + pagetitle + "]]"
+    print "updating ", title
+    send_pages([(title, text)])
 
