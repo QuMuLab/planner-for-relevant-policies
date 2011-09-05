@@ -334,8 +334,8 @@ class DownwardExperiment(experiments.Experiment):
 
         # Add the preprocess files for later parsing
         run.add_resource('OUTPUT', path('output'), 'output', symlink=sym)
-        run.add_resource('ALL_GROUPS', path('all.groups'), 'all.groups', symlink=sym)
-        run.add_resource('TEST_GROUPS', path('test.groups'), 'test.groups', symlink=sym)
+        run.add_resource('ALL_GROUPS', path('all.groups'), 'all.groups', symlink=sym, required=False)
+        run.add_resource('TEST_GROUPS', path('test.groups'), 'test.groups', symlink=sym, required=False)
         run.add_resource('OUTPUT_SAS', path('output.sas'), 'output.sas', symlink=sym)
         run.add_resource('DOMAIN', path('domain.pddl'), 'domain.pddl', symlink=sym)
         run.add_resource('PROBLEM', path('problem.pddl'), 'problem.pddl', symlink=sym)
