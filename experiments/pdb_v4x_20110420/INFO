@@ -1,4 +1,0 @@
-Wie v4, nur ohne Suche, um den Memory Peak der PDB Konstruktion 
-garantiert nicht durch den Speicherbedarf während der Suche zu verändern
-
-Revision: 1888:30956d91b5ea
