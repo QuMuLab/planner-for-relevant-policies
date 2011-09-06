@@ -13,6 +13,8 @@ else
     EXPTYPE=gkigrid
 fi
 
+# Can be used for testing --complete or --compact experiments
+EXPOPTS=
 
 # We only want a quick look if everything worked
 REPORTATTRS='-a coverage';
