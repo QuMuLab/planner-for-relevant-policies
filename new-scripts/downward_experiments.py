@@ -107,8 +107,8 @@ def _prepare_preprocess_run(exp, run):
     run.add_resource("DOMAIN", run.problem.domain_file(), "domain.pddl")
     run.add_resource("PROBLEM", run.problem.problem_file(), "problem.pddl")
 
-    run.add_command('translate', [run.translator.shell_name, 'domain.pddl',
-                                  'problem.pddl'],
+    run.add_command('translate', [run.translator.shell_name, 'DOMAIN',
+                                  'PROBLEM'],
                     time_limit=LIMIT_TRANSLATE_TIME,
                     mem_limit=LIMIT_TRANSLATE_MEMORY)
     run.add_command('preprocess', [run.preprocessor.shell_name],
@@ -135,7 +135,7 @@ def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
     """
     run.require_resource(run.planner.shell_name)
     run.add_command('search', [run.planner.shell_name] + shlex.split(config),
-                    stdin='OUTPUT',
+                    stdin='output',
                     time_limit=LIMIT_SEARCH_TIME,
                     mem_limit=LIMIT_SEARCH_MEMORY)
     run.declare_optional_output("sas_plan")
