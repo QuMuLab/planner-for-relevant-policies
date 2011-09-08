@@ -124,15 +124,6 @@ public:
 };
 
 
-struct HelpElement {
-    HelpElement(std::string k, std::string h, std::string tn);
-    void set_default_value(std::string d_v);
-    std::string kwd;
-    std::string help;
-    std::string type_name;
-    std::string default_value;
-};
-
 
 /*The OptionParser stores a parse tree, and a Options.
 By calling addArgument, the parse tree is partially parsed,
@@ -164,7 +155,9 @@ public:
 
     void add_enum_option(std::string k,
                          std::vector<std::string > enumeration,
-                         std::string def_val = "", std::string h = "", OptionFlags flags = OptionFlags());
+                         std::string def_val = "", std::string h = "",
+                         std::vector<std::string> enum_doc = std::vector<std::string>(),
+                         OptionFlags flags = OptionFlags());
 
     template <class T>
     void add_list_option(std::string k, std::string h = "", OptionFlags flags = OptionFlags());
@@ -172,6 +165,13 @@ public:
     template <class T>
     void add_list_option(std::string k,
                          std::vector<T> def_val, std::string h = "");
+
+    void document_values(std::string argument,
+                         ValueExplanations value_explanations) const;
+    void document_synopsis(std::string name, std::string note) const;
+    void document_property(std::string property, std::string note) const;
+    void document_language_support(std::string feature, std::string note) const;
+    void document_note(std::string name, std::string note) const;
 
     void error(std::string msg);
     void warning(std::string msg);
@@ -189,16 +189,19 @@ private:
     ParseTree parse_tree;
     bool dry_run_;
     bool help_mode_;
-    std::vector<HelpElement> helpers;
+
     ParseTree::sibling_iterator next_unparsed_argument;
     std::vector<std::string> valid_keys;
-    std::vector<std::string> helpstrings;
 };
 
 //Definitions of OptionParsers template functions:
 
 template <class T>
 T OptionParser::start_parsing() {
+    if (help_mode_){
+        DocStore::instance()->register_object(parse_tree.begin()->value,
+                                              TypeNamer<T>::name());
+    }
     return TokenParser<T>::parse(*this);
 }
 
@@ -206,13 +209,17 @@ template <class T>
 void OptionParser::add_option(
     std::string k, std::string h, OptionFlags flags) {
     if (help_mode_) {
-        helpers.push_back(HelpElement(k, h, TypeNamer<T>::name()));
+        std::string default_value = "";
         if (opts.contains(k)) {
-            helpers.back().default_value =
+            default_value =
                 DefaultValueNamer<T>::to_str(opts.get<T>(k));
         }
+        DocStore::instance()->add_arg(parse_tree.begin()->value,
+                                      k, h, 
+                                      TypeNamer<T>::name(), default_value);
         return;
     }
+
     valid_keys.push_back(k);
 
     ParseTree::sibling_iterator arg = next_unparsed_argument;
@@ -311,12 +318,6 @@ Heuristic *TokenParser<Heuristic *>::parse(OptionParser &p) {
         return Predefinitions<Heuristic *>::instance()->get(pt->value);
     } else if (Registry<Heuristic *>::instance()->contains(pt->value)) {
         return Registry<Heuristic *>::instance()->get(pt->value) (p);
-        //look if there's a scalar evaluator registered by this name,
-        //and cast (same behaviour as old parser)
-    } else if (Registry<ScalarEvaluator *>::instance()->contains(pt->value)) {
-        ScalarEvaluator *eval =
-            Registry<ScalarEvaluator *>::instance()->get(pt->value) (p);
-        return dynamic_cast<Heuristic *>(eval);
     }
 
     p.error("heuristic " + pt->value + " not found");
@@ -342,6 +343,9 @@ ScalarEvaluator *TokenParser<ScalarEvaluator *>::parse(OptionParser &p) {
                Predefinitions<Heuristic *>::instance()->get(pt->value);
     } else if (Registry<ScalarEvaluator *>::instance()->contains(pt->value)) {
         return Registry<ScalarEvaluator *>::instance()->get(pt->value) (p);
+    } else if (Registry<Heuristic *>::instance()->contains(pt->value)) {
+        return (ScalarEvaluator *)
+            Registry<Heuristic *>::instance()->get(pt->value) (p);
     }
     p.error("scalar evaluator " + pt->value + " not found");
     return 0;

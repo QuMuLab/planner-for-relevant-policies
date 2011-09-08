@@ -8,8 +8,11 @@
 #include <vector>
 #include <map>
 #include <ios>
+#include <iostream>
+#include <sstream>
 #include <tree.hh>
 #include <tree_util.hh>
+#include <utility>
 #include <boost/any.hpp>
 
 
@@ -197,7 +200,7 @@ struct TypeNamer<Heuristic *> {
 template <>
 struct TypeNamer<LandmarkGraph *> {
     static std::string name() {
-        return "landmarks graph";
+        return "landmark graph";
     }
 };
 
@@ -405,5 +408,139 @@ struct OptionFlags {
     bool mandatory;
 };
 
+typedef std::vector<std::pair<std::string, std::string> > ValueExplanations;
+struct ArgumentInfo {
+    ArgumentInfo(
+        std::string k, std::string h, std::string t_n, std::string def_val,
+        ValueExplanations val_expl)
+       : kwd(k),
+         help(h),
+         type_name(t_n),
+         default_value(def_val),
+         value_explanations(val_expl) {
+    }
+    std::string kwd;
+    std::string help;
+    std::string type_name;
+    std::string default_value;
+    std::vector<std::pair<std::string, std::string> > value_explanations;
+};
+
+struct PropertyInfo {
+    PropertyInfo(std::string prop, std::string descr)
+        : property(prop),
+          description(descr) {
+    }
+    std::string property;
+    std::string description;
+};
+
+struct NoteInfo {
+    NoteInfo(std::string n, std::string descr)
+        : name(n),
+          description(descr) {
+    }
+    std::string name;
+    std::string description;
+};
+
+
+struct LanguageSupportInfo{
+    LanguageSupportInfo(std::string feat, std::string descr)
+        : feature(feat),
+          description(descr) {
+    }
+    std::string feature;
+    std::string description;
+};
+
+//stores documentation for a single type, for use in combination with DocStore
+struct DocStruct {
+    std::string type;
+    std::string full_name;
+    std::string synopsis;
+    std::vector<ArgumentInfo> arg_help;
+    std::vector<PropertyInfo> property_help;
+    std::vector<LanguageSupportInfo> support_help;
+    std::vector<NoteInfo> notes;
+};
+
+//stores documentation for types parsed in help mode
+class DocStore {
+public:
+    static DocStore *instance() {
+        if (!instance_) {
+            instance_ = new DocStore();
+        }
+        return instance_;
+    }
+
+    void register_object(std::string k, std::string type);
+
+    void add_arg(std::string k,
+                 std::string arg_name,
+                 std::string help,
+                 std::string type,
+                 std::string default_value,
+                 ValueExplanations value_explanations = ValueExplanations());
+    void add_value_explanations(std::string k,
+                                std::string arg_name,
+                                ValueExplanations value_explanations);
+    void set_synopsis(std::string k, 
+                      std::string name, std::string description);
+    void add_property(std::string k,
+                      std::string name, std::string description);
+    void add_feature(std::string k,
+                     std::string feature, std::string description);
+    void add_note(std::string k,
+                  std::string name, std::string description);
+
+    bool contains(std::string k);
+    DocStruct get(std::string k);
+    std::vector<std::string> get_keys();
+    std::vector<std::string> get_types();
+
+private:
+    DocStore() {}
+    static DocStore *instance_;
+    std::map<std::string, DocStruct> registered;
+};
+
+class DocPrinter {
+public:
+    DocPrinter(std::ostream &out);
+    virtual ~DocPrinter();
+
+    virtual void print_all();
+    virtual void print_category(std::string category_name);
+    virtual void print_element(std::string call_name, DocStruct &info) = 0;
+protected:
+    std::ostream &os;
+
+    virtual void print_category_header(std::string category_name) = 0;
+    virtual void print_category_footer() = 0;
+};
+
+class Txt2TagsPrinter : public DocPrinter {
+public:
+    Txt2TagsPrinter(std::ostream &out);
+    virtual ~Txt2TagsPrinter();
+
+    virtual void print_element(std::string call_name, DocStruct &info);
+protected:
+    virtual void print_category_header(std::string category_name);
+    virtual void print_category_footer();
+};
+
+class PlainPrinter : public DocPrinter {
+public:
+    PlainPrinter(std::ostream &out);
+    virtual ~PlainPrinter();
+
+    virtual void print_element(std::string call_name, DocStruct &info);
+protected:
+    virtual void print_category_header(std::string category_name);
+    virtual void print_category_footer();
+};
 
 #endif

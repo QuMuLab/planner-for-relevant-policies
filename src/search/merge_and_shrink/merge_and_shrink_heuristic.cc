@@ -208,9 +208,23 @@ int MergeAndShrinkHeuristic::compute_heuristic(const State &state) {
     return cost;
 }
 
-static ScalarEvaluator *_parse(OptionParser &parser) {
+static Heuristic *_parse(OptionParser &parser) {
+    parser.document_synopsis(
+        "Merge-and-shrink heuristic", 
+        "Note: The parameter space and syntax for the merge-and-shrink "
+        "heuristic has changed significantly in August 2011.");
+    parser.document_language_support(
+        "action costs", 
+        "supported");
+    parser.document_language_support("conditional_effects", "not supported");
+    parser.document_language_support("axioms", "not supported");
+    parser.document_property("admissible", "yes");
+    parser.document_property("consistent", "yes");
+    parser.document_property("safe", "yes");
+    parser.document_property("preferred operators", "no");
+
     // TODO: better documentation what each parameter does
-    parser.add_option<int>("count", 1, "nr of abstractions to build");
+    parser.add_option<int>("count", "1", "number of abstractions to build");
     vector<string> merge_strategies;
     //TODO: it's a bit dangerous that the merge strategies here
     // have to be specified exactly in the same order
@@ -231,11 +245,47 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     // when it's actually used.
     ShrinkStrategy *def_shrink = ShrinkFH::create_default(50000);
 
-    parser.add_option<ShrinkStrategy *>("shrink_strategy", def_shrink, "shrink strategy");
+    parser.add_option<ShrinkStrategy *>(
+        "shrink_strategy", 
+        "shrink_fh(max_states=50000, max_states_before_merge=50000, shrink_f=high, shrink_h=low", 
+        "shrink strategy; these are not fully documented yet;"
+        "try one of the following:");
+    ValueExplanations shrink_value_explanations;
+    shrink_value_explanations.push_back(
+        make_pair("shrink_fh(max_states=N)",
+                  "f-preserving abstractions from the "
+                  "Helmert/Haslum/Hoffmann ICAPS 2007 paper "
+                  "(called HHH in the IJCAI 2011 paper by Nissim, "
+                  "Hoffmann and Helmert). "
+                  "Here, N is a numerical parameter for which sensible values "
+                  "include 1000, 10000, 50000, 100000 and 200000. "
+                  "Combine this with the default merge strategy "
+                  "MERGE_LINEAR_CG_GOAL_LEVEL to match the heuristic "
+                  "in the paper."));
+    shrink_value_explanations.push_back(
+        make_pair("shrink_bisimulation(max_states=infinity, threshold=1, greedy=true, initialize_by_h=false, group_by_h=false)",
+                  "Greedy bisimulation without size bound "
+                  "(called M&S-gop in the IJCAI 2011 paper by Nissim, "
+                  "Hoffmann and Helmert). "
+                  "Combine this with the merge strategy "
+                  "MERGE_LINEAR_REVERSE_LEVEL to match "
+                  "the heuristic in the paper. "));
+    shrink_value_explanations.push_back(
+        make_pair("shrink_bisimulation(max_states=N, greedy=false, initialize_by_h=true, group_by_h=true)",
+                  "Exact bisimulation with a size limit "
+                  "(called DFP-bop in the IJCAI 2011 paper by Nissim, "
+                  "Hoffmann and Helmert). "
+                  "where N is a numerical parameter for which sensible values "
+                  "include 1000, 10000, 50000, 100000 and 200000. "
+                  "Combine this with the merge strategy "
+                  "MERGE_LINEAR_REVERSE_LEVEL to match "
+                  "the heuristic in the paper.")); 
+    parser.document_values("shrink_strategy", shrink_value_explanations);
+
     // TODO: Rename option name to "use_label_reduction" to be
     //       consistent with the papers?
-    parser.add_option<bool>("reduce_labels", true, "enable label reduction");
-    parser.add_option<bool>("expensive_statistics", false, "show statistics on \"unique unlabeled edges\" (WARNING: "
+    parser.add_option<bool>("reduce_labels", "true", "enable label reduction");
+    parser.add_option<bool>("expensive_statistics", "false", "show statistics on \"unique unlabeled edges\" (WARNING: "
                             "these are *very* slow -- check the warning in the output)");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
@@ -257,4 +307,4 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     }
 }
 
-static Plugin<ScalarEvaluator> _plugin("merge_and_shrink", _parse);
+static Plugin<Heuristic> _plugin("merge_and_shrink", _parse);
