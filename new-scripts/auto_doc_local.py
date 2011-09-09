@@ -39,7 +39,9 @@ def insert_wiki_links(text):
     keywords = dict({'shrink strategy' : 'ShrinkStrategies',
                      'heuristic' : 'HeuristicSpecification',
                      'scalar evaluator' : 'ScalarEvaluator',
-                     'landmark graph' : 'LandmarksDefinition'})
+                     'landmark graph' : 'LandmarksDefinition',
+                     'LAMAFFSynergy' : '[[LAMAFFSynergy]]',
+                     'LPBuildInstruction' : '[[LPBuildInstructions]]'})
     for key, target in keywords.iteritems():
         link_inserter = re.compile(key + '\):')
         text = link_inserter.sub("[[AUTODOC" + target + "|" + key + "]]):", text)
@@ -70,21 +72,28 @@ if __name__ == '__main__':
                        'synergys' : 'LAMAFFSynergy',
                        'shrink strategys' : 'ShrinkStrategies'})
     #introductions for help pages
-    introductions = dict({'heuristics': "A heuristic specification is either a newly created heuristic instance or a heuristic that has been defined previously. This page describes how one can specify a new heuristic instance. For re-using heuristics, see ReusingHeuristics."})
+    introductions = dict({'heuristics': """A heuristic specification is either a newly created heuristic instance or a heuristic that has been defined previously. This page describes how one can specify a new heuristic instance. For re-using heuristics, see [[ReusingHeuristics]].
+ 
+Definitions of ''properties'' in the descriptions below:
+
+ * '''admissible:''' h(s) <= h*(s) for all states s
+ * '''consistent:''' h(s) + c(s, s') >= h(s') for all states s connected to states s' by an action with cost c(s, s')
+ * '''safe:''' h(s) = infinity is only true for states with h*(s) = infinity
+ * '''preferred operators:''' this heuristic identifies preferred operators"""})
 
     #send to wiki:
     pagetitles = [];
     for page in pages:
-        title = "AUTODOC"+categories[page[0]]
+        title = "DOC/"+categories[page[0]]
         pagetitles.append(title);
         text = page[1]
         text = "<<TableOfContents>>\n" + text
-        if(page[0] in introductions):
-            text = introductions[page[0]] + text
         doc = markup.Document()
         doc.add_text(text)
         text = doc.render("moin")
         text = insert_wiki_links(text)
+        if(page[0] in introductions):
+            text = introductions[page[0]] + text
         print "updating ", title
         send_pages([(title, text)])
     #update overview page:
