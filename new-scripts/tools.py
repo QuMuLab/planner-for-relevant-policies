@@ -257,8 +257,8 @@ def copy(src, dest, required=True):
                       (os.path.abspath(src), os.path.abspath(dest)))
         sys.exit(1)
     else:
-        logging.warning('Optional path %s cannot be copied to %s' %
-                        (os.path.abspath(src), os.path.abspath(dest)))
+        logging.info('Optional path %s cannot be copied to %s' %
+                     (os.path.abspath(src), os.path.abspath(dest)))
         return
     try:
         func(src, dest)
