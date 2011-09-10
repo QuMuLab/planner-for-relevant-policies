@@ -98,7 +98,8 @@ def translator_mutex_groups(content, props):
     # The file normally starts with "begin_groups\n7\ngroup", but if no groups
     # are found, it has the form "begin_groups\n0\nend_groups".
     match = re.search(r'begin_groups\n(\d+)$', content, re.M | re.S)
-    props['translator_mutex_groups'] = int(match.group(1))
+    if match:
+        props['translator_mutex_groups'] = int(match.group(1))
 
 
 def translator_mutex_groups_total_size(content, props):
