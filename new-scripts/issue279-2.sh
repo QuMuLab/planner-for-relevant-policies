@@ -1,6 +1,6 @@
 #! /bin/bash
 
-CONFIGS=issue279_configs.py:configs_reverse_level
+CONFIGS=issue279_configs.py:configs_cg_goal_level
 QUEUE=opteron_core.q
 
 ## For the real experiment, use this:
