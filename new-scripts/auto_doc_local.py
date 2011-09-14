@@ -39,12 +39,10 @@ def insert_wiki_links(text):
     keywords = dict({'shrink strategy' : 'ShrinkStrategies',
                      'heuristic' : 'HeuristicSpecification',
                      'scalar evaluator' : 'ScalarEvaluator',
-                     'landmark graph' : 'LandmarksDefinition',
-                     'LAMAFFSynergy' : '[[LAMAFFSynergy]]',
-                     'LPBuildInstruction' : '[[LPBuildInstructions]]'})
+                     'landmark graph' : 'LandmarksDefinition',})
     for key, target in keywords.iteritems():
         link_inserter = re.compile(key + '\):')
-        text = link_inserter.sub("[[AUTODOC" + target + "|" + key + "]]):", text)
+        text = link_inserter.sub("[[DOC/" + target + "|" + key + "]]):", text)
     return text
 
 if __name__ == '__main__':
