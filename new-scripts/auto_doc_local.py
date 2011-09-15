@@ -17,11 +17,22 @@ BOT_USERNAME = "MoritzGronbach"
 WIKI_URL = "http://localhost:8080"
 
 
-def send_pages(pages):
+def connect():
     wiki = xmlrpclib.ServerProxy(WIKI_URL + "?action=xmlrpc2", allow_none=True)
     auth_token = wiki.getAuthToken(BOT_USERNAME, "geheimeswort")
     multi_call = xmlrpclib.MultiCall(wiki)
     multi_call.applyAuthToken(auth_token)
+    return multi_call
+
+def get_all_pages():
+    multi_call = connect()
+    multi_call.getAllPages()
+    result = []
+    entry1, entry2 = multi_call()
+    return entry2
+
+def send_pages(pages):
+    multi_call = connect()
     for page_name, page_text in pages:
         multi_call.putPage(page_name, page_text)
     try:
@@ -35,14 +46,17 @@ def send_pages(pages):
     else:
         print "Update successful"
 
+def make_link(m):
+    s = m.group(0)
+    key = s[1:-1]
+    result = s[0] + "[[DOC/" + key + "|" + key + "]]" + s[-1]
+    return result
+
 def insert_wiki_links(text):
-    keywords = dict({'shrink strategy' : 'ShrinkStrategies',
-                     'heuristic' : 'HeuristicSpecification',
-                     'scalar evaluator' : 'ScalarEvaluator',
-                     'landmark graph' : 'LandmarksDefinition',})
-    for key, target in keywords.iteritems():
-        link_inserter = re.compile(key + '\):')
-        text = link_inserter.sub("[[DOC/" + target + "|" + key + "]]):", text)
+    pages = get_all_pages()
+    docpages = [page[4:] for page in pages if page.startswith("DOC/")]
+    for key in docpages:
+        text = re.sub("\W" + key + "\W", make_link, text)
     return text
 
 if __name__ == '__main__':
@@ -61,16 +75,8 @@ if __name__ == '__main__':
     pagesplitter = re.compile(r'>>>>CATEGORY: ([\w\s]+?)<<<<(.+?)>>>>CATEGORYEND<<<<', re.DOTALL)
     pages = pagesplitter.findall(out)
 
-    #nicer names for the categories
-    categories = dict({'heuristics': 'HeuristicSpecification',
-                       'openlists': 'OpenList',
-                       'scalar evaluators': 'ScalarEvaluator',
-                       'landmark graphs': 'LandmarksDefinition',
-                       'search engines' : 'SearchEngine',
-                       'synergys' : 'LAMAFFSynergy',
-                       'shrink strategys' : 'ShrinkStrategies'})
     #introductions for help pages
-    introductions = dict({'heuristics': """A heuristic specification is either a newly created heuristic instance or a heuristic that has been defined previously. This page describes how one can specify a new heuristic instance. For re-using heuristics, see [[ReusingHeuristics]].
+    introductions = dict({'Heuristic': """A heuristic specification is either a newly created heuristic instance or a heuristic that has been defined previously. This page describes how one can specify a new heuristic instance. For re-using heuristics, see [[ReusingHeuristics]].
  
 Definitions of ''properties'' in the descriptions below:
 
@@ -82,8 +88,11 @@ Definitions of ''properties'' in the descriptions below:
     #send to wiki:
     pagetitles = [];
     for page in pages:
-        title = "DOC/"+categories[page[0]]
-        pagetitles.append(title);
+        title = page[0]
+        if(title == "Synergy"):
+            title = "LAMAFFSynergy"
+        title = "DOC/"+title
+        pagetitles.append(title)
         text = page[1]
         text = "<<TableOfContents>>\n" + text
         doc = markup.Document()
