@@ -72,7 +72,7 @@ def insert_wiki_links(text):
     for key in doctitles:
         text = re.sub("\W" + key + "\W", make_doc_link, text)
     othertitles = [title for title in titles if not title.startswith("DOC/")]
-    for title in othertitles:
+    for key in othertitles:
         text = re.sub("\W" + key + "\W", make_other_link, text)
     return text
 
