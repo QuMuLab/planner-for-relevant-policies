@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 BOT_USERNAME = "MoritzGronbach"
 WIKI_URL = "http://localhost:8080"
 
+titles = []
 
 def connect():
     wiki = xmlrpclib.ServerProxy(WIKI_URL + "?action=xmlrpc2", allow_none=True)
@@ -67,7 +68,6 @@ def make_other_link(m):
     return result
 
 def insert_wiki_links(text):
-    titles = get_all_titles()
     doctitles = [title[4:] for title in titles if title.startswith("DOC/")]
     for key in doctitles:
         text = re.sub("\W" + key + "\W", make_doc_link, text)
@@ -77,6 +77,7 @@ def insert_wiki_links(text):
     return text
 
 if __name__ == '__main__':
+    titles = get_all_titles()
     #update the planner executable if necessary
     build_dir = "../src/search"
     cwd = os.getcwd()
@@ -92,7 +93,6 @@ if __name__ == '__main__':
     pagesplitter = re.compile(r'>>>>CATEGORY: ([\w\s]+?)<<<<(.+?)>>>>CATEGORYEND<<<<', re.DOTALL)
     pages = pagesplitter.findall(out)
 
-    titles = get_all_titles()
     doctitles = [title for title in titles if title.startswith("DOC/")]
 
     #format and send to wiki:
@@ -127,4 +127,6 @@ if __name__ == '__main__':
         text = text + "\n * [[" + pagetitle + "]]"
     print "updating ", title
     send_pages([(title, text)])
+    print "Done."
+    print "You may need to run this script again to insert links to newly created pages."
 
