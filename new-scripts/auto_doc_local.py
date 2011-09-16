@@ -24,12 +24,18 @@ def connect():
     multi_call.applyAuthToken(auth_token)
     return multi_call
 
-def get_all_pages():
+def get_all_titles():
     multi_call = connect()
     multi_call.getAllPages()
     result = []
     entry1, entry2 = multi_call()
     return entry2
+
+#returns the text of the page titled title
+def get_page(title):
+    multi_call = connect()
+    multi_call.getPage(title)
+    return multi_call()[1]
 
 def send_pages(pages):
     multi_call = connect()
@@ -46,17 +52,28 @@ def send_pages(pages):
     else:
         print "Update successful"
 
-def make_link(m):
+#helper function for insert_wiki_links
+def make_doc_link(m):
     s = m.group(0)
     key = s[1:-1]
     result = s[0] + "[[DOC/" + key + "|" + key + "]]" + s[-1]
     return result
 
+#helper function for insert_wiki_links
+def make_other_link(m):
+    s = m.group(0)
+    key = s[1:-1]
+    result = s[0] + "[[" + key + "|" + key + "]]" + s[-1]
+    return result
+
 def insert_wiki_links(text):
-    pages = get_all_pages()
-    docpages = [page[4:] for page in pages if page.startswith("DOC/")]
-    for key in docpages:
-        text = re.sub("\W" + key + "\W", make_link, text)
+    titles = get_all_titles()
+    doctitles = [title[4:] for title in titles if title.startswith("DOC/")]
+    for key in doctitles:
+        text = re.sub("\W" + key + "\W", make_doc_link, text)
+    othertitles = [title for title in titles if not title.startswith("DOC/")]
+    for title in othertitles:
+        text = re.sub("\W" + key + "\W", make_other_link, text)
     return text
 
 if __name__ == '__main__':
@@ -75,17 +92,10 @@ if __name__ == '__main__':
     pagesplitter = re.compile(r'>>>>CATEGORY: ([\w\s]+?)<<<<(.+?)>>>>CATEGORYEND<<<<', re.DOTALL)
     pages = pagesplitter.findall(out)
 
-    #introductions for help pages
-    introductions = dict({'Heuristic': """A heuristic specification is either a newly created heuristic instance or a heuristic that has been defined previously. This page describes how one can specify a new heuristic instance. For re-using heuristics, see [[ReusingHeuristics]].
- 
-Definitions of ''properties'' in the descriptions below:
+    titles = get_all_titles()
+    doctitles = [title for title in titles if title.startswith("DOC/")]
 
- * '''admissible:''' h(s) <= h*(s) for all states s
- * '''consistent:''' h(s) + c(s, s') >= h(s') for all states s connected to states s' by an action with cost c(s, s')
- * '''safe:''' h(s) = infinity is only true for states with h*(s) = infinity
- * '''preferred operators:''' this heuristic identifies preferred operators"""})
-
-    #send to wiki:
+    #format and send to wiki:
     pagetitles = [];
     for page in pages:
         title = page[0]
@@ -98,13 +108,20 @@ Definitions of ''properties'' in the descriptions below:
         doc = markup.Document()
         doc.add_text(text)
         text = doc.render("moin")
+        #remove anything before the table of contents (to get rid of the date):
+        text = text[text.find("<<TableOfContents>>"):]
         text = insert_wiki_links(text)
-        if(page[0] in introductions):
-            text = introductions[page[0]] + text
+        #if a page with this title exists, re-use the part preceding the table of contents:
+        introduction = ""
+        if title in doctitles:
+            old_text = get_page(title)
+            introduction = old_text[0:old_text.find("<<TableOfContents>>")]
+        text = introduction + text
         print "updating ", title
         send_pages([(title, text)])
+
     #update overview page:
-    title = "AUTODOCOverview"
+    title = "DOC/Overview"
     text = "";
     for pagetitle in pagetitles:
         text = text + "\n * [[" + pagetitle + "]]"

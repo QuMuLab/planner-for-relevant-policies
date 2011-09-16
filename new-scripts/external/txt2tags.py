@@ -1023,7 +1023,7 @@ def getTags(config):
 		'bar2'                  : '--------'      ,
                 #note: the following rules for urls were wrong.
                 #Submitted a patch to the txt2tags-developers.
-                #-- moritz
+                #-- Moritz
 		'url'                   : '[[\a]]'          ,
 		'urlMark'               : '[[\a|\a]]'       ,
 		'email'                 : '\a'          ,
