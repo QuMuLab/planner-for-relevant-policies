@@ -124,14 +124,12 @@ def _prepare_preprocess_run(exp, run):
         run.declare_optional_output(output_file)
 
 
-def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
+def _prepare_search_run(exp, run, config_nick, config):
     """
     If preprocess_dir is None we are assuming all relevant files are present
     in the dir (output, domain.pddl, problem.pddl).
     Else we use the absolute paths to the preprocess_dir to specify these
     files.
-
-    In the code we use the fact that "os.path.join('', 'filename') = filename".
     """
     run.require_resource(run.planner.shell_name)
     run.add_command('search', [run.planner.shell_name] + shlex.split(config),
