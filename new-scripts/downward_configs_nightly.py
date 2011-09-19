@@ -1,5 +1,5 @@
 """
-Example configurations taken from 
+Example configurations taken from
 http://alfons.informatik.uni-freiburg.de/downward/PlannerUsage
 """
 
@@ -8,17 +8,17 @@ ou = '--search "astar(lmcut())"'
 
 fF = """\
 --heuristic "hff=ff()" \
---search "lazy_greedy(hff, preferred=(hff))"\
+--search "lazy_greedy(hff, preferred=hff)"\
 """
 
 yY = """\
 --heuristic "hcea=cea()" \
---search "lazy_greedy(hcea, preferred=(hcea))"\
+--search "lazy_greedy(hcea, preferred=hcea)"\
 """
 
 fFyY = """\
 --heuristic "hff=ff()" --heuristic "hcea=cea()" \
---search "lazy_greedy(hff, hcea, preferred=(hff, hcea))"\
+--search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"\
 """
 
 blind = """\
@@ -26,6 +26,5 @@ blind = """\
 """
 
 oa50000 = """\
---search "astar(mas())"\
+--search "astar(merge_and_shrink())"\
 """
-

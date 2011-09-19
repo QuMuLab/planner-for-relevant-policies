@@ -16,6 +16,7 @@
              (possible ?x - molecule) 	
 	     (available ?x - molecule)
              (chosen ?s - simple)
+             (not-chosen ?s - simple)
 	     (next ?l1 ?l2 - level)
 	     (num-subs ?l - level)
 	     (goal1)
@@ -62,7 +63,7 @@
 
 (:action choose
  :parameters (?x - simple ?l1 ?l2 - level)
- :precondition (and (possible ?x) (not (chosen ?x)) 
+ :precondition (and (possible ?x) (not-chosen ?x) 
 		    (num-subs ?l2) (next ?l1 ?l2))
  :effect (and (chosen ?x) (not (num-subs ?l2)) (num-subs ?l1)))
 

@@ -72,7 +72,7 @@
  
           zero
           one
-           - number
+           - number_
  
 
            ;; available process types 

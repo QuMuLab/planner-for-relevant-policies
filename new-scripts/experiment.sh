@@ -1,3 +1,4 @@
+#! /bin/bash
 set -e
 
 function usage() {
@@ -15,6 +16,26 @@ function usage() {
     exit 2
 }
 
+function run_experiment() {
+    if [[ "$EXPTYPE" == gkigrid ]]; then
+        pushd .
+        cd $1
+        if [ -e already-submitted ]; then
+            # file exists
+            echo "Experiment has already been submitted once. \
+Delete the file 'already-submitted' or submit it \
+manually if you know what you're doing."
+        else
+            qsub $1.q
+            # Do not submit an experiment more than once
+            touch already-submitted
+        fi
+        popd
+    else
+        ./$1/run
+    fi
+}
+
 if [[ "$(basename "$0")" == experiment.sh ]]; then
     echo "$(basename "$0") is supposed to be called from another script."
     echo "Are you running it as a main script?"
@@ -27,6 +48,22 @@ fi
 
 PHASE=$1
 
+# Support specifying an attribute subset e.g. "-a coverage,plan_length"
+if [[ -z $REPORTATTRS ]]; then
+    REPORTATTRS=""
+fi
+
+# Support specifying an the module that is used for experiment creation.
+# This is useful for the issue*.py scripts.
+if [[ -z $EXPMODULE ]]; then
+    EXPMODULE=downward_experiments.py
+fi
+
+# Support specifying various experiment options.
+if [[ -z $EXPOPTS ]]; then
+    EXPOPTS=""
+fi
+
 ## You can set EXPNAME manually or it will be derived from the
 ## basename of the script that called this one.
 
@@ -34,7 +71,7 @@ if [[ -z $EXPNAME ]]; then
     EXPNAME="exp-$(basename "$0" .sh)"
 fi
 
-EXPTYPEOPT="--exp-type $EXPTYPE"
+EXPTYPEOPT="$EXPTYPE"
 if [[ "$EXPTYPE" == gkigrid ]]; then
     if [[ -z "$QUEUE" ]]; then
         echo error: must specify QUEUE
@@ -46,37 +83,22 @@ elif [[ "$EXPTYPE" != local ]]; then
     exit 2
 fi
 
-function build-all {
-    pushd .
-    cd ../src/
-    ./build_all
-    popd
-}
 
 if [[ "$PHASE" == 1 ]]; then
-    ./downward_experiments.py --preprocess --timeout 7200 --memory 3072 \
-        -s $SUITE $EXPTYPEOPT $EXPNAME
+    ./$EXPMODULE --preprocess -s $SUITE --path $EXPNAME $EXPTYPEOPT
 elif [[ "$PHASE" == 2 ]]; then
-    if [[ "$EXPTYPE" == gkigrid ]]; then
-        qsub ./$EXPNAME-p/$EXPNAME.q
-    else
-        ./$EXPNAME-p/run
-    fi
+    run_experiment $EXPNAME-p
 elif [[ "$PHASE" == 3 ]]; then
     ./resultfetcher.py $EXPNAME-p
 elif [[ "$PHASE" == 4 ]]; then
-    ./downward_experiments.py -s $SUITE -c $CONFIGS $EXPTYPEOPT $EXPNAME
+    ./$EXPMODULE -s $SUITE -c $CONFIGS --path $EXPNAME $EXPOPTS $EXPTYPEOPT
 elif [[ "$PHASE" == 5 ]]; then
-    if [[ "$EXPTYPE" == gkigrid ]]; then
-        qsub ./$EXPNAME/$EXPNAME.q
-    else
-        ./$EXPNAME/run
-    fi
+    run_experiment $EXPNAME
 elif [[ "$PHASE" == 6 ]]; then
     ./downward-resultfetcher.py $EXPNAME
 elif [[ "$PHASE" == 7 ]]; then
-    ./downward-reports.py $EXPNAME-eval
-    ./downward-reports.py --res=problem $EXPNAME-eval
+    ./downward-reports.py $EXPNAME-eval $REPORTATTRS
+    ./downward-reports.py --res=problem $EXPNAME-eval $REPORTATTRS
 elif [[ "$PHASE" == 8 ]]; then
     BASEURL="http://www.informatik.uni-freiburg.de/~$(whoami)"
     if [[ "$(hostname)" == alfons ]]; then
@@ -85,7 +107,7 @@ elif [[ "$PHASE" == 8 ]]; then
         BASEDIR=~
     fi
     echo "copying reports to .public_html -- to view, run:"
-    for REPORT in "$EXPNAME"-eval-{d,p}-abs.html; do
+    for REPORT in "$EXPNAME"-eval-abs-{d,p}.html; do
         cp "reports/$REPORT" "$BASEDIR/.public_html/"
         echo "firefox $BASEURL/$REPORT &"
     done

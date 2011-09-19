@@ -11,15 +11,8 @@
 
 class Operator;
 class State;
-class NamedOptionParser;
-
-struct HeuristicOptions {
-    int cost_type;
-
-    HeuristicOptions();
-
-    void add_option_to_parser(NamedOptionParser &option_parser);
-};
+class OptionParser;
+class Options;
 
 class Heuristic : public ScalarEvaluator {
     enum {NOT_INITIALIZED = -2};
@@ -29,7 +22,7 @@ class Heuristic : public ScalarEvaluator {
     // estimates, eg. when re-opening a search node
 
     std::vector<const Operator *> preferred_operators;
-
+    bool is_unit_cost;
 protected:
     OperatorCost cost_type;
     enum {DEAD_END = -1};
@@ -40,8 +33,11 @@ protected:
     // preferred operators for this heuristic once.
     void set_preferred(const Operator *op);
     int get_adjusted_cost(const Operator &op) const;
+    bool is_unit_cost_problem() const {
+        return is_unit_cost;
+    }
 public:
-    Heuristic(const HeuristicOptions &options);
+    Heuristic(const Options &options);
     virtual ~Heuristic();
 
     void evaluate(const State &state);
@@ -61,6 +57,9 @@ public:
     void get_involved_heuristics(std::set<Heuristic *> &hset) {hset.insert(this); }
     virtual void reset() {}
     OperatorCost get_cost_type() const {return cost_type; }
+
+    static void add_options_to_parser(OptionParser &parser);
+    static Options default_options();
 };
 
 #endif

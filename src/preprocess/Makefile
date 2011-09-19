@@ -4,6 +4,7 @@ HEADERS = \
           domain_transition_graph.h \
           helper_functions.h \
           max_dag.h \
+          mutex_group.h \
           operator.h \
           scc.h \
           state.h \
@@ -45,6 +46,11 @@ CCOPT  =
 CCOPT += -m32
 CCOPT += -g
 CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror
+
+## The following line is a HACK to cross-compile a 64-bit executable
+## on a 32-bit Ubuntu machine (it also needs the -m32 to be changed to
+## -m64, of course.) See http://stackoverflow.com/questions/4643197/missing-include-bits-cconfig-h-when-cross-compiling-64-bit-program-on-32-bit.
+CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu
 
 LINKOPT  =
 LINKOPT += -m32

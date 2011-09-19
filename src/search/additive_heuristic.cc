@@ -10,16 +10,27 @@
 using namespace std;
 
 
-static ScalarEvaluatorPlugin additive_heuristic_plugin(
-    "add", AdditiveHeuristic::create);
 
 
 // construction and destruction
-AdditiveHeuristic::AdditiveHeuristic(const HeuristicOptions &options)
-    : RelaxationHeuristic(options) {
+AdditiveHeuristic::AdditiveHeuristic(const Options &opts)
+    : RelaxationHeuristic(opts),
+      did_write_overflow_warning(false) {
 }
 
 AdditiveHeuristic::~AdditiveHeuristic() {
+}
+
+void AdditiveHeuristic::write_overflow_warning() {
+    if (!did_write_overflow_warning) {
+        // TODO: Should have a planner-wide warning mechanism to handle
+        // things like this.
+        cout << "WARNING: overflow on h^add! Costs clamped to "
+             << MAX_COST_VALUE << endl;
+        cerr << "WARNING: overflow on h^add! Costs clamped to "
+             << MAX_COST_VALUE << endl;
+        did_write_overflow_warning = true;
+    }
 }
 
 // initialization
@@ -65,6 +76,7 @@ void AdditiveHeuristic::relaxed_exploration() {
         int distance = top_pair.first;
         Proposition *prop = top_pair.second;
         int prop_cost = prop->cost;
+        assert(prop_cost >= 0);
         assert(prop_cost <= distance);
         if (prop_cost < distance)
             continue;
@@ -74,8 +86,8 @@ void AdditiveHeuristic::relaxed_exploration() {
             prop->precondition_of;
         for (int i = 0; i < triggered_operators.size(); i++) {
             UnaryOperator *unary_op = triggered_operators[i];
+            increase_cost(unary_op->cost, prop_cost);
             unary_op->unsatisfied_preconditions--;
-            unary_op->cost += prop_cost;
             assert(unary_op->unsatisfied_preconditions >= 0);
             if (unary_op->unsatisfied_preconditions == 0)
                 enqueue_if_necessary(unary_op->effect,
@@ -117,7 +129,7 @@ int AdditiveHeuristic::compute_add_and_ff(const State &state) {
         int prop_cost = goal_propositions[i]->cost;
         if (prop_cost == -1)
             return DEAD_END;
-        total_cost += prop_cost;
+        increase_cost(total_cost, prop_cost);
     }
     return total_cost;
 }
@@ -131,28 +143,13 @@ int AdditiveHeuristic::compute_heuristic(const State &state) {
     return h;
 }
 
-ScalarEvaluator *AdditiveHeuristic::create(
-    const std::vector<string> &config, int start, int &end, bool dry_run) {
-    HeuristicOptions common_options;
-
-    if (config.size() > start + 2 && config[start + 1] == "(") {
-        end = start + 2;
-        if (config[end] != ")") {
-            NamedOptionParser option_parser;
-            common_options.add_option_to_parser(option_parser);
-
-            option_parser.parse_options(config, end, end, dry_run);
-            end++;
-        }
-        if (config[end] != ")")
-            throw ParseError(end);
-    } else {
-        end = start;
-    }
-
-    if (dry_run) {
+static ScalarEvaluator *_parse(OptionParser &parser) {
+    Heuristic::add_options_to_parser(parser);
+    Options opts = parser.parse();
+    if (parser.dry_run())
         return 0;
-    } else {
-        return new AdditiveHeuristic(common_options);
-    }
+    else
+        return new AdditiveHeuristic(opts);
 }
+
+static Plugin<ScalarEvaluator> _plugin("add", _parse);
