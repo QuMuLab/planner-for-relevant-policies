@@ -26,14 +26,18 @@ class FetchOptionParser(tools.ArgParser):
         tools.ArgParser.__init__(self, *args, **kwargs)
 
         self.add_argument('exp_dir',
-                help='path to experiment directory', type=self.directory)
+                help='Path to experiment directory', type=self.directory)
 
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
-                help='path to evaluation directory (default: <exp_dir>-eval)')
+                help='Path to evaluation directory (default: <exp_dir>-eval)')
 
         self.add_argument('--copy-all', action='store_true',
-                help='copy all files from run dirs to new directory tree, '
-                    'not only the properties files')
+                help='Copy all files from run dirs to a new directory tree. '
+                     'Without this option only the combined properties file '
+                     'is written do disk.')
+
+        self.add_argument('--no-props-file', action='store_true',
+                help='Do not write the combined properties file.')
 
     def parse_args(self, *args, **kwargs):
         # args is the populated namespace, i.e. the Fetcher instance
@@ -57,6 +61,8 @@ class FetchOptionParser(tools.ArgParser):
             args.eval_dir = args.exp_props['eval_dir']
         if 'copy_all' in args.exp_props:
             args.copy_all = args.exp_props['copy_all']
+        if 'no_props_file' in args.exp_props:
+            args.no_props_file = args.exp_props['no_props_file']
 
         # If args.eval_dir is absolute already we don't have to do anything
         if args.eval_dir and not os.path.isabs(args.eval_dir):
@@ -262,11 +268,7 @@ class Fetcher(object):
     def fetch(self):
         total_dirs = self.exp_props.get('runs')
 
-        # Only write the combined properties when we are not copying preprocess
-        # files.
-        write_combined_props = not self.exp_props.get('stage') == 'preprocess'
-
-        if write_combined_props:
+        if not self.no_props_file:
             combined_props_filename = os.path.join(self.eval_dir, 'properties')
             combined_props = tools.Properties(combined_props_filename)
 
@@ -275,11 +277,11 @@ class Fetcher(object):
         for index, run_dir in enumerate(run_dirs, 1):
             logging.info('Evaluating: %6d/%d' % (index, total_dirs))
             id_string, props = self.fetch_dir(run_dir)
-            if write_combined_props:
+            if not self.no_props_file:
                 combined_props[id_string] = props.dict()
 
         tools.makedirs(self.eval_dir)
-        if write_combined_props:
+        if not self.no_props_file:
             combined_props.write()
             self.write_data_dump(combined_props)
 

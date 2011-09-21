@@ -235,6 +235,9 @@ class DownwardExperiment(experiments.Experiment):
         # We need the "output" file, not only the properties file
         self.set_property('copy_all', True)
 
+        # Don't write the combined properties file for preprocess experiments
+        self.set_property('no_props_file', True)
+
     def _prepare_translator_and_preprocessor(self, translator, preprocessor):
         # Copy the whole translate directory
         self.add_resource(translator.shell_name + '_DIR', translator.bin_dir,
