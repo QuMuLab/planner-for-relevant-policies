@@ -279,12 +279,17 @@ class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
     Help message formatter which retains any formatting in descriptions and adds
     default values to argument help.
     """
+    def __init__(self, prog, **kwargs):
+        # If we ever want to use the whole terminal width, we can set it here.
+        width = None
+        argparse.HelpFormatter.__init__(self, prog, width=width, **kwargs)
+
     def _fill_text(self, text, width, indent):
         return ''.join([indent + line for line in text.splitlines(True)])
 
     def _get_help_string(self, action):
         help = action.help
-        if '%(default)' not in action.help:
+        if '%(default)' not in action.help and not 'default' in action.help:
             if action.default is not argparse.SUPPRESS:
                 defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
