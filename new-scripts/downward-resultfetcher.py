@@ -8,7 +8,9 @@ from __future__ import with_statement, division
 import logging
 import re
 import math
+import os
 from collections import defaultdict
+from glob import glob
 
 from resultfetcher import Fetcher, FetchOptionParser
 import tools
@@ -383,6 +385,11 @@ def add_preprocess_functions(eval):
     eval.add_function(preprocessor_facts, file='output')
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
+
+
+def add_mutex_groups_functions(eval):
+    # Those functions will only parse the output files if we haven't found the
+    # values in the log.
     eval.add_function(translator_mutex_groups, file='all.groups')
     eval.add_function(translator_mutex_groups_total_size, file='all.groups')
 
@@ -418,6 +425,11 @@ def build_fetcher(parser=FetchOptionParser()):
     if not eval.no_preprocess:
         add_preprocess_parsing(eval)
         add_preprocess_functions(eval)
+        # Only try to parse all.groups files if there are any.
+        all_groups_files = glob(os.path.join(eval.exp_dir, 'runs-*-*', '*',
+                                             'all.groups'))
+        if all_groups_files:
+            add_mutex_groups_functions(eval)
     if not eval.no_search:
         add_search_parsing(eval)
         add_search_functions(eval)

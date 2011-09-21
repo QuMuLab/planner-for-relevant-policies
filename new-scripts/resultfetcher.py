@@ -138,8 +138,10 @@ class _FileParser(object):
             with open(filename, 'rb') as file:
                 self.content = file.read()
         except IOError, err:
-            logging.error('File "%s" could not be read (%s)' % (filename, err))
             self.content = ''
+            return False
+        else:
+            return True
 
     def add_pattern(self, pattern):
         self.patterns.append(pattern)
@@ -244,10 +246,13 @@ class Fetcher(object):
 
         for filename, file_parser in self.file_parsers.items():
             # If filename is absolute it will not be changed here
-            filename = os.path.join(run_dir, filename)
-            file_parser.load_file(filename)
-            # Subclasses directly modify the properties during parsing
-            file_parser.parse(props)
+            path = os.path.join(run_dir, filename)
+            success = file_parser.load_file(path)
+            if success:
+                # Subclasses directly modify the properties during parsing
+                file_parser.parse(props)
+            else:
+                logging.error('File "%s" could not be read' % path)
 
         if self.copy_all:
             # Write new properties file
