@@ -8,7 +8,9 @@ from __future__ import with_statement, division
 import logging
 import re
 import math
+import os
 from collections import defaultdict
+from glob import glob
 
 from resultfetcher import Fetcher, FetchOptionParser
 import tools
@@ -98,7 +100,8 @@ def translator_mutex_groups(content, props):
     # The file normally starts with "begin_groups\n7\ngroup", but if no groups
     # are found, it has the form "begin_groups\n0\nend_groups".
     match = re.search(r'begin_groups\n(\d+)$', content, re.M | re.S)
-    props['translator_mutex_groups'] = int(match.group(1))
+    if match:
+        props['translator_mutex_groups'] = int(match.group(1))
 
 
 def translator_mutex_groups_total_size(content, props):
@@ -382,6 +385,11 @@ def add_preprocess_functions(eval):
     eval.add_function(preprocessor_facts, file='output')
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
+
+
+def add_mutex_groups_functions(eval):
+    # Those functions will only parse the output files if we haven't found the
+    # values in the log.
     eval.add_function(translator_mutex_groups, file='all.groups')
     eval.add_function(translator_mutex_groups_total_size, file='all.groups')
 
@@ -415,14 +423,13 @@ def build_fetcher(parser=FetchOptionParser()):
 
     # Do not parse preprocess files if it has been disabled on the commandline
     if not eval.no_preprocess:
-        if eval.exp_props.get('compact', False):
-            # For compact experiments the preprocess files do not reside in the
-            # run's directory so we can't parse them
-            logging.info('You are parsing a compact experiment, so preprocess '
-                         'files will not be parsed')
-        else:
-            add_preprocess_parsing(eval)
-            add_preprocess_functions(eval)
+        add_preprocess_parsing(eval)
+        add_preprocess_functions(eval)
+        # Only try to parse all.groups files if there are any.
+        all_groups_files = glob(os.path.join(eval.exp_dir, 'runs-*-*', '*',
+                                             'all.groups'))
+        if all_groups_files:
+            add_mutex_groups_functions(eval)
     if not eval.no_search:
         add_search_parsing(eval)
         add_search_functions(eval)

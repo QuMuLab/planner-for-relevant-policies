@@ -257,8 +257,7 @@ def copy(src, dest, required=True):
                       (os.path.abspath(src), os.path.abspath(dest)))
         sys.exit(1)
     else:
-        logging.warning('Optional path %s cannot be copied to %s' %
-                        (os.path.abspath(src), os.path.abspath(dest)))
+        # Do not warn if an optional file cannot be copied.
         return
     try:
         func(src, dest)
@@ -279,12 +278,17 @@ class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
     Help message formatter which retains any formatting in descriptions and adds
     default values to argument help.
     """
+    def __init__(self, prog, **kwargs):
+        # If we ever want to use the whole terminal width, we can set it here.
+        width = None
+        argparse.HelpFormatter.__init__(self, prog, width=width, **kwargs)
+
     def _fill_text(self, text, width, indent):
         return ''.join([indent + line for line in text.splitlines(True)])
 
     def _get_help_string(self, action):
         help = action.help
-        if '%(default)' not in action.help:
+        if '%(default)' not in action.help and not 'default' in action.help:
             if action.default is not argparse.SUPPRESS:
                 defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:

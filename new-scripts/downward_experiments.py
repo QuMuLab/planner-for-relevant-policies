@@ -124,14 +124,12 @@ def _prepare_preprocess_run(exp, run):
         run.declare_optional_output(output_file)
 
 
-def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
+def _prepare_search_run(exp, run, config_nick, config):
     """
     If preprocess_dir is None we are assuming all relevant files are present
     in the dir (output, domain.pddl, problem.pddl).
     Else we use the absolute paths to the preprocess_dir to specify these
     files.
-
-    In the code we use the fact that "os.path.join('', 'filename') = filename".
     """
     run.require_resource(run.planner.shell_name)
     run.add_command('search', [run.planner.shell_name] + shlex.split(config),
@@ -237,6 +235,9 @@ class DownwardExperiment(experiments.Experiment):
         # We need the "output" file, not only the properties file
         self.set_property('copy_all', True)
 
+        # Don't write the combined properties file for preprocess experiments
+        self.set_property('no_props_file', True)
+
     def _prepare_translator_and_preprocessor(self, translator, preprocessor):
         # Copy the whole translate directory
         self.add_resource(translator.shell_name + '_DIR', translator.bin_dir,
@@ -341,9 +342,10 @@ class DownwardExperiment(experiments.Experiment):
         run.add_resource('PROBLEM', path('problem.pddl'), 'problem.pddl', symlink=sym)
         run.add_resource('PREPROCESS_PROPERTIES', path('properties'),
                          'preprocess-properties', symlink=sym)
-        if not self.compact:
-            run.add_resource('RUN_LOG', path('run.log'), 'run.log')
-            run.add_resource('RUN_ERR', path('run.err'), 'run.err')
+
+        # The logs have to be copied, not linked
+        run.add_resource('RUN_LOG', path('run.log'), 'run.log')
+        run.add_resource('RUN_ERR', path('run.err'), 'run.err')
 
     def _make_complete_runs(self):
         for translator, preprocessor, planner in self.combinations:

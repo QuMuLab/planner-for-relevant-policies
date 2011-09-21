@@ -44,21 +44,6 @@ class Checkout(object):
         return os.path.basename(self.checkout_dir)
 
     def checkout(self):
-        # We don't need to check out the working copy
-        if self.rev == 'WORK':
-            return
-
-        # If there's already a checkout, don't checkout again
-        path = self.checkout_dir
-        if os.path.exists(path):
-            logging.info('Checkout "%s" already exists' % path)
-        else:
-            cmd = self.get_checkout_cmd()
-            print cmd
-            subprocess.call(cmd, shell=True)
-        assert os.path.exists(path), 'Could not checkout to "%s"' % path
-
-    def get_checkout_cmd(self):
         raise Exception('Not implemented')
 
     def compile(self):
@@ -167,14 +152,29 @@ class HgCheckout(Checkout):
         ABS_REV_CACHE[cmd] = abs_rev
         return abs_rev
 
-    def get_checkout_cmd(self):
-        cwd = os.getcwd()
-        clone = 'hg clone -r %s %s %s' % (self.rev, self.repo,
-                                          self.checkout_dir)
-        cd_to_repo_dir = 'cd %s' % self.checkout_dir
-        update = 'hg update -r %s' % self.rev
-        cd_back = 'cd %s' % cwd
-        return '; '.join([clone, cd_to_repo_dir, update, cd_back])
+    def checkout(self):
+        # We don't need to check out the working copy
+        if self.rev == 'WORK':
+            return
+
+        path = self.checkout_dir
+        if not os.path.exists(path):
+            clone = ['hg', 'clone', '-r', self.rev, self.repo, path]
+            print ' '.join(clone)
+            subprocess.call(clone)
+        else:
+            logging.info('Checkout "%s" already exists' % path)
+            pull = ['hg', 'pull', self.repo]
+            print ' '.join(pull)
+            subprocess.call(pull, cwd=path)
+
+        update = ['hg', 'update', '-r', self.rev]
+        print ' '.join(update)
+        retcode = subprocess.call(update, cwd=path)
+        if not retcode == 0:
+            # Unknown revision
+            logging.error('Repo at %s has no revision %s. Please delete the '
+                          'checkouts directory' % (path, self.rev))
 
     @property
     def parent_rev(self):
@@ -259,8 +259,20 @@ class SvnCheckout(Checkout):
         ABS_REV_CACHE[cmd] = rev_number
         return rev_number
 
-    def get_checkout_cmd(self):
-        return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
+    def checkout(self):
+        # We don't need to check out the working copy
+        if self.rev == 'WORK':
+            return
+
+        # If there's already a checkout, don't checkout again
+        path = self.checkout_dir
+        if os.path.exists(path):
+            logging.info('Checkout "%s" already exists' % path)
+        else:
+            cmd = 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
+            print cmd
+            subprocess.call(cmd, shell=True)
+        assert os.path.exists(path), 'Could not checkout to "%s"' % path
 
     @property
     def parent_rev(self):
