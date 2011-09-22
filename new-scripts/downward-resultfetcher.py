@@ -256,8 +256,8 @@ def check_memory(content, props):
     Set "memory" to the max value if it was exceeded and "-1 KB" was reported
     """
     memory = props.get('memory')
-    memory_limit = props.get('memory_limit')
-    if memory == -1 and memory_limit:
+    memory_limit = props.get('memory_limit', None)
+    if memory == -1:
         props['memory'] = memory_limit
 
 
@@ -280,10 +280,14 @@ def scores(content, props):
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
         return round(score * 100, 2)
 
+    max_memory = props.get('memory_limit') or 2048 * 1024
+
     props.update({'score_expansions': log_score(props.get('expansions'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
             'score_evaluations': log_score(props.get('evaluations'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
+            'score_memory': log_score(props.get('memory'),
+                    min_bound=2000, max_bound=max_memory, min_score=0.0),
             'score_total_time': log_score(props.get('total_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
             'score_search_time': log_score(props.get('search_time'),
