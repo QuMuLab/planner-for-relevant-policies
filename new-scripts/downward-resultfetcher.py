@@ -410,11 +410,32 @@ def add_search_functions(eval):
     #eval.add_function(completely_explored)
     eval.add_function(get_iterative_results)
     eval.add_function(get_cumulative_results)
+    eval.add_function(check_memory)
     eval.add_function(set_search_time)
     eval.add_function(coverage)
     eval.add_function(get_status)
     eval.add_function(scores)
-    eval.add_function(check_memory)
+
+
+def ipc_score(props):
+    prob_to_runs = defaultdict(list)
+
+    for run_name, run in props.items():
+        prob = '%s:%s' % (run['domain'], run['problem'])
+        prob_to_runs[prob].append(run)
+
+    for prob, prob_runs in prob_to_runs.items():
+        min_length = tools.minimum(run.get('plan_length') for run in prob_runs)
+        for run in prob_runs:
+            length = run.get('plan_length')
+            if length is None:
+                quality = 0
+            elif length == 0:
+                assert min_length == 0
+                quality = 1
+            else:
+                quality = min_length / length
+            props[run['id-string']]['score_ipc'] = quality
 
 
 def build_fetcher(parser=FetchOptionParser()):
@@ -440,6 +461,7 @@ def build_fetcher(parser=FetchOptionParser()):
 
     eval.add_function(check_min_values)
     eval.set_check(check)
+    eval.postprocess_functions.append(ipc_score)
 
     return eval
 

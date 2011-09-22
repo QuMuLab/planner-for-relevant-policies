@@ -64,6 +64,17 @@ def prod(values):
     return prod
 
 
+def minimum(values):
+    """Filter out None values and return the minimum.
+
+    If there are only None values, return None.
+    """
+    values = [v for v in values if v is not None]
+    if values:
+        return min(values)
+    return None
+
+
 def divide_list(seq, size):
     """
     >>> divide_list(range(10), 4)
@@ -200,7 +211,6 @@ class Properties(ConfigObj):
     def get_dataset(self):
         data = DataSet()
         for run_id, run in sorted(self.items()):
-            run['id-string'] = run_id
             data.append(**run)
         return data
 

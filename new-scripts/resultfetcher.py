@@ -179,6 +179,7 @@ class Fetcher(object):
 
         self.file_parsers = defaultdict(_FileParser)
         self.check = None
+        self.postprocess_functions = []
 
     def add_pattern(self, name, regex, group=1, file='run.log', required=True,
                     type=int, flags=''):
@@ -283,10 +284,13 @@ class Fetcher(object):
             logging.info('Evaluating: %6d/%d' % (index, total_dirs))
             id_string, props = self.fetch_dir(run_dir)
             if not self.no_props_file:
+                props['id-string'] = id_string
                 combined_props[id_string] = props.dict()
 
         tools.makedirs(self.eval_dir)
         if not self.no_props_file:
+            for func in self.postprocess_functions:
+                func(combined_props)
             combined_props.write()
             self.write_data_dump(combined_props)
 
