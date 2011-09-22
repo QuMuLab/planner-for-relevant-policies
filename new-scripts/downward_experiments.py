@@ -32,8 +32,12 @@ LIMIT_SEARCH_MEMORY = 2048
 PLANNER_BINARIES = ['downward', 'downward-debug', 'downward-profile',
                     'release-search', 'search']
 # The following are added only if they are present
-PLANNER_HELPERS = ['downward-1', 'downward-2', 'downward-4',
-                   'dispatch', 'downward-seq-opt-fdss-1.py', 'unitcost']
+PLANNER_HELPERS = ['downward-1', 'downward-2', 'downward-4', 'dispatch',
+                   'seq_opt_portfolio.py', 'seq_sat_portfolio.py', 'unitcost']
+
+
+def shell_escape(s):
+    return s.upper().replace('-', '_').replace(' ', '_').replace('.', '_')
 
 
 def _get_configs(planner_rev, config_list):
@@ -48,14 +52,22 @@ def _get_configs(planner_rev, config_list):
         rev_number = None
     new_syntax = rev_number is None or rev_number >= 4425
 
+    portfolios = []
+    config_strings = []
+    for name in config_list:
+        if name.endswith('.py'):
+            portfolios.append((name, ''))
+        else:
+            config_strings.append(name)
+
     if new_syntax:
-        # configs is a list of (nickname,config) pairs
-        configs = downward_configs.get_configs(config_list)
+        # configs is a list of (nickname, config) pairs
+        configs = downward_configs.get_configs(config_strings)
     else:
         # Use the old config names
         # We use the config names also as nicknames
-        configs = zip(config_list, config_list)
-    return configs
+        configs = zip(config_strings, config_strings)
+    return configs + portfolios
 
 
 def require_src_dirs(exp, combinations):
@@ -132,8 +144,15 @@ def _prepare_search_run(exp, run, config_nick, config):
     files.
     """
     run.require_resource(run.planner.shell_name)
-    run.add_command('search', [run.planner.shell_name] + shlex.split(config),
-                    stdin='output',
+    if config:
+        # We have a single planner configuration
+        search_cmd = [run.planner.shell_name] + shlex.split(config)
+    else:
+        # We have a portfolio, config_nick is the path to the portfolio file
+        config_nick = os.path.basename(config_nick)
+        search_cmd = [run.planner.shell_name, '--portfolio', config_nick,
+                      '--plan-file', 'sas_plan']
+    run.add_command('search', search_cmd, stdin='output',
                     time_limit=LIMIT_SEARCH_TIME,
                     mem_limit=LIMIT_SEARCH_MEMORY)
     run.declare_optional_output("sas_plan")
@@ -270,6 +289,14 @@ class DownwardExperiment(experiments.Experiment):
                                 src_path)
                 continue
             self.add_resource('NONAME', src_path, planner.get_path_dest(bin))
+
+        # Find all portfolios and copy them into the experiment directory
+        for portfolio in [name for name in self.configs if name.endswith('.py')]:
+            if not os.path.isfile(portfolio):
+                logging.error('Portfolio file %s could not be found.' % portfolio)
+                sys.exit(1)
+            shell_name = shell_escape(os.path.basename(portfolio))
+            self.add_resource(shell_name, portfolio, planner.get_path_dest(os.path.basename(portfolio)))
 
         # The tip changeset has the newest validator version so we use this one
         validate = os.path.join(tools.SCRIPTS_DIR, '..', 'src', 'validate')
