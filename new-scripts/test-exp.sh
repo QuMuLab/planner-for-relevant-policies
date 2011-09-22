@@ -2,7 +2,7 @@
 
 EXPNAME=exp-test
 
-CONFIGS=yY,downward_configs.py:multiple_plans,iterated_search
+CONFIGS=yY,downward_configs.py:multiple_plans,iterated_search,../src/search/downward-seq-sat-fdss-1.py,../src/search/downward-seq-opt-fdss-1.py
 QUEUE=xeon_core.q
 
 SUITE=gripper:prob01.pddl,zenotravel:pfile1
