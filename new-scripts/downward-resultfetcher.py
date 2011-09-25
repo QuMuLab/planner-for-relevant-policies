@@ -428,7 +428,7 @@ def ipc_score(problem_runs):
             quality = 1
         else:
             quality = min_length / length
-        run['score_ipc'] = quality
+        run['quality'] = quality
 
 
 def build_fetcher(parser=FetchOptionParser()):
