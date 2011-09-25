@@ -279,7 +279,7 @@ class DownwardExperiment(experiments.Experiment):
                 break
         if not bin:
             logging.error('None of the binaries %s could be found in %s' %
-                          PLANNER_BINARIES, planner.bin_dir)
+                          (PLANNER_BINARIES, planner.bin_dir))
             sys.exit(1)
         self.add_resource(planner.shell_name, bin, planner.get_bin_dest())
         for bin in PLANNER_HELPERS:
