@@ -228,6 +228,19 @@ class Fetcher(object):
         """
         self.check = function
 
+    def apply_postprocess_functions(self, combined_props):
+        if not self.postprocess_functions:
+            return
+
+        prob_to_runs = defaultdict(list)
+        for run_name, run in combined_props.items():
+            prob = '%s:%s' % (run['domain'], run['problem'])
+            prob_to_runs[prob].append(run)
+
+        for func in self.postprocess_functions:
+            for prob, problem_runs in prob_to_runs.items():
+                func(problem_runs)
+
     def fetch_dir(self, run_dir):
         prop_file = os.path.join(run_dir, 'properties')
         props = tools.Properties(prop_file)
@@ -289,8 +302,7 @@ class Fetcher(object):
 
         tools.makedirs(self.eval_dir)
         if not self.no_props_file:
-            for func in self.postprocess_functions:
-                func(combined_props)
+            self.apply_postprocess_functions(combined_props)
             combined_props.write()
             self.write_data_dump(combined_props)
 

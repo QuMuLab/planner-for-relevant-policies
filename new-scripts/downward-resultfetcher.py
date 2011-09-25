@@ -417,25 +417,18 @@ def add_search_functions(eval):
     eval.add_function(scores)
 
 
-def ipc_score(props):
-    prob_to_runs = defaultdict(list)
-
-    for run_name, run in props.items():
-        prob = '%s:%s' % (run['domain'], run['problem'])
-        prob_to_runs[prob].append(run)
-
-    for prob, prob_runs in prob_to_runs.items():
-        min_length = tools.minimum(run.get('plan_length') for run in prob_runs)
-        for run in prob_runs:
-            length = run.get('plan_length')
-            if length is None:
-                quality = 0
-            elif length == 0:
-                assert min_length == 0
-                quality = 1
-            else:
-                quality = min_length / length
-            props[run['id-string']]['score_ipc'] = quality
+def ipc_score(problem_runs):
+    min_length = tools.minimum(run.get('plan_length') for run in problem_runs)
+    for run in problem_runs:
+        length = run.get('plan_length')
+        if length is None:
+            quality = 0
+        elif length == 0:
+            assert min_length == 0
+            quality = 1
+        else:
+            quality = min_length / length
+        run['score_ipc'] = quality
 
 
 def build_fetcher(parser=FetchOptionParser()):
