@@ -20,7 +20,7 @@ done
 ./downward-reports.py $EXPNAME-eval -r suite --filter domain:eq:gripper --outfile exp_test_suite.py
 ./downward-reports.py $EXPNAME-eval -r rel --dry -a coverage --rel-change 0 -c WORK-iterated_search,WORK-multiple_plans
 ./downward-reports.py $EXPNAME-eval -r scatter -a search_time -c WORK-iterated_search,WORK-multiple_plans
-./downward-reports.py $EXPNAME-eval -r abs --dry --res problem -a expansions,landmarks,landmarks_generation_time,initial_h_value,translator_operators,preprocessor_task_size,memory,score_memory,score_ipc
+./downward-reports.py $EXPNAME-eval -r abs --dry --res problem -a expansions,landmarks,landmarks_generation_time,initial_h_value,translator_operators,preprocessor_task_size,memory,score_memory,quality
 ./downward-reports.py $EXPNAME-eval -r iter --dry
 ./downward-reports.py $EXPNAME-eval -r abs --dry -a search_time,coverage
 
