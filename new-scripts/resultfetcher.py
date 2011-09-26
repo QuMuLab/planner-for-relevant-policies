@@ -25,7 +25,7 @@ class FetchOptionParser(tools.ArgParser):
     def __init__(self, *args, **kwargs):
         tools.ArgParser.__init__(self, *args, **kwargs)
 
-        self.add_argument('exp_dir',
+        self.add_argument('exp_dir', nargs='?',
                 help='Path to experiment directory', type=self.directory)
 
         self.add_argument('-d', '--dest', dest='eval_dir', default='',
@@ -43,8 +43,29 @@ class FetchOptionParser(tools.ArgParser):
         # args is the populated namespace, i.e. the Fetcher instance
         args = tools.ArgParser.parse_args(self, *args, **kwargs)
 
+        if args.exp_dir:
+            self.handle_exp_dir(args)
+        else:
+            args.exp_dir = ''
+            args.exp_props = {}
+
+        if not args.exp_dir and not args.eval_dir:
+            logging.error('If the experiment directory is not given, you '
+                          'have to specify the evaluation directory.')
+            sys.exit(1)
+
+        if args.eval_dir:
+            args.eval_dir = os.path.abspath(args.eval_dir)
+        else:
+            args.eval_dir = args.exp_dir + '-eval'
+
+        logging.info('Eval dir: "%s"' % args.eval_dir)
+
+        return args
+
+    def handle_exp_dir(self, args):
         args.exp_dir = os.path.abspath(args.exp_dir)
-        logging.info('Exp dir:  "%s"' % args.exp_dir)
+        logging.info('Exp dir:  %s' % args.exp_dir)
 
         if args.exp_dir.endswith('eval'):
             msg = ('The source directory seems to be an evaluation directory. '
@@ -63,16 +84,6 @@ class FetchOptionParser(tools.ArgParser):
             args.copy_all = args.exp_props['copy_all']
         if 'no_props_file' in args.exp_props:
             args.no_props_file = args.exp_props['no_props_file']
-
-        # If args.eval_dir is absolute already we don't have to do anything
-        if args.eval_dir and not os.path.isabs(args.eval_dir):
-            args.eval_dir = os.path.abspath(args.eval_dir)
-        elif not args.eval_dir:
-            args.eval_dir = args.eval_dir or args.exp_dir + '-eval'
-
-        logging.info('Eval dir: "%s"' % args.eval_dir)
-
-        return args
 
 
 class _MultiPattern(object):
