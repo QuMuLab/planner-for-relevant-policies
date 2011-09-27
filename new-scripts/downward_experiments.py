@@ -154,7 +154,8 @@ def _prepare_search_run(exp, run, config_nick, config):
                       '--plan-file', 'sas_plan']
     run.add_command('search', search_cmd, stdin='output',
                     time_limit=LIMIT_SEARCH_TIME,
-                    mem_limit=LIMIT_SEARCH_MEMORY)
+                    mem_limit=LIMIT_SEARCH_MEMORY,
+                    abort_on_failure=False)
     run.declare_optional_output("sas_plan")
 
     # Validation
