@@ -21,6 +21,7 @@ for plan_file in glob.glob("sas_plan*"):
     retcodes.append(Popen([VALIDATE, DOMAIN, PROBLEM, plan_file]).wait())
 
 if any(val != 0 for val in retcodes):
+    print 'VAL returncodes:', retcodes
     sys.exit(1)
 
 sys.exit(0)
