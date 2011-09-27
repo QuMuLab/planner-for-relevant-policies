@@ -422,13 +422,13 @@ def ipc_score(problem_runs):
     for run in problem_runs:
         length = run.get('plan_length')
         if length is None:
-            quality = 0
+            quality = 0.0
         elif length == 0:
             assert min_length == 0
-            quality = 1
+            quality = 1.0
         else:
             quality = min_length / length
-        run['quality'] = quality
+        run['quality'] = round(quality, 4)
 
 
 def build_fetcher(parser=FetchOptionParser()):
