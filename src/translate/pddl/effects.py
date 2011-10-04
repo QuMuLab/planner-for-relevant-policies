@@ -12,16 +12,20 @@ def cartesian_product(*sequences):
             for item in sequences[0]:
                 yield (item,) + tup
 
-def parse_effects(alist, result):
+def parse_effects(alist):
     """Parse a PDDL effect (any combination of simple, conjunctive, conditional, and universal)."""
-    tmp_effect = parse_effect(alist)
-    normalized = tmp_effect.normalize()
-    cost_eff, rest_effect = normalized.extract_cost()
-    add_effect(rest_effect, result)
-    if cost_eff:
-        return cost_eff.effect
-    else:
-        return None
+    tmp_effects = parse_effect(alist)
+    normalized = [tmp_effect.normalize() for tmp_effect in tmp_effects]
+    cost_rest_eff = [norm.extract_cost() for norm in normalized]
+    cost_eff_pairs = []
+    for (cost_eff, rest_effect) in cost_rest_eff:
+        res = []
+        add_effect(rest_effect, res)
+        if cost_eff:
+            cost_eff_pairs.append((cost_eff.effect, res))
+        else:
+            cost_eff_pairs.append((None, res))
+    return cost_eff_pairs
 
 def add_effect(tmp_effect, result):
     """tmp_effect has the following structure:
@@ -66,24 +70,29 @@ def add_effect(tmp_effect, result):
 def parse_effect(alist):
     tag = alist[0]
     if tag == "and":
-        return ConjunctiveEffect([parse_effect(eff) for eff in alist[1:]])
+        return [ConjunctiveEffect(conjuncts) for conjuncts in cartesian_product(*[parse_effect(eff) for eff in alist[1:]])]
     elif tag == "forall":
         assert len(alist) == 3
         parameters = pddl_types.parse_typed_list(alist[1])
-        effect = parse_effect(alist[2])
-        return UniversalEffect(parameters, effect)
+        effects = parse_effect(alist[2])
+        return [UniversalEffect(parameters, effect) for effect in effects]
     elif tag == "when":
         assert len(alist) == 3
         condition = conditions.parse_condition(alist[1])
-        effect = parse_effect(alist[2])
-        return ConditionalEffect(condition, effect)
+        effects = parse_effect(alist[2])
+        return [ConditionalEffect(condition, effect) for effect in effects]
     elif tag == "increase":
         assert len(alist) == 3
         assert alist[1] == ['total-cost']
         assignment = f_expression.parse_assignment(alist)
-        return CostEffect(assignment)
+        return [CostEffect(assignment)]
+    elif tag == "oneof":
+        options = []
+        for eff in alist[1:]:
+            options.extend(parse_effect(eff))
+        return options
     else:
-        return SimpleEffect(conditions.parse_literal(alist))
+        return [SimpleEffect(conditions.parse_literal(alist))]
 
 
 class Effect(object):

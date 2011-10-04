@@ -37,14 +37,17 @@ class Action(object):
             effect_tag = precondition_tag_opt
         assert effect_tag == ":effect"
         effect_list = iterator.next()
-        eff = []
         try:
-            cost = effects.parse_effects(effect_list, eff)
+            cost_eff_pairs = effects.parse_effects(effect_list)
+            if 1 == len(cost_eff_pairs):
+                cost_eff_pairs = [(cost_eff_pairs[0][0], cost_eff_pairs[0][1], '')]
+            else:
+                cost_eff_pairs = [(cost_eff_pairs[i][0], cost_eff_pairs[i][1], "_DETDUP_%d" % i) for i in range(len(cost_eff_pairs))]
         except ValueError, e:
             raise SystemExit("Error in Action %s\nReason: %s." % (name, e))
         for rest in iterator:
             assert False, rest
-        return Action(name, parameters, precondition, eff, cost)
+        return [Action(name + suffix, parameters, precondition, eff, cost) for (cost, eff, suffix) in cost_eff_pairs]
     parse = staticmethod(parse)
     def dump(self):
         print "%s(%s)" % (self.name, ", ".join(map(str, self.parameters)))
