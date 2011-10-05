@@ -214,8 +214,11 @@ class VarValueRenaming(object):
                 # effect that sets an always true value. Swallow this.
                 pass
         op.pre_post = new_pre_post
-        if not new_pre_post:
-            raise DoesNothing
+        
+        # HAZ: Allow operators that do nothing (in case it was a failed
+        #      effect from a determinized action).
+        #if not new_pre_post:
+        #    raise DoesNothing
 
     def apply_to_axiom(self, axiom):
         # The following line may generate an Impossible exception,

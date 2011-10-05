@@ -128,14 +128,21 @@ class Action(object):
         for eff in self.effects:
             eff.instantiate(var_mapping, init_facts, fluent_facts,
                             objects_by_type, effects)
-        if effects:
-            if self.cost is None:
-                cost = 0
-            else:
-                cost = int(self.cost.instantiate(var_mapping, init_facts).expression.value)
-            return PropositionalAction(name, precondition, effects, cost)
+        # HAZ: We return a propositional action since it may be a failed
+        #      outcome of a determinized action.
+        if self.cost is None:
+            cost = 0
         else:
-            return None
+            cost = int(self.cost.instantiate(var_mapping, init_facts).expression.value)
+        return PropositionalAction(name, precondition, effects, cost)
+        #if effects:
+        #    if self.cost is None:
+        #        cost = 0
+        #    else:
+        #        cost = int(self.cost.instantiate(var_mapping, init_facts).expression.value)
+        #    return PropositionalAction(name, precondition, effects, cost)
+        #else:
+        #    return None
 
 class PropositionalAction:
     def __init__(self, name, precondition, effects, cost):
