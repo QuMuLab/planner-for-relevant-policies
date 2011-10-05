@@ -17,7 +17,7 @@
   )
   (:action put-on-block
     :parameters (?b1 ?b2 - block)
-    :precondition (and (holding ?b1) (clear ?b2))
+    :precondition (and (not (= ?b1 ?b2)) (holding ?b1) (clear ?b2))
     :effect (oneof (and (on ?b1 ?b2) (emptyhand) (clear ?b1) (not (holding ?b1)) (not (clear ?b2)))
                    (and (on-table ?b1) (emptyhand) (clear ?b1) (not (holding ?b1))))
   )
