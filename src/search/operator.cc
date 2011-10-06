@@ -1,6 +1,7 @@
 #include "globals.h"
 #include "operator.h"
 
+#include <string>
 #include <iostream>
 using namespace std;
 
@@ -40,6 +41,14 @@ Operator::Operator(istream &in, bool axiom) {
         g_max_action_cost = max(g_max_action_cost, cost);
 
         check_magic(in, "end_operator");
+        
+        // The nondet name is the original name of the non-deterministic action
+        if (name.find("_DETDUP") == string::npos) {
+            nondet_name = name;
+        } else {
+            nondet_name = name.substr(0, name.find("_DETDUP")) + name.substr(name.find(" "), string::npos);
+        }
+        
     } else {
         name = "<axiom>";
         cost = 0;
@@ -67,7 +76,7 @@ void PrePost::dump() const {
 }
 
 void Operator::dump() const {
-    cout << name << ":";
+    cout << name << "(" << nondet_name << "):";
     for (int i = 0; i < prevail.size(); i++) {
         cout << " [";
         prevail[i].dump();

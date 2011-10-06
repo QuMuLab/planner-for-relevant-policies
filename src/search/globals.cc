@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -252,6 +253,10 @@ void read_everything(istream &in) {
     check_magic(in, "end_SG");
     DomainTransitionGraph::read_all(in);
     g_causal_graph = new CausalGraph(in);
+    
+    for (int i = 0; i < g_operators.size(); i++) {
+        g_nondet_mapping[g_operators[i].get_nondet_name()].push_back(g_operators[i]);
+    }
 }
 
 void dump_everything() {
@@ -328,6 +333,7 @@ AxiomEvaluator *g_axiom_evaluator;
 SuccessorGenerator *g_successor_generator;
 vector<DomainTransitionGraph *> g_transition_graphs;
 CausalGraph *g_causal_graph;
+map<string, vector<Operator> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
 
 Timer g_timer;
 string g_plan_filename = "sas_plan";

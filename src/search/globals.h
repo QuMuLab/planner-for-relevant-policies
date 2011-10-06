@@ -6,6 +6,7 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
+#include <map>
 
 class AxiomEvaluator;
 class CausalGraph;
@@ -54,5 +55,7 @@ extern CausalGraph *g_causal_graph;
 extern Timer g_timer;
 extern std::string g_plan_filename;
 extern RandomNumberGenerator g_rng;
+
+extern std::map<std::string, std::vector<Operator> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
 
 #endif

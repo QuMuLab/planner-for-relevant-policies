@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -54,6 +55,10 @@ struct PrePost {
         return true;
     }
 
+    bool has_conditional_effect() {
+        return cond.size() > 0;
+    }
+
     void dump() const;
 };
 
@@ -62,6 +67,7 @@ class Operator {
     std::vector<Prevail> prevail;      // var, val
     std::vector<PrePost> pre_post;     // var, old-val, new-val, effect conditions
     std::string name;
+    std::string nondet_name;
     int cost;
 
     mutable bool marked; // Used for short-term marking of preferred operators
@@ -69,6 +75,7 @@ public:
     Operator(std::istream &in, bool is_axiom);
     void dump() const;
     std::string get_name() const {return name; }
+    std::string get_nondet_name() const {return nondet_name; }
 
     bool is_axiom() const {return is_an_axiom; }
 
@@ -83,6 +90,13 @@ public:
             if (!pre_post[i].is_applicable(state))
                 return false;
         return true;
+    }
+
+    bool has_conditional_effect() {
+        for (int i = 0; i < pre_post.size(); i++)
+            if (pre_post[i].has_conditional_effect())
+                return true;
+        return false;
     }
 
     bool is_marked() const {
