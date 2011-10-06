@@ -54,17 +54,32 @@ State::State(const State &state) {
     _copy_buffer_from_state(state);
 }
 
-State::State(const State &predecessor, const Operator &op) {
+State::State(const State &predecessor, const Operator &op, bool progress) {
     assert(!op.is_axiom());
     _allocate();
     _copy_buffer_from_state(predecessor);
     // Update values affected by operator.
-    for (int i = 0; i < op.get_pre_post().size(); i++) {
-        const PrePost &pre_post = op.get_pre_post()[i];
-        if (pre_post.does_fire(predecessor))
-            vars[pre_post.var] = pre_post.post;
+    if (progress) {
+        for (int i = 0; i < op.get_pre_post().size(); i++) {
+            const PrePost &pre_post = op.get_pre_post()[i];
+            if (pre_post.does_fire(predecessor))
+                vars[pre_post.var] = pre_post.post;
+        }
+    } else {
+        // Make sure there are no conditional effects
+        assert(!op.has_conditional_effect());
+        
+        // Get all of the pre/post conditions (note: pre may be -1 here)
+        for (int i = 0; i < op.get_pre_post().size(); i++) {
+            vars[op.get_pre_post()[i].var] = op.get_pre_post()[i].pre;
+        }
+        
+        // Get all of the prevail conditions
+        for (int i = 0; i < op.get_prevail().size(); i++) {
+            vars[op.get_prevail()[i].var] = op.get_prevail()[i].prev;
+        }
     }
-
+    
     g_axiom_evaluator->evaluate(*this);
 }
 
