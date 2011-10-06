@@ -104,6 +104,7 @@ HEADERS += pdbs/canonical_pdbs_heuristic.h \
            pdbs/util.h \
            pdbs/zero_one_pdbs_heuristic.h \
 
+HEADERS += policy-repair/regression.h \
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET  = downward

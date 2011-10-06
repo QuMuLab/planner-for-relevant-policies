@@ -71,12 +71,12 @@ State::State(const State &predecessor, const Operator &op, bool progress) {
         
         // Get all of the pre/post conditions (note: pre may be -1 here)
         for (int i = 0; i < op.get_pre_post().size(); i++) {
-            vars[op.get_pre_post()[i].var] = op.get_pre_post()[i].pre;
+            vars[op.get_pre_post()[i].var] = state_var_t(op.get_pre_post()[i].pre);
         }
         
         // Get all of the prevail conditions
         for (int i = 0; i < op.get_prevail().size(); i++) {
-            vars[op.get_prevail()[i].var] = op.get_prevail()[i].prev;
+            vars[op.get_prevail()[i].var] = state_var_t(op.get_prevail()[i].prev);
         }
     }
     
@@ -90,9 +90,12 @@ State::~State() {
 void State::dump() const {
     // We cast the values to int since we'd get bad output otherwise
     // if state_var_t == char.
-    for (int i = 0; i < g_variable_domain.size(); i++)
-        cout << "  " << g_variable_name[i] << ": "
-             << static_cast<int>(vars[i]) << endl;
+    for (int i = 0; i < g_variable_domain.size(); i++) {
+        if (state_var_t(-1) != vars[i]) {
+            cout << "  " << g_variable_name[i] << ": "
+                 << static_cast<int>(vars[i]) << endl;
+        }
+    }
 }
 
 bool State::operator==(const State &other) const {

@@ -5,6 +5,7 @@
 #include "timer.h"
 #include "utilities.h"
 #include "search_engine.h"
+#include "policy-repair/regression.h"
 
 
 #include <iostream>
@@ -46,6 +47,16 @@ int main(int argc, const char **argv) {
     engine->heuristic_statistics();
     cout << "Search time: " << search_timer << endl;
     cout << "Total time: " << g_timer << endl;
+    
+    cout << "\n\nRegressing the plan..." << endl;
+    vector<RegressionStep> regression_steps = perform_regression(engine->get_plan(), g_goal);
+    for (int i = 0; i < regression_steps.size(); i++)
+        regression_steps[i].dump();
+    
+    cout << "Generating an initial policy..." << endl;
+    
+    
+    cout << "\n\n" << endl;
 
     return engine->found_solution() ? 0 : 1;
 }
