@@ -31,6 +31,11 @@ public:
     virtual ~GeneratorBase() {}
     virtual void dump(string indent) const = 0;
     virtual void generate_cpp_input(ofstream &outfile) const = 0;
+    virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) = 0;
+    
+    GeneratorBase *create_generator(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
+    int get_best_var(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
+    bool reg_step_done(RegressionStep *op_iter, set<int> &vars_seen);
 };
 
 class GeneratorSwitch : public GeneratorBase {
@@ -39,10 +44,6 @@ class GeneratorSwitch : public GeneratorBase {
     vector<GeneratorBase *> generator_for_value;
     GeneratorBase *default_generator;
     
-    int get_best_var(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
-    bool reg_step_done(RegressionStep *op_iter, set<int> &vars_seen);
-    GeneratorBase *create_generator(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
-    
 public:
     ~GeneratorSwitch();
     GeneratorSwitch(int switch_variable,
@@ -50,6 +51,7 @@ public:
                     const vector<GeneratorBase *> &gen_for_val,
                     GeneratorBase *default_gen);
     GeneratorSwitch(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
+    virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -58,12 +60,14 @@ class GeneratorLeaf : public GeneratorBase {
     list<RegressionStep *> applicable_steps;
 public:
     GeneratorLeaf(list<RegressionStep *> &reg_steps);
+    virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
 
 class GeneratorEmpty : public GeneratorBase {
 public:
+    virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -137,7 +141,7 @@ void GeneratorEmpty::generate_cpp_input(ofstream &outfile) const {
 }
 
 
-int GeneratorSwitch::get_best_var(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
+int GeneratorBase::get_best_var(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
     vector< pair<int,int> > var_count = vector< pair<int,int> >(g_variable_name.size());
     
     for (int i = 0; i < g_variable_name.size(); i++) {
@@ -165,7 +169,7 @@ int GeneratorSwitch::get_best_var(list<RegressionStep *> &reg_steps, set<int> &v
     return -1;
 }
 
-bool GeneratorSwitch::reg_step_done(RegressionStep *op_iter, set<int> &vars_seen) {
+bool GeneratorBase::reg_step_done(RegressionStep *op_iter, set<int> &vars_seen) {
     for (int i = 0; i < g_variable_name.size(); i++) {
         if ((state_var_t(-1) != (*(op_iter->state))[i]) && (vars_seen.count(i) <= 0))
             return false;
@@ -174,7 +178,7 @@ bool GeneratorSwitch::reg_step_done(RegressionStep *op_iter, set<int> &vars_seen
     return true;
 }
 
-GeneratorBase *GeneratorSwitch::create_generator(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
+GeneratorBase *GeneratorBase::create_generator(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
     if (reg_steps.empty())
         return new GeneratorEmpty;
     
@@ -221,9 +225,95 @@ GeneratorSwitch::GeneratorSwitch(list<RegressionStep *> &reg_steps, set<int> &va
     vars_seen.erase(switch_var);
 }
 
+GeneratorBase *GeneratorSwitch::update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
+    vector< list<RegressionStep *> > value_steps;
+    list<RegressionStep *> default_steps;
+    
+    // Initialize the value_steps
+    for (int i = 0; i < g_variable_domain[switch_var]; i++)
+        value_steps.push_back(list<RegressionStep *>());
+    
+    // Sort out the regression steps
+    for (list<RegressionStep *>::iterator op_iter = reg_steps.begin(); op_iter != reg_steps.end(); ++op_iter) {
+        if (reg_step_done(*op_iter, vars_seen)) {
+            immediate_steps.push_back(*op_iter);
+        } else if (state_var_t(-1) != (*((*op_iter)->state))[switch_var]) {
+            value_steps[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
+        } else { // == -1
+            default_steps.push_back(*op_iter);
+        }
+    }
+    
+    vars_seen.insert(switch_var);
+    
+    // Update the switch generators
+    for (int i = 0; i < value_steps.size(); i++) {
+        GeneratorBase *newGen = generator_for_value[i]->update_policy(value_steps[i], vars_seen);
+        if (NULL != newGen) {
+            delete generator_for_value[i];
+            generator_for_value[i] = newGen;
+        }
+    }
+    
+    // Update the default generator
+    GeneratorBase *newGen = default_generator->update_policy(default_steps, vars_seen);
+    if (NULL != newGen) {
+        delete default_generator;
+        default_generator = newGen;
+    }
+    
+    vars_seen.erase(switch_var);
+    
+    return NULL;
+}
+
+GeneratorBase *GeneratorLeaf::update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
+    if (reg_steps.empty())
+        return NULL;
+    
+    bool all_done = true;
+    for (list<RegressionStep *>::iterator op_iter = reg_steps.begin(); op_iter != reg_steps.end(); ++op_iter) {
+        if (!reg_step_done(*op_iter, vars_seen)) {
+            all_done = false;
+            break;
+        }
+    }
+    
+    if (all_done) {
+        applicable_steps.splice(applicable_steps.end(), reg_steps);
+        return NULL;
+    } else {
+        reg_steps.splice(reg_steps.end(), applicable_steps);
+        return new GeneratorSwitch(reg_steps, vars_seen);
+    }
+}
+
+GeneratorBase *GeneratorEmpty::update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
+    if (reg_steps.empty())
+        return NULL;
+    
+    bool all_done = true;
+    for (list<RegressionStep *>::iterator op_iter = reg_steps.begin(); op_iter != reg_steps.end(); ++op_iter) {
+        if (!reg_step_done(*op_iter, vars_seen)) {
+            all_done = false;
+            break;
+        }
+    }
+    
+    if (all_done)
+        return new GeneratorLeaf(reg_steps);
+    else
+        return new GeneratorSwitch(reg_steps, vars_seen);
+}
+
 Policy::Policy(list<RegressionStep *> &reg_steps) {
     set<int> vars_seen;
     root = new GeneratorSwitch(reg_steps, vars_seen);
+}
+
+void Policy::update_policy(list<RegressionStep *> &reg_steps) {
+    set<int> vars_seen;
+    root->update_policy(reg_steps, vars_seen);
 }
 
 Policy::Policy() {

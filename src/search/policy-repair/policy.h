@@ -35,6 +35,8 @@ public:
     ~Policy();
     void dump() const;
     void generate_cpp_input(ofstream &outfile) const;
+    
+    void update_policy(list<RegressionStep *> &reg_steps);
 };
 
 #endif

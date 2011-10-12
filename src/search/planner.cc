@@ -56,9 +56,9 @@ int main(int argc, const char **argv) {
         (*op_iter)->dump();
     
     cout << "Generating an initial policy..." << endl;
-    //Policy *pol = new Policy(regression_steps);
-    new Policy(regression_steps);
-    //pol->dump();
+    Policy *pol = new Policy(regression_steps);
+    pol->update_policy(regression_steps);
+    pol->dump();
     
     cout << "\n\n" << endl;
 
