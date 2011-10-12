@@ -1,5 +1,6 @@
 #include "regression.h"
 
+
 void RegressionStep::dump() const {
     cout << "Regression Step (" << distance << ")" << endl;
     if (!is_goal) {
@@ -13,9 +14,16 @@ void RegressionStep::dump() const {
     cout << "" << endl;
 }
 
-vector<RegressionStep> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal) {
+string RegressionStep::get_op_name() {
+    if (is_goal)
+        return "goal";
+    else
+        return op->get_name();
+}
+
+list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal) {
     
-    vector<RegressionStep> reg_steps;
+    list<RegressionStep *> reg_steps;
     int distance = 1;
     State *s = new State(*g_initial_state);
     
@@ -27,10 +35,10 @@ vector<RegressionStep> perform_regression(const SearchEngine::Plan &plan, vector
         (*s)[goal[i].first] = state_var_t(goal[i].second);
     }
     
-    reg_steps.push_back(RegressionStep(s, distance));
+    reg_steps.push_back(new RegressionStep(s, distance));
     
     for (int i = plan.size() - 1; i >= 0; i--) {
-        reg_steps.push_back(RegressionStep(*plan[i], new State(*(reg_steps.back().state), *plan[i], false), distance++));
+        reg_steps.push_back(new RegressionStep(*plan[i], new State(*(reg_steps.back()->state), *plan[i], false), distance++));
     }
     
     return reg_steps;

@@ -6,9 +6,11 @@
 #include "utilities.h"
 #include "search_engine.h"
 #include "policy-repair/regression.h"
+#include "policy-repair/policy.h"
 
 
 #include <iostream>
+#include <list>
 using namespace std;
 
 
@@ -49,12 +51,14 @@ int main(int argc, const char **argv) {
     cout << "Total time: " << g_timer << endl;
     
     cout << "\n\nRegressing the plan..." << endl;
-    vector<RegressionStep> regression_steps = perform_regression(engine->get_plan(), g_goal);
-    for (int i = 0; i < regression_steps.size(); i++)
-        regression_steps[i].dump();
+    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal);
+    for (list<RegressionStep *>::iterator op_iter = regression_steps.begin(); op_iter != regression_steps.end(); ++op_iter)
+        (*op_iter)->dump();
     
     cout << "Generating an initial policy..." << endl;
-    
+    //Policy *pol = new Policy(regression_steps);
+    new Policy(regression_steps);
+    //pol->dump();
     
     cout << "\n\n" << endl;
 

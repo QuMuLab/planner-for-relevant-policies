@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
+#include <list>
 
 #include "../globals.h"
 #include "../state.h"
@@ -19,10 +19,12 @@ struct RegressionStep {
 
     RegressionStep(const Operator &o, State *s, int d) : op(&o), state(s), distance(d), is_goal(false) {}
     RegressionStep(State *s, int d) : state(s), distance(d), is_goal(true) {}
+    
+    string get_op_name();
 
     void dump() const;
 };
 
-vector<RegressionStep> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal);
+list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal);
 
 #endif
