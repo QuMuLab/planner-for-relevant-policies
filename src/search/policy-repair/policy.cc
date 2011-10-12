@@ -32,6 +32,7 @@ public:
     virtual void dump(string indent) const = 0;
     virtual void generate_cpp_input(ofstream &outfile) const = 0;
     virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) = 0;
+    virtual void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps) = 0;
     
     GeneratorBase *create_generator(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
     int get_best_var(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
@@ -52,6 +53,7 @@ public:
                     GeneratorBase *default_gen);
     GeneratorSwitch(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
     virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
+    virtual void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -61,6 +63,7 @@ class GeneratorLeaf : public GeneratorBase {
 public:
     GeneratorLeaf(list<RegressionStep *> &reg_steps);
     virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
+    virtual void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -68,9 +71,25 @@ public:
 class GeneratorEmpty : public GeneratorBase {
 public:
     virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
+    virtual void generate_applicable_steps(const State &, vector<RegressionStep *> &) {}
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
+
+
+void GeneratorSwitch::generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps) {
+    for (list<RegressionStep *>::iterator op_iter = immediate_steps.begin(); op_iter != immediate_steps.end(); ++op_iter)
+        reg_steps.push_back(*op_iter);
+    
+    generator_for_value[curr[switch_var]]->generate_applicable_steps(curr, reg_steps);
+    default_generator->generate_applicable_steps(curr, reg_steps);
+}
+
+void GeneratorLeaf::generate_applicable_steps(const State &, vector<RegressionStep *> &reg_steps) {
+    for (list<RegressionStep *>::iterator op_iter = applicable_steps.begin(); op_iter != applicable_steps.end(); ++op_iter)
+        reg_steps.push_back(*op_iter);
+}
+
 
 GeneratorSwitch::GeneratorSwitch(int switch_variable,
                                  list<RegressionStep *> &reg_steps,
