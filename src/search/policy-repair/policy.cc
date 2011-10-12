@@ -335,6 +335,10 @@ void Policy::update_policy(list<RegressionStep *> &reg_steps) {
     root->update_policy(reg_steps, vars_seen);
 }
 
+void Policy::generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps) {
+    root->generate_applicable_steps(curr, reg_steps);
+}
+
 Policy::Policy() {
     root = 0;
 }

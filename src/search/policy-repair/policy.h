@@ -37,6 +37,7 @@ public:
     void generate_cpp_input(ofstream &outfile) const;
     
     void update_policy(list<RegressionStep *> &reg_steps);
+    void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
 };
 
 #endif

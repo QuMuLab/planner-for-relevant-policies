@@ -6,6 +6,7 @@
 #include "utilities.h"
 #include "search_engine.h"
 #include "policy-repair/regression.h"
+#include "policy-repair/simulator.h"
 #include "policy-repair/policy.h"
 
 
@@ -55,10 +56,18 @@ int main(int argc, const char **argv) {
     for (list<RegressionStep *>::iterator op_iter = regression_steps.begin(); op_iter != regression_steps.end(); ++op_iter)
         (*op_iter)->dump();
     
-    cout << "Generating an initial policy..." << endl;
+    cout << "\n\nGenerating an initial policy..." << endl;
     Policy *pol = new Policy(regression_steps);
-    pol->update_policy(regression_steps);
-    pol->dump();
+    
+    //pol->update_policy(regression_steps);
+    //pol->dump();
+    
+    cout << "\n\nComputing just-in-time repairs..." << endl;
+    
+    cout << "\n\nRunning the simulation..." << endl;
+    Simulator *sim = new Simulator(pol, engine);
+    sim->run();
+    sim->dump();
     
     cout << "\n\n" << endl;
 
