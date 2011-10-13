@@ -418,9 +418,9 @@ def add_search_functions(eval):
 
 
 def ipc_score(problem_runs):
-    min_length = tools.minimum(run.get('plan_length') for run in problem_runs)
+    min_length = tools.minimum(run.get('cost') for run in problem_runs)
     for run in problem_runs:
-        length = run.get('plan_length')
+        length = run.get('cost')
         if length is None:
             quality = 0.0
         elif length == 0:
