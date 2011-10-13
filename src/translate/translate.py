@@ -380,7 +380,7 @@ def translate_task(strips_to_sas, ranges, translation_key,
     for fact in init:
         pairs = strips_to_sas.get(fact, [])  # empty for static init facts
         for var, val in pairs:
-            assert init_values[var] == ranges[var] - 1, "Inconsistent init facts!"
+            assert init_values[var] == ranges[var] - 1, "Inconsistent init facts! %s" % str(fact)
             init_values[var] = val
     init = sas_tasks.SASInit(init_values)
 

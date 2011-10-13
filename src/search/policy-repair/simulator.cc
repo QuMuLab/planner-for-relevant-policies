@@ -1,62 +1,81 @@
 #include "simulator.h"
+#include "../option_parser.h"
 
-Simulator::Simulator(Policy *pol, SearchEngine *eng) : policy(pol), engine(eng) {
+Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb) :
+                    engine(eng), argc(_argc), argv(_argv), verbose(verb), found_solution(false) {
     current_state = new State(*g_initial_state);
+    successful_states = 0;
+    failed_states = 0;
 }
 
 void Simulator::run() {
-    bool going = true;
-    vector<RegressionStep *> current_steps;
+   RegressionStep * current_step;
     
-    while(going) {
-        // Get the applicable options
-        current_steps.clear();
-        policy->generate_applicable_steps(*current_state, current_steps);
+    while(!found_solution) {
+        // Get the best action (if any)
+        current_step = g_policy->get_best_step(*current_state);
         
-        // Check for failure
-        if (0 == current_steps.size()) {
-            failed_states++;
-            replan();
-        } else {
+        if (current_step) {
+            
             successful_states++;
-            int best_index = 0;
-            int best_val = current_steps[0]->distance;
-            bool found_goal = false;
             
-            for (int i = 0; i < current_steps.size(); i++) {
-                if (current_steps[i]->is_goal) {
-                    found_goal = true;
-                    break;
-                }
-                
-                if (current_steps[i]->distance < best_val) {
-                    best_val = current_steps[i]->distance;
-                    best_index = i;
-                }
-            }
-            
-            if (found_goal) {
+            if (current_step->is_goal) {
                 cout << "...achieved the goal!" << endl;
-                going = false;
+                found_solution = true;
             } else {
                 // Execute the non-deterministic action
-                execute_action(current_steps[best_val]->op);
+                execute_action(current_step->op);
             }
+        } else {
+            failed_states++;
+            replan();
         }
-        
     }
 }
 
 void Simulator::execute_action(const Operator *op) {
+    
+    if (verbose) {
+        cout << "\nExpected operator:" << endl << "  ";
+        op->dump();
+    }
+    
     // Choose the op
     Operator *chosen = g_nondet_mapping[op->get_nondet_name()][rand() % g_nondet_mapping[op->get_nondet_name()].size()];
+    
+    if (verbose) {
+        cout << "Chosen operator:" << endl << "  ";
+        chosen->dump();
+    }
+    
     State *old_state = current_state;
     current_state = new State(*old_state, *chosen);
     delete old_state;
 }
 
 void Simulator::replan() {
+    if (verbose)
+        cout << "\nRequired to replan..." << endl;
+    
+    delete engine;
+    delete g_initial_state;
+    
+    if (verbose)
+        cout << "Creating initial state and new engine." << endl;
+    g_initial_state = new State(*current_state);
+    engine = OptionParser::parse_cmd_line(argc, argv, false);
+    
+    if (verbose)
+        cout << "Searching for a solution." << endl;
     engine->search();
+    
+    if (verbose)
+        cout << "Building the regression list." << endl;
+    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance);
+    
+    if (verbose)
+        cout << "Updating the policy." << endl;
+    g_policy->update_policy(regression_steps);
 }
 
 void Simulator::dump() {

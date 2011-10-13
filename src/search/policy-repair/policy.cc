@@ -339,6 +339,26 @@ void Policy::generate_applicable_steps(const State &curr, vector<RegressionStep 
     root->generate_applicable_steps(curr, reg_steps);
 }
 
+RegressionStep *Policy::get_best_step(const State &curr) {
+    vector<RegressionStep *> current_steps;
+    generate_applicable_steps(curr, current_steps);
+    
+    if (0 == current_steps.size())
+        return 0;
+    
+    int best_index = 0;
+    int best_val = current_steps[0]->distance;
+    
+    for (int i = 0; i < current_steps.size(); i++) {
+        if (current_steps[i]->distance < best_val) {
+            best_val = current_steps[i]->distance;
+            best_index = i;
+        }
+    }
+    
+    return current_steps[best_index];
+}
+
 Policy::Policy() {
     root = 0;
 }

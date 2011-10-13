@@ -28,6 +28,7 @@ int main(int argc, const char **argv) {
         read_everything(cin);
 
     SearchEngine *engine = 0;
+    g_policy = 0;
 
     //the input will be parsed twice:
     //once in dry-run mode, to check for simple input errors,
@@ -52,24 +53,24 @@ int main(int argc, const char **argv) {
     cout << "Total time: " << g_timer << endl;
     
     cout << "\n\nRegressing the plan..." << endl;
-    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal);
+    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
     for (list<RegressionStep *>::iterator op_iter = regression_steps.begin(); op_iter != regression_steps.end(); ++op_iter)
         (*op_iter)->dump();
     
     cout << "\n\nGenerating an initial policy..." << endl;
-    Policy *pol = new Policy(regression_steps);
-    
-    //pol->update_policy(regression_steps);
-    //pol->dump();
+    g_policy = new Policy(regression_steps);
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
     
     cout << "\n\nRunning the simulation..." << endl;
-    Simulator *sim = new Simulator(pol, engine);
+    Simulator *sim = new Simulator(engine, argc, argv, false);
     sim->run();
+    
+    cout << "\n\n" << endl;
+    
     sim->dump();
     
     cout << "\n\n" << endl;
 
-    return engine->found_solution() ? 0 : 1;
+    return sim->found_solution ? 0 : 1;
 }

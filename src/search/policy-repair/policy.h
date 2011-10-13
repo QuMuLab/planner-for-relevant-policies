@@ -17,18 +17,11 @@ class Operator;
 
 class Policy {
     GeneratorBase *root;
-    Policy(const Policy &copy);
-
-    //typedef vector<pair<int, int> > Condition;
-    //GeneratorBase *construct_recursive(int switchVarNo, vector<RegressionStep *> &reg_steps);
     
-
-    //vector<Condition> conditions;
-    //vector<Condition::const_iterator> next_condition_by_op;
-    //vector<int> varOrder;
-
     // private copy constructor to forbid copying;
     // typical idiom for classes with non-trivial destructors
+    Policy(const Policy &copy);
+    
 public:
     Policy();
     Policy(list<RegressionStep *> &reg_steps);
@@ -38,6 +31,7 @@ public:
     
     void update_policy(list<RegressionStep *> &reg_steps);
     void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
+    RegressionStep *get_best_step(const State &curr);
 };
 
 #endif

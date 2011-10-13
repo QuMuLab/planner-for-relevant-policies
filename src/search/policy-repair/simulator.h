@@ -16,9 +16,11 @@
 #include "regression.h"
 
 class Simulator {
-    Policy *policy;
     State *current_state;
+    
     SearchEngine *engine;
+    int argc;
+    const char **argv;
     
     int successful_states;
     int failed_states;
@@ -26,10 +28,14 @@ class Simulator {
     void execute_action(const Operator *op);
     void replan();
     
+    bool verbose;
+    
 public:
-    Simulator(Policy *pol, SearchEngine *eng);
+    Simulator(SearchEngine *eng, int argc, const char **argv, bool verb = true);
     
     void run();
+    
+    bool found_solution;
     
     void dump();
     

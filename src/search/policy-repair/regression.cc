@@ -21,10 +21,9 @@ string RegressionStep::get_op_name() {
         return op->get_name();
 }
 
-list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal) {
+list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal, int distance, bool create_goal) {
     
     list<RegressionStep *> reg_steps;
-    int distance = 1;
     State *s = new State(*g_initial_state);
     
     for (int i = 0; i < g_variable_name.size(); i++) {
@@ -39,6 +38,11 @@ list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector
     
     for (int i = plan.size() - 1; i >= 0; i--) {
         reg_steps.push_back(new RegressionStep(*plan[i], new State(*(reg_steps.back()->state), *plan[i], false), distance++));
+    }
+    
+    if (!create_goal) {
+        delete reg_steps.front();
+        reg_steps.pop_front();
     }
     
     return reg_steps;

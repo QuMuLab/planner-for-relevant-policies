@@ -25,6 +25,6 @@ struct RegressionStep {
     void dump() const;
 };
 
-list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal);
+list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal, int distance, bool create_goal = false);
 
 #endif

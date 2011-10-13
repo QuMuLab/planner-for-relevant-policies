@@ -17,8 +17,11 @@ class State;
 class SuccessorGenerator;
 class Timer;
 class RandomNumberGenerator;
+class Policy;
 
 bool test_goal(const State &state);
+bool test_policy(const State &state);
+
 void save_plan(const std::vector<const Operator *> &plan, int iter);
 int calculate_plan_cost(const std::vector<const Operator *> &plan);
 
@@ -57,5 +60,8 @@ extern std::string g_plan_filename;
 extern RandomNumberGenerator g_rng;
 
 extern std::map<std::string, std::vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
+extern std::vector<std::pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
+extern int g_matched_distance; // Containts the distance to the goal for the matched policy
+extern Policy *g_policy; // The policy to check while searching
 
 #endif
