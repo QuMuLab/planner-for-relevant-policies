@@ -24,7 +24,7 @@ void State::_copy_buffer_from_state(const State &state) {
     // TODO: Profile if memcpy could speed this up significantly,
     //       e.g. if we do blind A* search.
     for (int i = 0; i < g_variable_domain.size(); i++)
-        vars[i] = state.vars[i];
+        vars[i] = state_var_t(state.vars[i]);
 }
 
 State & State::operator=(const State &other) {

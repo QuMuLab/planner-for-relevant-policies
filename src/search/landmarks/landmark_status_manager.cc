@@ -124,7 +124,7 @@ bool LandmarkStatusManager::update_reached_lms(
 }
 
 bool LandmarkStatusManager::update_lm_status(const State &state) {
-    StateProxy proxy = StateProxy(&state);
+    //StateProxy proxy = StateProxy(&state); // HAZ: Commented out since this isn't used.
 
     vector<bool> &reached = get_reached_landmarks(state);
 

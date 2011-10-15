@@ -55,7 +55,7 @@ struct PrePost {
         return true;
     }
 
-    bool has_conditional_effect() {
+    bool has_conditional_effect() const {
         return cond.size() > 0;
     }
 
@@ -92,7 +92,7 @@ public:
         return true;
     }
 
-    bool has_conditional_effect() {
+    bool has_conditional_effect() const {
         for (int i = 0; i < pre_post.size(); i++)
             if (pre_post[i].has_conditional_effect())
                 return true;

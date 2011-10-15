@@ -51,7 +51,7 @@ CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror
 ## on a 32-bit Ubuntu machine (it also needs the -m32 to be changed to
 ## -m64, of course.) See http://stackoverflow.com/questions/4643197/missing-include-bits-cconfig-h-when-cross-compiling-64-bit-program-on-32-bit.
 #CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu
-CCOPT += -I/usr/include/c++/4.5/i686-linux-gnu
+CCOPT += -I/usr/include/c++/4.6/i686-linux-gnu
 
 LINKOPT  =
 LINKOPT += -m32

@@ -107,6 +107,7 @@ HEADERS += pdbs/canonical_pdbs_heuristic.h \
 HEADERS += policy-repair/regression.h \
            policy-repair/policy.h \
            policy-repair/simulator.h \
+           policy-repair/jit.h \
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET  = downward
@@ -148,7 +149,7 @@ CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror -DST
 ## on a 32-bit Ubuntu machine (it also needs the -m32 to be changed to
 ## -m64, of course.) See http://stackoverflow.com/questions/4643197/missing-include-bits-cconfig-h-when-cross-compiling-64-bit-program-on-32-bit.
 #CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu -Iext
-CCOPT += -I/usr/include/c++/4.5/i686-linux-gnu -Iext
+CCOPT += -I/usr/include/c++/4.6/i686-linux-gnu -Iext
 
 LINKOPT  = -g
 LINKOPT += -m32
@@ -243,7 +244,7 @@ $(OBJECTS_RELEASE): .obj/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
 debug: $(TARGET_DEBUG)
 
 $(TARGET_DEBUG): $(OBJECTS_DEBUG)
-	$(CC) $(LINKOPT) $(LINKOPT_DEBUG) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG)
+	$(CC) $(LINKOPT) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG) $(LINKOPT_DEBUG)
 
 $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 	@mkdir -p $$(dirname $@)
@@ -254,7 +255,7 @@ $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 profile: $(TARGET_PROFILE)
 
 $(TARGET_PROFILE): $(OBJECTS_PROFILE)
-	$(CC) $(LINKOPT) $(LINKOPT_PROFILE) $(OBJECTS_PROFILE) $(POSTLINKOPT) $(POSTLINKOPT_PROFILE) -o $(TARGET_PROFILE)
+	$(CC) $(LINKOPT) $(OBJECTS_PROFILE) $(POSTLINKOPT) $(POSTLINKOPT_PROFILE) -o $(TARGET_PROFILE) $(LINKOPT_PROFILE)
 
 $(OBJECTS_PROFILE): .obj/%$(OBJECT_SUFFIX_PROFILE).o: %.cc
 	@mkdir -p $$(dirname $@)
