@@ -53,6 +53,10 @@ int main(int argc, const char **argv) {
     cout << "Search time: " << search_timer << endl;
     cout << "Total time: " << g_timer << endl;
     
+    if (!engine->found_solution()) {
+        cout << "No solution -- aborting repairs." << endl;
+        exit(1);
+    }
     cout << "\n\nRegressing the plan..." << endl;
     list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
     for (list<RegressionStep *>::iterator op_iter = regression_steps.begin(); op_iter != regression_steps.end(); ++op_iter)

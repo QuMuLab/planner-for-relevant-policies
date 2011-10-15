@@ -37,7 +37,7 @@ list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector
     reg_steps.push_back(new RegressionStep(s, distance));
     
     for (int i = plan.size() - 1; i >= 0; i--) {
-        reg_steps.push_back(new RegressionStep(*plan[i], new State(*(reg_steps.back()->state), *plan[i], false), distance++));
+        reg_steps.push_back(new RegressionStep(*plan[i], new State(*(reg_steps.back()->state), *plan[i], false), ++distance));
     }
     
     if (!create_goal) {
