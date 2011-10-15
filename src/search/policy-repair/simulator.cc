@@ -56,13 +56,20 @@ void Simulator::execute_action(const Operator *op) {
 void Simulator::replan() {
     if (verbose)
         cout << "\nRequired to replan..." << endl;
-    
+
     delete engine;
     delete g_initial_state;
     
     if (verbose)
-        cout << "Creating initial state and new engine." << endl;
+        cout << "Creating initial state." << endl;
+    if (!current_state) {
+        cout << "Error: No current state for the replan." << endl;
+        exit(0);
+    }
     g_initial_state = new State(*current_state);
+    
+    if (verbose)
+        cout << "Creating new engine." << endl;
     engine = OptionParser::parse_cmd_line(argc, argv, false);
     
     if (verbose)

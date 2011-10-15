@@ -26,7 +26,6 @@ class Simulator {
     int failed_states;
     
     void execute_action(const Operator *op);
-    void replan();
     
     bool verbose;
     
@@ -34,6 +33,10 @@ public:
     Simulator(SearchEngine *eng, int argc, const char **argv, bool verb = true);
     
     void run();
+    void replan();
+    
+    void set_state(State * s) { current_state = new State(*s); }
+    SearchEngine * get_engine() { return engine; }
     
     bool found_solution;
     
