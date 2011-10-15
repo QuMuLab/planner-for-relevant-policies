@@ -8,6 +8,7 @@
 #include "policy-repair/regression.h"
 #include "policy-repair/simulator.h"
 #include "policy-repair/policy.h"
+#include "policy-repair/jit.h"
 
 
 #include <iostream>
@@ -61,6 +62,7 @@ int main(int argc, const char **argv) {
     g_policy = new Policy(regression_steps);
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
+    perform_jit_repairs(engine, argc, argv, 0.0);
     
     cout << "\n\nRunning the simulation..." << endl;
     Simulator *sim = new Simulator(engine, argc, argv, false);
