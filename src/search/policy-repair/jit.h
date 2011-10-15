@@ -20,7 +20,7 @@ struct UnhandledState {
     int cost;
 
     UnhandledState(State *s, int c) : state(s), cost(c) {}
-    ~UnhandledState() { delete state; }
+    ~UnhandledState() { /*delete state;*/ }
     
     bool operator<(const UnhandledState& other) const { return (cost < other.cost); }
     

@@ -9,6 +9,7 @@ void UnhandledState::dump() const {
 void perform_jit_repairs(SearchEngine *engine, int argc, const char **argv, float){ // Note: Currently we aren't using the time bound
     set<UnhandledState> open_states;
     Simulator *sim = new Simulator(engine, argc, argv, true);
+    State *old_initial_state = new State(*g_initial_state);
     
     find_unhandled_states(g_initial_state, engine->get_plan(), open_states, 0);
     
@@ -16,21 +17,23 @@ void perform_jit_repairs(SearchEngine *engine, int argc, const char **argv, floa
         UnhandledState current_state = *(open_states.begin());
         
         cout << "Open states left: " << open_states.size() << endl;
-        cout << "Handling a new open state of distance " << current_state.cost << endl;
         
-        if (!current_state.state)
-            cout << "Uh oh!" << endl;
-        sim->set_state(current_state.state);
-        sim->replan();
+        if (g_policy->get_best_step(*(current_state.state)) == 0) {
+            cout << "Handling a new open state of distance " << current_state.cost << endl;
         
-        if (!current_state.state)
-            cout << "Uh oh! (v2)" << endl;
-        find_unhandled_states(current_state.state, sim->get_engine()->get_plan(), open_states, current_state.cost);
+            sim->set_state(current_state.state);
+            sim->replan();
         
-        if (!current_state.state)
-            cout << "Uh oh! (v3)" << endl;
+            find_unhandled_states(current_state.state, sim->get_engine()->get_plan(), open_states, current_state.cost);
+        
+        } else {
+            cout << "Found a leaf already closed of distance " << current_state.cost << endl;
+        }
+        
         open_states.erase(open_states.begin());
+        
     }
+    g_initial_state = old_initial_state;
     cout << "Done Repairing!!!" << endl;
 }
 
