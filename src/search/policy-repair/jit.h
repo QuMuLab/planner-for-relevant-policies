@@ -1,6 +1,7 @@
 #ifndef JIT_H
 #define JIT_H
 
+#include <queue>
 #include <list>
 #include <set>
 
@@ -27,7 +28,8 @@ struct UnhandledState {
     void dump() const;
 };
 
-void perform_jit_repairs(SearchEngine *eng, int argc, const char **argv, float time_bound);
+bool perform_jit_repairs(SearchEngine *eng, int argc, const char **argv, float time_bound);
+void perform_jit_repairs_old(SearchEngine *eng, int argc, const char **argv, float time_bound);
 void find_unhandled_states(State *state, const SearchEngine::Plan &plan, set<UnhandledState> &unhandled, int cost);
 
 #endif

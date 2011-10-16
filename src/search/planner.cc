@@ -66,7 +66,13 @@ int main(int argc, const char **argv) {
     g_policy = new Policy(regression_steps);
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
-    perform_jit_repairs(engine, argc, argv, 0.0);
+    bool changes_made = true;
+    while (changes_made) {
+        changes_made = perform_jit_repairs(engine, argc, argv, 0.0);
+        cout << "Finished repair round." << endl;
+    }
+    cout << "Done repairing..." << endl;
+    engine = OptionParser::parse_cmd_line(argc, argv, false);
     
     cout << "\n\nRunning the simulation..." << endl;
     Simulator *sim = new Simulator(engine, argc, argv, false);

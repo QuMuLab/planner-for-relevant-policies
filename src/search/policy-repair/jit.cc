@@ -6,7 +6,53 @@ void UnhandledState::dump() const {
 }
 
 
-void perform_jit_repairs(SearchEngine *engine, int argc, const char **argv, float){ // Note: Currently we aren't using the time bound
+bool perform_jit_repairs(SearchEngine *engine, int argc, const char **argv, float) { // Note: Currently we aren't using the time bound
+    queue<State *> open_list;
+    set<State> seen;
+    State *current_state;
+    bool made_change = false;
+    Simulator *sim = new Simulator(engine, argc, argv, true);
+    
+    State *old_initial_state = new State(*g_initial_state);
+    
+    open_list.push(new State(*g_initial_state));
+    
+    while (!open_list.empty()) {
+        current_state = open_list.front();
+        open_list.pop();
+        
+        if (0 == seen.count(*current_state)) {
+            seen.insert(*current_state);
+        
+            // See if we can handle this state
+            RegressionStep * regstep = g_policy->get_best_step(*current_state);
+            
+            if (0 == regstep) {
+                made_change = true;
+                //cout << "Handling a new open state." << endl;
+                sim->set_state(current_state);
+                sim->replan();
+                regstep = g_policy->get_best_step(*current_state);
+            }
+            
+            assert(regstep);
+            
+            if (!(regstep->is_goal)) {
+                //cout << "Searching through operator " << regstep->op->get_nondet_name() << endl;
+                for (int i = 0; i < g_nondet_mapping[regstep->op->get_nondet_name()].size(); i++) {
+                    State *new_state = new State(*current_state, *(g_nondet_mapping[regstep->op->get_nondet_name()][i]));
+                    if (0 == seen.count(*new_state))
+                        open_list.push(new_state);
+                }
+            }
+        }
+    }
+    
+    g_initial_state = old_initial_state;
+    return made_change;
+}
+
+void perform_jit_repairs_old(SearchEngine *engine, int argc, const char **argv, float){ // Note: Currently we aren't using the time bound
     set<UnhandledState> open_states;
     Simulator *sim = new Simulator(engine, argc, argv, true);
     State *old_initial_state = new State(*g_initial_state);
@@ -19,6 +65,7 @@ void perform_jit_repairs(SearchEngine *engine, int argc, const char **argv, floa
         cout << "Open states left: " << open_states.size() << endl;
         
         if (g_policy->get_best_step(*(current_state.state)) == 0) {
+            
             cout << "Handling a new open state of distance " << current_state.cost << endl;
         
             sim->set_state(current_state.state);
@@ -34,7 +81,7 @@ void perform_jit_repairs(SearchEngine *engine, int argc, const char **argv, floa
         
     }
     g_initial_state = old_initial_state;
-    cout << "Done Repairing!!!" << endl;
+    cout << "Finished repair round." << endl;
 }
 
 void find_unhandled_states(State *state, const SearchEngine::Plan &plan, set<UnhandledState> &unhandled, int cost) {

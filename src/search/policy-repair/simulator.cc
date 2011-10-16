@@ -9,7 +9,7 @@ Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb
 }
 
 void Simulator::run() {
-   RegressionStep * current_step;
+    RegressionStep * current_step;
     
     while(!found_solution) {
         // Get the best action (if any)
@@ -57,8 +57,10 @@ void Simulator::replan() {
     if (verbose)
         cout << "\nRequired to replan..." << endl;
 
-    delete engine;
-    delete g_initial_state;
+    if (engine)
+        delete engine;
+    if (g_initial_state)
+        delete g_initial_state;
     
     if (verbose)
         cout << "Creating initial state." << endl;
