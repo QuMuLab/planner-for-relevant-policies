@@ -41,7 +41,7 @@ void Simulator::execute_action(const Operator *op) {
     }
     
     // Choose the op
-    Operator *chosen = g_nondet_mapping[op->get_nondet_name()][rand() % g_nondet_mapping[op->get_nondet_name()].size()];
+    Operator *chosen = g_nondet_mapping[op->get_nondet_name()][g_rng.next(g_nondet_mapping[op->get_nondet_name()].size())];
     
     if (verbose) {
         cout << "Chosen operator:" << endl << "  ";

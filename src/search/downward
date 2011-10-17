@@ -15,6 +15,7 @@ else
 fi
 
 TIME="$TIME --output=elapsed.time --format=%S\n%U\n"
+SEED=`date +%s`
 
 STATE_SIZE=$($TIME --append "$BASEDIR/dispatch" $TEMPFILE)
 echo Dispatcher selected state size $STATE_SIZE.
@@ -121,6 +122,7 @@ if [[ "$1" == "ipc" ]]; then
                 --heuristic "hlm,hff=lm_ff_syn(lm_rhw(
                     reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
                 --search "lazy_greedy([hff,hlm],preferred=[hff,hlm])" \
+                --random-seed $SEED \
                 "$@" < $TEMPFILE
     elif [[ "$CONFIG" == "seq-sat-lama-2011" ]]; then
         if [[ "$UNIT_COST" == "unit" ]]; then
