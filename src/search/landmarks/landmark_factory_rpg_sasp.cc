@@ -101,6 +101,8 @@ int LandmarkFactoryRpgSasp::min_cost_for_landmark(LandmarkNode *bp, vector<vecto
     }
     // Commenting out to allow the planner to fail in finding a solution
     //assert(min_cost < numeric_limits<int>::max());
+    if (min_cost == numeric_limits<int>::max())
+        throw SolvableError();
     return min_cost;
 }
 

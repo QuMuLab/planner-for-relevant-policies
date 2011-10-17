@@ -5,6 +5,7 @@
 #include "landmark_graph.h"
 #include <ext/hash_set>
 #include "../globals.h"
+#include "../search_engine.h"
 
 class LandmarkFactoryRpgSasp : public LandmarkFactory {
     list<LandmarkNode *> open_landmarks;

@@ -68,32 +68,46 @@ bool Simulator::replan() {
     if (g_initial_state)
         delete g_initial_state;
     
-    if (verbose)
-        cout << "Creating initial state." << endl;
     if (!current_state) {
         cout << "Error: No current state for the replan." << endl;
         exit(0);
     }
+    
+    if (verbose)
+        cout << "Creating initial state." << endl;
     g_initial_state = new State(*current_state);
     
     if (verbose)
         cout << "Creating new engine." << endl;
-    engine = OptionParser::parse_cmd_line(argc, argv, false);
+    bool engine_ready = true;
+    try {
+        engine = OptionParser::parse_cmd_line(argc, argv, false);
+    } catch (SolvableError &se) {
+        cout << se;
+        engine = 0; // Memory leak seems necessary --> engine can't be deleted.
+        engine_ready = false;
+    }
     
-    if (verbose)
-        cout << "Searching for a solution." << endl;
-    engine->search();
-    
-    if (engine->found_solution()) {
+    if (engine_ready) {
         if (verbose)
-            cout << "Building the regression list." << endl;
-        list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance);
+            cout << "Searching for a solution." << endl;
+        engine->search();
         
-        if (verbose)
-            cout << "Updating the policy." << endl;
-        g_policy->update_policy(regression_steps);
-        
-        return true;
+        if (engine->found_solution()) {
+            if (verbose)
+                cout << "Building the regression list." << endl;
+            list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance);
+            
+            if (verbose)
+                cout << "Updating the policy." << endl;
+            g_policy->update_policy(regression_steps);
+            
+            return true;
+        } else {
+            if (verbose)
+                cout << "Replanning failed!" << endl;
+            return false;
+        }
     } else {
         if (verbose)
             cout << "Replanning failed!" << endl;
@@ -106,6 +120,6 @@ void Simulator::dump() {
     cout << "Successful states: " << successful_states << endl;
     cout << "Replans: " << failed_states << endl;
     cout << "Actions: " << (successful_states + failed_states) << endl;
-    cout << "Succeeded: " << succeeded << endl;
     cout << "State-Action Pairs: " << g_policy_size << endl;
+    cout << "Succeeded: " << succeeded << endl;
 }
