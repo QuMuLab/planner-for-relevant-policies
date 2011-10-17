@@ -57,6 +57,10 @@ int main(int argc, const char **argv) {
         cout << "No solution -- aborting repairs." << endl;
         exit(1);
     }
+    
+    cout << "\n\nCreating the simulator..." << endl;
+    Simulator *sim = new Simulator(engine, argc, argv, true);
+    
     cout << "\n\nRegressing the plan..." << endl;
     list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
     for (list<RegressionStep *>::iterator op_iter = regression_steps.begin(); op_iter != regression_steps.end(); ++op_iter)
@@ -68,14 +72,12 @@ int main(int argc, const char **argv) {
     cout << "\n\nComputing just-in-time repairs..." << endl;
     bool changes_made = true;
     while (changes_made) {
-        changes_made = perform_jit_repairs(engine, argc, argv, 0.0);
+        changes_made = perform_jit_repairs(sim, 0.0);
         cout << "Finished repair round." << endl;
     }
     cout << "Done repairing..." << endl;
-    engine = OptionParser::parse_cmd_line(argc, argv, false);
     
     cout << "\n\nRunning the simulation..." << endl;
-    Simulator *sim = new Simulator(engine, argc, argv, false);
     sim->run();
     
     cout << "\n\n" << endl;

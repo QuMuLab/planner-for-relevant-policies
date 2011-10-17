@@ -6,12 +6,11 @@ void UnhandledState::dump() const {
 }
 
 
-bool perform_jit_repairs(SearchEngine *engine, int argc, const char **argv, float) { // Note: Currently we aren't using the time bound
+bool perform_jit_repairs(Simulator *sim, float) { // Note: Currently we aren't using the time bound
     queue<State *> open_list;
     set<State> seen;
     State *current_state;
     bool made_change = false;
-    Simulator *sim = new Simulator(engine, argc, argv, true);
     
     State *old_initial_state = new State(*g_initial_state);
     
