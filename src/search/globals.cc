@@ -365,6 +365,7 @@ map<string, vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic a
 vector<pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
 int g_matched_distance; // Containts the distance to the goal for the matched policy
 Policy *g_policy; // The policy to check while searching
+int g_policy_size = 0;
 
 Timer g_timer;
 string g_plan_filename = "sas_plan";

@@ -107,4 +107,5 @@ void Simulator::dump() {
     cout << "Replans: " << failed_states << endl;
     cout << "Actions: " << (successful_states + failed_states) << endl;
     cout << "Succeeded: " << succeeded << endl;
+    cout << "State-Action Pairs: " << g_policy_size << endl;
 }

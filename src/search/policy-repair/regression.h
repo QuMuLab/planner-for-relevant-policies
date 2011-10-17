@@ -17,8 +17,8 @@ struct RegressionStep {
     int distance;
     bool is_goal;
 
-    RegressionStep(const Operator &o, State *s, int d) : op(&o), state(s), distance(d), is_goal(false) {}
-    RegressionStep(State *s, int d) : state(s), distance(d), is_goal(true) {}
+    RegressionStep(const Operator &o, State *s, int d) : op(&o), state(s), distance(d), is_goal(false) { g_policy_size++; }
+    RegressionStep(State *s, int d) : state(s), distance(d), is_goal(true) { g_policy_size++; }
     
     string get_op_name();
 
