@@ -11,6 +11,7 @@ bool perform_jit_repairs(Simulator *sim, float) { // Note: Currently we aren't u
     set<State> seen;
     State *current_state;
     bool made_change = false;
+    int failed_open_states = 0;
     
     State *old_initial_state = new State(*g_initial_state);
     
@@ -25,29 +26,38 @@ bool perform_jit_repairs(Simulator *sim, float) { // Note: Currently we aren't u
         
             // See if we can handle this state
             RegressionStep * regstep = g_policy->get_best_step(*current_state);
+            bool have_solution = true;
             
             if (0 == regstep) {
-                made_change = true;
-                //cout << "Handling a new open state." << endl;
                 sim->set_state(current_state);
-                sim->replan();
-                regstep = g_policy->get_best_step(*current_state);
+                have_solution = sim->replan();
+                
+                if (have_solution) {
+                    regstep = g_policy->get_best_step(*current_state);
+                    made_change = true;
+                }
             }
             
-            assert(regstep);
-            
-            if (!(regstep->is_goal)) {
-                //cout << "Searching through operator " << regstep->op->get_nondet_name() << endl;
-                for (int i = 0; i < g_nondet_mapping[regstep->op->get_nondet_name()].size(); i++) {
-                    State *new_state = new State(*current_state, *(g_nondet_mapping[regstep->op->get_nondet_name()][i]));
-                    if (0 == seen.count(*new_state))
-                        open_list.push(new_state);
+            if (have_solution) {
+                assert(regstep);
+                
+                if (!(regstep->is_goal)) {
+                    //cout << "Searching through operator " << regstep->op->get_nondet_name() << endl;
+                    for (int i = 0; i < g_nondet_mapping[regstep->op->get_nondet_name()].size(); i++) {
+                        State *new_state = new State(*current_state, *(g_nondet_mapping[regstep->op->get_nondet_name()][i]));
+                        if (0 == seen.count(*new_state))
+                            open_list.push(new_state);
+                    }
                 }
+            } else {
+                failed_open_states++;
             }
         }
     }
     
+    cout << "Could not close " << failed_open_states << " open leaf states." << endl;
     g_initial_state = old_initial_state;
+    sim->set_state(g_initial_state);
     return made_change;
 }
 

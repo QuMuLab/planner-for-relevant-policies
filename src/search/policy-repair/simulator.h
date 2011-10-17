@@ -29,12 +29,13 @@ class Simulator {
     void execute_action(const Operator *op);
     
     bool verbose;
+    bool succeeded;
     
 public:
     Simulator(SearchEngine *eng, int argc, const char **argv, bool verb = true);
     
     void run();
-    void replan();
+    bool replan();
     
     void set_state(State * s) { current_state = new State(*s); }
     SearchEngine * get_engine() { return engine; }

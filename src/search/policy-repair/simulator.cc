@@ -2,14 +2,16 @@
 #include "../option_parser.h"
 
 Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb) :
-                    engine(eng), argc(_argc), argv(_argv), verbose(verb), found_solution(false) {
+                    engine(eng), argc(_argc), argv(_argv), verbose(verb), succeeded(false), found_solution(false) {
     current_state = new State(*g_initial_state);
     successful_states = 0;
     failed_states = 0;
 }
 
 void Simulator::run() {
+    found_solution = false;
     RegressionStep * current_step;
+    current_state->dump();
     
     while(!found_solution) {
         // Get the best action (if any)
@@ -21,6 +23,7 @@ void Simulator::run() {
             
             if (current_step->is_goal) {
                 cout << "...achieved the goal!" << endl;
+                succeeded = true;
                 found_solution = true;
             } else {
                 // Execute the non-deterministic action
@@ -28,7 +31,10 @@ void Simulator::run() {
             }
         } else {
             failed_states++;
-            replan();
+            if (!replan()) {
+                cout << "Got into a dead-end state..." << endl;
+                found_solution = true;
+            }
         }
     }
 }
@@ -53,7 +59,7 @@ void Simulator::execute_action(const Operator *op) {
     delete old_state;
 }
 
-void Simulator::replan() {
+bool Simulator::replan() {
     if (verbose)
         cout << "\nRequired to replan..." << endl;
 
@@ -78,13 +84,21 @@ void Simulator::replan() {
         cout << "Searching for a solution." << endl;
     engine->search();
     
-    if (verbose)
-        cout << "Building the regression list." << endl;
-    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance);
-    
-    if (verbose)
-        cout << "Updating the policy." << endl;
-    g_policy->update_policy(regression_steps);
+    if (engine->found_solution()) {
+        if (verbose)
+            cout << "Building the regression list." << endl;
+        list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance);
+        
+        if (verbose)
+            cout << "Updating the policy." << endl;
+        g_policy->update_policy(regression_steps);
+        
+        return true;
+    } else {
+        if (verbose)
+            cout << "Replanning failed!" << endl;
+        return false;
+    }
 }
 
 void Simulator::dump() {
@@ -92,4 +106,5 @@ void Simulator::dump() {
     cout << "Successful states: " << successful_states << endl;
     cout << "Replans: " << failed_states << endl;
     cout << "Actions: " << (successful_states + failed_states) << endl;
+    cout << "Succeeded: " << succeeded << endl;
 }
