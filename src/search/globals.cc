@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -21,6 +22,7 @@ using namespace __gnu_cxx;
 #include "state.h"
 #include "successor_generator.h"
 #include "timer.h"
+#include "policy-repair/policy.h"
 
 
 static const int PRE_FILE_VERSION = 3;
@@ -35,12 +37,38 @@ static const int PRE_FILE_VERSION = 3;
 static vector<vector<set<pair<int, int> > > > g_inconsistent_facts;
 
 bool test_goal(const State &state) {
+    if (g_policy)
+        return test_policy(state);
+
     for (int i = 0; i < g_goal.size(); i++) {
         if (state[g_goal[i].first] != g_goal[i].second) {
             return false;
         }
     }
     return true;
+}
+
+bool test_policy(const State &state) {
+    
+    RegressionStep * best_step = g_policy->get_best_step(state);
+    
+    //if ((best_step) && (best_step->is_goal)) { // Enable if you want to plan for the goal
+    if (best_step) { // Enable if you want to use the policy to stop early
+        
+        g_matched_policy.clear();
+        g_matched_distance = best_step->distance;
+        
+        for (int i = 0; i < g_variable_name.size(); i++) {
+            if (state_var_t(-1) != (*(best_step->state))[i]) {
+                g_matched_policy.push_back(make_pair(i, (*(best_step->state))[i]));
+            }
+        }
+        
+        return true;
+        
+    } else {
+        return false;
+    }
 }
 
 int calculate_plan_cost(const vector<const Operator *> &plan) {
@@ -252,6 +280,10 @@ void read_everything(istream &in) {
     check_magic(in, "end_SG");
     DomainTransitionGraph::read_all(in);
     g_causal_graph = new CausalGraph(in);
+    
+    for (int i = 0; i < g_operators.size(); i++) {
+        g_nondet_mapping[g_operators[i].get_nondet_name()].push_back(&g_operators[i]);
+    }
 }
 
 void dump_everything() {
@@ -328,6 +360,12 @@ AxiomEvaluator *g_axiom_evaluator;
 SuccessorGenerator *g_successor_generator;
 vector<DomainTransitionGraph *> g_transition_graphs;
 CausalGraph *g_causal_graph;
+
+map<string, vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
+vector<pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
+int g_matched_distance; // Containts the distance to the goal for the matched policy
+Policy *g_policy; // The policy to check while searching
+int g_policy_size = 0;
 
 Timer g_timer;
 string g_plan_filename = "sas_plan";

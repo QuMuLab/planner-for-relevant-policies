@@ -5,9 +5,14 @@
 #include "timer.h"
 #include "utilities.h"
 #include "search_engine.h"
+#include "policy-repair/regression.h"
+#include "policy-repair/simulator.h"
+#include "policy-repair/policy.h"
+#include "policy-repair/jit.h"
 
 
 #include <iostream>
+#include <list>
 using namespace std;
 
 
@@ -24,6 +29,7 @@ int main(int argc, const char **argv) {
         read_everything(cin);
 
     SearchEngine *engine = 0;
+    g_policy = 0;
 
     //the input will be parsed twice:
     //once in dry-run mode, to check for simple input errors,
@@ -46,6 +52,39 @@ int main(int argc, const char **argv) {
     engine->heuristic_statistics();
     cout << "Search time: " << search_timer << endl;
     cout << "Total time: " << g_timer << endl;
+    
+    if (!engine->found_solution()) {
+        cout << "No solution -- aborting repairs." << endl;
+        exit(1);
+    }
+    
+    cout << "\n\nCreating the simulator..." << endl;
+    Simulator *sim = new Simulator(engine, argc, argv, true);
+    
+    cout << "\n\nRegressing the plan..." << endl;
+    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
+    for (list<RegressionStep *>::iterator op_iter = regression_steps.begin(); op_iter != regression_steps.end(); ++op_iter)
+        (*op_iter)->dump();
+    
+    cout << "\n\nGenerating an initial policy..." << endl;
+    g_policy = new Policy(regression_steps);
+    
+    cout << "\n\nComputing just-in-time repairs..." << endl;
+    bool changes_made = true;
+    while (changes_made) {
+        changes_made = perform_jit_repairs(sim, 0.0);
+        cout << "Finished repair round." << endl;
+    }
+    cout << "Done repairing..." << endl;
+    
+    cout << "\n\nRunning the simulation..." << endl;
+    sim->run();
+    
+    cout << "\n\n" << endl;
+    
+    sim->dump();
+    
+    cout << "\n\n" << endl;
 
-    return engine->found_solution() ? 0 : 1;
+    return sim->found_solution ? 0 : 1;
 }
