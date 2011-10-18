@@ -157,19 +157,24 @@ class HgCheckout(Checkout):
         if self.rev == 'WORK':
             return
 
-        cwd = os.getcwd()
         path = self.checkout_dir
-        # If there's already a checkout, don't checkout again
         if not os.path.exists(path):
-            clone = 'hg clone -r %s %s %s' % (self.rev, self.repo, path)
-            print clone
-            subprocess.call(clone, shell=True)
+            clone = ['hg', 'clone', '-r', self.rev, self.repo, path]
+            print ' '.join(clone)
+            subprocess.call(clone)
         else:
             logging.info('Checkout "%s" already exists' % path)
-        update = '; '.join(['cd %s' % path, 'hg update -r %s' % self.rev,
-                            'cd %s' % cwd])
-        print update
-        subprocess.call(update, shell=True)
+            pull = ['hg', 'pull', self.repo]
+            print ' '.join(pull)
+            subprocess.call(pull, cwd=path)
+
+        update = ['hg', 'update', '-r', self.rev]
+        print ' '.join(update)
+        retcode = subprocess.call(update, cwd=path)
+        if not retcode == 0:
+            # Unknown revision
+            logging.error('Repo at %s has no revision %s. Please delete the '
+                          'checkouts directory' % (path, self.rev))
 
     @property
     def parent_rev(self):

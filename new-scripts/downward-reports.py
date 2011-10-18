@@ -116,7 +116,8 @@ class PlanningReport(Report):
         Returns an empty table. Used and filled by subclasses.
         '''
         # Decide whether we want to highlight minima or maxima
-        max_attribute_parts = ['score', 'initial_h_value', 'coverage']
+        max_attribute_parts = ['score', 'initial_h_value', 'coverage',
+                               'quality']
         min_wins = True
         for attr_part in max_attribute_parts:
             if attr_part in attribute:
