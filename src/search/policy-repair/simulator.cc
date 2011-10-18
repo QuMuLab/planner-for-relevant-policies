@@ -11,7 +11,6 @@ Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb
 void Simulator::run() {
     found_solution = false;
     RegressionStep * current_step;
-    current_state->dump();
     
     while(!found_solution) {
         // Get the best action (if any)
@@ -83,7 +82,8 @@ bool Simulator::replan() {
     try {
         engine = OptionParser::parse_cmd_line(argc, argv, false);
     } catch (SolvableError &se) {
-        cout << se;
+        if (!g_silent_planning)
+            cout << se;
         engine = 0; // Memory leak seems necessary --> engine can't be deleted.
         engine_ready = false;
     }
@@ -121,5 +121,6 @@ void Simulator::dump() {
     cout << "Replans: " << failed_states << endl;
     cout << "Actions: " << (successful_states + failed_states) << endl;
     cout << "State-Action Pairs: " << g_policy_size << endl;
-    cout << "Succeeded: " << succeeded << endl;
+    cout << "Strongly Cyclic: " << ((g_failed_open_states > 0) ? "False" : "True") << endl;
+    cout << "Succeeded: " << (succeeded ? "True" : "False") << endl;
 }

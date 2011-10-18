@@ -58,13 +58,13 @@ int main(int argc, const char **argv) {
         exit(1);
     }
     
+    g_silent_planning = true;
+    
     cout << "\n\nCreating the simulator..." << endl;
-    Simulator *sim = new Simulator(engine, argc, argv, true);
+    Simulator *sim = new Simulator(engine, argc, argv, false);
     
     cout << "\n\nRegressing the plan..." << endl;
     list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
-    for (list<RegressionStep *>::iterator op_iter = regression_steps.begin(); op_iter != regression_steps.end(); ++op_iter)
-        (*op_iter)->dump();
     
     cout << "\n\nGenerating an initial policy..." << endl;
     g_policy = new Policy(regression_steps);
@@ -73,9 +73,11 @@ int main(int argc, const char **argv) {
     bool changes_made = true;
     while (changes_made) {
         changes_made = perform_jit_repairs(sim, 0.0);
-        cout << "Finished repair round." << endl;
+        if (!g_silent_planning)
+            cout << "Finished repair round." << endl;
     }
-    cout << "Done repairing..." << endl;
+    if (!g_silent_planning)
+        cout << "Done repairing..." << endl;
     
     cout << "\n\nRunning the simulation..." << endl;
     sim->run();

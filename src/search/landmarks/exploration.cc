@@ -30,7 +30,8 @@ using namespace __gnu_cxx;
 Exploration::Exploration(const Options &opts)
     : Heuristic(opts),
       did_write_overflow_warning(false) {
-    cout << "Initializing Exploration..." << endl;
+    if (!g_silent_planning)
+        cout << "Initializing Exploration..." << endl;
 
     // Build propositions.
     for (int var = 0; var < g_variable_domain.size(); var++) {

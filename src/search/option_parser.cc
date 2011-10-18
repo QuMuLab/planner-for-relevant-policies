@@ -184,7 +184,8 @@ SearchEngine *OptionParser::parse_cmd_line(
             ++i;
             srand(atoi(argv[i]));
             g_rng.seed(atoi(argv[i]));
-            cout << "random seed " << argv[i] << endl;
+            if (!g_silent_planning)
+                cout << "random seed " << argv[i] << endl;
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;
             if (i + 1 < argc) {

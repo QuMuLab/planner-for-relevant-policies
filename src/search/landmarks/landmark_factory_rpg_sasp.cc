@@ -344,7 +344,8 @@ void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<i
 }
 
 void LandmarkFactoryRpgSasp::generate_landmarks() {
-    cout << "Generating landmarks using the RPG/SAS+ approach\n";
+    if (!g_silent_planning)
+        cout << "Generating landmarks using the RPG/SAS+ approach\n";
     build_disjunction_classes();
 
     for (unsigned i = 0; i < g_goal.size(); i++) {

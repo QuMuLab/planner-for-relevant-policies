@@ -366,6 +366,8 @@ vector<pair<int, int> > g_matched_policy; // Contains the condition that matched
 int g_matched_distance; // Containts the distance to the goal for the matched policy
 Policy *g_policy; // The policy to check while searching
 int g_policy_size = 0;
+int g_failed_open_states = 0;
+bool g_silent_planning = false;
 
 Timer g_timer;
 string g_plan_filename = "sas_plan";

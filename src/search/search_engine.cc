@@ -44,13 +44,15 @@ void SearchEngine::search() {
     Timer timer;
     while (step() == IN_PROGRESS)
         ;
-    cout << "Actual search time: " << timer
-         << " [t=" << g_timer << "]" << endl;
+    if (!g_silent_planning)
+        cout << "Actual search time: " << timer
+            << " [t=" << g_timer << "]" << endl;
 }
 
 bool SearchEngine::check_goal_and_set_plan(const State &state) {
     if (test_goal(state)) {
-        cout << "Solution found!" << endl;
+        if (!g_silent_planning)
+            cout << "Solution found!" << endl;
         Plan plan;
         search_space.trace_path(state, plan);
         set_plan(plan);

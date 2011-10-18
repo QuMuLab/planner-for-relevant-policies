@@ -11,7 +11,6 @@ bool perform_jit_repairs(Simulator *sim, float) { // Note: Currently we aren't u
     set<State> seen;
     State *current_state;
     bool made_change = false;
-    int failed_open_states = 0;
     
     State *old_initial_state = new State(*g_initial_state);
     
@@ -50,12 +49,13 @@ bool perform_jit_repairs(Simulator *sim, float) { // Note: Currently we aren't u
                     }
                 }
             } else {
-                failed_open_states++;
+                g_failed_open_states++;
             }
         }
     }
     
-    cout << "Could not close " << failed_open_states << " open leaf states." << endl;
+    if (!g_silent_planning)
+        cout << "Could not close " << g_failed_open_states << " open leaf states." << endl;
     g_initial_state = old_initial_state;
     sim->set_state(g_initial_state);
     return made_change;

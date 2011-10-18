@@ -34,7 +34,8 @@ void LazySearch::set_pref_operator_heuristics(
 
 void LazySearch::initialize() {
     //TODO children classes should output which kind of search
-    cout << "Conducting lazy best first search, (real) bound = " << bound << endl;
+    if (!g_silent_planning)
+        cout << "Conducting lazy best first search, (real) bound = " << bound << endl;
 
     assert(open_list != NULL);
     set<Heuristic *> hset;
