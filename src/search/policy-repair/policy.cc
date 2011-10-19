@@ -326,13 +326,17 @@ GeneratorBase *GeneratorEmpty::update_policy(list<RegressionStep *> &reg_steps, 
 }
 
 Policy::Policy(list<RegressionStep *> &reg_steps) {
+    g_timer_policy_build.resume();
     set<int> vars_seen;
     root = new GeneratorSwitch(reg_steps, vars_seen);
+    g_timer_policy_build.stop();
 }
 
 void Policy::update_policy(list<RegressionStep *> &reg_steps) {
+    g_timer_policy_build.resume();
     set<int> vars_seen;
     root->update_policy(reg_steps, vars_seen);
+    g_timer_policy_build.stop();
 }
 
 void Policy::generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps) {
@@ -340,11 +344,14 @@ void Policy::generate_applicable_steps(const State &curr, vector<RegressionStep 
 }
 
 RegressionStep *Policy::get_best_step(const State &curr) {
+    g_timer_policy_eval.resume();
     vector<RegressionStep *> current_steps;
     generate_applicable_steps(curr, current_steps);
     
-    if (0 == current_steps.size())
+    if (0 == current_steps.size()) {
+        g_timer_policy_eval.stop();
         return 0;
+    }
     
     int best_index = 0;
     int best_val = current_steps[0]->distance;
@@ -355,7 +362,7 @@ RegressionStep *Policy::get_best_step(const State &curr) {
             best_index = i;
         }
     }
-    
+    g_timer_policy_eval.stop();
     return current_steps[best_index];
 }
 

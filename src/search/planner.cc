@@ -30,10 +30,25 @@ int main(int argc, const char **argv) {
 
     SearchEngine *engine = 0;
     g_policy = 0;
+    
+    g_timer_regression.stop();
+    g_timer_engine_init.stop();
+    g_timer_search.stop();
+    g_timer_policy_build.stop();
+    g_timer_policy_eval.stop();
+    g_timer_jit.stop();
+    
+    g_timer_regression.reset();
+    g_timer_engine_init.reset();
+    g_timer_search.reset();
+    g_timer_policy_build.reset();
+    g_timer_policy_eval.reset();
+    g_timer_jit.reset();
 
     //the input will be parsed twice:
     //once in dry-run mode, to check for simple input errors,
     //then in normal mode
+    g_timer_engine_init.resume();
     try {
         OptionParser::parse_cmd_line(argc, argv, true);
         engine = OptionParser::parse_cmd_line(argc, argv, false);
@@ -41,17 +56,18 @@ int main(int argc, const char **argv) {
         cout << pe << endl;
         exit(1);
     }
+    g_timer_engine_init.stop();
 
-    Timer search_timer;
+    g_timer_search.resume();
     engine->search();
-    search_timer.stop();
-    g_timer.stop();
+    g_timer_search.stop();
 
     engine->save_plan_if_necessary();
     engine->statistics();
     engine->heuristic_statistics();
-    cout << "Search time: " << search_timer << endl;
-    cout << "Total time: " << g_timer << endl;
+    
+    cout << "Initial search time: " << g_timer_search << endl;
+    cout << "Initial total time: " << g_timer << endl;
     
     if (!engine->found_solution()) {
         cout << "No solution -- aborting repairs." << endl;
@@ -70,6 +86,7 @@ int main(int argc, const char **argv) {
     g_policy = new Policy(regression_steps);
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
+    g_timer_jit.resume();
     bool changes_made = true;
     while (changes_made) {
         changes_made = perform_jit_repairs(sim, 0.0);
@@ -78,12 +95,14 @@ int main(int argc, const char **argv) {
     }
     if (!g_silent_planning)
         cout << "Done repairing..." << endl;
+    g_timer_jit.stop();
     
     cout << "\n\nRunning the simulation..." << endl;
     sim->run();
     
     cout << "\n\n" << endl;
     
+    g_timer.stop();
     sim->dump();
     
     cout << "\n\n" << endl;

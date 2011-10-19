@@ -67,4 +67,12 @@ extern int g_policy_size; // Size of the policy we create
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_silent_planning; // Silence the planning output
 
+/* Timers */
+extern Timer g_timer_regression;
+extern Timer g_timer_engine_init;
+extern Timer g_timer_search;
+extern Timer g_timer_policy_build;
+extern Timer g_timer_policy_eval;
+extern Timer g_timer_jit;
+
 #endif

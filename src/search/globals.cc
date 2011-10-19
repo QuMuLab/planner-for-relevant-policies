@@ -369,6 +369,13 @@ int g_policy_size = 0;
 int g_failed_open_states = 0;
 bool g_silent_planning = false;
 
+Timer g_timer_regression;
+Timer g_timer_engine_init;
+Timer g_timer_search;
+Timer g_timer_policy_build;
+Timer g_timer_policy_eval;
+Timer g_timer_jit;
+
 Timer g_timer;
 string g_plan_filename = "sas_plan";
 RandomNumberGenerator g_rng(2011); // Use an arbitrary default seed.

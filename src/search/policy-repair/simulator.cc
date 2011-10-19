@@ -79,6 +79,7 @@ bool Simulator::replan() {
     if (verbose)
         cout << "Creating new engine." << endl;
     bool engine_ready = true;
+    g_timer_engine_init.resume();
     try {
         engine = OptionParser::parse_cmd_line(argc, argv, false);
     } catch (SolvableError &se) {
@@ -87,11 +88,14 @@ bool Simulator::replan() {
         engine = 0; // Memory leak seems necessary --> engine can't be deleted.
         engine_ready = false;
     }
+    g_timer_engine_init.stop();
     
     if (engine_ready) {
         if (verbose)
             cout << "Searching for a solution." << endl;
+        g_timer_search.resume();
         engine->search();
+        g_timer_search.stop();
         
         if (engine->found_solution()) {
             if (verbose)
@@ -116,11 +120,20 @@ bool Simulator::replan() {
 }
 
 void Simulator::dump() {
-    cout << "-{ Simulator Statistics }-" << endl;
+    cout << "-{ General Statistics }-" << endl;
     cout << "Successful states: " << successful_states << endl;
     cout << "Replans: " << failed_states << endl;
     cout << "Actions: " << (successful_states + failed_states) << endl;
     cout << "State-Action Pairs: " << g_policy_size << endl;
     cout << "Strongly Cyclic: " << ((g_failed_open_states > 0) ? "False" : "True") << endl;
     cout << "Succeeded: " << (succeeded ? "True" : "False") << endl;
+    
+    cout << "\n-{ Timing Statistics }-" << endl;
+    cout << "Regression Computation: " << g_timer_regression << endl;
+    cout << "Engine Initialization: " << g_timer_engine_init << endl;
+    cout << "Search Time: " << g_timer_search << endl;
+    cout << "Policy Construction: " << g_timer_policy_build << endl;
+    cout << "Evaluating the policy: " << g_timer_policy_eval << endl;
+    cout << "Just-in-case Repairs: " << g_timer_jit << endl;
+    cout << "Total time: " << g_timer << endl;
 }
