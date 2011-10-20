@@ -108,19 +108,335 @@ blind = """\
 """
 
 oa10000 = """\
---search "astar(mas(max_states=10000))"\
+--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=10000)))"\
 """
 
 oa50000 = """\
---search "astar(mas())"\
+--search "astar(merge_and_shrink())"\
+"""
+
+oa100000 = """\
+--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=100000)))"\
 """
 
 oa200000 = """\
---search "astar(mas(max_states=200000))"\
+--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=200000)))"\
 """
 
-pdb = """\
---search "astar(pdb())"\
+pdb1000 = """\
+--search "astar(pdb(max_states=1000))"\
+"""
+
+pdb2500 = """\
+--search "astar(pdb(max_states=2500))"\
+"""
+
+pdb5000 = """\
+--search "astar(pdb(max_states=5000))"\
+"""
+
+pdb10000 = """\
+--search "astar(pdb(max_states=10000))"\
+"""
+
+pdb25000 = """\
+--search "astar(pdb(max_states=25000))"\
+"""
+
+pdb50000 = """\
+--search "astar(pdb(max_states=50000))"\
+"""
+
+pdb100000 = """\
+--search "astar(pdb(max_states=100000))"\
+"""
+
+pdb250000 = """\
+--search "astar(pdb(max_states=250000))"\
+"""
+
+pdb500000 = """\
+--search "astar(pdb(max_states=500000))"\
+"""
+
+pdb1000000 = """\
+--search "astar(pdb(max_states=1000000))"\
+"""
+
+pdb2500000 = """\
+--search "astar(pdb(max_states=2500000))"\
+"""
+
+pdb5000000 = """\
+--search "astar(pdb(max_states=5000000))"\
+"""
+
+pdb10000000 = """\
+--search "astar(pdb(max_states=10000000))"\
+"""
+
+pdb25000000 = """\
+--search "astar(pdb(max_states=25000000))"\
+"""
+
+pdb50000000 = """\
+--search "astar(pdb(max_states=50000000))"\
+"""
+
+pdb100000000 = """\
+--search "astar(pdb(max_states=100000000))"\
+"""
+
+pdb250000000 = """\
+--search "astar(pdb(max_states=250000000))"\
+"""
+
+pdb500000000 = """\
+--search "astar(pdb(max_states=500000000))"\
+"""
+
+pdb1000000000 = """\
+--search "astar(pdb(max_states=1000000000))"\
+"""
+
+ipdb = """\
+--search "astar(ipdb())"\
+"""
+
+ipdbi2 = """\
+--search "astar(ipdb(min_improvement=2))"\
+"""
+
+ipdbi3 = """\
+--search "astar(ipdb(min_improvement=3))"\
+"""
+
+ipdbi4 = """\
+--search "astar(ipdb(min_improvement=4))"\
+"""
+
+ipdbi5 = """\
+--search "astar(ipdb(min_improvement=5))"\
+"""
+
+ipdbi6 = """\
+--search "astar(ipdb(min_improvement=6))"\
+"""
+
+ipdbi7 = """\
+--search "astar(ipdb(min_improvement=7))"\
+"""
+
+ipdbi8 = """\
+--search "astar(ipdb(min_improvement=8))"\
+"""
+
+ipdbi9 = """\
+--search "astar(ipdb(min_improvement=9))"\
+"""
+
+ipdbi10 = """\
+--search "astar(ipdb(min_improvement=10))"\
+"""
+
+ipdbi11 = """\
+--search "astar(ipdb(min_improvement=11))"\
+"""
+
+ipdbi12 = """\
+--search "astar(ipdb(min_improvement=12))"\
+"""
+
+ipdbi13 = """\
+--search "astar(ipdb(min_improvement=13))"\
+"""
+
+ipdbi14 = """\
+--search "astar(ipdb(min_improvement=14))"\
+"""
+
+ipdbi15 = """\
+--search "astar(ipdb(min_improvement=15))"\
+"""
+
+ipdbi16 = """\
+--search "astar(ipdb(min_improvement=16))"\
+"""
+
+ipdbi17 = """\
+--search "astar(ipdb(min_improvement=17))"\
+"""
+
+ipdbi18 = """\
+--search "astar(ipdb(min_improvement=18))"\
+"""
+
+ipdbi19 = """\
+--search "astar(ipdb(min_improvement=19))"\
+"""
+
+ipdbi20 = """\
+--search "astar(ipdb(min_improvement=20))"\
+"""
+
+pdbs = """\
+--search "astar(cpdbs())"\
+"""
+
+ipdb_hhh = """\
+--search "astar(ipdb())"\
+"""
+
+ipdb_hhh_pipesworld = """\
+--search "astar(ipdb(num_samples=250,min_improvement=3))"\
+"""
+
+ipdb_hhh_airport = """\
+--search "astar(ipdb(num_samples=50,min_improvement=5))"\
+"""
+
+gapdb = """\
+--search "astar(gapdb())"\
+"""
+
+gapdb_e10 = """\
+--search "astar(gapdb(num_episodes=10))"\
+"""
+
+gapdb_e20 = """\
+--search "astar(gapdb(num_episodes=20))"\
+"""
+
+gapdb_e30 = """\
+--search "astar(gapdb(num_episodes=30))"\
+"""
+
+gapdb_e40 = """\
+--search "astar(gapdb(num_episodes=40))"\
+"""
+
+gapdb_e50 = """\
+--search "astar(gapdb(num_episodes=50))"\
+"""
+
+gapdb_e60 = """\
+--search "astar(gapdb(num_episodes=60))"\
+"""
+
+gapdb_e70 = """\
+--search "astar(gapdb(num_episodes=70))"\
+"""
+
+gapdb_e80 = """\
+--search "astar(gapdb(num_episodes=80))"\
+"""
+
+gapdb_e90 = """\
+--search "astar(gapdb(num_episodes=90))"\
+"""
+
+gapdb_e100 = """\
+--search "astar(gapdb(num_episodes=100))"\
+"""
+
+gapdb_max100 = """\
+--search "astar(gapdb(pdb_max_size=100))"\
+"""
+
+gapdb_max1000 = """\
+--search "astar(gapdb(pdb_max_size=1000))"\
+"""
+
+gapdb_max10000 = """\
+--search "astar(gapdb(pdb_max_size=10000))"\
+"""
+
+gapdb_max100000 = """\
+--search "astar(gapdb(pdb_max_size=100000))"\
+"""
+
+gapdb_max1000000 = """\
+--search "astar(gapdb(pdb_max_size=1000000))"\
+"""
+
+gapdb_c10 = """\
+--search "astar(gapdb(num_collections=10))"\
+"""
+
+gapdb_c20 = """\
+--search "astar(gapdb(num_collections=20))"\
+"""
+
+gapdb_c40 = """\
+--search "astar(gapdb(num_collections=40))"\
+"""
+
+gapdb_c80 = """\
+--search "astar(gapdb(num_collections=80))"\
+"""
+
+gapdb_m5 = """\
+--search "astar(gapdb(mutation_probability=5))"\
+"""
+
+gapdb_m10 = """\
+--search "astar(gapdb(mutation_probability=10))"\
+"""
+
+gapdb_disjoint = """\
+--search "astar(gapdb(disjoint=true))"
+"""
+
+gapdb_1 = """\
+--search "astar(gapdb(pdb_max_size=1024,num_episodes=50,num_collections=5))"\
+"""
+
+gapdb_2 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=50,num_collections=5))"\
+"""
+
+gapdb_3 = """\
+--search "astar(gapdb(pdb_max_size=1024,num_episodes=100,num_collections=5))"\
+"""
+
+gapdb_4 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=5))"\
+"""
+
+gapdb_5 = """\
+--search "astar(gapdb(pdb_max_size=1024,num_episodes=300,num_collections=5))"\
+"""
+
+gapdb_6 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=300,num_collections=5))"\
+"""
+
+gapdb_7 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=10))"\
+"""
+
+gapdb_8 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=15))"\
+"""
+
+gapdb_9 = """\
+--search "astar(gapdb(pdb_max_size=1048576,num_episodes=100,num_collections=15))"\
+"""
+
+gapdb_10 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=300,num_collections=15))"\
+"""
+
+gapdb_11 = """\
+--search "astar(gapdb(pdb_max_size=32768,num_episodes=100,num_collections=20))"\
+"""
+
+gapdb_12 = """\
+--search "astar(gapdb(pdb_max_size=1048576,num_episodes=300,num_collections=20))"\
+"""
+
+gapdb_comparison = """\
+--search "astar(gapdb(pdb_max_size=100000,num_episodes=100,num_collections=15))"\
 """
 
 lmopt_rhw = """\
@@ -201,9 +517,9 @@ def ipc_optimal():
         ("bjolp", lmopt_rhw_hm1),
         ("lmopt_rhw", lmopt_rhw),
         ("lmopt_hm1", lmopt_hm1),
-        ("mas10000", "--search 'astar(mas(max_states=10000))'"),
-        ("mas50000", "--search 'astar(mas(max_states=50000))'"),
-        ("mas100000", "--search 'astar(mas(max_states=100000))'"),
+        ("mas10000", '--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=10000)))"'),
+        ("mas50000", '--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=50000)))"'),
+        ("mas100000", '--search "astar(merge_and_shrink(shrink_strategy=shrink_fh(max_states=100000)))"'),
         ]
 
 
@@ -243,8 +559,8 @@ def alternation_configs():
 
 def raz_ipc():
     return [
-        ("mas-1", "--search 'astar(mas(max_states=1,merge_strategy=5,shrink_strategy=12))'"),
-        ("mas-2", "--search 'astar(mas(max_states=200000,merge_strategy=5,shrink_strategy=7))'"),
+        ("mas-1", "--search 'astar(merge_and_shrink(merge_strategy=merge_linear_reverse_level,shrink_strategy=shrink_bisimulation(max_states=infinity,threshold=1,greedy=true,initialize_by_h=false,group_by_h=false)))'"),
+        ("mas-2", "--search 'astar(merge_and_shrink(merge_strategy=merge_linear_reverse_level,shrink_strategy=shrink_bisimulation(max_states=200000,greedy=false,initialize_by_h=true,group_by_h=true)))'"),
         ]
 
 
@@ -461,6 +777,13 @@ multiple_plans = """\
 --heuristic "hadd=add()" \
 --search "iterated([lazy_greedy([hadd]),\
 lazy_wastar([hff,hlm],preferred=[hff,hlm],w=2)],\
+repeat_last=false)"\
+"""
+
+
+iterated_search = """\
+--heuristic "hadd=add()" \
+--search "iterated([lazy_greedy([hadd]),lazy_wastar([hadd])],\
 repeat_last=false)"\
 """
 

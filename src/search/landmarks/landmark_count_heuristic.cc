@@ -1,24 +1,14 @@
 #include "landmark_count_heuristic.h"
 
-#include "h_m_landmarks.h"
-#include "landmark_factory_rpg_exhaust.h"
-#include "landmark_factory_rpg_sasp.h"
-#include "landmark_factory_rpg_search.h"
-#include "landmark_factory_zhu_givan.h"
-
-#include "../globals.h"
-#include "../operator.h"
-#include "../option_parser.h"
 #include "../plugin.h"
-#include "../search_engine.h"
 #include "../successor_generator.h"
-#include "../timer.h"
 
 #include <cmath>
+#include <ext/hash_map>
 #include <limits>
 
-
 using namespace std;
+using namespace __gnu_cxx;
 
 LandmarkCountHeuristic::LandmarkCountHeuristic(const Options &opts)
     : Heuristic(opts),
@@ -83,10 +73,6 @@ int LandmarkCountHeuristic::get_heuristic_value(const State &state) {
     // they do not get counted as reached in that case). However, we
     // must return 0 for a goal state.
 
-    bool goal_reached = test_goal(state);
-    if (goal_reached)
-        return 0;
-
     bool dead_end = lm_status_manager.update_lm_status(state);
 
     if (dead_end) {
@@ -108,37 +94,23 @@ int LandmarkCountHeuristic::get_heuristic_value(const State &state) {
         h = total_cost - reached_cost + needed_cost;
     }
 
+    // Two plausibility tests in debug mode.
     assert(h >= 0);
-
-#ifndef NDEBUG
-    // For debugging purposes, check whether heuristic is 0 even though
-    // goal is not reached. This should never happen unless action costs
-    // are used where some actions have cost 0.
-    if (h == 0 && !goal_reached) {
-        assert(g_use_metric);
-        bool all_costs_are_zero = true;
-        //cout << "WARNING! Landmark heuristic is 0, but goal not reached" << endl;
-        for (int i = 0; i < g_goal.size(); i++) {
-            if (state[g_goal[i].first] != g_goal[i].second) {
-                //cout << "missing goal prop " << g_variable_name[g_goal[i].first] << " : "
-                //<< g_goal[i].second << endl;
-                LandmarkNode *node_p = lgraph.get_landmarked(g_goal[i]);
-                assert(node_p != NULL);
-                if (node_p->min_cost != 0)
-                    all_costs_are_zero = false;
-            }
-        }
-        assert(all_costs_are_zero);
-    }
-#endif
+    if (h == 0 && g_min_action_cost > 0)
+        assert(test_goal(state));
 
     return h;
 }
 
 int LandmarkCountHeuristic::compute_heuristic(const State &state) {
+    bool goal_reached = test_goal(state);
+    if (goal_reached)
+        return 0;
+
     int h = get_heuristic_value(state);
 
-    if (!use_preferred_operators || h == 0) { // no (need for) helpful actions, return
+    // no (need for) helpful actions, return
+    if (!use_preferred_operators) {
         return h;
     }
 
@@ -150,19 +122,16 @@ int LandmarkCountHeuristic::compute_heuristic(const State &state) {
     LandmarkSet reached_lms;
     vector<bool> &reached_lms_v = lm_status_manager.get_reached_landmarks(state);
     convert_lms(reached_lms, reached_lms_v);
-    const int reached_lms_cost = lgraph.get_reached_cost();
 
-    // BUG/TODO/FIXME: This first test likely does the wrong thing in
-    // the presence of zero-cost landmarks.
-    if (reached_lms_cost == lgraph.cost_of_landmarks()
+    if (reached_lms.size() == lgraph.number_of_landmarks()
         || !generate_helpful_actions(state, reached_lms)) {
         assert(exploration != NULL);
         set_exploration_goals(state);
+
         // Use FF to plan to a landmark leaf
-        int dead_end = ff_search_lm_leaves(ff_search_disjunctive_lms, state,
-                                           reached_lms);
-        if (dead_end) {
-            assert(dead_end == DEAD_END);
+        vector<pair<int, int> > leaves;
+        collect_lm_leaves(ff_search_disjunctive_lms, reached_lms, leaves);
+        if (!exploration->plan_for_disj(leaves, state)) {
             exploration->exported_ops.clear();
             return DEAD_END;
         }
@@ -193,16 +162,6 @@ void LandmarkCountHeuristic::collect_lm_leaves(bool disjunctive_lms,
             }
         }
     }
-}
-
-int LandmarkCountHeuristic::ff_search_lm_leaves(bool disjunctive_lms,
-                                                const State &state, LandmarkSet &reached_lms) {
-    vector<pair<int, int> > leaves;
-    collect_lm_leaves(disjunctive_lms, reached_lms, leaves);
-    if (exploration->plan_for_disj(leaves, state) == DEAD_END) {
-        return DEAD_END;
-    } else
-        return 0;
 }
 
 bool LandmarkCountHeuristic::check_node_orders_disobeyed(LandmarkNode &node,
@@ -314,7 +273,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
 
     if (!parser.dry_run() && opts.get<LandmarkGraph *>("lm_graph") == 0)
         parser.error("landmark graph could not be constructed");
-    
+
     if (parser.dry_run())
         return 0;
     else

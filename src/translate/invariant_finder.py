@@ -47,22 +47,20 @@ class BalanceChecker(object):
         inequal_params = []
         combs = itertools.combinations(range(len(action.parameters)), 2)
         for pos1, pos2 in combs:
-            inequality = True
             for params in reachable_action_params[action.name]:
                 if params[pos1] == params[pos2]:
-                    inequality = False
                     break
-            if inequality:
+            else:
                 inequal_params.append((pos1, pos2))
 
         if inequal_params:
-            precond_parts = list(action.precondition.parts)
+            precond_parts = [action.precondition]
             for pos1, pos2 in inequal_params:
                 param1 = action.parameters[pos1].name
                 param2 = action.parameters[pos2].name
                 new_cond = pddl.NegatedAtom("=", (param1, param2))
                 precond_parts.append(new_cond)
-            precond = action.precondition.change_parts(precond_parts)
+            precond = pddl.Conjunction(precond_parts).simplified()
             return pddl.Action(action.name, action.parameters, precond,
                                action.effects, action.cost)
         else:
@@ -130,7 +128,7 @@ def useful_groups(invariants, initial_facts):
         yield [part.instantiate(parameters) for part in invariant.parts]
 
 def get_groups(task, reachable_action_params=None):
-    with timers.timing("Finding invariants"):
+    with timers.timing("Finding invariants", block=True):
         invariants = list(find_invariants(task, reachable_action_params))
     with timers.timing("Checking invariant weight"):
         result = list(useful_groups(invariants, task.init))
@@ -141,7 +139,9 @@ if __name__ == "__main__":
     print "Parsing..."
     task = pddl.open()
     print "Finding invariants..."
-    for invariant in find_invariants(task):
+    print "NOTE: not passing in reachable_action_params."
+    print "This means fewer invariants might be found."
+    for invariant in find_invariants(task, None):
         print invariant
     print "Finding fact groups..."
     groups = get_groups(task)

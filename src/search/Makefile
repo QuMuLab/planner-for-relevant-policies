@@ -23,6 +23,7 @@ HEADERS = \
           option_parser.h \
           pref_evaluator.h \
           relaxation_heuristic.h \
+          rng.h \
           search_engine.h \
           search_node_info.h \
           search_progress.h \
@@ -58,15 +59,15 @@ HEADERS += hm_heuristic.h
 HEADERS += lm_cut_heuristic.h
 HEADERS += max_heuristic.h
 
-# HEADERS += mas_heuristic.h \
-#            abstraction.h \
-#            operator_registry.h \
-#            variable_order_finder.h
-
-HEADERS += raz_mas_heuristic.h \
-           raz_abstraction.h \
-           raz_operator_registry.h \
-           raz_variable_order_finder.h
+HEADERS += merge_and_shrink/abstraction.h \
+           merge_and_shrink/label_reducer.h \
+           merge_and_shrink/merge_and_shrink_heuristic.h \
+           merge_and_shrink/shrink_bisimulation.h \
+           merge_and_shrink/shrink_bucket_based.h \
+           merge_and_shrink/shrink_fh.h \
+           merge_and_shrink/shrink_random.h \
+           merge_and_shrink/shrink_strategy.h \
+           merge_and_shrink/variable_order_finder.h \
 
 HEADERS += landmarks/exploration.h \
            landmarks/h_m_landmarks.h \
@@ -76,12 +77,11 @@ HEADERS += landmarks/exploration.h \
            landmarks/landmark_status_manager.h \
            landmarks/landmark_graph_merged.h \
            landmarks/landmark_graph.h \
+           landmarks/landmark_factory.h \
            landmarks/landmark_factory_rpg_exhaust.h \
            landmarks/landmark_factory_rpg_sasp.h \
-           landmarks/landmark_factory_rpg_search.h \
            landmarks/landmark_factory_zhu_givan.h \
            landmarks/util.h \
-           landmarks/landmark_factory.h
 
 HEADERS += learning/AODE.h \
            learning/classifier.h \
@@ -93,14 +93,23 @@ HEADERS += learning/AODE.h \
            learning/probe_state_space_sample.h \
            learning/selective_max_heuristic.h \
            learning/state_space_sample.h \
-           learning/state_vars_feature_extractor.h
+           learning/state_vars_feature_extractor.h \
+
+HEADERS += pdbs/canonical_pdbs_heuristic.h \
+           pdbs/match_tree.h \
+           pdbs/max_cliques.h \
+           pdbs/pattern_generation_edelkamp.h \
+           pdbs/pattern_generation_haslum.h \
+           pdbs/pdb_heuristic.h \
+           pdbs/util.h \
+           pdbs/zero_one_pdbs_heuristic.h \
+
+SHELL = /bin/bash
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET  = downward
 
 ARGS_PROFILE = --search 'astar(lmcut())' < profile-input.pre
-
-
 
 OBJECT_SUFFIX_RELEASE = .$(STATE_VAR_BYTES)
 TARGET_SUFFIX_RELEASE = -$(STATE_VAR_BYTES)
@@ -118,7 +127,6 @@ TARGET_DEBUG    = $(TARGET)$(TARGET_SUFFIX_DEBUG)
 OBJECTS_PROFILE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_PROFILE).o)
 TARGET_PROFILE  = $(TARGET)$(TARGET_SUFFIX_PROFILE)
 
-
 CC     = g++
 DEPEND = g++ -MM
 
@@ -126,15 +134,27 @@ DEPEND = g++ -MM
 ## that are used for all three targets (release, debug, and profile).
 ## (POSTLINKOPT are options that appear *after* all object files.)
 
-CCOPT  = -g
+CCOPT = -Iext
+CCOPT += -g
 CCOPT += -m32
-CCOPT +=
 CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror -DSTATE_VAR_BYTES=$(STATE_VAR_BYTES)
 
-## The following line is a HACK to cross-compile a 64-bit executable
-## on a 32-bit Ubuntu machine (it also needs the -m32 to be changed to
-## -m64, of course.) See http://stackoverflow.com/questions/4643197/missing-include-bits-cconfig-h-when-cross-compiling-64-bit-program-on-32-bit.
-CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu -Iext
+## The following lines contain workarounds for bugs when
+## cross-compiling to 64 bit on 32-bit systems using gcc 4.4 or gcc
+## 4.5 in some Ubuntu releases. (We don't usually cross-compile to
+## 64-bit, but in some cases we do; e.g. we did for the IPC.) See
+## http://stackoverflow.com/questions/4643197/missing-include-bits-cconfig-h-when-cross-compiling-64-bit-program-on-32-bit.
+
+HAVE_GCC_4_4 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.4\.\\\))
+HAVE_GCC_4_5 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.5\.\\\))
+
+ifdef HAVE_GCC_4_4
+    CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu
+endif
+
+ifdef HAVE_GCC_4_5
+    CCOPT += -I/usr/include/c++/4.5/i686-linux-gnu
+endif
 
 LINKOPT  = -g
 LINKOPT += -m32
@@ -209,8 +229,6 @@ POSTLINKOPT_PROFILE += $(COIN_LINKOPT) -Wl,-Bdynamic
 
 endif
 
-SHELL = /bin/bash
-
 all: release debug profile
 
 ## Build rules for the release target follow.
@@ -274,10 +292,14 @@ Makefile.depend: $(SOURCES) $(HEADERS)
 	    cat Makefile.temp0 >> Makefile.temp; \
 	done
 	rm -f Makefile.temp0 Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.depend
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.temp0
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.temp0
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.temp0
 	rm -f Makefile.temp
+	sed -e "s@\(.*\)\.$(STATE_VAR_BYTES)\.\(.*\)@\1.1.\2@" Makefile.temp0 >> Makefile.depend
+	sed -e "s@\(.*\)\.$(STATE_VAR_BYTES)\.\(.*\)@\1.2.\2@" Makefile.temp0 >> Makefile.depend
+	sed -e "s@\(.*\)\.$(STATE_VAR_BYTES)\.\(.*\)@\1.4.\2@" Makefile.temp0 >> Makefile.depend
+	rm -f Makefile.temp0
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),distclean)

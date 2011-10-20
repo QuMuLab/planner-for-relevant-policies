@@ -3,6 +3,7 @@
 #include "axioms.h"
 #include "globals.h"
 #include "operator.h"
+#include "utilities.h"
 
 #include <algorithm>
 #include <iostream>
@@ -26,7 +27,7 @@ void State::_copy_buffer_from_state(const State &state) {
         vars[i] = state.vars[i];
 }
 
-State &State::operator=(const State &other) {
+State & State::operator=(const State &other) {
     if (this != &other) {
         if (borrowed_buffer)
             _allocate();
@@ -91,13 +92,5 @@ bool State::operator<(const State &other) const {
 }
 
 size_t State::hash() const {
-    // hash function adapted from Python's hash function for tuples.
-    size_t hash_value = 0x345678;
-    size_t mult = 1000003;
-    for (int i = g_variable_domain.size() - 1; i >= 0; i--) {
-        hash_value = (hash_value ^ vars[i]) * mult;
-        mult += 82520 + i + i;
-    }
-    hash_value += 97531;
-    return hash_value;
+    return ::hash_number_sequence(vars, g_variable_domain.size());
 }

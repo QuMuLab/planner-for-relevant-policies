@@ -45,7 +45,7 @@ class LandmarkGraph;
 template<class Entry>
 class OpenList;
 class SearchEngine;
-
+class ShrinkStrategy;
 
 /*
 The TokenParser<T> wraps functions to parse supported types T.
@@ -111,6 +111,12 @@ public:
     static inline ParseTree parse(OptionParser &p);
 };
 
+template <>
+class TokenParser<ShrinkStrategy *> {
+public:
+    static inline ShrinkStrategy *parse(OptionParser &p);
+};
+
 template <class T>
 class TokenParser<std::vector<T > > {
 public:
@@ -147,8 +153,9 @@ public:
     T start_parsing();
 
     //add option with no default value, optional help
+    //call with mandatory = false to specify an optional parameter without default value
     template <class T>
-    void add_option(std::string k, std::string h = "");
+    void add_option(std::string k, std::string h = "", OptionFlags flags = OptionFlags());
 
     //add option with default value
     template <class T>
@@ -157,10 +164,10 @@ public:
 
     void add_enum_option(std::string k,
                          std::vector<std::string > enumeration,
-                         std::string def_val = "", std::string h = "");
+                         std::string def_val = "", std::string h = "", OptionFlags flags = OptionFlags());
 
     template <class T>
-    void add_list_option(std::string k, std::string h = "");
+    void add_list_option(std::string k, std::string h = "", OptionFlags flags = OptionFlags());
 
     template <class T>
     void add_list_option(std::string k,
@@ -197,12 +204,12 @@ T OptionParser::start_parsing() {
 
 template <class T>
 void OptionParser::add_option(
-    std::string k, std::string h) {
+    std::string k, std::string h, OptionFlags flags) {
     if (help_mode_) {
         helpers.push_back(HelpElement(k, h, TypeNamer<T>::name()));
         if (opts.contains(k)) {
             helpers.back().default_value =
-                DefaultValueNamer<T>::toStr(opts.get<T>(k));
+                DefaultValueNamer<T>::to_str(opts.get<T>(k));
         }
         return;
     }
@@ -211,10 +218,10 @@ void OptionParser::add_option(
     ParseTree::sibling_iterator arg = next_unparsed_argument;
     //scenario where we have already handled all arguments
     if (arg == parse_tree.end(parse_tree.begin())) {
-        if (!opts.contains(k)) {
+        if (!opts.contains(k) && flags.mandatory) {
             error("missing option: " + k);
         } else {
-            return; //use default value
+            return;
         }
     }
     //handling arguments with explicit keyword:
@@ -225,10 +232,10 @@ void OptionParser::add_option(
                 break;
         }
         if (arg == parse_tree.end(parse_tree.begin())) {
-            if (!opts.contains(k)) {
+            if (!opts.contains(k) && flags.mandatory) {
                 error("missing option: " + k);
             } else {
-                return; //use default value
+                return;
             }
         }
     }
@@ -256,8 +263,8 @@ void OptionParser::add_option(
 }
 
 template <class T>
-void OptionParser::add_list_option(std::string k, std::string h) {
-    add_option<std::vector<T> >(k, h);
+void OptionParser::add_list_option(std::string k, std::string h, OptionFlags flags) {
+    add_option<std::vector<T> >(k, h, flags.mandatory);
 }
 
 //Definitions of TokenParser<T>:
@@ -349,6 +356,16 @@ SearchEngine *TokenParser<SearchEngine *>::parse(OptionParser &p) {
     p.error("search engine not found");
     return 0;
 }
+
+ShrinkStrategy *TokenParser<ShrinkStrategy *>::parse(OptionParser &p) {
+    ParseTree::iterator pt = p.get_parse_tree()->begin();
+    if (Registry<ShrinkStrategy *>::instance()->contains(pt->value)) {
+        return Registry<ShrinkStrategy *>::instance()->get(pt->value) (p);
+    }
+    p.error("Shrink strategy not found");
+    return 0;
+}
+
 
 Synergy *TokenParser<Synergy *>::parse(OptionParser &p) {
     ParseTree::iterator pt = p.get_parse_tree()->begin();

@@ -2,6 +2,7 @@
 #include "option_parser.h"
 #include "ext/tree_util.hh"
 #include "plugin.h"
+#include "rng.h"
 #include <string>
 #include <algorithm>
 #include <iostream>
@@ -60,6 +61,7 @@ static void get_help(string k) {
     get_help_templ<LandmarkGraph *>(pt);
     Plugin<OpenList<int> >::register_open_lists();
     get_help_templ<OpenList<int> *>(pt);
+    get_help_templ<ShrinkStrategy *>(pt);
 }
 
 template <class T>
@@ -81,6 +83,7 @@ static void get_full_help() {
     get_full_help_templ<LandmarkGraph *>();
     Plugin<OpenList<int> >::register_open_lists();
     get_full_help_templ<OpenList<int> *>();
+    get_full_help_templ<ShrinkStrategy *>();
 }
 
 
@@ -180,6 +183,7 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--random-seed") == 0) {
             ++i;
             srand(atoi(argv[i]));
+            g_rng.seed(atoi(argv[i]));
             cout << "random seed " << argv[i] << endl;
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;
@@ -324,7 +328,8 @@ string str_to_lower(string s) {
 
 void OptionParser::add_enum_option(string k,
                                    vector<string > enumeration,
-                                   string def_val, string h) {
+                                   string def_val, string h,
+                                   OptionFlags flags) {
     if (help_mode_) {
         string enum_descr = "{";
         for (size_t i(0); i != enumeration.size(); ++i) {
@@ -347,8 +352,11 @@ void OptionParser::add_enum_option(string k,
     if (def_val.compare("") != 0) {
         add_option<string>(k, def_val, h);
     } else {
-        add_option<string>(k, h);
+        add_option<string>(k, h, flags.mandatory);
     }
+
+    if (!flags.mandatory && !opts.contains(k))
+        return;
 
     string name = str_to_lower(opts.get<string>(k));
 
@@ -360,7 +368,7 @@ void OptionParser::add_enum_option(string k,
             error("invalid enum argument " + name
                   + " for option " + k);
         }
-        opts.set(k, x);
+        opts.set<int>(k, x);
     } else {
         //...otherwise try to map the string to its position in the enumeration vector
         transform(enumeration.begin(), enumeration.end(), enumeration.begin(),
@@ -371,7 +379,7 @@ void OptionParser::add_enum_option(string k,
             error("invalid enum argument " + name
                   + " for option " + k);
         }
-        opts.set(k, it - enumeration.begin());
+        opts.set<int>(k, it - enumeration.begin());
     }
 }
 
