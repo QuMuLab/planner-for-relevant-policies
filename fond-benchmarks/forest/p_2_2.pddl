@@ -33,8 +33,8 @@
 	(s-init-y sy2)
 	(s-goal-x sx1)
 	(s-goal-y sy1)
-(succ-loc sx1 sx2)
-(succ-loc sy1 sy2)
+(s-succ-loc sx1 sx2)
+(s-succ-loc sy1 sy2)
 	;;;;;;logistics sub-problem;;
                 (s-city-loc l11 c1) (s-city-loc l12 c1)
                 (s-city-loc l21 c2) (s-city-loc l22 c2)

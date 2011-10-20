@@ -17,7 +17,7 @@
   )
   (:action put-on-block
     :parameters (?b1 ?b2 - block)
-    :precondition (and (holding ?b1) (clear ?b2) (not (on ?b2 ?b1)))
+    :precondition (and (holding ?b1) (clear ?b2) (not (on b2 b1)))
     :effect (oneof (and (on ?b1 ?b2) (emptyhand) (clear ?b1) (not (holding ?b1)) (not (clear ?b2)))
                    (and (on-table ?b1) (emptyhand) (clear ?b1) (not (holding ?b1))))
   )
@@ -28,7 +28,7 @@
   )
   (:action pick-tower
     :parameters (?b1 ?b2 ?b3 - block)
-    :precondition (and (emptyhand) (clear ?b1) (on ?b1 ?b2) (on ?b2 ?b3))
+    :precondition (and (emptyhand) (clear b1) (on ?b1 ?b2) (on ?b2 ?b3))
     :effect
       (oneof (and) (and (holding ?b2) (clear ?b3) (not (emptyhand)) (not (on ?b2 ?b3))))
   )
