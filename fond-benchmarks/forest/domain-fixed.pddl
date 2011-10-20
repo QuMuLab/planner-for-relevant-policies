@@ -1,5 +1,5 @@
 (define (domain forest)
-  (:requirements :typing :strips :equality :non-deterministic)
+  (:requirements :typing :strips :non-deterministic)
   (:types
      ;;;;;;;top level grid;;;;;;;;
      location 
@@ -52,7 +52,7 @@
    ;;;;;grid navigation subproblem;;;;;;;;;;;;;
    (s-at-x ?loc - sub-location)
    (s-at-y ?loc - sub-location)
-   (s-succ-loc ?loc1 ?loc2 - sub-location)
+   ;(s-succ-loc ?loc1 ?loc2 - sub-location) ; Use the original succ-loc
    (s-init-x ?loc - sub-location)
    (s-init-y ?loc - sub-location)
    (s-goal-x ?loc - sub-location)
@@ -199,7 +199,8 @@
                 ?locx ?locy - location)
    :precondition (and (initialized ?locx ?locy)
                       (problem-at ?locx ?locy grid)
-		      (s-succ-loc ?sloc1x ?sloc2x)
+		      ;(s-succ-loc ?sloc1x ?sloc2x)
+		      (succ-loc ?sloc1x ?sloc2x)
 		      (s-at-x ?sloc1x) (s-at-y ?sloc1y))
    :effect (and (s-at-x ?sloc2x) (not (s-at-x ?sloc1x)))
   )
@@ -209,7 +210,8 @@
                 ?locx ?locy - location)
    :precondition (and (initialized ?locx ?locy)
                       (problem-at ?locx ?locy grid)
-		      (s-succ-loc ?sloc1y ?sloc2y)
+		      ;(s-succ-loc ?sloc1y ?sloc2y)
+		      (succ-loc ?sloc1y ?sloc2y)
 		      (s-at-x ?sloc1x) (s-at-y ?sloc1y))
    :effect (and (s-at-y ?sloc2y) (not (s-at-y ?sloc1y)))
   )
@@ -219,7 +221,8 @@
                 ?locx ?locy - location)
    :precondition (and (initialized ?locx ?locy)
                       (problem-at ?locx ?locy grid)
-		      (s-succ-loc ?sloc2x ?sloc1x)
+		      ;(s-succ-loc ?sloc2x ?sloc1x)
+		      (succ-loc ?sloc2x ?sloc1x)
 		      (s-at-x ?sloc1x) (s-at-y ?sloc1y))
    :effect (and (s-at-x ?sloc2x) (not (s-at-x ?sloc1x)))
   )
@@ -229,7 +232,8 @@
                 ?locx ?locy - location)
    :precondition (and (initialized ?locx ?locy)
                       (problem-at ?locx ?locy grid)
-		      (s-succ-loc ?sloc2y ?sloc1y)
+		      ;(s-succ-loc ?sloc2y ?sloc1y)
+		      (succ-loc ?sloc2y ?sloc1y)
 		      (s-at-x ?sloc1x) (s-at-y ?sloc1y))
    :effect (and (s-at-y ?sloc2y) (not (s-at-y ?sloc1y)))
   )
