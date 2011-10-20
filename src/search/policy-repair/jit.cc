@@ -6,7 +6,7 @@ void UnhandledState::dump() const {
 }
 
 
-bool perform_jit_repairs(Simulator *sim, float) { // Note: Currently we aren't using the time bound
+bool perform_jit_repairs(Simulator *sim) { // Note: Currently we aren't using the time bound
     queue<State *> open_list;
     set<State> seen;
     State *current_state;
@@ -16,7 +16,7 @@ bool perform_jit_repairs(Simulator *sim, float) { // Note: Currently we aren't u
     
     open_list.push(new State(*g_initial_state));
     
-    while (!open_list.empty()) {
+    while (!open_list.empty() && (g_timer_jit() < g_jic_limit)) {
         current_state = open_list.front();
         open_list.pop();
         
@@ -61,7 +61,7 @@ bool perform_jit_repairs(Simulator *sim, float) { // Note: Currently we aren't u
     return made_change;
 }
 
-void perform_jit_repairs_old(SearchEngine *engine, int argc, const char **argv, float){ // Note: Currently we aren't using the time bound
+void perform_jit_repairs_old(SearchEngine *engine, int argc, const char **argv){ // Note: Currently we aren't using the time bound
     set<UnhandledState> open_states;
     Simulator *sim = new Simulator(engine, argc, argv, true);
     State *old_initial_state = new State(*g_initial_state);

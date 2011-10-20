@@ -66,6 +66,9 @@ extern Policy *g_policy; // The policy to check while searching
 extern int g_policy_size; // Size of the policy we create
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_silent_planning; // Silence the planning output
+extern bool g_ffreplan; // Do the simple ff-replan approach
+extern bool g_fullstate; // Use the full state for regression
+extern double g_jic_limit; // Limit for the just-in-case repairs
 
 /* Timers */
 extern Timer g_timer_regression;

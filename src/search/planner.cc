@@ -89,7 +89,7 @@ int main(int argc, const char **argv) {
     g_timer_jit.resume();
     bool changes_made = true;
     while (changes_made) {
-        changes_made = perform_jit_repairs(sim, 0.0);
+        changes_made = perform_jit_repairs(sim);
         if (!g_silent_planning)
             cout << "Finished repair round." << endl;
     }

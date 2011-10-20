@@ -26,7 +26,11 @@ run_planner() {
     echo "2. Running preprocessor"
     $TIME --append "$PREPROCESS" < output.sas || exit 1
     echo "3. Running search"
-    "$SEARCH" ipc policy-repair --plan-file "$3" < output
+    shift
+    shift
+    PROB="$1"
+    shift
+    "$SEARCH" ipc policy-repair --plan-file "$PROB" "$@" < output
 }
 
 check_input_files() {
@@ -41,14 +45,21 @@ check_input_files() {
 }
 
 # Make sure we have exactly 3 command line arguments
-if [[ $# != 3 ]]; then
-    echo "Usage: \"plan-ipc <domain_file> <problem_file> <result_file>\""
-    exit 1
-fi
+#if [[ $# != 3 ]]; then
+#    echo "Usage: \"plan-ipc <domain_file> <problem_file> <result_file>\""
+#    exit 1
+#fi
 
-check_input_files "$1" "$2"
+DOMAIN="$1"
+shift
+PROB="$1"
+shift
+RESULT="$1"
+shift
+
+check_input_files "$DOMAIN" "$PROB"
 
 # Command line arguments seem to be fine, run planner
-run_planner "$1" "$2" "$3"
+run_planner "$DOMAIN" "$PROB" "$RESULT" "$@"
 
 # We do not clean up temporary files here (not necessary for the IPC)

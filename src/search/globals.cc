@@ -368,6 +368,9 @@ Policy *g_policy; // The policy to check while searching
 int g_policy_size = 0;
 int g_failed_open_states = 0;
 bool g_silent_planning = false;
+bool g_ffreplan = false; // Do the simple ff-replan approach
+bool g_fullstate = false; // Use the full state for regression
+double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
 
 Timer g_timer_regression;
 Timer g_timer_engine_init;
