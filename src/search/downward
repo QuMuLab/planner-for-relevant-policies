@@ -119,6 +119,12 @@ if [[ "$1" == "ipc" ]]; then
         exit 2
     elif [[ "$CONFIG" == "policy-repair" ]]; then
         "$PLANNER" \
+                --heuristic "hFF=ff(cost_type=2)" \
+                --search "lazy_greedy([ff],preferred=[ff])" \
+                --random-seed $SEED \
+                "$@" < $TEMPFILE
+    elif [[ "$CONFIG" == "policy-repair-old" ]]; then
+        "$PLANNER" \
                 --heuristic "hlm,hff=lm_ff_syn(lm_rhw(
                     reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
                 --search "lazy_greedy([hff,hlm],preferred=[hff,hlm])" \

@@ -26,7 +26,8 @@ FFHeuristic::~FFHeuristic() {
 
 // initialization
 void FFHeuristic::initialize() {
-    cout << "Initializing FF heuristic..." << endl;
+    if (!g_silent_planning)
+        cout << "Initializing FF heuristic..." << endl;
     AdditiveHeuristic::initialize();
     relaxed_plan.resize(g_operators.size(), false);
 }
