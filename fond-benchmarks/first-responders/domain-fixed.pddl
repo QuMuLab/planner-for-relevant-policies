@@ -1,12 +1,5 @@
 (define (domain first-response)
-  (:requirements :typing 
-		 :equality
-		 :negative-preconditions
-		 :disjunctive-preconditions
-		 :universal-preconditions
-		 :conditional-effects
-		 :existential-preconditions
-		 :non-deterministic)
+  (:requirements :typing :negative-preconditions :non-deterministic)
  (:types location victim status fire_unit medical_unit)
  (:constants healthy hurt dying - status)
  (:predicates 
