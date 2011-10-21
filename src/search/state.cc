@@ -71,7 +71,8 @@ State::State(const State &predecessor, const Operator &op, bool progress) {
         
         // Get all of the pre/post conditions (note: pre may be -1 here)
         for (int i = 0; i < op.get_pre_post().size(); i++) {
-            vars[op.get_pre_post()[i].var] = state_var_t(op.get_pre_post()[i].pre);
+            if (!g_fullstate || (state_var_t(op.get_pre_post()[i].pre) != state_var_t(-1)))
+                vars[op.get_pre_post()[i].var] = state_var_t(op.get_pre_post()[i].pre);
         }
         
         // Get all of the prevail conditions
