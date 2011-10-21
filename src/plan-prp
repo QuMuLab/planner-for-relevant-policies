@@ -30,6 +30,7 @@ run_planner() {
     shift
     PROB="$1"
     shift
+    echo "$SEARCH" ipc policy-repair --plan-file "$PROB" "$@" < output
     "$SEARCH" ipc policy-repair --plan-file "$PROB" "$@" < output
 }
 

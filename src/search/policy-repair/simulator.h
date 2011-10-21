@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <queue>
 #include <list>
 
 #include "../globals.h"
@@ -26,7 +27,7 @@ class Simulator {
     int successful_states;
     int failed_states;
     
-    void execute_action(const Operator *op);
+    bool execute_action(const Operator *op);
     
     bool verbose;
     bool succeeded;
@@ -35,6 +36,7 @@ public:
     Simulator(SearchEngine *eng, int argc, const char **argv, bool verb = true);
     
     void run();
+    void run_ffreplan(queue<const Operator *> &plan);
     bool replan();
     
     void set_state(State * s) { current_state = new State(*s); }

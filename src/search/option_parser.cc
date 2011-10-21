@@ -182,10 +182,13 @@ SearchEngine *OptionParser::parse_cmd_line(
             engine = p.start_parsing<SearchEngine *>();
         } else if (arg.compare("--random-seed") == 0) {
             ++i;
-            srand(atoi(argv[i]));
-            g_rng.seed(atoi(argv[i]));
-            if (!g_silent_planning)
-                cout << "random seed " << argv[i] << endl;
+            if (!g_seeded) {
+                g_seeded = true;
+                srand(atoi(argv[i]));
+                g_rng.seed(atoi(argv[i]));
+                if (!g_silent_planning)
+                    cout << "random seed " << argv[i] << endl;
+            }
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;
             if (i + 1 < argc) {
@@ -204,10 +207,10 @@ SearchEngine *OptionParser::parse_cmd_line(
             g_jic_limit = atof(argv[i]);
         } else if (arg.compare("--ffreplan") == 0) {
             ++i;
-            g_ffreplan = (string(argv[i]).compare("1"));
+            g_ffreplan = (1 == atoi(argv[i]));
         } else if (arg.compare("--fullstate") == 0) {
             ++i;
-            g_fullstate = (string(argv[i]).compare("1"));
+            g_fullstate = (1 == atoi(argv[i]));
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;

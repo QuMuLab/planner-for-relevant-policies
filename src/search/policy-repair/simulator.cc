@@ -38,7 +38,7 @@ void Simulator::run() {
     }
 }
 
-void Simulator::execute_action(const Operator *op) {
+bool Simulator::execute_action(const Operator *op) {
     
     if (verbose) {
         cout << "\nExpected operator:" << endl << "  ";
@@ -46,7 +46,8 @@ void Simulator::execute_action(const Operator *op) {
     }
     
     // Choose the op
-    Operator *chosen = g_nondet_mapping[op->get_nondet_name()][g_rng.next(g_nondet_mapping[op->get_nondet_name()].size())];
+    int choice = g_rng.next(g_nondet_mapping[op->get_nondet_name()].size());
+    Operator *chosen = g_nondet_mapping[op->get_nondet_name()][choice];
     
     if (verbose) {
         cout << "Chosen operator:" << endl << "  ";
@@ -56,6 +57,8 @@ void Simulator::execute_action(const Operator *op) {
     State *old_state = current_state;
     current_state = new State(*old_state, *chosen);
     delete old_state;
+    
+    return (op->get_name() == chosen->get_name());
 }
 
 bool Simulator::replan() {
@@ -117,6 +120,80 @@ bool Simulator::replan() {
             cout << "Replanning failed!" << endl;
         return false;
     }
+}
+
+void Simulator::run_ffreplan(queue<const Operator *> &plan) {
+    
+    while(!test_goal(*current_state)) {
+        
+        const Operator *op = plan.front();
+        plan.pop();
+        
+        if (execute_action(op)) {
+            successful_states++;
+        } else {
+            failed_states++;
+            if (verbose)
+                cout << "\nRequired to replan..." << endl;
+
+            if (engine)
+                delete engine;
+            if (g_initial_state)
+                delete g_initial_state;
+            
+            if (!current_state) {
+                cout << "Error: No current state for the replan." << endl;
+                exit(0);
+            }
+            
+            if (verbose)
+                cout << "Creating initial state." << endl;
+            g_initial_state = new State(*current_state);
+            
+            if (verbose)
+                cout << "Creating new engine." << endl;
+            bool engine_ready = true;
+            g_timer_engine_init.resume();
+            try {
+                engine = OptionParser::parse_cmd_line(argc, argv, false);
+            } catch (SolvableError &se) {
+                if (!g_silent_planning)
+                    cout << se;
+                engine = 0; // Memory leak seems necessary --> engine can't be deleted.
+                engine_ready = false;
+            }
+            g_timer_engine_init.stop();
+            
+            if (engine_ready) {
+                if (verbose)
+                    cout << "Searching for a solution." << endl;
+                g_timer_search.resume();
+                engine->search();
+                g_timer_search.stop();
+                
+                if (engine->found_solution()) {
+                    if (verbose)
+                        cout << "Replanning succeeded." << endl;
+                    
+                    plan = queue<const Operator *>();
+                    
+                    for (int i = 0; i < engine->get_plan().size(); i++)
+                        plan.push(engine->get_plan()[i]);
+                    
+                } else {
+                    cout << "Replanning failed!" << endl;
+                    succeeded = false;
+                    return;
+                }
+            } else {
+                cout << "Replanning failed!" << endl;
+                succeeded = false;
+                return;
+            }
+        }
+    }
+    cout << "...achieved the goal!" << endl;
+    succeeded = true;
 }
 
 void Simulator::dump() {

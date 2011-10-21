@@ -57,7 +57,7 @@ int main(int argc, const char **argv) {
         exit(1);
     }
     g_timer_engine_init.stop();
-
+    
     g_timer_search.resume();
     engine->search();
     g_timer_search.stop();
@@ -77,28 +77,36 @@ int main(int argc, const char **argv) {
     g_silent_planning = true;
     
     cout << "\n\nCreating the simulator..." << endl;
-    Simulator *sim = new Simulator(engine, argc, argv, false);
+    Simulator *sim = new Simulator(engine, argc, argv, !g_silent_planning);
     
-    cout << "\n\nRegressing the plan..." << endl;
-    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
-    
-    cout << "\n\nGenerating an initial policy..." << endl;
-    g_policy = new Policy(regression_steps);
-    
-    cout << "\n\nComputing just-in-time repairs..." << endl;
-    g_timer_jit.resume();
-    bool changes_made = true;
-    while (changes_made) {
-        changes_made = perform_jit_repairs(sim);
+    if (!g_ffreplan) {
+        cout << "\n\nRegressing the plan..." << endl;
+        list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
+        
+        cout << "\n\nGenerating an initial policy..." << endl;
+        g_policy = new Policy(regression_steps);
+        
+        cout << "\n\nComputing just-in-time repairs..." << endl;
+        g_timer_jit.resume();
+        bool changes_made = true;
+        while (changes_made) {
+            changes_made = perform_jit_repairs(sim);
+            if (!g_silent_planning)
+                cout << "Finished repair round." << endl;
+        }
         if (!g_silent_planning)
-            cout << "Finished repair round." << endl;
-    }
-    if (!g_silent_planning)
-        cout << "Done repairing..." << endl;
-    g_timer_jit.stop();
+            cout << "Done repairing..." << endl;
+        g_timer_jit.stop();
     
-    cout << "\n\nRunning the simulation..." << endl;
-    sim->run();
+        cout << "\n\nRunning the simulation..." << endl;
+        sim->run();
+    } else {
+        cout << "\n\nRunning the simulation..." << endl;
+        queue<const Operator *> plan;
+        for (int i = 0; i < engine->get_plan().size(); i++)
+            plan.push(engine->get_plan()[i]);
+        sim->run_ffreplan(plan);
+    }
     
     cout << "\n\n" << endl;
     
