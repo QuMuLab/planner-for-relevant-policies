@@ -304,6 +304,7 @@ class DownwardExperiment(experiments.Experiment):
         if not os.path.exists(validate):
             logging.error('Please run ./build_all in the src directory first '
                           'to compile the validator')
+            sys.exit(1)
         self.add_resource('VALIDATE', validate, 'validate')
 
         downward_validate = os.path.join(tools.SCRIPTS_DIR, 'downward-validate.py')
