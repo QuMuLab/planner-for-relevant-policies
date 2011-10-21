@@ -19,7 +19,7 @@ class State {
 public:
     explicit State(istream &in);
     State(const State &state);
-    State(const State &predecessor, const Operator &op);
+    State(const State &predecessor, const Operator &op, bool progress=true);
     ~State();
     State &operator=(const State &other);
     state_var_t &operator[](int index) {

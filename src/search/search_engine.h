@@ -46,4 +46,13 @@ public:
     static void add_options_to_parser(OptionParser &parser);
 };
 
+struct SolvableError {
+    SolvableError() {}
+
+    friend std::ostream &operator<<(std::ostream &out, const SolvableError) {
+        out << "Error: Problem is unsolvable" << std::endl;
+        return out;
+    }
+};
+
 #endif

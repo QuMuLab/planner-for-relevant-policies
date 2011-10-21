@@ -125,7 +125,8 @@ void RelaxationHeuristic::simplify() {
     */
 
 
-    cout << "Simplifying " << unary_operators.size() << " unary operators..." << flush;
+    if (!g_silent_planning)
+        cout << "Simplifying " << unary_operators.size() << " unary operators..." << flush;
 
     typedef pair<vector<Proposition *>, Proposition *> HashKey;
     typedef hash_map<HashKey, int, hash_unary_operator> HashMap;
@@ -183,5 +184,6 @@ void RelaxationHeuristic::simplify() {
             unary_operators.push_back(old_unary_operators[unary_operator_no]);
     }
 
-    cout << " done! [" << unary_operators.size() << " unary operators]" << endl;
+    if (!g_silent_planning)
+        cout << " done! [" << unary_operators.size() << " unary operators]" << endl;
 }

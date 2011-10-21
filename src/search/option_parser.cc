@@ -184,7 +184,8 @@ SearchEngine *OptionParser::parse_cmd_line(
             ++i;
             srand(atoi(argv[i]));
             g_rng.seed(atoi(argv[i]));
-            cout << "random seed " << argv[i] << endl;
+            if (!g_silent_planning)
+                cout << "random seed " << argv[i] << endl;
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;
             if (i + 1 < argc) {
@@ -198,6 +199,15 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--plan-file") == 0) {
             ++i;
             g_plan_filename = argv[i];
+        } else if (arg.compare("--jic-limit") == 0) {
+            ++i;
+            g_jic_limit = atof(argv[i]);
+        } else if (arg.compare("--ffreplan") == 0) {
+            ++i;
+            g_ffreplan = (string(argv[i]).compare("1"));
+        } else if (arg.compare("--fullstate") == 0) {
+            ++i;
+            g_fullstate = (string(argv[i]).compare("1"));
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;
@@ -227,6 +237,12 @@ string OptionParser::usage(string progname) {
         "    Use random seed SEED\n\n"
         "--plan-file FILENAME\n"
         "    Plan will be output to a file called FILENAME\n\n"
+        "--jic-limit TIME_LIMIT\n"
+        "    Only perform JIC for the given time.\n\n"
+        "--ffreplan 1/0\n"
+        "    Throw out the policy and regress full states.\n\n"
+        "--fullstate 1/0\n"
+        "    Use full states in the regression.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }

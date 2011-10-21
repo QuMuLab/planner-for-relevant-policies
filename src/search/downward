@@ -15,12 +15,14 @@ else
 fi
 
 TIME="$TIME --output=elapsed.time --format=%S\n%U\n"
+SEED=`date +%s`
 
 STATE_SIZE=$($TIME --append "$BASEDIR/dispatch" $TEMPFILE)
 echo Dispatcher selected state size $STATE_SIZE.
 UNIT_COST=$($TIME --append "$BASEDIR/unitcost" $TEMPFILE)
 echo This is a $UNIT_COST task.
 PLANNER="$BASEDIR/downward-$STATE_SIZE"
+#PLANNER="$BASEDIR/downward-$STATE_SIZE-debug"
 if [[ "$1" == "ipc" ]]; then
     CONFIG="$2"
     shift 2
@@ -115,6 +117,19 @@ if [[ "$1" == "ipc" ]]; then
     elif [[ "$CONFIG" == "seq-sat-lama-2008" ]]; then
         echo "The seq-sat-lama-2008 planner should not use this code."
         exit 2
+    elif [[ "$CONFIG" == "policy-repair" ]]; then
+        "$PLANNER" \
+                --heuristic "h=ff(cost_type=1)" \
+                --search "lazy_greedy([h],preferred=[h])" \
+                --random-seed $SEED \
+                "$@" < $TEMPFILE
+    elif [[ "$CONFIG" == "policy-repair-old" ]]; then
+        "$PLANNER" \
+                --heuristic "hlm,hff=lm_ff_syn(lm_rhw(
+                    reasonable_orders=true,lm_cost_type=2,cost_type=2))" \
+                --search "lazy_greedy([hff,hlm],preferred=[hff,hlm])" \
+                --random-seed $SEED \
+                "$@" < $TEMPFILE
     elif [[ "$CONFIG" == "seq-sat-lama-2011" ]]; then
         if [[ "$UNIT_COST" == "unit" ]]; then
             "$PLANNER" \
