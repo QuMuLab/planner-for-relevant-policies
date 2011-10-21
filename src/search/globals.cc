@@ -37,7 +37,7 @@ static const int PRE_FILE_VERSION = 3;
 static vector<vector<set<pair<int, int> > > > g_inconsistent_facts;
 
 bool test_goal(const State &state) {
-    if (g_policy)
+    if (g_policy && g_plan_with_policy)
         return test_policy(state);
 
     for (int i = 0; i < g_goal.size(); i++) {
@@ -63,9 +63,7 @@ bool test_policy(const State &state) {
                 g_matched_policy.push_back(make_pair(i, (*(best_step->state))[i]));
             }
         }
-        
         return true;
-        
     } else {
         return false;
     }
@@ -238,6 +236,7 @@ void read_goal(istream &in) {
         int var, val;
         in >> var >> val;
         g_goal.push_back(make_pair(var, val));
+        g_goal_orig.push_back(make_pair(var, val));
     }
     check_magic(in, "end_goal");
 }
@@ -370,8 +369,11 @@ int g_failed_open_states = 0;
 bool g_silent_planning = false;
 bool g_ffreplan = false; // Do the simple ff-replan approach
 bool g_fullstate = false; // Use the full state for regression
+bool g_plan_locally = false; // Plan for the expected state rather than replanning to the goal
+bool g_plan_with_policy = true; // Stop planning when the policy matches
 bool g_seeded = false; // Only want to seed once
 double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
+vector<pair<int, int> > g_goal_orig;
 
 Timer g_timer_regression;
 Timer g_timer_engine_init;

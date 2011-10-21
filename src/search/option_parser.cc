@@ -211,6 +211,12 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--fullstate") == 0) {
             ++i;
             g_fullstate = (1 == atoi(argv[i]));
+        } else if (arg.compare("--planlocal") == 0) {
+            ++i;
+            g_plan_locally = (1 == atoi(argv[i]));
+        } else if (arg.compare("--plan-with-policy") == 0) {
+            ++i;
+            g_plan_with_policy = (1 == atoi(argv[i]));
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;
@@ -246,6 +252,8 @@ string OptionParser::usage(string progname) {
         "    Throw out the policy and regress full states.\n\n"
         "--fullstate 1/0\n"
         "    Use full states in the regression.\n\n"
+        "--planlocal 1/0\n"
+        "    Plan locally to recover before planning for the goal.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }

@@ -68,8 +68,11 @@ extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_silent_planning; // Silence the planning output
 extern bool g_ffreplan; // Do the simple ff-replan approach
 extern bool g_fullstate; // Use the full state for regression
-extern bool g_seeded;
+extern bool g_plan_locally; // Plan for the expected state rather than replanning to the goal
+extern bool g_plan_with_policy; // Stop planning when the policy matches
+extern bool g_seeded; // Used to make sure we only seed the rng once
 extern double g_jic_limit; // Limit for the just-in-case repairs
+extern std::vector<std::pair<int, int> > g_goal_orig;
 
 /* Timers */
 extern Timer g_timer_regression;

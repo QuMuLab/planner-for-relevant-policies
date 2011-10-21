@@ -19,6 +19,7 @@
 
 class Simulator {
     State *current_state;
+    State *current_goal;
     
     SearchEngine *engine;
     int argc;
@@ -40,6 +41,10 @@ public:
     bool replan();
     
     void set_state(State * s) { current_state = new State(*s); }
+    void set_goal(State * s) { current_goal = new State(*s); }
+    
+    void reset_goal();
+    
     SearchEngine * get_engine() { return engine; }
     
     bool found_solution;
