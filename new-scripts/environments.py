@@ -30,11 +30,9 @@ class LocalEnvironment(Environment):
 
     @classmethod
     def write_main_script(cls, exp):
-        dirs = [os.path.relpath(run.dir, exp.path) for run in exp.runs]
-        commands = ['"cd %s; ./run"' % dir for dir in dirs]
-        replacements = {'COMMANDS': ',\n'.join(commands),
-                        'PROCESSES': str(exp.processes),
-                        }
+        dirs = [repr(os.path.relpath(run.dir, exp.path)) for run in exp.runs]
+        replacements = {'DIRS': ',\n'.join(dirs),
+                        'PROCESSES': str(exp.processes)}
 
         script = open(os.path.join(DATA_DIR, 'local-job-template.py')).read()
         for orig, new in replacements.items():
