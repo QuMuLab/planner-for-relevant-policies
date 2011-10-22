@@ -37,7 +37,7 @@ static const int PRE_FILE_VERSION = 3;
 static vector<vector<set<pair<int, int> > > > g_inconsistent_facts;
 
 bool test_goal(const State &state) {
-    if (g_policy && g_plan_with_policy)
+    if (g_policy)
         return test_policy(state);
 
     for (int i = 0; i < g_goal.size(); i++) {
@@ -52,8 +52,7 @@ bool test_policy(const State &state) {
     
     RegressionStep * best_step = g_policy->get_best_step(state);
     
-    //if ((best_step) && (best_step->is_goal)) { // Enable if you want to plan for the goal
-    if (best_step) { // Enable if you want to use the policy to stop early
+    if ((best_step && g_plan_with_policy) || (best_step && best_step->is_goal)) {
         
         g_matched_policy.clear();
         g_matched_distance = best_step->distance;

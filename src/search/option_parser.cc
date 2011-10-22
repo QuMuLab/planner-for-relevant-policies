@@ -254,6 +254,8 @@ string OptionParser::usage(string progname) {
         "    Use full states in the regression.\n\n"
         "--planlocal 1/0\n"
         "    Plan locally to recover before planning for the goal.\n\n"
+        "--plan-with-policy 1/0\n"
+        "    Stop searching when the policy matches the current state.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }
