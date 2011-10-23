@@ -146,6 +146,7 @@ def _prepare_search_run(exp, run, config_nick, config):
     run.require_resource(run.planner.shell_name)
     if config:
         # We have a single planner configuration
+        config = config.replace('\n', ' ').replace('\t', ' ')
         search_cmd = [run.planner.shell_name] + shlex.split(config)
     else:
         # We have a portfolio, config_nick is the path to the portfolio file
