@@ -433,19 +433,7 @@ class Run(object):
         If we are building an argo experiment, add all linked resources to
         the resources list
         """
-        # Currently argo experiments are not supported
-        if False:
-            # Copy into run dir by adding the linked resource to normal
-            # resources list
-            for resource_name in self.linked_resources:
-                source = self.experiment.env_vars.get(resource_name, None)
-                if not source:
-                    logging.error('If you require a resource you have to add '
-                                  'it to the experiment')
-                    sys.exit(1)
-                basename = os.path.basename(source)
-                dest = self._get_abs_path(basename)
-                self.resources.append((source, dest, True, False))
+        self.experiment.environment.build_linked_resources(self)
 
     def _build_resources(self):
         for name, content in self.new_files:
