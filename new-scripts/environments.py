@@ -12,8 +12,12 @@ class Environment(object):
     def add_subparser(cls, subparsers):
         pass
 
-    def get_main_script(self):
-        raise NotImplemented
+    def write_main_script(self):
+        raise NotImplementedError
+
+    @classmethod
+    def get_end_instructions(cls, exp):
+        return ''
 
 
 class LocalEnvironment(Environment):
