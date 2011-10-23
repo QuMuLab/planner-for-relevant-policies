@@ -101,17 +101,3 @@ class GkiGridEnvironment(Environment):
         return ('You can change into the experiment directory now and submit '
                 'the experiment to the '
                 'queue by calling "qsub %s.q"' % exp.name)
-
-
-class ArgoEnvironment(Environment):
-    @classmethod
-    def add_subparser(cls, subparsers):
-        subparsers.add_parser('argo', help='Argo Experiment')
-
-    @classmethod
-    def write_main_script(cls, exp):
-        pass
-
-    @classmethod
-    def get_end_instructions(cls, exp):
-        pass

@@ -19,13 +19,12 @@ EPILOG = """\
 PLEASE NOTE: The available options depend on the selected experiment type:
 
 global options:  %(exe)s --help
-special options: %(exe)s {local,gkigrid,argo} --help
+special options: %(exe)s {local,gkigrid} --help
 --------------------------------------------------------------------------------
 """ % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
-                'gkigrid': environments.GkiGridEnvironment,
-                'argo': environments.ArgoEnvironment}
+                'gkigrid': environments.GkiGridEnvironment}
 
 DEFAULT_ABORT_ON_FAILURE = True
 
@@ -434,8 +433,8 @@ class Run(object):
         If we are building an argo experiment, add all linked resources to
         the resources list
         """
-        # Determine if we should link (gkigrid) or copy (argo)
-        if self.experiment.environment == environments.ArgoEnvironment:
+        # Currently argo experiments are not supported
+        if False:
             # Copy into run dir by adding the linked resource to normal
             # resources list
             for resource_name in self.linked_resources:
