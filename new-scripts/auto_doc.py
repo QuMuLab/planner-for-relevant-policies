@@ -8,7 +8,13 @@ import sys
 import xmlrpclib
 import getpass, subprocess, re
 import markup
+import time
+import random #can be removed when testing is done
 
+
+#how many seconds to wait after a failed requests. Will be doubled after each failed request.
+#Don't lower this below ~5, or we may get locked out for an hour.
+sleep_time = 10  
 
 BOT_USERNAME = "XmlRpcBot"
 PASSWORD_FILE = "downward-xmlrpc.secret" # relative to this source file
@@ -39,6 +45,13 @@ def get_all_titles():
     entry1, entry2 = multi_call()
     return entry2
 
+def get_pages(titles):
+    multi_call = connect()
+    for title in titles:
+        print title
+        multi_call.getPage(title)
+    return multi_call()
+
 #returns the text of the page titled title
 def get_page(title):
     multi_call = connect()
@@ -49,21 +62,36 @@ def send_pages(pages):
     multi_call = connect()
     for page_name, page_text in pages:
         multi_call.putPage(page_name, page_text)
+    return multi_call()
+
+def attempt(func, *args):
+    global sleep_time
     try:
-        for entry in multi_call():
-            logging.info(repr(entry))
+        result = func(*args)
     except xmlrpclib.Fault as error:
+        #this usually means the page content did not change. Should not happen anymore.
         print error
+    except xmlrpclib.ProtocolError, err:
+        print "Error: ", err.errcode
+        print "Will retry after ", sleep_time, " seconds."
+        #retry after sleeping
+        time.sleep(sleep_time)
+        sleep_time *= 2
+        return attempt(func,*args)
     except:
         print "Unexpected error:", sys.exc_info()[0]
         raise
     else:
-        print "Update successful"
+        for entry in result:
+            logging.info(repr(entry))
+        print "Call to ", func.__name__, " successful."
+        return result
 
 #helper function for insert_wiki_links
 def make_doc_link(m):
     s = m.group(0)
     key = s[1:-1]
+    #leave out the "DOC/"-part in the link name
     result = s[0] + "[[DOC/" + key + "|" + key + "]]" + s[-1]
     return result
 
@@ -84,7 +112,8 @@ def insert_wiki_links(text):
     return text
 
 if __name__ == '__main__':
-    titles = get_all_titles()
+    logging.info("getting existing page titles...")
+    titles = attempt(get_all_titles)
     #update the planner executable if necessary
     build_dir = "../src/search"
     cwd = os.getcwd()
@@ -100,9 +129,14 @@ if __name__ == '__main__':
     pagesplitter = re.compile(r'>>>>CATEGORY: ([\w\s]+?)<<<<(.+?)>>>>CATEGORYEND<<<<', re.DOTALL)
     pages = pagesplitter.findall(out)
 
+    #build a dictionary of existing pages
+    logging.info("getting existing doc pages...")
     doctitles = [title for title in titles if title.startswith("DOC/")]
+    get_old_pages_multicall = attempt(get_pages, doctitles)
+    old_pages = dict(zip(["statusdummy"] + doctitles, get_old_pages_multicall))
 
-    #format and send to wiki:
+    #build a list of changed pages
+    changed_pages = []
     pagetitles = [];
     for page in pages:
         title = page[0]
@@ -118,21 +152,28 @@ if __name__ == '__main__':
         #remove anything before the table of contents (to get rid of the date):
         text = text[text.find("<<TableOfContents>>"):]
         text = insert_wiki_links(text)
-        #if a page with this title exists, re-use the part preceding the table of contents:
+        #if a page with this title exists, re-use the text preceding the table of contents:
         introduction = ""
         if title in doctitles:
-            old_text = get_page(title)
+            old_text = old_pages[title]
             introduction = old_text[0:old_text.find("<<TableOfContents>>")]
         text = introduction + text
-        print "updating ", title
-        send_pages([(title, text)])
+        #check if this page is new or changed)
+        if(not title in doctitles or old_pages[title] != text):
+            changed_pages.append([title, text])
+            logging.info("%s changed, adding to update list...", title)
 
-    #update overview page:
+    #update the overview page
     title = "DOC/Overview"
     text = "";
     for pagetitle in pagetitles:
         text = text + "\n * [[" + pagetitle + "]]"
-    print "updating ", title
-    send_pages([(title, text)])
-    print "Done."
+    if(not title in doctitles or old_pages[title] != text):
+        changed_pages.append([title, text])
+        logging.info("%s changed, adding to update list...", title)
+
+    logging.info("sending changed pages...")
+    attempt(send_pages, changed_pages)
+
+    print "Done"
     print "You may need to run this script again to insert links to newly created pages."
