@@ -1,5 +1,5 @@
 
-from domains import DOMAINS
+from domains import DOMAINS, GOOD_DOMAINS
 
 from krrt.utils import get_opts, run_experiment, match_value, get_value, load_CSV, write_file, append_file, read_file
 
@@ -9,8 +9,8 @@ USAGE_STRING = """
 Usage: python policy_experiment.py <TASK> -domain <domain> ...
 
         Where <TASK> may be:
-          all: Run all experiments
-          
+          full: Run all experiment parameters
+          fip-vs-prp: Run a comparison between fip and the best setting for PRP
         """
 
 TRIALS = 1
@@ -63,6 +63,11 @@ def parse_prp_settings(res):
     return ','.join([res.parameters[p] for p in ['--jic-limit', '--ffreplan', '--fullstate', '--planlocal', '--plan-with-policy']])
 
 def doit(domain, dofip = True, doprp = True, prp_params = PRP_PARAMS['all']):
+    
+    if 'all' == domain:
+        for dom in GOOD_DOMAINS:
+            doit(dom, dofip, doprp, prp_params)
+        return
 
     dom_probs = DOMAINS[domain]
     
@@ -82,7 +87,7 @@ def doit_fip(domain, dom_probs):
     fip_results = run_experiment(
         base_command = './../fip',
         single_arguments = {'domprob': fip_args},
-        time_limit = 2,
+        time_limit = 1800,
         memory_limit = 1000,
         results_dir = "RESULTS/fip-%s" % domain,
         progress_file = None,
@@ -96,17 +101,21 @@ def doit_fip(domain, dom_probs):
     for res_id in fip_results.get_ids():
         result = fip_results[res_id]
         prob = result.single_args['domprob'].split(' ')[3].split('/')[-1]
-        if result.timed_out:
-            if match_value(result.output_file, 'MemoryError'):
-                memouts += 1
-                fip_csv.append("%s,%s,-1,-1,M" % (domain, prob))
-            else:
-                timeouts += 1
-                fip_csv.append("%s,%s,-1,-1,T" % (domain, prob))
-            
+        
+        if match_value(result.output_file, 'No plan will solve it'):
+            fip_csv.append("%s,%s,-1,-1,N" % (domain, prob))
         else:
-            run, size = parse_fip(result.output_file)
-            fip_csv.append("%s,%s,%f,%d,-" % (domain, prob, run, size))
+            if result.timed_out:
+                if match_value(result.output_file, 'MemoryError'):
+                    memouts += 1
+                    fip_csv.append("%s,%s,-1,-1,M" % (domain, prob))
+                else:
+                    timeouts += 1
+                    fip_csv.append("%s,%s,-1,-1,T" % (domain, prob))
+                
+            else:
+                run, size = parse_fip(result.output_file)
+                fip_csv.append("%s,%s,%f,%d,-" % (domain, prob, run, size))
     
     print "\nTimed out %d times." % timeouts
     print "Ran out of memory %d times.\n" % memouts
@@ -137,30 +146,55 @@ def doit_prp(domain, dom_probs, prp_params):
     for res_id in prp_results.get_ids():
         result = prp_results[res_id]
         prob = result.single_args['domprob'].split(' ')[1].split('/')[-1]
-        if result.timed_out:
-            if match_value(result.output_file, 'MemoryError'):
-                memouts += 1
-                prp_csv.append("%s,%s,-1,-1,M,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
-            else:
-                timeouts += 1
-                prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
-            
+        
+        if match_value(result.output_file, 'No solution -- aborting repairs.'):
+            prp_csv.append("%s,%s,-1,-1,N,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
         else:
-            runtime, jic_time, policy_eval_time, policy_construction_time, \
-                search_time, engine_init_time, regression_time, successful_states, \
-                replans, actions, size, strongly_cyclic, succeeded = parse_prp(result.output_file)
-            prp_csv.append("%s,%s,%f,%d,-,%s,%f,%f,%f,%f,%f,%f,%d,%d,%d,%s,%s" % (domain, prob,
-                                                        runtime, size, parse_prp_settings(result),
-                                                        jic_time, policy_eval_time, policy_construction_time,
-                                                        search_time, engine_init_time, regression_time,
-                                                        successful_states, replans, actions,
-                                                        str(strongly_cyclic), str(succeeded)))
+            if result.timed_out:
+                if match_value(result.output_file, 'MemoryError'):
+                    memouts += 1
+                    prp_csv.append("%s,%s,-1,-1,M,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+                else:
+                    timeouts += 1
+                    prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+                
+            else:
+                runtime, jic_time, policy_eval_time, policy_construction_time, \
+                    search_time, engine_init_time, regression_time, successful_states, \
+                    replans, actions, size, strongly_cyclic, succeeded = parse_prp(result.output_file)
+                prp_csv.append("%s,%s,%f,%d,-,%s,%f,%f,%f,%f,%f,%f,%d,%d,%d,%s,%s" % (domain, prob,
+                                                            runtime, size, parse_prp_settings(result),
+                                                            jic_time, policy_eval_time, policy_construction_time,
+                                                            search_time, engine_init_time, regression_time,
+                                                            successful_states, replans, actions,
+                                                            str(strongly_cyclic), str(succeeded)))
     
     print "\nTimed out %d times." % timeouts
     print "Ran out of memory %d times.\n" % memouts
     write_file("RESULTS/prp-%s-results.csv" % domain, prp_csv)
 
 
+def compare(domain):
+    if 'all' == domain:
+        for dom in GOOD_DOMAINS:
+            compare(dom)
+        return
+    
+    # Load both sets
+    fip_data = load_CSV("RESULTS/fip-%s-results.csv" % domain)
+    prp_data = load_CSV("RESULTS/prp-%s-results.csv" % domain)
+    
+    compare_data = ['domain,problem,fip time,prp time,fip size,prp size']
+    
+    assert len(fip_data) == len(prp_data)
+    
+    for i in range(len(fip_data)):
+        assert (fip_data[i][0] == prp_data[i][0]) and (fip_data[i][1] == prp_data[i][1])
+        compare_data.append("%s,%s,%s,%s,%s,%s" % (fip_data[i][0], fip_data[i][1],
+                                                   fip_data[i][2], prp_data[i][2],
+                                                   fip_data[i][3], prp_data[i][3]))
+    
+    write_file("RESULTS/%s-results.csv" % domain, compare_data)
 
 
 if __name__ == '__main__':
@@ -171,8 +205,9 @@ if __name__ == '__main__':
         print USAGE_STRING
         os._exit(1)
     
-    if 'all' in flags:
+    if 'full' in flags:
         doit(myargs['-domain'])
     
     if 'fip-vs-prp' in flags:
         doit(myargs['-domain'], True, True, PRP_PARAMS['best'])
+        compare(myargs['-domain'])

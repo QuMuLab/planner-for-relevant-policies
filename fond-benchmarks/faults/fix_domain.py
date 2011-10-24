@@ -1,6 +1,8 @@
 from krrt.utils import get_file_list, read_file, write_file
 
-domains = get_file_list('.', None, ['d_'])
+domains = get_file_list('.', ['fixed'], ['d_'])
+
+print domains
 
 for dom in domains:
     lines = read_file(dom)
