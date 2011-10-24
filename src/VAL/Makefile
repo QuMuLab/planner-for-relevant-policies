@@ -36,7 +36,7 @@ SEARCHDIRS := -iquote -I${MYCODEDIR}
 
 # makemake variables
 
-DEPENDFLAGS := -g -Wall -Werror ${SEARCHDIRS} -Wno-error=unused-but-set-variable
+DEPENDFLAGS := -g -Wall ${SEARCHDIRS}
 
 # C preprocessor (C, C++, FORTRAN)
 
