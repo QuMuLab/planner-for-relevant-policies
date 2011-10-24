@@ -11,7 +11,6 @@ CHECKOUTS_DIR = os.path.join(tools.SCRIPTS_DIR, 'checkouts')
 tools.makedirs(CHECKOUTS_DIR)
 
 ABS_REV_CACHE = {}
-_sentinel = object()
 
 
 class Checkout(object):
@@ -64,7 +63,7 @@ class Checkout(object):
         return os.path.join(self.checkout_dir, *rel_path)
 
     def get_bin(self, *bin_path):
-        """Return the absolute path to this part's src directory."""
+        """Return the absolute path to one of this part's executables."""
         return os.path.join(self.bin_dir, *bin_path)
 
     def get_path_dest(self, *rel_path):
