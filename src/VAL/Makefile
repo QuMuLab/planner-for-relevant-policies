@@ -36,7 +36,7 @@ SEARCHDIRS := -iquote -I${MYCODEDIR}
 
 # makemake variables
 
-DEPENDFLAGS := -g -Wall -Werror ${SEARCHDIRS}
+DEPENDFLAGS := -g -Wall ${SEARCHDIRS}
 
 # C preprocessor (C, C++, FORTRAN)
 
@@ -81,18 +81,18 @@ CXXFLAGS  = ${DEPENDFLAGS} -ansi -Wall
 # FORTRAN compiler
 
 FC     := f77
-FFLAGS  = 
+FFLAGS  =
 
 # C/C++/Eiffel/FORTRAN linker
 
 LINKER    := g++ -g -static -static-libgcc
-LDFLAGS    = 
-LOADLIBES := 
+LDFLAGS    =
+LOADLIBES :=
 
 # Java compiler
 
 JAVAC  := javac
-JFLAGS  = 
+JFLAGS  =
 JAR    := jar
 
 %.class : %.java

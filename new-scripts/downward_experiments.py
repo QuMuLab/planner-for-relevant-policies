@@ -40,33 +40,21 @@ def shell_escape(s):
     return s.upper().replace('-', '_').replace(' ', '_').replace('.', '_')
 
 
-def _get_configs(planner_rev, config_list):
+def _get_configs(config_and_porfolio_list):
     """
     Turn the list of config names from the command line into a list of
     (config_nick, config_string) pairs
     """
-    # New syntax <=> we use mercurial (hex, not numbers) or rev >= 4425
-    try:
-        rev_number = int(planner_rev)
-    except ValueError:
-        rev_number = None
-    new_syntax = rev_number is None or rev_number >= 4425
-
     portfolios = []
-    config_strings = []
-    for name in config_list:
+    config_nicks = []
+    for name in config_and_porfolio_list:
         if name.endswith('.py'):
             portfolios.append((name, ''))
         else:
-            config_strings.append(name)
+            config_nicks.append(name)
 
-    if new_syntax:
-        # configs is a list of (nickname, config) pairs
-        configs = downward_configs.get_configs(config_strings)
-    else:
-        # Use the old config names
-        # We use the config names also as nicknames
-        configs = zip(config_strings, config_strings)
+    # configs is a list of (config_nick, config) pairs
+    configs = downward_configs.get_configs(config_nicks)
     return configs + portfolios
 
 
@@ -146,6 +134,7 @@ def _prepare_search_run(exp, run, config_nick, config):
     run.require_resource(run.planner.shell_name)
     if config:
         # We have a single planner configuration
+        config = config.replace('\n', ' ').replace('\t', ' ')
         search_cmd = [run.planner.shell_name] + shlex.split(config)
     else:
         # We have a portfolio, config_nick is the path to the portfolio file
@@ -154,7 +143,8 @@ def _prepare_search_run(exp, run, config_nick, config):
                       '--plan-file', 'sas_plan']
     run.add_command('search', search_cmd, stdin='output',
                     time_limit=LIMIT_SEARCH_TIME,
-                    mem_limit=LIMIT_SEARCH_MEMORY)
+                    mem_limit=LIMIT_SEARCH_MEMORY,
+                    abort_on_failure=False)
     run.declare_optional_output("sas_plan")
 
     # Validation
@@ -194,12 +184,13 @@ class DownwardExperiment(experiments.Experiment):
         parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
         parser.add_argument('-c', '--configs', default=[], type=tools.csv,
-                            required=False, help=downward_configs.HELP)
+                            required=False, dest='config_nicks',
+                            help=downward_configs.HELP)
 
         experiments.Experiment.__init__(self, parser)
 
         config_needed = self.complete or not self.preprocess
-        if config_needed and not self.configs:
+        if config_needed and not self.config_nicks:
             logging.error('Please specify at least one planner configuration')
             sys.exit(2)
 
@@ -211,6 +202,7 @@ class DownwardExperiment(experiments.Experiment):
         checkouts.compile(combinations)
         #require_src_dirs(self, combinations)
         self.problems = downward_suites.build_suite(self.suite)
+        self.configs = _get_configs(self.config_nicks)
 
         self.make_runs()
 
@@ -291,7 +283,7 @@ class DownwardExperiment(experiments.Experiment):
             self.add_resource('NONAME', src_path, planner.get_path_dest(bin))
 
         # Find all portfolios and copy them into the experiment directory
-        for portfolio in [name for name in self.configs if name.endswith('.py')]:
+        for portfolio in [name for name in self.config_nicks if name.endswith('.py')]:
             if not os.path.isfile(portfolio):
                 logging.error('Portfolio file %s could not be found.' % portfolio)
                 sys.exit(1)
@@ -303,13 +295,11 @@ class DownwardExperiment(experiments.Experiment):
         if not os.path.exists(validate):
             logging.error('Please run ./build_all in the src directory first '
                           'to compile the validator')
+            sys.exit(1)
         self.add_resource('VALIDATE', validate, 'validate')
 
         downward_validate = os.path.join(tools.SCRIPTS_DIR, 'downward-validate.py')
         self.add_resource('DOWNWARD_VALIDATE', downward_validate, 'downward-validate')
-
-    def _get_configs(self, rev):
-        return _get_configs(rev, self.configs)
 
     def make_runs(self):
         # Save the experiment stage in the properties
@@ -337,7 +327,7 @@ class DownwardExperiment(experiments.Experiment):
         for translator, preprocessor, planner in self.combinations:
             self._prepare_planner(planner)
 
-            for config_nick, config in self._get_configs(planner.rev):
+            for config_nick, config in self.configs:
                 for prob in self.problems:
                     self._make_search_run(translator, preprocessor, planner,
                                           config_nick, config, prob)
@@ -379,7 +369,7 @@ class DownwardExperiment(experiments.Experiment):
             self._prepare_translator_and_preprocessor(translator, preprocessor)
             self._prepare_planner(planner)
 
-            for config_nick, config in self._get_configs(planner.rev):
+            for config_nick, config in self.configs:
                 for prob in self.problems:
                     run = DownwardRun(self, translator, preprocessor, planner, prob)
                     _prepare_preprocess_run(self, run)

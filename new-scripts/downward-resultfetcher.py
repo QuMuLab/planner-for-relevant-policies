@@ -417,18 +417,18 @@ def add_search_functions(eval):
     eval.add_function(scores)
 
 
-def ipc_score(problem_runs):
-    min_length = tools.minimum(run.get('plan_length') for run in problem_runs)
+def quality(problem_runs):
+    min_cost = tools.minimum(run.get('cost') for run in problem_runs)
     for run in problem_runs:
-        length = run.get('plan_length')
-        if length is None:
-            quality = 0
-        elif length == 0:
-            assert min_length == 0
-            quality = 1
+        cost = run.get('cost')
+        if cost is None:
+            quality = 0.0
+        elif cost == 0:
+            assert min_cost == 0
+            quality = 1.0
         else:
-            quality = min_length / length
-        run['quality'] = quality
+            quality = min_cost / cost
+        run['quality'] = round(quality, 4)
 
 
 def build_fetcher(parser=FetchOptionParser()):
@@ -454,7 +454,7 @@ def build_fetcher(parser=FetchOptionParser()):
 
     eval.add_function(check_min_values)
     eval.set_check(check)
-    eval.postprocess_functions.append(ipc_score)
+    eval.postprocess_functions.append(quality)
 
     return eval
 

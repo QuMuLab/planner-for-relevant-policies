@@ -12,8 +12,21 @@ class Environment(object):
     def add_subparser(cls, subparsers):
         pass
 
-    def get_main_script(self):
-        raise NotImplemented
+    @classmethod
+    def write_main_script(cls, exp):
+        raise NotImplementedError
+
+    @classmethod
+    def build_linked_resources(cls, run):
+        """
+        Only if we are building an argo experiment, we need to add all linked
+        resources to the resources list.
+        """
+        pass
+
+    @classmethod
+    def get_end_instructions(cls, exp):
+        return ''
 
 
 class LocalEnvironment(Environment):
@@ -30,11 +43,9 @@ class LocalEnvironment(Environment):
 
     @classmethod
     def write_main_script(cls, exp):
-        dirs = [os.path.relpath(run.dir, exp.path) for run in exp.runs]
-        commands = ['"cd %s; ./run"' % dir for dir in dirs]
-        replacements = {'COMMANDS': ',\n'.join(commands),
-                        'PROCESSES': str(exp.processes),
-                        }
+        dirs = [repr(os.path.relpath(run.dir, exp.path)) for run in exp.runs]
+        replacements = {'DIRS': ',\n'.join(dirs),
+                        'PROCESSES': str(exp.processes)}
 
         script = open(os.path.join(DATA_DIR, 'local-job-template.py')).read()
         for orig, new in replacements.items():
@@ -106,14 +117,29 @@ class GkiGridEnvironment(Environment):
 
 
 class ArgoEnvironment(Environment):
+    """
+    This environment is currently not supported, but we keep it here to hold
+    the already written code.
+    """
+
     @classmethod
     def add_subparser(cls, subparsers):
         subparsers.add_parser('argo', help='Argo Experiment')
 
     @classmethod
     def write_main_script(cls, exp):
-        pass
+        raise NotImplementedError
 
     @classmethod
-    def get_end_instructions(cls, exp):
-        pass
+    def build_linked_resources(cls, run):
+        # Copy the linked resource into the run dir by adding the linked
+        # resource to the normal resources list.
+        for resource_name in run.linked_resources:
+            source = run.experiment.env_vars.get(resource_name, None)
+            if not source:
+                logging.error('If you require a resource you have to add it '
+                              'to the experiment')
+                sys.exit(1)
+            basename = os.path.basename(source)
+            dest = run._get_abs_path(basename)
+            run.resources.append((source, dest, True, False))
