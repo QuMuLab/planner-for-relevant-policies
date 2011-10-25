@@ -23,10 +23,10 @@ PRP_PARAMS = {'all': {'--jic-limit': [0],
                       '--planlocal': [0,1],
                       '--plan-with-policy': [0,1]},
 
-              'best': {'--jic-limit': [0],
+              'best': {'--jic-limit': [18000],
                        '--ffreplan': [0],
                        '--fullstate': [0],
-                       '--planlocal': [0],
+                       '--planlocal': [1],
                        '--plan-with-policy': [1]}
              }
 
