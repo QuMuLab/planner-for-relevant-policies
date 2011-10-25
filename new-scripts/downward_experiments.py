@@ -93,8 +93,12 @@ class DownwardRun(experiments.Run):
         self.set_property('domain', self.domain_name)
         self.set_property('problem', self.problem_name)
 
-        # Add memory limit information in KB
-        self.set_property('memory_limit', LIMIT_SEARCH_MEMORY * 1024)
+        self.set_property('limit_translate_time', LIMIT_TRANSLATE_TIME)
+        self.set_property('limit_translate_memory', LIMIT_TRANSLATE_MEMORY)
+        self.set_property('limit_preprocess_time', LIMIT_PREPROCESS_TIME)
+        self.set_property('limit_preprocess_memory', LIMIT_PREPROCESS_MEMORY)
+        self.set_property('limit_search_time', LIMIT_SEARCH_TIME)
+        self.set_property('limit_search_memory', LIMIT_SEARCH_MEMORY)
 
         self.set_property('experiment_name', self.experiment.name)
 
