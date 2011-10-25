@@ -12,6 +12,8 @@ void Simulator::run() {
     found_solution = false;
     RegressionStep * current_step;
     reset_goal();
+    successful_states = 0;
+    failed_states = 0;
     
     while(!found_solution) {
         // Get the best action (if any)
