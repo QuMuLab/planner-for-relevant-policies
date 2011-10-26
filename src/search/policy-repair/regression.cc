@@ -54,6 +54,7 @@ list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector
             reg_steps.push_back(new RegressionStep(states.back(), distance));
         }
         
+        // Remove the full goal state (we still keep the partial goal state if need be)
         states.pop_back();
         
         for (int i = plan.size() - 1; i >= 0; i--) {

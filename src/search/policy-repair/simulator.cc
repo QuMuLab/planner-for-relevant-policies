@@ -10,6 +10,7 @@ Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb
 
 void Simulator::run() {
     found_solution = false;
+    succeeded = false;
     RegressionStep * current_step;
     reset_goal();
     successful_states = 0;
@@ -31,6 +32,7 @@ void Simulator::run() {
                 // Execute the non-deterministic action
                 execute_action(current_step->op);
             }
+            
         } else {
             failed_states++;
             if (!replan()) {

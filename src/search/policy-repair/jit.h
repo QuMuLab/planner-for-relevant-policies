@@ -29,7 +29,5 @@ struct UnhandledState {
 };
 
 bool perform_jit_repairs(Simulator *sim);
-void perform_jit_repairs_old(SearchEngine *eng, int argc, const char **argv);
-void find_unhandled_states(State *state, const SearchEngine::Plan &plan, set<UnhandledState> &unhandled, int cost);
 
 #endif
