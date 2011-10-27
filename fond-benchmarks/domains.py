@@ -35,4 +35,4 @@ DOMAINS = {
     'forest' : forest
 }
 
-GOOD_DOMAINS = ['blocksworld', 'blocksworld-orig', 'first']
+GOOD_DOMAINS = ['blocksworld', 'blocksworld-orig', 'first', 'forest']

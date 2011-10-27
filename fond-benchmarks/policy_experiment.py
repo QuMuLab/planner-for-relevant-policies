@@ -14,13 +14,17 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
         """
 
 TRIALS = 10
+CORES = 16
+MEM_LIMIT = 2000
+TIME_LIMIT = 1800
 SHOW_DATA = True
 BASEDIR = os.path.abspath(os.path.curdir)
 
-PRP_PARAMS = {'all': {'--jic-limit': [0],
+PRP_PARAMS = {'all': {'--jic-limit': [18000],
                       '--ffreplan': [0,1],
                       '--fullstate': [0,1],
                       '--planlocal': [0,1],
+                      '--trials': [100],
                       '--plan-with-policy': [0,1]},
 
               'best': {'--jic-limit': [18000],
@@ -88,11 +92,11 @@ def doit_fip(domain, dom_probs):
     fip_results = run_experiment(
         base_command = './../fip',
         single_arguments = {'domprob': fip_args},
-        time_limit = 1800,
-        memory_limit = 1000,
+        time_limit = TIME_LIMIT,
+        memory_limit = MEM_LIMIT,
         results_dir = "RESULTS/fip-%s" % domain,
         progress_file = None,
-        processors = 1,
+        processors = CORES,
         sandbox = True
     )
     
@@ -133,11 +137,11 @@ def doit_prp(domain, dom_probs, prp_params):
         base_command = './../../src/plan-prp',
         single_arguments = {'domprob': prp_args},
         parameters = prp_params,
-        time_limit = 1800,
-        memory_limit = 1000,
+        time_limit = TIME_LIMIT,
+        memory_limit = MEM_LIMIT,
         results_dir = "RESULTS/prp-%s" % domain,
         progress_file = None,
-        processors = 1,
+        processors = CORES,
         sandbox = True,
         trials = TRIALS
     )
