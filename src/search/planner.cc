@@ -106,6 +106,8 @@ int main(int argc, const char **argv) {
         for (int i = 0; i < engine->get_plan().size(); i++)
             plan.push(engine->get_plan()[i]);
         sim->run_ffreplan(plan);
+        sim->record_stats();
+        g_num_trials = 1; // Can't do multiple ffreplan trials since we augment the policy during simulation
     }
     
     cout << "\n\n" << endl;

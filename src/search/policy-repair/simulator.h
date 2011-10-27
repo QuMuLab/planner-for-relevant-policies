@@ -51,6 +51,7 @@ public:
     void set_state(State * s) { current_state = new State(*s); }
     void set_goal(State * s) { current_goal = new State(*s); }
     
+    void record_stats();
     void reset_goal();
     
     SearchEngine * get_engine() { return engine; }

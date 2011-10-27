@@ -12,12 +12,16 @@ Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb
 void Simulator::run() {
     for (int i = 0; i < g_num_trials; i++) {
         run_once();
-        record_successful_states.push_back(successful_states);
-        record_failed_states.push_back(failed_states);
-        record_total_states.push_back(successful_states + failed_states);
-        if (succeeded)
-            record_succeeded++;
+        record_stats();
     }
+}
+
+void Simulator::record_stats() {
+    record_successful_states.push_back(successful_states);
+    record_failed_states.push_back(failed_states);
+    record_total_states.push_back(successful_states + failed_states);
+    if (succeeded)
+        record_succeeded++;
 }
 
 void Simulator::run_once() {
@@ -236,6 +240,9 @@ bool Simulator::replan() {
 void Simulator::run_ffreplan(queue<const Operator *> &plan) {
     
     reset_goal();
+    
+    successful_states = 0;
+    failed_states = 0;
     
     while(!test_goal(*current_state)) {
         
