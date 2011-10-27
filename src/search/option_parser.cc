@@ -205,6 +205,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--jic-limit") == 0) {
             ++i;
             g_jic_limit = atof(argv[i]);
+        } else if (arg.compare("--trials") == 0) {
+            ++i;
+            g_num_trials = atoi(argv[i]);
         } else if (arg.compare("--ffreplan") == 0) {
             ++i;
             g_ffreplan = (1 == atoi(argv[i]));
@@ -256,6 +259,8 @@ string OptionParser::usage(string progname) {
         "    Plan locally to recover before planning for the goal.\n\n"
         "--plan-with-policy 1/0\n"
         "    Stop searching when the policy matches the current state.\n\n"
+        "--trials NUM_TRIALS\n"
+        "    Number of trials to run for the simulator.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }

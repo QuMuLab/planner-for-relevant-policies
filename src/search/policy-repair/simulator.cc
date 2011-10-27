@@ -6,15 +6,32 @@ Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb
     current_state = new State(*g_initial_state);
     successful_states = 0;
     failed_states = 0;
+    record_succeeded = 0;
 }
 
 void Simulator::run() {
+    for (int i = 0; i < g_num_trials; i++) {
+        run_once();
+        record_successful_states.push_back(successful_states);
+        record_failed_states.push_back(failed_states);
+        record_total_states.push_back(successful_states + failed_states);
+        if (succeeded)
+            record_succeeded++;
+    }
+}
+
+void Simulator::run_once() {
     found_solution = false;
     succeeded = false;
     RegressionStep * current_step;
-    reset_goal();
     successful_states = 0;
     failed_states = 0;
+    
+    State *orig_init_state = new State(*g_initial_state);
+    current_state = new State(*g_initial_state);
+    
+    reset_goal();
+    
     
     while(!found_solution) {
         // Get the best action (if any)
@@ -25,7 +42,8 @@ void Simulator::run() {
             successful_states++;
             
             if (current_step->is_goal) {
-                cout << "...achieved the goal!" << endl;
+                if (verbose || (1 == g_num_trials))
+                    cout << "...achieved the goal!" << endl;
                 succeeded = true;
                 found_solution = true;
             } else {
@@ -36,11 +54,14 @@ void Simulator::run() {
         } else {
             failed_states++;
             if (!replan()) {
-                cout << "Got into a dead-end state..." << endl;
+                if (verbose || (1 == g_num_trials))
+                    cout << "Got into a dead-end state..." << endl;
                 found_solution = true;
             }
         }
     }
+    
+    g_initial_state = orig_init_state;
 }
 
 bool Simulator::execute_action(const Operator *op) {
@@ -288,14 +309,29 @@ void Simulator::run_ffreplan(queue<const Operator *> &plan) {
     succeeded = true;
 }
 
+float average(vector<int> &nums) {
+    float sum = 0;
+    for (int i = 0; i < nums.size(); i++)
+        sum += (float)nums[i];
+    return sum / (float)(nums.size());
+}
+
+float standard_dev(vector<int> &nums) {
+    float avg = average(nums);
+    float sum = 0;
+    for (int i = 0; i < nums.size(); i++)
+        sum += pow((nums[i] - avg), 2);
+    return sqrt(sum / (float)(nums.size()));
+}
+
 void Simulator::dump() {
     cout << "-{ General Statistics }-" << endl;
-    cout << "Successful states: " << successful_states << endl;
-    cout << "Replans: " << failed_states << endl;
-    cout << "Actions: " << (successful_states + failed_states) << endl;
+    cout << "Successful states: " << average(record_successful_states) << " +/- " << standard_dev(record_successful_states) << endl;
+    cout << "Replans: " << average(record_failed_states) << " +/- " << standard_dev(record_failed_states) << endl;
+    cout << "Actions: " << average(record_total_states) << " +/- " << standard_dev(record_total_states) << endl;
     cout << "State-Action Pairs: " << g_policy_size << endl;
     cout << "Strongly Cyclic: " << ((g_failed_open_states > 0) ? "False" : "True") << endl;
-    cout << "Succeeded: " << (succeeded ? "True" : "False") << endl;
+    cout << "Succeeded: " << record_succeeded << " / " << g_num_trials << endl;
     
     cout << "\n-{ Timing Statistics }-" << endl;
     cout << "Regression Computation: " << g_timer_regression << endl;

@@ -1,9 +1,11 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
-#include <cstdlib>
 #include <iostream>
+#include <cstdlib>
 #include <string>
+#include <vector>
+#include <cmath>
 #include <queue>
 #include <list>
 
@@ -28,6 +30,12 @@ class Simulator {
     int successful_states;
     int failed_states;
     
+    int record_succeeded;
+    vector<int> record_successful_states;
+    vector<int> record_failed_states;
+    vector<int> record_total_states;
+    
+    void run_once();
     bool execute_action(const Operator *op);
     
     bool verbose;
@@ -52,5 +60,8 @@ public:
     void dump();
     
 };
+
+float average(vector<int> &nums);
+float standard_dev(vector<int> &nums);
 
 #endif

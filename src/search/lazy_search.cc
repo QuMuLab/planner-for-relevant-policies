@@ -115,7 +115,8 @@ void LazySearch::generate_successors() {
 
 int LazySearch::fetch_next_state() {
     if (open_list->empty()) {
-        cout << "Completely explored state space -- no solution!" << endl;
+        if (!g_silent_planning)
+            cout << "Completely explored state space -- no solution!" << endl;
         return FAILED;
     }
 
