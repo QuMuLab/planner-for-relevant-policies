@@ -32,6 +32,7 @@ public:
     void update_policy(list<RegressionStep *> &reg_steps);
     void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
     RegressionStep *get_best_step(const State &curr);
+    bool empty() { return (0 == root); }
 };
 
 #endif

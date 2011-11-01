@@ -11,8 +11,15 @@ Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb
 
 void Simulator::run() {
     for (int i = 0; i < g_num_trials; i++) {
+        
+        if (g_forgetpolicy) {
+            delete g_policy;
+            g_policy = new Policy();
+        }
+        
         run_once();
         record_stats();
+        
     }
 }
 
@@ -175,7 +182,7 @@ bool Simulator::replan() {
             
             if (verbose)
                 cout << "Building the regression list." << endl;
-            list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance);
+            list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
             
             if (verbose)
                 cout << "Updating the policy." << endl;
@@ -216,7 +223,7 @@ bool Simulator::replan() {
                 if (engine->found_solution()) {
                     if (verbose)
                         cout << "Building the regression list." << endl;
-                    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance);
+                    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
                     
                     if (verbose)
                         cout << "Updating the policy." << endl;

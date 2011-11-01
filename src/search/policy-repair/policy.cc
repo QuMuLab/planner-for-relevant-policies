@@ -61,6 +61,7 @@ public:
 class GeneratorLeaf : public GeneratorBase {
     list<RegressionStep *> applicable_steps;
 public:
+    ~GeneratorLeaf();
     GeneratorLeaf(list<RegressionStep *> &reg_steps);
     virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
     virtual void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
@@ -103,6 +104,16 @@ GeneratorSwitch::~GeneratorSwitch() {
     for (int i = 0; i < generator_for_value.size(); i++)
         delete generator_for_value[i];
     delete default_generator;
+    
+    for (list<RegressionStep *>::const_iterator op_iter = immediate_steps.begin();
+         op_iter != immediate_steps.end(); ++op_iter)
+         delete *op_iter;
+}
+
+GeneratorLeaf::~GeneratorLeaf() {
+    for (list<RegressionStep *>::const_iterator op_iter = applicable_steps.begin();
+         op_iter != applicable_steps.end(); ++op_iter)
+         delete *op_iter;
 }
 
 void GeneratorSwitch::dump(string indent) const {
@@ -335,7 +346,10 @@ Policy::Policy(list<RegressionStep *> &reg_steps) {
 void Policy::update_policy(list<RegressionStep *> &reg_steps) {
     g_timer_policy_build.resume();
     set<int> vars_seen;
-    root->update_policy(reg_steps, vars_seen);
+    if (root)
+        root->update_policy(reg_steps, vars_seen);
+    else
+        root = new GeneratorSwitch(reg_steps, vars_seen);
     g_timer_policy_build.stop();
 }
 
@@ -344,6 +358,10 @@ void Policy::generate_applicable_steps(const State &curr, vector<RegressionStep 
 }
 
 RegressionStep *Policy::get_best_step(const State &curr) {
+    
+    if (0 == root)
+        return 0;
+    
     g_timer_policy_eval.resume();
     vector<RegressionStep *> current_steps;
     generate_applicable_steps(curr, current_steps);
@@ -371,7 +389,8 @@ Policy::Policy() {
 }
 
 Policy::~Policy() {
-    delete root;
+    if (root)
+        delete root;
 }
 
 void Policy::dump() const {

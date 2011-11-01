@@ -21,18 +21,25 @@ SHOW_DATA = True
 BASEDIR = os.path.abspath(os.path.curdir)
 
 PRP_PARAMS = {'all': {'--jic-limit': [18000],
-                      '--ffreplan': [0,1],
+                      '--forgetpolicy': [0],
                       '--fullstate': [0,1],
                       '--planlocal': [0,1],
                       '--trials': [100],
                       '--plan-with-policy': [0,1]},
 
               'best': {'--jic-limit': [18000],
-                       '--ffreplan': [0],
+                       '--forgetpolicy': [0],
                        '--fullstate': [0],
                        '--planlocal': [1],
                        '--trials': [100],
-                       '--plan-with-policy': [1]}
+                       '--plan-with-policy': [1]},
+              
+              'ffreplan': {'--jic-limit': [0],
+                           '--forgetpolicy': [1],
+                           '--fullstate': [1],
+                           '--planlocal': [0],
+                           '--trials': [100],
+                           '--plan-with-policy': [1]}
              }
 
 
@@ -65,7 +72,7 @@ def parse_prp(outfile):
     
 
 def parse_prp_settings(res):
-    return ','.join([res.parameters[p] for p in ['--jic-limit', '--ffreplan', '--fullstate', '--planlocal', '--plan-with-policy']])
+    return ','.join([res.parameters[p] for p in ['--jic-limit', '--forgetpolicy', '--fullstate', '--planlocal', '--plan-with-policy']])
 
 def doit(domain, dofip = True, doprp = True, prp_params = PRP_PARAMS['all']):
     
@@ -148,7 +155,7 @@ def doit_prp(domain, dom_probs, prp_params):
     
     timeouts = 0
     memouts = 0
-    prp_csv = ['domain,problem,runtime,size,status,jic-limit,ffreplan,fullstate,planlocal,usepolicy,jic time,policy eval,policy creation,search time,engine time,regression time,successful states,replans,actions,strongly cyclic,succeeded']
+    prp_csv = ['domain,problem,runtime,size,status,jic-limit,forgetpolicy,fullstate,planlocal,usepolicy,jic time,policy eval,policy creation,search time,engine time,regression time,successful states,replans,actions,strongly cyclic,succeeded']
     for res_id in prp_results.get_ids():
         result = prp_results[res_id]
         prob = result.single_args['domprob'].split(' ')[1].split('/')[-1]

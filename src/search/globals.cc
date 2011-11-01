@@ -37,7 +37,7 @@ static const int PRE_FILE_VERSION = 3;
 static vector<vector<set<pair<int, int> > > > g_inconsistent_facts;
 
 bool test_goal(const State &state) {
-    if (g_policy)
+    if (g_policy && !(g_policy->empty()))
         return test_policy(state);
 
     for (int i = 0; i < g_goal.size(); i++) {
@@ -45,6 +45,13 @@ bool test_goal(const State &state) {
             return false;
         }
     }
+    
+    g_matched_distance = 0;
+    g_matched_policy.clear();
+    for (int i = 0; i < g_goal.size(); i++) {
+        g_matched_policy.push_back(make_pair(g_goal[i].first, g_goal[i].second));
+    }
+    
     return true;
 }
 
@@ -366,7 +373,7 @@ Policy *g_policy; // The policy to check while searching
 int g_policy_size = 0;
 int g_failed_open_states = 0;
 bool g_silent_planning = false;
-bool g_ffreplan = false; // Do the simple ff-replan approach
+bool g_forgetpolicy = false; // Forget the global policy after every simulation run
 bool g_fullstate = false; // Use the full state for regression
 bool g_plan_locally = false; // Plan for the expected state rather than replanning to the goal
 bool g_plan_with_policy = true; // Stop planning when the policy matches

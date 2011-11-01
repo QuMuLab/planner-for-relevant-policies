@@ -208,9 +208,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--trials") == 0) {
             ++i;
             g_num_trials = atoi(argv[i]);
-        } else if (arg.compare("--ffreplan") == 0) {
+        } else if (arg.compare("--forgetpolicy") == 0) {
             ++i;
-            g_ffreplan = (1 == atoi(argv[i]));
+            g_forgetpolicy = (1 == atoi(argv[i]));
         } else if (arg.compare("--fullstate") == 0) {
             ++i;
             g_fullstate = (1 == atoi(argv[i]));
@@ -251,8 +251,8 @@ string OptionParser::usage(string progname) {
         "    Plan will be output to a file called FILENAME\n\n"
         "--jic-limit TIME_LIMIT\n"
         "    Only perform JIC for the given time.\n\n"
-        "--ffreplan 1/0\n"
-        "    Throw out the policy and regress full states.\n\n"
+        "--forgetpolicy 1/0\n"
+        "    Throw out the policy after every simulation.\n\n"
         "--fullstate 1/0\n"
         "    Use full states in the regression.\n\n"
         "--planlocal 1/0\n"

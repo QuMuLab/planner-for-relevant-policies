@@ -79,36 +79,26 @@ int main(int argc, const char **argv) {
     cout << "\n\nCreating the simulator..." << endl;
     Simulator *sim = new Simulator(engine, argc, argv, !g_silent_planning);
     
-    if (!g_ffreplan) {
-        cout << "\n\nRegressing the plan..." << endl;
-        list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
-        
-        cout << "\n\nGenerating an initial policy..." << endl;
-        g_policy = new Policy(regression_steps);
-        
-        cout << "\n\nComputing just-in-time repairs..." << endl;
-        g_timer_jit.resume();
-        bool changes_made = true;
-        while (changes_made) {
-            changes_made = perform_jit_repairs(sim);
-            if (!g_silent_planning)
-                cout << "Finished repair round." << endl;
-        }
-        if (!g_silent_planning)
-            cout << "Done repairing..." << endl;
-        g_timer_jit.stop();
+    cout << "\n\nRegressing the plan..." << endl;
+    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
     
-        cout << "\n\nRunning the simulation..." << endl;
-        sim->run();
-    } else {
-        cout << "\n\nRunning the simulation..." << endl;
-        queue<const Operator *> plan;
-        for (int i = 0; i < engine->get_plan().size(); i++)
-            plan.push(engine->get_plan()[i]);
-        sim->run_ffreplan(plan);
-        sim->record_stats();
-        g_num_trials = 1; // Can't do multiple ffreplan trials since we augment the policy during simulation
+    cout << "\n\nGenerating an initial policy..." << endl;
+    g_policy = new Policy(regression_steps);
+    
+    cout << "\n\nComputing just-in-time repairs..." << endl;
+    g_timer_jit.resume();
+    bool changes_made = true;
+    while (changes_made) {
+        changes_made = perform_jit_repairs(sim);
+        if (!g_silent_planning)
+            cout << "Finished repair round." << endl;
     }
+    if (!g_silent_planning)
+        cout << "Done repairing..." << endl;
+    g_timer_jit.stop();
+
+    cout << "\n\nRunning the simulation..." << endl;
+    sim->run();
     
     cout << "\n\n" << endl;
     
