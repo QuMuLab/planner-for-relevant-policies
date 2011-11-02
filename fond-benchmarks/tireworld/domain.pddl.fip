@@ -1,0 +1,46 @@
+;;;  Authors: Michael Littman and David Weissman  ;;;
+;;;  Modified: Blai Bonet for IPC 2006 ;;;
+
+;;;  Modified: Christian Muise to make it a FOND domain
+
+(define (domain tire)
+  (:requirements :typing :strips)
+  (:types location)
+  (:predicates (vehicle-at ?loc - location) (spare-in ?loc - location) (road ?from - location ?to - location) (not-flattire) (hasspare))
+  
+(:action D_1_move-car
+  :parameters ( ?from ?to - location )
+  :precondition (and (vehicle-at ?from) (road ?from ?to) (not-flattire))
+  :effect (and (vehicle-at ?to) (not (vehicle-at ?from)))
+)
+
+(:action D_2_move-car
+  :parameters ( ?from ?to - location )
+  :precondition (and (vehicle-at ?from) (road ?from ?to) (not-flattire))
+  :effect (and (vehicle-at ?to) (not (vehicle-at ?from)))
+)
+
+(:action D_3_move-car
+  :parameters ( ?from ?to - location )
+  :precondition (and (vehicle-at ?from) (road ?from ?to) (not-flattire))
+  :effect (and (vehicle-at ?to) (not (vehicle-at ?from)) (not (not-flattire)))
+)
+
+(:action loadtire
+  :parameters ( ?loc - location )
+  :precondition (and (vehicle-at ?loc) (spare-in ?loc))
+  :effect (and (hasspare) (not (spare-in ?loc)))
+)
+
+(:action D_1_changetire
+  :parameters ( )
+  :precondition (hasspare)
+  :effect (hasspare)
+)
+
+(:action D_2_changetire
+  :parameters ( )
+  :precondition (hasspare)
+  :effect (and (not (hasspare)) (not-flattire))
+)
+)
