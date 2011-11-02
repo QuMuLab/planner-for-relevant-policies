@@ -115,7 +115,9 @@ def doit_fip(domain, dom_probs):
         results_dir = "RESULTS/fip-%s" % domain,
         progress_file = None,
         processors = CORES,
-        sandbox = True
+        sandbox = True,
+        output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.err')
     )
     
     timeouts = 0
@@ -129,13 +131,11 @@ def doit_fip(domain, dom_probs):
             fip_csv.append("%s,%s,-1,-1,N" % (domain, prob))
         else:
             if result.timed_out:
-                if match_value(result.output_file, 'MemoryError'):
-                    memouts += 1
-                    fip_csv.append("%s,%s,-1,-1,M" % (domain, prob))
-                else:
-                    timeouts += 1
-                    fip_csv.append("%s,%s,-1,-1,T" % (domain, prob))
-                
+                timeouts += 1
+                fip_csv.append("%s,%s,-1,-1,T" % (domain, prob))
+            elif result.mem_out:
+                memouts += 1
+                fip_csv.append("%s,%s,-1,-1,M" % (domain, prob))
             else:
                 run, size = parse_fip(result.output_file)
                 fip_csv.append("%s,%s,%f,%d,-" % (domain, prob, run, size))
@@ -161,7 +161,9 @@ def doit_prp(domain, dom_probs, prp_params):
         progress_file = None,
         processors = CORES,
         sandbox = True,
-        trials = TRIALS
+        trials = TRIALS,
+        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.err')
     )
     
     timeouts = 0
@@ -174,14 +176,14 @@ def doit_prp(domain, dom_probs, prp_params):
         if match_value(result.output_file, 'No solution -- aborting repairs.'):
             prp_csv.append("%s,%s,-1,-1,N,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
         else:
-            if result.timed_out:
-                if match_value(result.output_file, 'MemoryError'):
-                    memouts += 1
-                    prp_csv.append("%s,%s,-1,-1,M,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
-                else:
-                    timeouts += 1
-                    prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
-                
+            if result.mem_out:
+                memouts += 1
+                prp_csv.append("%s,%s,-1,-1,M,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+            
+            elif result.timed_out:
+                timeouts += 1
+                prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+              
             else:
                 runtime, jic_time, policy_eval_time, policy_construction_time, \
                     search_time, engine_init_time, regression_time, successful_states, \
