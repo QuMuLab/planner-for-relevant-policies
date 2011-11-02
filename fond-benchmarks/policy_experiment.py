@@ -1,5 +1,5 @@
 
-from domains import DOMAINS, GOOD_DOMAINS
+from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS
 
 from krrt.utils import get_opts, run_experiment, match_value, get_value, load_CSV, write_file, append_file, read_file
 
@@ -39,7 +39,14 @@ PRP_PARAMS = {'all': {'--jic-limit': [18000],
                            '--fullstate': [1],
                            '--planlocal': [0],
                            '--trials': [100],
-                           '--plan-with-policy': [1]}
+                           '--plan-with-policy': [1]},
+              
+              'redundant': {'--jic-limit': [18000],
+                            '--forgetpolicy': [0],
+                            '--fullstate': [0,1],
+                            '--planlocal': [0,1],
+                            '--trials': [100],
+                            '--plan-with-policy': [1]}
              }
 
 
@@ -74,21 +81,25 @@ def parse_prp(outfile):
 def parse_prp_settings(res):
     return ','.join([res.parameters[p] for p in ['--jic-limit', '--forgetpolicy', '--fullstate', '--planlocal', '--plan-with-policy']])
 
-def doit(domain, dofip = True, doprp = True, prp_params = PRP_PARAMS['all']):
+def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PARAMS['all']):
     
     if 'all' == domain:
         for dom in GOOD_DOMAINS:
             doit(dom, dofip, doprp, prp_params)
         return
 
-    dom_probs = DOMAINS[domain]
+    if redundant > 0:
+        dom_probs = REDUNDANT_DOMAINS[domain][redundant]
+        doit_prp("%s-redundant-%d" % (domain, redundant), dom_probs, PRP_PARAMS['redundant'])
     
-    if dofip:
-        doit_fip(domain, dom_probs)
-    
-    if doprp:
-        doit_prp(domain, dom_probs, prp_params)
-    
+    else:
+        dom_probs = DOMAINS[domain]
+        
+        if dofip:
+            doit_fip(domain, dom_probs)
+        
+        if doprp:
+            doit_prp(domain, dom_probs, prp_params)
 
 def doit_fip(domain, dom_probs):
     
@@ -200,3 +211,7 @@ if __name__ == '__main__':
     
     if 'fip-vs-prp' in flags:
         doit(myargs['-domain'], prp_params = PRP_PARAMS['best'])
+    
+    if 'redundant' in flags:
+        for i in REDUNDANT_DOMAINS[myargs['-domain']].keys():
+            doit(myargs['-domain'], redundant = i)

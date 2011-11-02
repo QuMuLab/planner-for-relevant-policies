@@ -1,8 +1,11 @@
 
 # Blocksworld
 blocks = []
+redundant_blocks = {}
 for i in range(1,31):
     blocks.append(("blocksworld/domain-fixed.pddl", "blocksworld/p%d.pddl" % i))
+for i in range(1,6):
+    redundant_blocks[i] = [("blocksworld/domain-redundant%d.pddl" % i, prob) for (dom,prob) in blocks]
 
 blocks_orig = []
 for i in range(1,31):
@@ -33,6 +36,10 @@ DOMAINS = {
     'faults': faults,
     'first' : first,
     'forest' : forest
+}
+
+REDUNDANT_DOMAINS = {
+    'blocksworld': redundant_blocks
 }
 
 GOOD_DOMAINS = ['blocksworld', 'blocksworld-orig', 'first', 'forest']
