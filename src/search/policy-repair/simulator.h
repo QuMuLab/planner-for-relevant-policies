@@ -45,7 +45,6 @@ public:
     Simulator(SearchEngine *eng, int argc, const char **argv, bool verb = true);
     
     void run();
-    void run_ffreplan(queue<const Operator *> &plan);
     bool replan();
     
     void set_state(State * s) { current_state = new State(*s); }
