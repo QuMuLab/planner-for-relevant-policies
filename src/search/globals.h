@@ -6,6 +6,7 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
+#include <map>
 
 class AxiomEvaluator;
 class CausalGraph;
@@ -16,8 +17,11 @@ class State;
 class SuccessorGenerator;
 class Timer;
 class RandomNumberGenerator;
+class Policy;
 
 bool test_goal(const State &state);
+bool test_policy(const State &state);
+
 void save_plan(const std::vector<const Operator *> &plan, int iter);
 int calculate_plan_cost(const std::vector<const Operator *> &plan);
 
@@ -54,5 +58,29 @@ extern CausalGraph *g_causal_graph;
 extern Timer g_timer;
 extern std::string g_plan_filename;
 extern RandomNumberGenerator g_rng;
+
+extern std::map<std::string, std::vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
+extern std::vector<std::pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
+extern int g_matched_distance; // Containts the distance to the goal for the matched policy
+extern Policy *g_policy; // The policy to check while searching
+extern int g_policy_size; // Size of the policy we create
+extern int g_failed_open_states; // Numer of states we cannot find a plan for
+extern bool g_silent_planning; // Silence the planning output
+extern bool g_forgetpolicy; // Forget the policy after every simulation run
+extern bool g_fullstate; // Use the full state for regression
+extern bool g_plan_locally; // Plan for the expected state rather than replanning to the goal
+extern bool g_plan_with_policy; // Stop planning when the policy matches
+extern bool g_seeded; // Used to make sure we only seed the rng once
+extern int g_num_trials; // Number of trials that should be used for the simulation
+extern double g_jic_limit; // Limit for the just-in-case repairs
+extern std::vector<std::pair<int, int> > g_goal_orig;
+
+/* Timers */
+extern Timer g_timer_regression;
+extern Timer g_timer_engine_init;
+extern Timer g_timer_search;
+extern Timer g_timer_policy_build;
+extern Timer g_timer_policy_eval;
+extern Timer g_timer_jit;
 
 #endif

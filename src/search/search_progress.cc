@@ -72,6 +72,8 @@ void SearchProgress::print_f_line() const {
 }
 
 void SearchProgress::print_h_line(int g) const {
+    if (g_silent_planning)
+        return;
     cout << "Best heuristic value: ";
     for (int i = 0; i < heuristics.size(); i++) {
         cout << best_heuristic_values[i];
@@ -84,6 +86,8 @@ void SearchProgress::print_h_line(int g) const {
 }
 
 void SearchProgress::print_line() const {
+    if (g_silent_planning)
+        return;
     cout << evaluated_states << " evaluated, "
          << expanded_states << " expanded, ";
     if (reopened_states > 0) {
@@ -93,6 +97,8 @@ void SearchProgress::print_line() const {
 }
 
 void SearchProgress::print_statistics() const {
+    if (g_silent_planning)
+        return;
     if (!initial_h_values.empty()) {
         // This will be skipped in the cumulative statistics of an
         // iterated search, which do not have initial h values.

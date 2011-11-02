@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <cstddef>
 
 // Implements a Successor Generator for abstract operators
 class AbstractOperator;
