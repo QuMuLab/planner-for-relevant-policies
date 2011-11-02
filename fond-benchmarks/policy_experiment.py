@@ -115,7 +115,7 @@ def doit_fip(domain, dom_probs):
         results_dir = "RESULTS/fip-%s" % domain,
         progress_file = None,
         processors = CORES,
-        sandbox = True,
+        sandbox = 'fip',
         output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.out'),
         error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.err')
     )
@@ -160,7 +160,7 @@ def doit_prp(domain, dom_probs, prp_params):
         results_dir = "RESULTS/prp-%s" % domain,
         progress_file = None,
         processors = CORES,
-        sandbox = True,
+        sandbox = 'prp',
         trials = TRIALS,
         output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.out'),
         error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.err')
