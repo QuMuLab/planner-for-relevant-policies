@@ -341,6 +341,9 @@ Policy::Policy(list<RegressionStep *> &reg_steps) {
     set<int> vars_seen;
     root = new GeneratorSwitch(reg_steps, vars_seen);
     g_timer_policy_build.stop();
+    
+    score = 0.0;
+    
 }
 
 void Policy::update_policy(list<RegressionStep *> &reg_steps) {
@@ -362,12 +365,12 @@ RegressionStep *Policy::get_best_step(const State &curr) {
     if (0 == root)
         return 0;
     
-    g_timer_policy_eval.resume();
+    g_timer_policy_use.resume();
     vector<RegressionStep *> current_steps;
     generate_applicable_steps(curr, current_steps);
     
     if (0 == current_steps.size()) {
-        g_timer_policy_eval.stop();
+        g_timer_policy_use.stop();
         return 0;
     }
     
@@ -380,12 +383,13 @@ RegressionStep *Policy::get_best_step(const State &curr) {
             best_index = i;
         }
     }
-    g_timer_policy_eval.stop();
+    g_timer_policy_use.stop();
     return current_steps[best_index];
 }
 
 Policy::Policy() {
     root = 0;
+    score = 0.0;
 }
 
 Policy::~Policy() {
@@ -400,3 +404,40 @@ void Policy::dump() const {
 void Policy::generate_cpp_input(ofstream &outfile) const {
     root->generate_cpp_input(outfile);
 }
+
+
+
+double Policy::get_score() {
+    if (0.0 == score)
+        evaluate();
+    return score;
+}
+
+void Policy::evaluate() {
+    if (1.0 == score)
+        return;
+    
+    g_timer_policy_eval.resume();
+    
+    //evaluate_analytical();
+    evaluate_random();
+    
+    g_timer_policy_eval.stop();
+}
+
+void Policy::evaluate_analytical() {
+    
+}
+
+void Policy::evaluate_random() {
+    Simulator *sim = new Simulator(false);
+    int succeeded = 0;
+    int NUMTRIALS = 1000;
+    for (int i = 0; i < NUMTRIALS; i++) {
+        sim->run_once(true, this);
+        if (sim->succeeded)
+            succeeded++;
+    }
+    score = double(succeeded) / double(NUMTRIALS);
+}
+

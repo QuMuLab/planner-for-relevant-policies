@@ -2,7 +2,14 @@
 #include "../option_parser.h"
 
 Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb) :
-                    engine(eng), argc(_argc), argv(_argv), verbose(verb), succeeded(false), found_solution(false) {
+                    engine(eng), argc(_argc), argv(_argv), verbose(verb), found_solution(false), succeeded(false) {
+    current_state = new State(*g_initial_state);
+    successful_states = 0;
+    failed_states = 0;
+    record_succeeded = 0;
+}
+
+Simulator::Simulator(bool verb) : verbose(verb), found_solution(false), succeeded(false) {
     current_state = new State(*g_initial_state);
     successful_states = 0;
     failed_states = 0;
@@ -31,7 +38,7 @@ void Simulator::record_stats() {
         record_succeeded++;
 }
 
-void Simulator::run_once() {
+void Simulator::run_once(bool stop_on_failure, Policy *pol) {
     found_solution = false;
     succeeded = false;
     RegressionStep * current_step;
@@ -46,14 +53,14 @@ void Simulator::run_once() {
     
     while(!found_solution) {
         // Get the best action (if any)
-        current_step = g_policy->get_best_step(*current_state);
+        current_step = pol->get_best_step(*current_state);
         
         if (current_step) {
             
             successful_states++;
             
             if (current_step->is_goal) {
-                if (verbose || (1 == g_num_trials))
+                if (verbose || ((1 == g_num_trials) && !stop_on_failure))
                     cout << "...achieved the goal!" << endl;
                 succeeded = true;
                 found_solution = true;
@@ -64,9 +71,10 @@ void Simulator::run_once() {
             
         } else {
             failed_states++;
-            if (!replan()) {
-                if (verbose || (1 == g_num_trials))
+            if (stop_on_failure || !replan()) {
+                if (verbose || ((1 == g_num_trials) && !stop_on_failure))
                     cout << "Got into a dead-end state..." << endl;
+                succeeded = false;
                 found_solution = true;
             }
         }
@@ -266,6 +274,7 @@ void Simulator::dump() {
     cout << "Actions: " << average(record_total_states) << " +/- " << standard_dev(record_total_states) << endl;
     cout << "State-Action Pairs: " << g_policy_size << endl;
     cout << "Strongly Cyclic: " << ((g_failed_open_states > 0) ? "False" : "True") << endl;
+    cout << "Policy Score: " << g_policy->get_score() << endl;
     cout << "Succeeded: " << record_succeeded << " / " << g_num_trials << endl;
     
     cout << "\n-{ Timing Statistics }-" << endl;
@@ -273,7 +282,8 @@ void Simulator::dump() {
     cout << "Engine Initialization: " << g_timer_engine_init << endl;
     cout << "Search Time: " << g_timer_search << endl;
     cout << "Policy Construction: " << g_timer_policy_build << endl;
-    cout << "Evaluating the policy: " << g_timer_policy_eval << endl;
+    cout << "Evaluating the policy quality: " << g_timer_policy_eval << endl;
+    cout << "Using the policy: " << g_timer_policy_use << endl;
     cout << "Just-in-case Repairs: " << g_timer_jit << endl;
     cout << "Total time: " << g_timer << endl;
 }

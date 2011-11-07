@@ -36,6 +36,7 @@ int main(int argc, const char **argv) {
     g_timer_search.stop();
     g_timer_policy_build.stop();
     g_timer_policy_eval.stop();
+    g_timer_policy_use.stop();
     g_timer_jit.stop();
     
     g_timer_regression.reset();
@@ -43,6 +44,7 @@ int main(int argc, const char **argv) {
     g_timer_search.reset();
     g_timer_policy_build.reset();
     g_timer_policy_eval.reset();
+    g_timer_policy_use.reset();
     g_timer_jit.reset();
 
     //the input will be parsed twice:
@@ -107,5 +109,5 @@ int main(int argc, const char **argv) {
     
     cout << "\n\n" << endl;
 
-    return sim->found_solution ? 0 : 1;
+    return sim->succeeded ? 0 : 1;
 }

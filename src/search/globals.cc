@@ -387,6 +387,7 @@ Timer g_timer_engine_init;
 Timer g_timer_search;
 Timer g_timer_policy_build;
 Timer g_timer_policy_eval;
+Timer g_timer_policy_use;
 Timer g_timer_jit;
 
 Timer g_timer;

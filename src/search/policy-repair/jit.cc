@@ -12,6 +12,7 @@ bool perform_jit_repairs(Simulator *sim) {
     State *current_state;
     State *current_goal;
     bool made_change = false;
+    g_failed_open_states = 0;
     
     State *old_initial_state = new State(*g_initial_state);
     
@@ -76,6 +77,9 @@ bool perform_jit_repairs(Simulator *sim) {
     
     if (!g_silent_planning)
         cout << "Could not close " << g_failed_open_states << " open leaf states." << endl;
+    if (0 == g_failed_open_states)
+        g_policy->mark_strong();
+    
     g_initial_state = old_initial_state;
     sim->set_state(g_initial_state);
     sim->set_goal(goal_orig);

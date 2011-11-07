@@ -9,6 +9,7 @@
 #include <map>
 
 #include "regression.h"
+#include "simulator.h"
 
 using namespace std;
 
@@ -22,6 +23,11 @@ class Policy {
     // typical idiom for classes with non-trivial destructors
     Policy(const Policy &copy);
     
+    double score;
+    
+    void evaluate_random();
+    void evaluate_analytical();
+    
 public:
     Policy();
     Policy(list<RegressionStep *> &reg_steps);
@@ -33,6 +39,11 @@ public:
     void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
     RegressionStep *get_best_step(const State &curr);
     bool empty() { return (0 == root); }
+    
+    void mark_strong() { score = 1.0; }
+    
+    void evaluate();
+    double get_score();
 };
 
 #endif

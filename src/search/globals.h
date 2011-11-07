@@ -81,6 +81,7 @@ extern Timer g_timer_engine_init;
 extern Timer g_timer_search;
 extern Timer g_timer_policy_build;
 extern Timer g_timer_policy_eval;
+extern Timer g_timer_policy_use;
 extern Timer g_timer_jit;
 
 #endif

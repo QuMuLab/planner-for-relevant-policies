@@ -35,16 +35,17 @@ class Simulator {
     vector<int> record_failed_states;
     vector<int> record_total_states;
     
-    void run_once();
     bool execute_action(const Operator *op);
     
     bool verbose;
-    bool succeeded;
+    bool found_solution;
     
 public:
     Simulator(SearchEngine *eng, int argc, const char **argv, bool verb = true);
+    Simulator(bool verb = true);
     
     void run();
+    void run_once(bool stop_on_failure = false, Policy *pol = g_policy);
     bool replan();
     
     void set_state(State * s) { current_state = new State(*s); }
@@ -55,7 +56,7 @@ public:
     
     SearchEngine * get_engine() { return engine; }
     
-    bool found_solution;
+    bool succeeded;
     
     void dump();
     
