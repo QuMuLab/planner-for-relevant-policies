@@ -11,6 +11,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
         Where <TASK> may be:
           full: Run all experiment parameters
           fip-vs-prp: Run a comparison between fip and the best setting for PRP
+          redundant: Run the comparison for domains that have redundancy
         """
 
 TRIALS = 10
@@ -116,8 +117,8 @@ def doit_fip(domain, dom_probs):
         progress_file = None,
         processors = CORES,
         sandbox = 'fip',
-        output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.out'),
-        error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.err')
+        output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+str(res.id)+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+str(res.id)+'.err')
     )
     
     timeouts = 0
@@ -162,8 +163,8 @@ def doit_prp(domain, dom_probs, prp_params):
         processors = CORES,
         sandbox = 'prp',
         trials = TRIALS,
-        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.out'),
-        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.err')
+        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+str(res.id)+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+str(res.id)+'.err')
     )
     
     timeouts = 0
