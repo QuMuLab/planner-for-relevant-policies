@@ -24,9 +24,12 @@ class Policy {
     Policy(const Policy &copy);
     
     double score;
+    int size;
     
     void evaluate_random();
     void evaluate_analytical();
+    
+    list<RegressionStep *> all_steps;
     
 public:
     Policy();
@@ -44,6 +47,7 @@ public:
     
     void evaluate();
     double get_score();
+    int get_size() { return all_steps.size(); }
 };
 
 #endif

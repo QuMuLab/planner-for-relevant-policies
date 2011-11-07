@@ -61,7 +61,6 @@ public:
 class GeneratorLeaf : public GeneratorBase {
     list<RegressionStep *> applicable_steps;
 public:
-    ~GeneratorLeaf();
     GeneratorLeaf(list<RegressionStep *> &reg_steps);
     virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
     virtual void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
@@ -104,16 +103,6 @@ GeneratorSwitch::~GeneratorSwitch() {
     for (int i = 0; i < generator_for_value.size(); i++)
         delete generator_for_value[i];
     delete default_generator;
-    
-    for (list<RegressionStep *>::const_iterator op_iter = immediate_steps.begin();
-         op_iter != immediate_steps.end(); ++op_iter)
-         delete *op_iter;
-}
-
-GeneratorLeaf::~GeneratorLeaf() {
-    for (list<RegressionStep *>::const_iterator op_iter = applicable_steps.begin();
-         op_iter != applicable_steps.end(); ++op_iter)
-         delete *op_iter;
 }
 
 void GeneratorSwitch::dump(string indent) const {
@@ -338,8 +327,11 @@ GeneratorBase *GeneratorEmpty::update_policy(list<RegressionStep *> &reg_steps, 
 
 Policy::Policy(list<RegressionStep *> &reg_steps) {
     g_timer_policy_build.resume();
+    
     set<int> vars_seen;
     root = new GeneratorSwitch(reg_steps, vars_seen);
+    all_steps = reg_steps;
+    
     g_timer_policy_build.stop();
     
     score = 0.0;
@@ -348,11 +340,14 @@ Policy::Policy(list<RegressionStep *> &reg_steps) {
 
 void Policy::update_policy(list<RegressionStep *> &reg_steps) {
     g_timer_policy_build.resume();
+    
     set<int> vars_seen;
     if (root)
         root->update_policy(reg_steps, vars_seen);
     else
         root = new GeneratorSwitch(reg_steps, vars_seen);
+    all_steps.insert(all_steps.end(), reg_steps.begin(), reg_steps.end());
+    
     g_timer_policy_build.stop();
 }
 
@@ -395,6 +390,10 @@ Policy::Policy() {
 Policy::~Policy() {
     if (root)
         delete root;
+    
+    for (list<RegressionStep *>::const_iterator op_iter = all_steps.begin();
+         op_iter != all_steps.end(); ++op_iter)
+         delete *op_iter;
 }
 
 void Policy::dump() const {
