@@ -190,7 +190,7 @@ bool Simulator::replan() {
             
             if (verbose)
                 cout << "Building the regression list." << endl;
-            list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
+            list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
             
             if (verbose)
                 cout << "Updating the policy." << endl;
@@ -231,7 +231,7 @@ bool Simulator::replan() {
                 if (engine->found_solution()) {
                     if (verbose)
                         cout << "Building the regression list." << endl;
-                    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
+                    list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
                     
                     if (verbose)
                         cout << "Updating the policy." << endl;

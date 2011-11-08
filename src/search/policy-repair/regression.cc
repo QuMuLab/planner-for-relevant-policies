@@ -14,16 +14,31 @@ void RegressionStep::dump() const {
     cout << "" << endl;
 }
 
-string RegressionStep::get_op_name() {
+string RegressionStep::get_name() {
     if (is_goal)
         return "goal";
     else
         return op->get_name();
 }
 
-list<RegressionStep *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal, int distance, bool create_goal) {
+void NondetDeadend::dump() const {
+    cout << "Non-deterministic deadend:" << endl;
+    cout << "Operator: " << op_name << endl;
+    cout << " -{ State }-" << endl;
+    state->dump();
+    cout << "" << endl;
+}
+
+string NondetDeadend::get_name() {
+    return op_name;
+}
+
+
+
+
+list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal, int distance, bool create_goal) {
     g_timer_regression.resume();
-    list<RegressionStep *> reg_steps;
+    list<PolicyItem *> reg_steps;
     State *s = new State(*g_initial_state);
     
     if (g_fullstate) {

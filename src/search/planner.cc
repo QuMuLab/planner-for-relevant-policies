@@ -82,7 +82,7 @@ int main(int argc, const char **argv) {
     Simulator *sim = new Simulator(engine, argc, argv, !g_silent_planning);
     
     cout << "\n\nRegressing the plan..." << endl;
-    list<RegressionStep *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
+    list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
     
     cout << "\n\nGenerating an initial policy..." << endl;
     g_policy = new Policy(regression_steps);

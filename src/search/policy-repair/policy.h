@@ -29,17 +29,17 @@ class Policy {
     void evaluate_random();
     void evaluate_analytical();
     
-    list<RegressionStep *> all_steps;
+    list<PolicyItem *> all_items;
     
 public:
     Policy();
-    Policy(list<RegressionStep *> &reg_steps);
+    Policy(list<PolicyItem *> &reg_items);
     ~Policy();
     void dump() const;
     void generate_cpp_input(ofstream &outfile) const;
     
-    void update_policy(list<RegressionStep *> &reg_steps);
-    void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
+    void update_policy(list<PolicyItem *> &reg_items);
+    void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items);
     RegressionStep *get_best_step(const State &curr);
     bool empty() { return (0 == root); }
     
@@ -47,7 +47,7 @@ public:
     
     void evaluate();
     double get_score();
-    int get_size() { return all_steps.size(); }
+    int get_size() { return all_items.size(); }
 };
 
 #endif

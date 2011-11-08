@@ -31,73 +31,73 @@ public:
     virtual ~GeneratorBase() {}
     virtual void dump(string indent) const = 0;
     virtual void generate_cpp_input(ofstream &outfile) const = 0;
-    virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) = 0;
-    virtual void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps) = 0;
+    virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen) = 0;
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items) = 0;
     
-    GeneratorBase *create_generator(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
-    int get_best_var(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
-    bool reg_step_done(RegressionStep *op_iter, set<int> &vars_seen);
+    GeneratorBase *create_generator(list<PolicyItem *> &reg_items, set<int> &vars_seen);
+    int get_best_var(list<PolicyItem *> &reg_items, set<int> &vars_seen);
+    bool reg_item_done(PolicyItem *item, set<int> &vars_seen);
 };
 
 class GeneratorSwitch : public GeneratorBase {
     int switch_var;
-    list<RegressionStep *> immediate_steps;
+    list<PolicyItem *> immediate_items;
     vector<GeneratorBase *> generator_for_value;
     GeneratorBase *default_generator;
     
 public:
     ~GeneratorSwitch();
     GeneratorSwitch(int switch_variable,
-                    list<RegressionStep *> &reg_steps,
+                    list<PolicyItem *> &reg_items,
                     const vector<GeneratorBase *> &gen_for_val,
                     GeneratorBase *default_gen);
-    GeneratorSwitch(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
-    virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
-    virtual void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
+    GeneratorSwitch(list<PolicyItem *> &reg_items, set<int> &vars_seen);
+    virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
 
 class GeneratorLeaf : public GeneratorBase {
-    list<RegressionStep *> applicable_steps;
+    list<PolicyItem *> applicable_items;
 public:
-    GeneratorLeaf(list<RegressionStep *> &reg_steps);
-    virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
-    virtual void generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps);
+    GeneratorLeaf(list<PolicyItem *> &reg_items);
+    virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
 
 class GeneratorEmpty : public GeneratorBase {
 public:
-    virtual GeneratorBase *update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen);
-    virtual void generate_applicable_steps(const State &, vector<RegressionStep *> &) {}
+    virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
+    virtual void generate_applicable_items(const State &, vector<PolicyItem *> &) {}
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
 
 
-void GeneratorSwitch::generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps) {
-    for (list<RegressionStep *>::iterator op_iter = immediate_steps.begin(); op_iter != immediate_steps.end(); ++op_iter)
-        reg_steps.push_back(*op_iter);
+void GeneratorSwitch::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items) {
+    for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter)
+        reg_items.push_back(*op_iter);
     
-    generator_for_value[curr[switch_var]]->generate_applicable_steps(curr, reg_steps);
-    default_generator->generate_applicable_steps(curr, reg_steps);
+    generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items);
+    default_generator->generate_applicable_items(curr, reg_items);
 }
 
-void GeneratorLeaf::generate_applicable_steps(const State &, vector<RegressionStep *> &reg_steps) {
-    for (list<RegressionStep *>::iterator op_iter = applicable_steps.begin(); op_iter != applicable_steps.end(); ++op_iter)
-        reg_steps.push_back(*op_iter);
+void GeneratorLeaf::generate_applicable_items(const State &, vector<PolicyItem *> &reg_items) {
+    for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter)
+        reg_items.push_back(*op_iter);
 }
 
 
 GeneratorSwitch::GeneratorSwitch(int switch_variable,
-                                 list<RegressionStep *> &reg_steps,
+                                 list<PolicyItem *> &reg_items,
                                  const vector<GeneratorBase *> &gen_for_val,
                                  GeneratorBase *default_gen)
     : switch_var(switch_variable),
       generator_for_value(gen_for_val),
-      default_generator(default_gen) { immediate_steps.swap(reg_steps); }
+      default_generator(default_gen) { immediate_items.swap(reg_items); }
 
 GeneratorSwitch::~GeneratorSwitch() {
     for (int i = 0; i < generator_for_value.size(); i++)
@@ -108,9 +108,9 @@ GeneratorSwitch::~GeneratorSwitch() {
 void GeneratorSwitch::dump(string indent) const {
     cout << indent << "switch on " << g_variable_name[switch_var] << endl;
     cout << indent << "immediately:" << endl;
-    for (list<RegressionStep *>::const_iterator op_iter = immediate_steps.begin();
-         op_iter != immediate_steps.end(); ++op_iter)
-        cout << indent << (*op_iter)->get_op_name() << endl;
+    for (list<PolicyItem *>::const_iterator op_iter = immediate_items.begin();
+         op_iter != immediate_items.end(); ++op_iter)
+        cout << indent << (*op_iter)->get_name() << endl;
     for (int i = 0; i < g_variable_domain[switch_var]; i++) {
         cout << indent << "case " << i << ":" << endl;
         generator_for_value[i]->dump(indent + "  ");
@@ -121,9 +121,9 @@ void GeneratorSwitch::dump(string indent) const {
 
 void GeneratorSwitch::generate_cpp_input(ofstream &outfile) const {
     outfile << "switch " << endl;
-    outfile << "check " << immediate_steps.size() << endl;
-    for (list<RegressionStep *>::const_iterator op_iter = immediate_steps.begin();
-         op_iter != immediate_steps.end(); ++op_iter)
+    outfile << "check " << immediate_items.size() << endl;
+    for (list<PolicyItem *>::const_iterator op_iter = immediate_items.begin();
+         op_iter != immediate_items.end(); ++op_iter)
         outfile << *op_iter << endl;
     for (int i = 0; i < g_variable_domain[switch_var]; i++) {
         //cout << "case "<<switch_var->get_name()<<" (Level " <<switch_var->get_level() <<
@@ -134,20 +134,20 @@ void GeneratorSwitch::generate_cpp_input(ofstream &outfile) const {
     default_generator->generate_cpp_input(outfile);
 }
 
-GeneratorLeaf::GeneratorLeaf(list<RegressionStep *> &steps) {
-    applicable_steps.swap(steps);
+GeneratorLeaf::GeneratorLeaf(list<PolicyItem *> &items) {
+    applicable_items.swap(items);
 }
 
 void GeneratorLeaf::dump(string indent) const {
-    for (list<RegressionStep *>::const_iterator op_iter = applicable_steps.begin();
-         op_iter != applicable_steps.end(); ++op_iter)
-        cout << indent << (*op_iter)->get_op_name() << endl;
+    for (list<PolicyItem *>::const_iterator op_iter = applicable_items.begin();
+         op_iter != applicable_items.end(); ++op_iter)
+        cout << indent << (*op_iter)->get_name() << endl;
 }
 
 void GeneratorLeaf::generate_cpp_input(ofstream &outfile) const {
-    outfile << "check " << applicable_steps.size() << endl;
-    for (list<RegressionStep *>::const_iterator op_iter = applicable_steps.begin();
-         op_iter != applicable_steps.end(); ++op_iter)
+    outfile << "check " << applicable_items.size() << endl;
+    for (list<PolicyItem *>::const_iterator op_iter = applicable_items.begin();
+         op_iter != applicable_items.end(); ++op_iter)
         outfile << *op_iter << endl;
 }
 
@@ -160,14 +160,14 @@ void GeneratorEmpty::generate_cpp_input(ofstream &outfile) const {
 }
 
 
-int GeneratorBase::get_best_var(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
+int GeneratorBase::get_best_var(list<PolicyItem *> &reg_items, set<int> &vars_seen) {
     vector< pair<int,int> > var_count = vector< pair<int,int> >(g_variable_name.size());
     
     for (int i = 0; i < g_variable_name.size(); i++) {
         var_count[i] = pair<int,int>(0, i);
     }
     
-    for (list<RegressionStep *>::iterator op_iter = reg_steps.begin(); op_iter != reg_steps.end(); ++op_iter) {
+    for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
         for (int i = 0; i < g_variable_name.size(); i++) {
             if (state_var_t(-1) != (*((*op_iter)->state))[i]) {
                 var_count[i].first++;
@@ -188,7 +188,7 @@ int GeneratorBase::get_best_var(list<RegressionStep *> &reg_steps, set<int> &var
     return -1;
 }
 
-bool GeneratorBase::reg_step_done(RegressionStep *op_iter, set<int> &vars_seen) {
+bool GeneratorBase::reg_item_done(PolicyItem *op_iter, set<int> &vars_seen) {
     for (int i = 0; i < g_variable_name.size(); i++) {
         if ((state_var_t(-1) != (*(op_iter->state))[i]) && (vars_seen.count(i) <= 0))
             return false;
@@ -197,77 +197,77 @@ bool GeneratorBase::reg_step_done(RegressionStep *op_iter, set<int> &vars_seen) 
     return true;
 }
 
-GeneratorBase *GeneratorBase::create_generator(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
-    if (reg_steps.empty())
+GeneratorBase *GeneratorBase::create_generator(list<PolicyItem *> &reg_items, set<int> &vars_seen) {
+    if (reg_items.empty())
         return new GeneratorEmpty;
     
-    // By this point, we are assuming that either /every/ reg_step is
-    //  done, or /no/ reg_step is done. Thus we only check the first.
-    if (reg_step_done(reg_steps.front(), vars_seen)) {
-        return new GeneratorLeaf(reg_steps);
+    // By this point, we are assuming that either /every/ reg_item is
+    //  done, or /no/ reg_item is done. Thus we only check the first.
+    if (reg_item_done(reg_items.front(), vars_seen)) {
+        return new GeneratorLeaf(reg_items);
     } else {
-        return new GeneratorSwitch(reg_steps, vars_seen);
+        return new GeneratorSwitch(reg_items, vars_seen);
     }
 }
 
-GeneratorSwitch::GeneratorSwitch(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
-    switch_var = get_best_var(reg_steps, vars_seen);
+GeneratorSwitch::GeneratorSwitch(list<PolicyItem *> &reg_items, set<int> &vars_seen) {
+    switch_var = get_best_var(reg_items, vars_seen);
     
-    vector< list<RegressionStep *> > value_steps;
-    list<RegressionStep *> default_steps;
+    vector< list<PolicyItem *> > value_items;
+    list<PolicyItem *> default_items;
     
-    // Initialize the value_steps
+    // Initialize the value_items
     for (int i = 0; i < g_variable_domain[switch_var]; i++)
-        value_steps.push_back(list<RegressionStep *>());
+        value_items.push_back(list<PolicyItem *>());
     
-    // Sort out the regression steps
-    for (list<RegressionStep *>::iterator op_iter = reg_steps.begin(); op_iter != reg_steps.end(); ++op_iter) {
-        if (reg_step_done(*op_iter, vars_seen)) {
-            immediate_steps.push_back(*op_iter);
+    // Sort out the regression items
+    for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
+        if (reg_item_done(*op_iter, vars_seen)) {
+            immediate_items.push_back(*op_iter);
         } else if (state_var_t(-1) != (*((*op_iter)->state))[switch_var]) {
-            value_steps[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
+            value_items[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
         } else { // == -1
-            default_steps.push_back(*op_iter);
+            default_items.push_back(*op_iter);
         }
     }
     
     vars_seen.insert(switch_var);
     
     // Create the switch generators
-    for (int i = 0; i < value_steps.size(); i++) {
-        generator_for_value.push_back(create_generator(value_steps[i], vars_seen));
+    for (int i = 0; i < value_items.size(); i++) {
+        generator_for_value.push_back(create_generator(value_items[i], vars_seen));
     }
     
     // Create the default generator
-    default_generator = create_generator(default_steps, vars_seen);
+    default_generator = create_generator(default_items, vars_seen);
     
     vars_seen.erase(switch_var);
 }
 
-GeneratorBase *GeneratorSwitch::update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
-    vector< list<RegressionStep *> > value_steps;
-    list<RegressionStep *> default_steps;
+GeneratorBase *GeneratorSwitch::update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen) {
+    vector< list<PolicyItem *> > value_items;
+    list<PolicyItem *> default_items;
     
-    // Initialize the value_steps
+    // Initialize the value_items
     for (int i = 0; i < g_variable_domain[switch_var]; i++)
-        value_steps.push_back(list<RegressionStep *>());
+        value_items.push_back(list<PolicyItem *>());
     
-    // Sort out the regression steps
-    for (list<RegressionStep *>::iterator op_iter = reg_steps.begin(); op_iter != reg_steps.end(); ++op_iter) {
-        if (reg_step_done(*op_iter, vars_seen)) {
-            immediate_steps.push_back(*op_iter);
+    // Sort out the regression items
+    for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
+        if (reg_item_done(*op_iter, vars_seen)) {
+            immediate_items.push_back(*op_iter);
         } else if (state_var_t(-1) != (*((*op_iter)->state))[switch_var]) {
-            value_steps[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
+            value_items[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
         } else { // == -1
-            default_steps.push_back(*op_iter);
+            default_items.push_back(*op_iter);
         }
     }
     
     vars_seen.insert(switch_var);
     
     // Update the switch generators
-    for (int i = 0; i < value_steps.size(); i++) {
-        GeneratorBase *newGen = generator_for_value[i]->update_policy(value_steps[i], vars_seen);
+    for (int i = 0; i < value_items.size(); i++) {
+        GeneratorBase *newGen = generator_for_value[i]->update_policy(value_items[i], vars_seen);
         if (NULL != newGen) {
             delete generator_for_value[i];
             generator_for_value[i] = newGen;
@@ -275,7 +275,7 @@ GeneratorBase *GeneratorSwitch::update_policy(list<RegressionStep *> &reg_steps,
     }
     
     // Update the default generator
-    GeneratorBase *newGen = default_generator->update_policy(default_steps, vars_seen);
+    GeneratorBase *newGen = default_generator->update_policy(default_items, vars_seen);
     if (NULL != newGen) {
         delete default_generator;
         default_generator = newGen;
@@ -286,51 +286,51 @@ GeneratorBase *GeneratorSwitch::update_policy(list<RegressionStep *> &reg_steps,
     return NULL;
 }
 
-GeneratorBase *GeneratorLeaf::update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
-    if (reg_steps.empty())
+GeneratorBase *GeneratorLeaf::update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen) {
+    if (reg_items.empty())
         return NULL;
     
     bool all_done = true;
-    for (list<RegressionStep *>::iterator op_iter = reg_steps.begin(); op_iter != reg_steps.end(); ++op_iter) {
-        if (!reg_step_done(*op_iter, vars_seen)) {
+    for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
+        if (!reg_item_done(*op_iter, vars_seen)) {
             all_done = false;
             break;
         }
     }
     
     if (all_done) {
-        applicable_steps.splice(applicable_steps.end(), reg_steps);
+        applicable_items.splice(applicable_items.end(), reg_items);
         return NULL;
     } else {
-        reg_steps.splice(reg_steps.end(), applicable_steps);
-        return new GeneratorSwitch(reg_steps, vars_seen);
+        reg_items.splice(reg_items.end(), applicable_items);
+        return new GeneratorSwitch(reg_items, vars_seen);
     }
 }
 
-GeneratorBase *GeneratorEmpty::update_policy(list<RegressionStep *> &reg_steps, set<int> &vars_seen) {
-    if (reg_steps.empty())
+GeneratorBase *GeneratorEmpty::update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen) {
+    if (reg_items.empty())
         return NULL;
     
     bool all_done = true;
-    for (list<RegressionStep *>::iterator op_iter = reg_steps.begin(); op_iter != reg_steps.end(); ++op_iter) {
-        if (!reg_step_done(*op_iter, vars_seen)) {
+    for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
+        if (!reg_item_done(*op_iter, vars_seen)) {
             all_done = false;
             break;
         }
     }
     
     if (all_done)
-        return new GeneratorLeaf(reg_steps);
+        return new GeneratorLeaf(reg_items);
     else
-        return new GeneratorSwitch(reg_steps, vars_seen);
+        return new GeneratorSwitch(reg_items, vars_seen);
 }
 
-Policy::Policy(list<RegressionStep *> &reg_steps) {
+Policy::Policy(list<PolicyItem *> &reg_items) {
     g_timer_policy_build.resume();
     
     set<int> vars_seen;
-    root = new GeneratorSwitch(reg_steps, vars_seen);
-    all_steps = reg_steps;
+    root = new GeneratorSwitch(reg_items, vars_seen);
+    all_items = reg_items;
     
     g_timer_policy_build.stop();
     
@@ -338,21 +338,21 @@ Policy::Policy(list<RegressionStep *> &reg_steps) {
     
 }
 
-void Policy::update_policy(list<RegressionStep *> &reg_steps) {
+void Policy::update_policy(list<PolicyItem *> &reg_items) {
     g_timer_policy_build.resume();
     
     set<int> vars_seen;
     if (root)
-        root->update_policy(reg_steps, vars_seen);
+        root->update_policy(reg_items, vars_seen);
     else
-        root = new GeneratorSwitch(reg_steps, vars_seen);
-    all_steps.insert(all_steps.end(), reg_steps.begin(), reg_steps.end());
+        root = new GeneratorSwitch(reg_items, vars_seen);
+    all_items.insert(all_items.end(), reg_items.begin(), reg_items.end());
     
     g_timer_policy_build.stop();
 }
 
-void Policy::generate_applicable_steps(const State &curr, vector<RegressionStep *> &reg_steps) {
-    root->generate_applicable_steps(curr, reg_steps);
+void Policy::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items) {
+    root->generate_applicable_items(curr, reg_items);
 }
 
 RegressionStep *Policy::get_best_step(const State &curr) {
@@ -361,8 +361,8 @@ RegressionStep *Policy::get_best_step(const State &curr) {
         return 0;
     
     g_timer_policy_use.resume();
-    vector<RegressionStep *> current_steps;
-    generate_applicable_steps(curr, current_steps);
+    vector<PolicyItem *> current_steps;
+    generate_applicable_items(curr, current_steps);
     
     if (0 == current_steps.size()) {
         g_timer_policy_use.stop();
@@ -370,16 +370,16 @@ RegressionStep *Policy::get_best_step(const State &curr) {
     }
     
     int best_index = 0;
-    int best_val = current_steps[0]->distance;
+    int best_val = ((RegressionStep*)(current_steps[0]))->distance;
     
     for (int i = 0; i < current_steps.size(); i++) {
-        if (current_steps[i]->distance < best_val) {
-            best_val = current_steps[i]->distance;
+        if (((RegressionStep*)(current_steps[i]))->distance < best_val) {
+            best_val = ((RegressionStep*)(current_steps[i]))->distance;
             best_index = i;
         }
     }
     g_timer_policy_use.stop();
-    return current_steps[best_index];
+    return (RegressionStep*)(current_steps[best_index]);
 }
 
 Policy::Policy() {
@@ -391,8 +391,8 @@ Policy::~Policy() {
     if (root)
         delete root;
     
-    for (list<RegressionStep *>::const_iterator op_iter = all_steps.begin();
-         op_iter != all_steps.end(); ++op_iter)
+    for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
+         op_iter != all_items.end(); ++op_iter)
          delete *op_iter;
 }
 
