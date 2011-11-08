@@ -64,12 +64,14 @@ extern std::vector<std::pair<int, int> > g_matched_policy; // Contains the condi
 extern int g_matched_distance; // Containts the distance to the goal for the matched policy
 extern Policy *g_policy; // The policy to check while searching
 extern Policy *g_regressable_ops; // The policy to check what operators are applicable
+extern Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_silent_planning; // Silence the planning output
 extern bool g_forgetpolicy; // Forget the policy after every simulation run
 extern bool g_fullstate; // Use the full state for regression
 extern bool g_plan_locally; // Plan for the expected state rather than replanning to the goal
 extern bool g_plan_with_policy; // Stop planning when the policy matches
+extern bool g_detect_deadends; // Decide whether or not deadends should be detected and avoided
 extern bool g_seeded; // Used to make sure we only seed the rng once
 extern int g_num_trials; // Number of trials that should be used for the simulation
 extern double g_jic_limit; // Limit for the just-in-case repairs

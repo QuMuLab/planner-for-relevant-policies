@@ -108,6 +108,7 @@ HEADERS += policy-repair/regression.h \
            policy-repair/policy.h \
            policy-repair/simulator.h \
            policy-repair/jit.h \
+           policy-repair/deadend.h \
 
 SHELL = /bin/bash
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)

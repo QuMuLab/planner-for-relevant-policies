@@ -220,12 +220,23 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--plan-with-policy") == 0) {
             ++i;
             g_plan_with_policy = (1 == atoi(argv[i]));
+        } else if (arg.compare("--detect-deadends") == 0) {
+            ++i;
+            g_detect_deadends = (1 == atoi(argv[i]));
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;
             exit(1);
         }
     }
+    
+    /* HAZ: Unfortunately, this must go here (as supposed to globals.cc)
+     *      since we need to know if g_detect_deadends is true or not. */
+    if (g_detect_deadends) {
+        generate_regressable_ops();
+        g_deadend_policy = new Policy();
+    }
+    
     return engine;
 }
 
@@ -261,6 +272,8 @@ string OptionParser::usage(string progname) {
         "    Stop searching when the policy matches the current state.\n\n"
         "--trials NUM_TRIALS\n"
         "    Number of trials to run for the simulator.\n\n"
+        "--detect-deadends 1/0\n"
+        "    Use primitive deadend detection to ensure a strongly cyclic solution.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }

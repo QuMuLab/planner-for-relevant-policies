@@ -13,14 +13,12 @@ bool perform_jit_repairs(Simulator *sim) {
     State *current_goal;
     bool made_change = false;
     g_failed_open_states = 0;
+    vector<State *> failed_states;
     
     State *old_initial_state = new State(*g_initial_state);
     
     // Build the goal state
-    State *goal_orig = new State(*g_initial_state);
-    for (int i = 0; i < g_variable_name.size(); i++) {
-        (*goal_orig)[i] = state_var_t(-1);
-    }
+    State *goal_orig = new State();
     for (int i = 0; i < g_goal.size(); i++) {
         (*goal_orig)[g_goal[i].first] = state_var_t(g_goal[i].second);
     }
@@ -68,6 +66,7 @@ bool perform_jit_repairs(Simulator *sim) {
                 }
                 
             } else {
+                failed_states.push_back(current_state);
                 g_failed_open_states++;
             }
         }
@@ -79,6 +78,8 @@ bool perform_jit_repairs(Simulator *sim) {
         cout << "Could not close " << g_failed_open_states << " open leaf states." << endl;
     if (0 == g_failed_open_states)
         g_policy->mark_strong();
+    if (g_detect_deadends)
+        update_deadends(failed_states);
     
     g_initial_state = old_initial_state;
     sim->set_state(g_initial_state);

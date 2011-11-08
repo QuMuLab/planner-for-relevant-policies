@@ -15,6 +15,7 @@
 #include "policy.h"
 #include "regression.h"
 #include "simulator.h"
+#include "deadend.h"
 
 struct UnhandledState {
     State *state;

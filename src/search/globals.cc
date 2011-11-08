@@ -290,8 +290,6 @@ void read_everything(istream &in) {
     for (int i = 0; i < g_operators.size(); i++) {
         g_nondet_mapping[g_operators[i].get_nondet_name()].push_back(&g_operators[i]);
     }
-    
-    generate_regressable_ops();
 }
 
 void dump_everything() {
@@ -374,12 +372,14 @@ vector<pair<int, int> > g_matched_policy; // Contains the condition that matched
 int g_matched_distance; // Containts the distance to the goal for the matched policy
 Policy *g_policy; // The policy to check while searching
 Policy *g_regressable_ops; // The policy to check what operators are applicable
+Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 int g_failed_open_states = 0;
 bool g_silent_planning = false;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run
 bool g_fullstate = false; // Use the full state for regression
 bool g_plan_locally = false; // Plan for the expected state rather than replanning to the goal
 bool g_plan_with_policy = true; // Stop planning when the policy matches
+bool g_detect_deadends = false; // Decide whether or not deadends should be detected and avoided
 bool g_seeded = false; // Only want to seed once
 int g_num_trials = 1; // Number of trials that should be used for the simulation
 double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
