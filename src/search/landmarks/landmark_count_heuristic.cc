@@ -2,6 +2,7 @@
 
 #include "../plugin.h"
 #include "../successor_generator.h"
+#include "../policy-repair/deadend.h"
 
 #include <cmath>
 #include <ext/hash_map>

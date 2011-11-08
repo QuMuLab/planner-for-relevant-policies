@@ -188,6 +188,12 @@ bool Simulator::replan() {
         
         if (engine->found_solution()) {
             
+            if (verbose) {
+                engine->save_plan_if_necessary();
+                engine->statistics();
+                engine->heuristic_statistics();
+            }
+            
             if (verbose)
                 cout << "Building the regression list." << endl;
             list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
@@ -229,6 +235,13 @@ bool Simulator::replan() {
                 g_timer_search.stop();
                 
                 if (engine->found_solution()) {
+                    
+                    if (verbose) {
+                        engine->save_plan_if_necessary();
+                        engine->statistics();
+                        engine->heuristic_statistics();
+                    }
+                    
                     if (verbose)
                         cout << "Building the regression list." << endl;
                     list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());

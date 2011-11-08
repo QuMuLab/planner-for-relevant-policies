@@ -4,6 +4,7 @@
 #include "heuristic.h"
 #include "option_parser.h"
 #include "successor_generator.h"
+#include "policy-repair/deadend.h"
 #include "g_evaluator.h"
 #include "sum_evaluator.h"
 #include "plugin.h"

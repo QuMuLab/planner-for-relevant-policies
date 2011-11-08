@@ -230,13 +230,6 @@ SearchEngine *OptionParser::parse_cmd_line(
         }
     }
     
-    /* HAZ: Unfortunately, this must go here (as supposed to globals.cc)
-     *      since we need to know if g_detect_deadends is true or not. */
-    if (g_detect_deadends) {
-        generate_regressable_ops();
-        g_deadend_policy = new Policy();
-    }
-    
     return engine;
 }
 

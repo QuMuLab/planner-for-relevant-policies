@@ -18,6 +18,7 @@ class SuccessorGenerator;
 class Timer;
 class RandomNumberGenerator;
 class Policy;
+class DeadendAwareSuccessorGenerator;
 
 bool test_goal(const State &state);
 bool test_policy(const State &state);
@@ -52,12 +53,15 @@ extern std::vector<std::pair<int, int> > g_goal;
 extern std::vector<Operator> g_operators;
 extern std::vector<Operator> g_axioms;
 extern AxiomEvaluator *g_axiom_evaluator;
-extern SuccessorGenerator *g_successor_generator;
 extern std::vector<DomainTransitionGraph *> g_transition_graphs;
 extern CausalGraph *g_causal_graph;
 extern Timer g_timer;
 extern std::string g_plan_filename;
 extern RandomNumberGenerator g_rng;
+
+extern SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can be pruned based on deadends
+extern DeadendAwareSuccessorGenerator *g_successor_generator;
+
 
 extern std::map<std::string, std::vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
 extern std::vector<std::pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
@@ -65,6 +69,8 @@ extern int g_matched_distance; // Containts the distance to the goal for the mat
 extern Policy *g_policy; // The policy to check while searching
 extern Policy *g_regressable_ops; // The policy to check what operators are applicable
 extern Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
+extern Policy *g_best_policy; // The best policy we've found so far
+extern double g_best_policy_score; // Score for the best policy we've seen so far
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_silent_planning; // Silence the planning output
 extern bool g_forgetpolicy; // Forget the policy after every simulation run

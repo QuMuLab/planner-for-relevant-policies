@@ -24,6 +24,7 @@ using namespace __gnu_cxx;
 #include "timer.h"
 #include "policy-repair/policy.h"
 #include "policy-repair/regression.h"
+#include "policy-repair/deadend.h"
 
 
 static const int PRE_FILE_VERSION = 3;
@@ -282,7 +283,7 @@ void read_everything(istream &in) {
     read_operators(in);
     read_axioms(in);
     check_magic(in, "begin_SG");
-    g_successor_generator = read_successor_generator(in);
+    g_successor_generator_orig = read_successor_generator(in);
     check_magic(in, "end_SG");
     DomainTransitionGraph::read_all(in);
     g_causal_graph = new CausalGraph(in);
@@ -363,9 +364,11 @@ vector<pair<int, int> > g_goal;
 vector<Operator> g_operators;
 vector<Operator> g_axioms;
 AxiomEvaluator *g_axiom_evaluator;
-SuccessorGenerator *g_successor_generator;
 vector<DomainTransitionGraph *> g_transition_graphs;
 CausalGraph *g_causal_graph;
+
+SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can be pruned based on deadends
+DeadendAwareSuccessorGenerator *g_successor_generator;
 
 map<string, vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
 vector<pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
@@ -373,7 +376,9 @@ int g_matched_distance; // Containts the distance to the goal for the matched po
 Policy *g_policy; // The policy to check while searching
 Policy *g_regressable_ops; // The policy to check what operators are applicable
 Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
-int g_failed_open_states = 0;
+Policy *g_best_policy; // The best policy we've found so far
+double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
+int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
 bool g_silent_planning = false;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run
 bool g_fullstate = false; // Use the full state for regression

@@ -352,7 +352,8 @@ void Policy::update_policy(list<PolicyItem *> &reg_items) {
 }
 
 void Policy::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items) {
-    root->generate_applicable_items(curr, reg_items);
+    if (root)
+        root->generate_applicable_items(curr, reg_items);
 }
 
 RegressionStep *Policy::get_best_step(const State &curr) {

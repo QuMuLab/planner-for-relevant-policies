@@ -66,23 +66,72 @@ bool perform_jit_repairs(Simulator *sim) {
                 }
                 
             } else {
-                failed_states.push_back(current_state);
+                if (g_detect_deadends)
+                    failed_states.push_back(current_state);
                 g_failed_open_states++;
+                
+                // This only matches when no strong cyclic solution exists
+                if (current_state == old_initial_state) {
+                    if (!g_silent_planning) {
+                        cout << "Found the initial state to be a failed one. No strong cyclic plan exists." << endl;
+                        cout << "Using the best policy found, with a score of " << g_best_policy_score << endl;
+                    }
+                    g_initial_state = old_initial_state;
+                    sim->set_state(g_initial_state);
+                    sim->set_goal(goal_orig);
+                    
+                    // Use the best policy we've found so far
+                    delete g_policy;
+                    g_policy = g_best_policy;
+                    
+                    // Return false so jic stops
+                    return false;
+                }
             }
         }
         //delete current_state;
         //delete current_goal; // Current_goal goes into many tuples -- memory leak here
     }
     
-    if (!g_silent_planning)
-        cout << "Could not close " << g_failed_open_states << " open leaf states." << endl;
-    if (0 == g_failed_open_states)
-        g_policy->mark_strong();
-    if (g_detect_deadends)
-        update_deadends(failed_states);
-    
     g_initial_state = old_initial_state;
     sim->set_state(g_initial_state);
     sim->set_goal(goal_orig);
+    
+    if (!g_silent_planning)
+        cout << "Could not close " << g_failed_open_states << " open leaf states." << endl;
+        
+    if (0 == g_failed_open_states)
+        g_policy->mark_strong();
+        
+    if (g_detect_deadends && (g_failed_open_states > 0)) {
+        
+        update_deadends(failed_states);
+        
+        double cur_score = g_policy->get_score();
+        if (cur_score > g_best_policy_score) {
+            
+            if (!g_silent_planning)
+                cout << "Found a better policy of score " << g_best_policy_score << endl;
+            
+            if (g_best_policy)
+                delete g_best_policy;
+            
+            g_best_policy_score = cur_score;
+            g_best_policy = g_policy;
+            
+        } else {
+            
+            if (!g_silent_planning)
+                cout << "Went through another policy of score " << cur_score << endl;
+            
+            delete g_policy;
+        }
+        
+        g_policy = new Policy();
+        
+        made_change = true;
+    }
+    
+    
     return made_change;
 }

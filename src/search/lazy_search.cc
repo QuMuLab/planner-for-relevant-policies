@@ -3,6 +3,7 @@
 #include "g_evaluator.h"
 #include "heuristic.h"
 #include "successor_generator.h"
+#include "policy-repair/deadend.h"
 #include "sum_evaluator.h"
 #include "weighted_evaluator.h"
 #include "plugin.h"

@@ -1,5 +1,6 @@
 #include "probe_state_space_sample.h"
 #include "../successor_generator.h"
+#include "../policy-repair/deadend.h"
 #include "../heuristic.h"
 #include <limits>
 #include <cassert>

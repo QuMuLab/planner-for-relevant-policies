@@ -60,6 +60,13 @@ int main(int argc, const char **argv) {
     }
     g_timer_engine_init.stop();
     
+    /* HAZ: Unfortunately, this must go here (as supposed to globals.cc)
+     *      since we need to know if g_detect_deadends is true or not. */
+    if (g_detect_deadends) {
+        generate_regressable_ops();
+        g_deadend_policy = new Policy();
+    }
+    
     g_timer_search.resume();
     engine->search();
     g_timer_search.stop();
@@ -86,6 +93,8 @@ int main(int argc, const char **argv) {
     
     cout << "\n\nGenerating an initial policy..." << endl;
     g_policy = new Policy(regression_steps);
+    g_best_policy = g_policy;
+    g_best_policy_score = g_policy->get_score();
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
     g_timer_jit.resume();
