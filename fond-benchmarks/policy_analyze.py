@@ -1,6 +1,6 @@
 
 from krrt.utils import get_opts, match_value, get_value, load_CSV, write_file, append_file, read_file
-from krrt.stats.plots import plot
+from krrt.stats.plots import plot, create_time_profile
 from krrt.stats import anova
 
 from domains import GOOD_DOMAINS
@@ -83,6 +83,11 @@ def prp_compare_two(domain, type1, type2):
         for dom in GOOD_DOMAINS:
             prp_data.extend(load_CSV("RESULTS/prp-%s-results.csv" % dom))
     
+    elif 'all-redundant' == domain:
+        prp_data = []
+        for i in range(1, 6):
+            prp_data.extend(load_CSV("RESULTS/prp-blocksworld-redundant-%d-results.csv" % i))
+    
     else:
         prp_data = load_CSV("RESULTS/prp-%s-results.csv" % domain)
     
@@ -133,6 +138,11 @@ def prp_compare_two(domain, type1, type2):
     
     plot([item[0] for item in size_data], [item[1] for item in size_data],
          x_label = "PRPv1 Policy Size", y_label = "PRPv2 Policy Size", graph_name = "%s (Size)" % domain, makesquare = True, x_log = True, y_log = True)
+    
+    x1,y1 = create_time_profile([item[0] for item in time_data])
+    x2,y2 = create_time_profile([item[1] for item in time_data])
+    plot([x1,x2], [y1,y2], x_label = "Time", y_label = "Problems Solved", no_scatter = True,
+         xyline = False, legend_name = "Method", names = ["FIP", "PRP"], x_log = True)
     
     print
 
@@ -196,6 +206,11 @@ def fip_vs_prp(domain):
     
     plot([item[0] for item in size_data], [item[1] for item in size_data],
          x_label = "FIP Policy Size", y_label = "PRP Policy Size", graph_name = "FIP -vs- PRP: %s (Size)" % domain, makesquare = True)
+    
+    x1,y1 = create_time_profile([item[0] for item in time_data])
+    x2,y2 = create_time_profile([item[1] for item in time_data])
+    plot([x1,x2], [y1,y2], x_label = "Time", y_label = "Problems Solved", no_scatter = True,
+         xyline = False, legend_name = "Method", names = ["FIP", "PRP"], x_log = True)
     
     print
 
