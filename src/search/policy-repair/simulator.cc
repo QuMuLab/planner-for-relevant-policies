@@ -113,6 +113,11 @@ void Simulator::reset_goal() {
 }
 
 bool Simulator::replan() {
+    
+    // If the policy is complete, searching further won't help us
+    if (g_policy->is_complete())
+        return false;
+    
     if (verbose)
         cout << "\nRequired to replan..." << endl;
 

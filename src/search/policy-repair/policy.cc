@@ -335,6 +335,7 @@ Policy::Policy(list<PolicyItem *> &reg_items) {
     g_timer_policy_build.stop();
     
     score = 0.0;
+    complete = false;
     
 }
 
@@ -386,6 +387,7 @@ RegressionStep *Policy::get_best_step(const State &curr) {
 Policy::Policy() {
     root = 0;
     score = 0.0;
+    complete = false;
 }
 
 Policy::~Policy() {

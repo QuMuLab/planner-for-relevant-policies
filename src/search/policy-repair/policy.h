@@ -24,6 +24,7 @@ class Policy {
     Policy(const Policy &copy);
     
     double score;
+    bool complete;
     int size;
     
     void evaluate_random();
@@ -44,10 +45,12 @@ public:
     bool empty() { return (0 == root); }
     
     void mark_strong() { score = 1.0; }
+    void mark_complete() { complete = true; }
     
     void evaluate();
     double get_score();
     int get_size() { return all_items.size(); }
+    bool is_complete() { return complete; }
 };
 
 #endif
