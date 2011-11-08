@@ -1,5 +1,5 @@
 #include "regression.h"
-
+#include "policy.h"
 
 void RegressionStep::dump() const {
     cout << "Regression Step (" << distance << ")" << endl;
@@ -21,6 +21,7 @@ string RegressionStep::get_name() {
         return op->get_name();
 }
 
+
 void NondetDeadend::dump() const {
     cout << "Non-deterministic deadend:" << endl;
     cout << "Operator: " << op_name << endl;
@@ -33,6 +34,19 @@ string NondetDeadend::get_name() {
     return op_name;
 }
 
+
+void RegressableOperator::dump() const {
+    cout << "Regressable operator:" << endl;
+    cout << " -{ Operator }-" << endl;
+    op->dump();
+    cout << " -{ State }-" << endl;
+    state->dump();
+    cout << "" << endl;
+}
+
+string RegressableOperator::get_name() {
+    return op->get_name();
+}
 
 
 
@@ -102,3 +116,23 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
     g_timer_regression.stop();
     return reg_steps;
 }
+
+void generate_regressable_ops() {
+    list<PolicyItem *> reg_steps;
+    State *s;
+    for (int i = 0; i < g_operators.size(); i++) {
+        s = new State();
+        // Only applicable if the prevail and post conditions currently hold.
+        for (int j = 0; j < g_operators[i].get_pre_post().size(); j++) {
+            (*s)[g_operators[i].get_pre_post()[j].var] = state_var_t(g_operators[i].get_pre_post()[j].post);
+        }
+        
+        for (int j = 0; j < g_operators[i].get_prevail().size(); j++) {
+            (*s)[g_operators[i].get_prevail()[j].var] = state_var_t(g_operators[i].get_prevail()[j].prev);
+        }
+        
+        reg_steps.push_back(new RegressableOperator(g_operators[i], s));
+    }
+    g_regressable_ops = new Policy(reg_steps);
+}
+

@@ -49,6 +49,12 @@ State::State(istream &in) {
     g_default_axiom_values.assign(vars, vars + g_variable_domain.size());
 }
 
+State::State() {
+    _allocate();
+    for (int i = 0; i < g_variable_domain.size(); i++)
+        vars[i] = state_var_t(-1);
+}
+
 State::State(const State &state) {
     _allocate();
     _copy_buffer_from_state(state);

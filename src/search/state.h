@@ -18,6 +18,7 @@ class State {
 
 public:
     explicit State(istream &in);
+    State(); // Creates a state with -1 values for everything
     State(const State &state);
     State(const State &predecessor, const Operator &op, bool progress=true);
     ~State();

@@ -23,6 +23,7 @@ using namespace __gnu_cxx;
 #include "successor_generator.h"
 #include "timer.h"
 #include "policy-repair/policy.h"
+#include "policy-repair/regression.h"
 
 
 static const int PRE_FILE_VERSION = 3;
@@ -289,6 +290,8 @@ void read_everything(istream &in) {
     for (int i = 0; i < g_operators.size(); i++) {
         g_nondet_mapping[g_operators[i].get_nondet_name()].push_back(&g_operators[i]);
     }
+    
+    generate_regressable_ops();
 }
 
 void dump_everything() {
@@ -370,6 +373,7 @@ map<string, vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic a
 vector<pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
 int g_matched_distance; // Containts the distance to the goal for the matched policy
 Policy *g_policy; // The policy to check while searching
+Policy *g_regressable_ops; // The policy to check what operators are applicable
 int g_failed_open_states = 0;
 bool g_silent_planning = false;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run

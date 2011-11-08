@@ -29,6 +29,17 @@ struct NondetDeadend : PolicyItem {
     void dump() const;
 };
 
+struct RegressableOperator : PolicyItem {
+    const Operator *op;
+    
+    RegressableOperator(const Operator &o, State *s) : PolicyItem(s), op(&o) {}
+    
+    ~RegressableOperator() {}
+    
+    string get_name();
+    void dump() const;
+};
+
 struct RegressionStep : PolicyItem {
     const Operator *op;
     int distance;
@@ -42,6 +53,8 @@ struct RegressionStep : PolicyItem {
     string get_name();
     void dump() const;
 };
+
+void generate_regressable_ops();
 
 list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal, int distance, bool create_goal = false);
 
