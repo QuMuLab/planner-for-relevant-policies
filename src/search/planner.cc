@@ -65,6 +65,7 @@ int main(int argc, const char **argv) {
     if (g_detect_deadends) {
         generate_regressable_ops();
         g_deadend_policy = new Policy();
+        g_deadend_states = new Policy();
     }
     
     g_timer_search.resume();

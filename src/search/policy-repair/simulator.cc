@@ -118,6 +118,14 @@ bool Simulator::replan() {
     if (g_policy->is_complete())
         return false;
     
+    // If we are detecting deadends, and know this is one, don't even try
+    if (g_detect_deadends) {
+        vector<PolicyItem *> reg_items;
+        g_deadend_states->generate_applicable_items(*current_state, reg_items);
+        if (reg_items.size() > 0)
+            return false;
+    }
+    
     if (verbose)
         cout << "\nRequired to replan..." << endl;
 

@@ -2,6 +2,8 @@
 
 void update_deadends(vector<State *> &failed_states) {
     list<PolicyItem *> de_items;
+    list<PolicyItem *> de_states;
+    
     for (int i = 0; i < failed_states.size(); i++) {
         // Get the regressable operators for the given state.
         vector<PolicyItem *> reg_items;
@@ -12,9 +14,12 @@ void update_deadends(vector<State *> &failed_states) {
             RegressableOperator *ro = (RegressableOperator*)(reg_items[j]);
             de_items.push_back(new NondetDeadend(new State(*(failed_states[i]), *(ro->op), false),
                                                      ro->op->get_nondet_name()));
+            de_states.push_back(new NondetDeadend(new State(*(failed_states[i])),
+                                                     ro->op->get_nondet_name()));
         }
     }
     g_deadend_policy->update_policy(de_items);
+    g_deadend_states->update_policy(de_states);
 }
 
 

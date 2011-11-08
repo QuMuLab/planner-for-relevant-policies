@@ -376,6 +376,7 @@ int g_matched_distance; // Containts the distance to the goal for the matched po
 Policy *g_policy; // The policy to check while searching
 Policy *g_regressable_ops; // The policy to check what operators are applicable
 Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
+Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
 Policy *g_best_policy; // The best policy we've found so far
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
 int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
