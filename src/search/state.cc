@@ -87,7 +87,9 @@ State::State(const State &predecessor, const Operator &op, bool progress) {
         }
     }
     
-    g_axiom_evaluator->evaluate(*this);
+    // HAZ: This is disabled since we cannot handle domains with axioms,
+    //      leaving it in slows us down.
+    //g_axiom_evaluator->evaluate(*this);
 }
 
 State::~State() {

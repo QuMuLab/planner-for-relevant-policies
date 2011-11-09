@@ -9,6 +9,7 @@ void UnhandledState::dump() const {
 bool perform_jit_repairs(Simulator *sim) {
     queue<pair<State *, State *> > open_list;
     set<State> seen;
+    vector<State *> created_states;
     State *current_state;
     State *current_goal;
     bool made_change = false;
@@ -23,7 +24,12 @@ bool perform_jit_repairs(Simulator *sim) {
         (*goal_orig)[g_goal[i].first] = state_var_t(g_goal[i].second);
     }
     
-    open_list.push(make_pair(new State(*g_initial_state), new State(*goal_orig)));
+    current_state = new State(*g_initial_state);
+    current_goal = new State(*goal_orig);
+    open_list.push(make_pair(current_state, current_goal));
+    
+    created_states.push_back(current_state);
+    created_states.push_back(current_goal);
     
     while (!open_list.empty() && (g_timer_jit() < g_jic_limit)) {
         current_state = open_list.front().first;
@@ -57,9 +63,11 @@ bool perform_jit_repairs(Simulator *sim) {
                 if (!(regstep->is_goal)) {
                     // Record the expected state
                     State *expected_state = new State(*current_state, *(regstep->op));
+                    created_states.push_back(expected_state);
                     
                     for (int i = 0; i < g_nondet_mapping[regstep->op->get_nondet_name()].size(); i++) {
                         State *new_state = new State(*current_state, *(g_nondet_mapping[regstep->op->get_nondet_name()][i]));
+                        created_states.push_back(new_state);
                         if (0 == seen.count(*new_state))
                             open_list.push(make_pair(new_state, expected_state));
                     }
@@ -69,6 +77,9 @@ bool perform_jit_repairs(Simulator *sim) {
                 if (g_detect_deadends)
                     failed_states.push_back(current_state);
                 g_failed_open_states++;
+                
+                //while (!open_list.empty())
+                //    open_list.pop();
                 
                 // This only matches when no strong cyclic solution exists
                 if (*current_state == *old_initial_state) {
@@ -86,13 +97,17 @@ bool perform_jit_repairs(Simulator *sim) {
                     g_policy = g_best_policy;
                     g_policy->mark_complete();
                     
+                    // Clean up the states we've created
+                    for (int i = 0; i < created_states.size(); i++) {
+                        if (created_states[i])
+                            delete created_states[i];
+                    }
+                    
                     // Return false so jic stops
                     return false;
                 }
             }
         }
-        //delete current_state;
-        //delete current_goal; // Current_goal goes into many tuples -- memory leak here
     }
     
     g_initial_state = old_initial_state;
@@ -134,6 +149,11 @@ bool perform_jit_repairs(Simulator *sim) {
         made_change = true;
     }
     
+    // Clean up the states we've created
+    for (int i = 0; i < created_states.size(); i++) {
+        if (created_states[i])
+            delete created_states[i];
+    }
     
     return made_change;
 }

@@ -122,8 +122,9 @@ bool Simulator::replan() {
     if (g_detect_deadends) {
         vector<PolicyItem *> reg_items;
         g_deadend_states->generate_applicable_items(*current_state, reg_items);
-        if (reg_items.size() > 0)
+        if (reg_items.size() > 0) {
             return false;
+        }
     }
     
     if (verbose)
