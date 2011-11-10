@@ -24,7 +24,8 @@ special options: %(exe)s {local,gkigrid} --help
 """ % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
-                'gkigrid': environments.GkiGridEnvironment}
+                'gkigrid': environments.GkiGridEnvironment,
+                'maia': environments.MaiaEnvironment}
 
 DEFAULT_ABORT_ON_FAILURE = True
 
