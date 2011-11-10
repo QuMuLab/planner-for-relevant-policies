@@ -42,4 +42,5 @@ REDUNDANT_DOMAINS = {
     'blocksworld': redundant_blocks
 }
 
-GOOD_DOMAINS = ['blocksworld', 'blocksworld-orig', 'first', 'forest', 'faults']
+#GOOD_DOMAINS = ['blocksworld', 'blocksworld-orig', 'first', 'forest', 'faults']
+GOOD_DOMAINS = ['blocksworld-orig', 'first', 'forest', 'faults']

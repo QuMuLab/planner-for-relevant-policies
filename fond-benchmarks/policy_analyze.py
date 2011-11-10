@@ -72,7 +72,7 @@ def do_anova(domain):
     
     anova([prp_data[0]] + solved_prp_data, ['fullstate','planlocal','usepolicy'], dependent = 'runtime')
 
-def prp_compare_two(domain, type1, type2):
+def prp_compare_two(domain, type1, type2, name1, name2):
     if 'every' == domain:
         for dom in GOOD_DOMAINS:
             prp_compare_two(dom, type1, type2)
@@ -119,8 +119,8 @@ def prp_compare_two(domain, type1, type2):
     prp_solved2 = set(prp_mapping2.keys())
     both_solved = prp_solved1 & prp_solved2
     
-    print "PRPv1 Coverage: %d" % len(prp_solved1)
-    print "PRPv2 Coverage: %d" % len(prp_solved2)
+    print "%s Coverage: %d" % (name1, len(prp_solved1))
+    print "%s Coverage: %d" % (name2, len(prp_solved2))
     print "Combined Coverage: %d" % len(both_solved)
     
     time_data = []
@@ -134,15 +134,15 @@ def prp_compare_two(domain, type1, type2):
         size_data.append((float(prp_mapping1[(dom,prob)][3]), float(prp_mapping2[(dom,prob)][3])))
     
     plot([item[0] for item in time_data], [item[1] for item in time_data],
-         x_label = "PRPv1 Time (s)", y_label = "PRPv2 Time (s)", graph_name = "%s (Time)" % domain, makesquare = True, x_log = True, y_log = True)
+         x_label = "%s Time (s)" % name1, y_label = "%s Time (s)" % name2, graph_name = "%s (Time)" % domain, makesquare = True, x_log = True, y_log = True)
     
     plot([item[0] for item in size_data], [item[1] for item in size_data],
-         x_label = "PRPv1 Policy Size", y_label = "PRPv2 Policy Size", graph_name = "%s (Size)" % domain, makesquare = True, x_log = True, y_log = True)
+         x_label = "%s Policy Size" % name1, y_label = "%s Policy Size" % name2, graph_name = "%s (Size)" % domain, makesquare = True, x_log = True, y_log = True)
     
-    x1,y1 = create_time_profile([item[0] for item in time_data])
-    x2,y2 = create_time_profile([item[1] for item in time_data])
-    plot([x1,x2], [y1,y2], x_label = "Time", y_label = "Problems Solved", no_scatter = True,
-         xyline = False, legend_name = "Method", names = ["FIP", "PRP"], x_log = True)
+    x1,y1 = create_time_profile([float(item[2]) for item in prp_mapping1.values()])
+    x2,y2 = create_time_profile([float(item[2]) for item in prp_mapping2.values()])
+    plot([x1,x2], [y1,y2], x_label = "Time (s)", y_label = "Problems Solved", no_scatter = True,
+         xyline = False, legend_name = "Method", names = [name1, name2], x_log = True)
     
     print
 
@@ -227,7 +227,7 @@ if __name__ == '__main__':
         fip_vs_prp(myargs['-domain'])
     
     if 'pfip-vs-prp' in flags:
-        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '0', '1', '1'))
+        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '0', '1', '1'), 'PFIP', 'PRP')
     
     if 'anova' in flags:
         do_anova(myargs['-domain'])
