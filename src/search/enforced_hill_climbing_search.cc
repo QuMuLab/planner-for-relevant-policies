@@ -1,5 +1,6 @@
 #include "enforced_hill_climbing_search.h"
 #include "successor_generator.h"
+#include "policy-repair/deadend.h"
 #include "heuristic.h"
 #include "operator.h"
 #include "pref_evaluator.h"

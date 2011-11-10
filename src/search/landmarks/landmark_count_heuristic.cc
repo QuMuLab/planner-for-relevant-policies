@@ -2,6 +2,7 @@
 
 #include "../plugin.h"
 #include "../successor_generator.h"
+#include "../policy-repair/deadend.h"
 
 #include <cmath>
 #include <ext/hash_map>
@@ -15,7 +16,8 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const Options &opts)
       lgraph(*opts.get<LandmarkGraph *>("lm_graph")),
       exploration(lgraph.get_exploration()),
       lm_status_manager(lgraph) {
-    cout << "Initializing landmarks count heuristic..." << endl;
+    if (!g_silent_planning)
+        cout << "Initializing landmarks count heuristic..." << endl;
     use_preferred_operators = opts.get<bool>("pref");
     lookahead = numeric_limits<int>::max();
     // When generating preferred operators, we plan towards

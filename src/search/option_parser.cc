@@ -182,9 +182,13 @@ SearchEngine *OptionParser::parse_cmd_line(
             engine = p.start_parsing<SearchEngine *>();
         } else if (arg.compare("--random-seed") == 0) {
             ++i;
-            srand(atoi(argv[i]));
-            g_rng.seed(atoi(argv[i]));
-            cout << "random seed " << argv[i] << endl;
+            if (!g_seeded) {
+                g_seeded = true;
+                srand(atoi(argv[i]));
+                g_rng.seed(atoi(argv[i]));
+                if (!g_silent_planning)
+                    cout << "random seed " << argv[i] << endl;
+            }
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;
             if (i + 1 < argc) {
@@ -198,12 +202,34 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--plan-file") == 0) {
             ++i;
             g_plan_filename = argv[i];
+        } else if (arg.compare("--jic-limit") == 0) {
+            ++i;
+            g_jic_limit = atof(argv[i]);
+        } else if (arg.compare("--trials") == 0) {
+            ++i;
+            g_num_trials = atoi(argv[i]);
+        } else if (arg.compare("--forgetpolicy") == 0) {
+            ++i;
+            g_forgetpolicy = (1 == atoi(argv[i]));
+        } else if (arg.compare("--fullstate") == 0) {
+            ++i;
+            g_fullstate = (1 == atoi(argv[i]));
+        } else if (arg.compare("--planlocal") == 0) {
+            ++i;
+            g_plan_locally = (1 == atoi(argv[i]));
+        } else if (arg.compare("--plan-with-policy") == 0) {
+            ++i;
+            g_plan_with_policy = (1 == atoi(argv[i]));
+        } else if (arg.compare("--detect-deadends") == 0) {
+            ++i;
+            g_detect_deadends = (1 == atoi(argv[i]));
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;
             exit(1);
         }
     }
+    
     return engine;
 }
 
@@ -227,6 +253,20 @@ string OptionParser::usage(string progname) {
         "    Use random seed SEED\n\n"
         "--plan-file FILENAME\n"
         "    Plan will be output to a file called FILENAME\n\n"
+        "--jic-limit TIME_LIMIT\n"
+        "    Only perform JIC for the given time.\n\n"
+        "--forgetpolicy 1/0\n"
+        "    Throw out the policy after every simulation.\n\n"
+        "--fullstate 1/0\n"
+        "    Use full states in the regression.\n\n"
+        "--planlocal 1/0\n"
+        "    Plan locally to recover before planning for the goal.\n\n"
+        "--plan-with-policy 1/0\n"
+        "    Stop searching when the policy matches the current state.\n\n"
+        "--trials NUM_TRIALS\n"
+        "    Number of trials to run for the simulator.\n\n"
+        "--detect-deadends 1/0\n"
+        "    Use primitive deadend detection to ensure a strongly cyclic solution.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }

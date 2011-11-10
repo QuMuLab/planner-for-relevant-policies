@@ -23,7 +23,8 @@ LamaFFSynergy::LamaFFSynergy(const Options &opts)
       lm_admissible(opts.get<bool>("admissible")),
       lm_optimal(opts.get<bool>("optimal")),
       use_action_landmarks(opts.get<bool>("alm")) {
-    cout << "Initializing LAMA-FF Synergy Object" << endl;
+    if (!g_silent_planning)
+        cout << "Initializing LAMA-FF Synergy Object" << endl;
     lama_heuristic =
         new LandmarkCountHeuristic(opts);
     //lama_heuristic->initialize(); // must be called here explicitly

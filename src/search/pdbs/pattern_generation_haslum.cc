@@ -11,6 +11,7 @@
 #include "../rng.h"
 #include "../state.h"
 #include "../successor_generator.h"
+#include "../policy-repair/deadend.h"
 #include "../timer.h"
 #include "../utilities.h"
 

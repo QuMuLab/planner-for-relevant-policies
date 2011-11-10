@@ -19,6 +19,21 @@ RelaxationHeuristic::RelaxationHeuristic(const Options &opts)
 RelaxationHeuristic::~RelaxationHeuristic() {
 }
 
+void RelaxationHeuristic::reset() {
+    // Rebuild the goal propositions (there may be a new goal)
+    for (int i = 0; i < goal_propositions.size(); i++) {
+        goal_propositions[i]->is_goal = false;
+    }
+    
+    goal_propositions.clear();
+    
+    for (int i = 0; i < g_goal.size(); i++) {
+        int var = g_goal[i].first, val = g_goal[i].second;
+        propositions[var][val].is_goal = true;
+        goal_propositions.push_back(&propositions[var][val]);
+    }
+}
+
 // initialization
 void RelaxationHeuristic::initialize() {
     // Build propositions.
@@ -125,7 +140,8 @@ void RelaxationHeuristic::simplify() {
     */
 
 
-    cout << "Simplifying " << unary_operators.size() << " unary operators..." << flush;
+    if (!g_silent_planning)
+        cout << "Simplifying " << unary_operators.size() << " unary operators..." << flush;
 
     typedef pair<vector<Proposition *>, Proposition *> HashKey;
     typedef hash_map<HashKey, int, hash_unary_operator> HashMap;
@@ -183,5 +199,6 @@ void RelaxationHeuristic::simplify() {
             unary_operators.push_back(old_unary_operators[unary_operator_no]);
     }
 
-    cout << " done! [" << unary_operators.size() << " unary operators]" << endl;
+    if (!g_silent_planning)
+        cout << " done! [" << unary_operators.size() << " unary operators]" << endl;
 }

@@ -17,11 +17,13 @@ LandmarkGraph *LandmarkFactory::compute_lm_graph() {
 
     // the following replaces the old "build_lm_graph"
     generate();
-    cout << "Landmarks generation time: " << lm_generation_timer << endl;
+    if (!g_silent_planning)
+        cout << "Landmarks generation time: " << lm_generation_timer << endl;
     if (lm_graph->number_of_landmarks() == 0)
         cout << "Warning! No landmarks found. Task unsolvable?" << endl;
     else {
-        cout << "Discovered " << lm_graph->number_of_landmarks()
+        if (!g_silent_planning)
+            cout << "Discovered " << lm_graph->number_of_landmarks()
              << " landmarks, of which " << lm_graph->number_of_disj_landmarks()
              << " are disjunctive and "
              << lm_graph->number_of_conj_landmarks() << " are conjunctive \n"
@@ -43,9 +45,11 @@ void LandmarkFactory::generate() {
     if (!lm_graph->use_orders())
         discard_all_orderings();
     else if (lm_graph->is_using_reasonable_orderings()) {
-        cout << "approx. reasonable orders" << endl;
+        if (!g_silent_planning)
+            cout << "approx. reasonable orders" << endl;
         approximate_reasonable_orders(false);
-        cout << "approx. obedient reasonable orders" << endl;
+        if (!g_silent_planning)
+            cout << "approx. obedient reasonable orders" << endl;
         approximate_reasonable_orders(true);
     }
     mk_acyclic_graph();
@@ -654,8 +658,9 @@ void LandmarkFactory::mk_acyclic_graph() {
     // [Malte] Commented out the following assertion because
     // the old method for this is no longer available.
     // assert(acyclic_node_set.size() == number_of_landmarks());
-    cout << "Removed " << removed_edges
-         << " reasonable or obedient reasonable orders\n";
+    if (!g_silent_planning)
+        cout << "Removed " << removed_edges
+            << " reasonable or obedient reasonable orders\n";
 }
 
 bool LandmarkFactory::remove_first_weakest_cycle_edge(LandmarkNode *cur,
