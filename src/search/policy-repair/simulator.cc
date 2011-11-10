@@ -130,8 +130,8 @@ bool Simulator::replan() {
     if (verbose)
         cout << "\nRequired to replan..." << endl;
 
-    if (engine)
-        delete engine;
+    //if (engine)
+    //    delete engine;
     if (g_initial_state)
         delete g_initial_state;
     
@@ -160,7 +160,8 @@ bool Simulator::replan() {
     bool engine_ready = true;
     g_timer_engine_init.resume();
     try {
-        engine = OptionParser::parse_cmd_line(argc, argv, false);
+        //engine = OptionParser::parse_cmd_line(argc, argv, false);
+        engine->reset();
     } catch (SolvableError &se) {
         if (!g_silent_planning)
             cout << se;
@@ -183,7 +184,8 @@ bool Simulator::replan() {
         engine_ready = true;
         g_timer_engine_init.resume();
         try {
-            engine = OptionParser::parse_cmd_line(argc, argv, false);
+            //engine = OptionParser::parse_cmd_line(argc, argv, false);
+            engine->reset();
         } catch (SolvableError &se) {
             if (!g_silent_planning)
                 cout << se;
@@ -224,13 +226,14 @@ bool Simulator::replan() {
             reset_goal();
             
             if (try_again) {
-                delete engine;
+                //delete engine;
                 
                 if (verbose)
                     cout << "Creating new engine." << endl;
                 g_timer_engine_init.resume();
                 try {
-                    engine = OptionParser::parse_cmd_line(argc, argv, false);
+                    //engine = OptionParser::parse_cmd_line(argc, argv, false);
+                    engine->reset();
                 } catch (SolvableError &se) {
                     if (!g_silent_planning)
                         cout << se;

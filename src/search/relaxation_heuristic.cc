@@ -19,6 +19,21 @@ RelaxationHeuristic::RelaxationHeuristic(const Options &opts)
 RelaxationHeuristic::~RelaxationHeuristic() {
 }
 
+void RelaxationHeuristic::reset() {
+    // Rebuild the goal propositions (there may be a new goal)
+    for (int i = 0; i < goal_propositions.size(); i++) {
+        goal_propositions[i]->is_goal = false;
+    }
+    
+    goal_propositions.clear();
+    
+    for (int i = 0; i < g_goal.size(); i++) {
+        int var = g_goal[i].first, val = g_goal[i].second;
+        propositions[var][val].is_goal = true;
+        goal_propositions.push_back(&propositions[var][val]);
+    }
+}
+
 // initialization
 void RelaxationHeuristic::initialize() {
     // Build propositions.

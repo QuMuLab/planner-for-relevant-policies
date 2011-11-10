@@ -57,6 +57,8 @@ protected:
 public:
     RelaxationHeuristic(const Options &options);
     virtual ~RelaxationHeuristic();
+    
+    virtual void reset();
 };
 
 #endif

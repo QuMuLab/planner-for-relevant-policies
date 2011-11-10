@@ -152,6 +152,11 @@ SearchSpace::~SearchSpace() {
     delete nodes;
 }
 
+void SearchSpace::reset() {
+    delete nodes;
+    nodes = new HashTable;
+}
+
 int SearchSpace::size() const {
     return nodes->size();
 }

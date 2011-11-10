@@ -28,6 +28,23 @@ LazySearch::LazySearch(const Options &opts)
 LazySearch::~LazySearch() {
 }
 
+void LazySearch::reset() {
+    SearchEngine::reset();
+
+    current_state = *g_initial_state;
+    current_predecessor_buffer = NULL;
+    current_operator = NULL;
+    current_g = 0;
+    current_real_g = 0;
+
+    open_list->clear();
+
+    for (int i = 0; i < heuristics.size(); i++) {
+        heuristics[i]->reset();
+    }
+
+}
+
 void LazySearch::set_pref_operator_heuristics(
     vector<Heuristic *> &heur) {
     preferred_operator_heuristics = heur;

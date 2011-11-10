@@ -78,9 +78,6 @@ bool perform_jit_repairs(Simulator *sim) {
                     failed_states.push_back(current_state);
                 g_failed_open_states++;
                 
-                //while (!open_list.empty())
-                //    open_list.pop();
-                
                 // This only matches when no strong cyclic solution exists
                 if (*current_state == *old_initial_state) {
                     if (!g_silent_planning) {
