@@ -3,7 +3,7 @@ from krrt.utils import get_opts, match_value, get_value, load_CSV, write_file, a
 from krrt.stats.plots import plot, create_time_profile
 from krrt.stats import anova
 
-from domains import GOOD_DOMAINS
+from domains import GOOD_DOMAINS, FOND_DOMAINS
 
 import os, time
 
@@ -12,8 +12,13 @@ Usage: python policy_analyze.py <TASK> -domain <domain> ...
 
         Where <TASK> may be:
           fip-vs-prp: Run a comparison between fip and the best setting for prp
+          prpga-vs-prp: Run a comparison between the best setting for prp, and the same settings with goal alternative
           pfip-vs-prp: Run a comparison between fip settings of prp, and the best setting for prp
-          anova: Run an anova analysis of the parameters for prp
+          pfip-vs-psr: Run a comparison between fip settings of prp, and fip settings without goal alternative
+          pfip-vs-pga: Run a comparison between fip settings of prp, and fip settings without state reuse
+          pfip-vs-pbasic: Run a comparison between fip settings of prp, and fip settings without state reuse or goal alternative
+          anova-time: Run an anova analysis of the parameters for prp, with time as the dependent variable
+          anova-size: Run an anova analysis of the parameters for prp, with size as the dependent variable
         """
 
 BASEDIR = os.path.abspath(os.path.curdir)
@@ -54,15 +59,15 @@ def average_prp_data(data):
 def print_setting(s):
     print "jic-limit(%s), forgetpolicy(%s), fullstate(%s), planlocal(%s), usepolicy(%s)" % (s[0], s[1], s[2], s[3], s[4])
 
-def do_anova(domain):
+def do_anova(domain, dep):
     if 'every' == domain:
-        for dom in GOOD_DOMAINS:
+        for dom in FOND_DOMAINS:
             do_anova(dom)
         return
     
     elif 'all' == domain:
         prp_data = []
-        for dom in GOOD_DOMAINS:
+        for dom in FOND_DOMAINS:
             prp_data.extend(load_CSV("RESULTS/prp-%s-results.csv" % dom))
     
     else:
@@ -70,17 +75,17 @@ def do_anova(domain):
     
     solved_prp_data = filter(lambda x: x[-2] == 'True', prp_data)
     
-    anova([prp_data[0]] + solved_prp_data, ['fullstate','planlocal','usepolicy'], dependent = 'runtime')
+    anova([prp_data[0]] + solved_prp_data, ['fullstate','planlocal','usepolicy'], dependent = dep)
 
 def prp_compare_two(domain, type1, type2, name1, name2):
     if 'every' == domain:
-        for dom in GOOD_DOMAINS:
+        for dom in FOND_DOMAINS:
             prp_compare_two(dom, type1, type2)
         return
     
     elif 'all' == domain:
         prp_data = []
-        for dom in GOOD_DOMAINS:
+        for dom in FOND_DOMAINS:
             prp_data.extend(load_CSV("RESULTS/prp-%s-results.csv" % dom))
     
     elif 'all-redundant' == domain:
@@ -148,14 +153,14 @@ def prp_compare_two(domain, type1, type2, name1, name2):
 
 def fip_vs_prp(domain):
     if 'every' == domain:
-        for dom in GOOD_DOMAINS:
+        for dom in FOND_DOMAINS:
             fip_vs_prp(dom)
         return
     
     elif 'all' == domain:
         fip_data = []
         prp_data = []
-        for dom in GOOD_DOMAINS:
+        for dom in FOND_DOMAINS:
             fip_data.extend(load_CSV("RESULTS/fip-%s-results.csv" % dom))
             prp_data.extend(load_CSV("RESULTS/prp-%s-results.csv" % dom))
     
@@ -168,7 +173,7 @@ def fip_vs_prp(domain):
     # Load both sets
     solved_fip_data = filter(lambda x: x[-1] == '-', fip_data)
     
-    prp_data = [prp_data[0]] + filter_prp_settings(prp_data, '18000', '0', '0', '1', '1')
+    prp_data = [prp_data[0]] + filter_prp_settings(prp_data, '18000', '0', '0', '0', '1')
     solved_prp_data = filter(lambda x: x[-2] == 'True', prp_data)
     solved_prp_data = average_prp_data(solved_prp_data) # Filter and average based on what FIP has solved.
     
@@ -201,11 +206,13 @@ def fip_vs_prp(domain):
         time_data.append((float(fip_mapping[(dom,prob)][2]), float(prp_mapping[(dom,prob)][2])))
         size_data.append((float(fip_mapping[(dom,prob)][3]), float(prp_mapping[(dom,prob)][3])))
     
-    plot([item[0] for item in time_data], [item[1] for item in time_data],
-         x_label = "FIP Time (s)", y_label = "PRP Time (s)", graph_name = "FIP -vs- PRP: %s (Time)" % domain, makesquare = True)
+    #HACK: We assign 0.001 seconds to a reported time of 0: This is needed for log plots to work
+    
+    plot([max(0.001, item[0]) for item in time_data], [max(0.001, item[1]) for item in time_data],
+         x_label = "FIP Time (s)", y_label = "PRP Time (s)", graph_name = "FIP -vs- PRP: %s (Time)" % domain, makesquare = True, x_log = True, y_log = True)
     
     plot([item[0] for item in size_data], [item[1] for item in size_data],
-         x_label = "FIP Policy Size", y_label = "PRP Policy Size", graph_name = "FIP -vs- PRP: %s (Size)" % domain, makesquare = True)
+         x_label = "FIP Policy Size", y_label = "PRP Policy Size", graph_name = "FIP -vs- PRP: %s (Size)" % domain, makesquare = True, x_log = True, y_log = True)
     
     x1,y1 = create_time_profile([item[0] for item in time_data])
     x2,y2 = create_time_profile([item[1] for item in time_data])
@@ -227,7 +234,22 @@ if __name__ == '__main__':
         fip_vs_prp(myargs['-domain'])
     
     if 'pfip-vs-prp' in flags:
-        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '0', '1', '1'), 'PFIP', 'PRP')
+        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '0', '0', '1'), 'PFIP', 'PRP')
     
-    if 'anova' in flags:
-        do_anova(myargs['-domain'])
+    if 'pfip-vs-psr' in flags:
+        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '1', '0', '1'), 'PFIP', 'PSR')
+    
+    if 'pfip-vs-pga' in flags:
+        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '1', '1', '0'), 'PFIP', 'PGA')
+    
+    if 'pfip-vs-pbasic' in flags:
+        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '1', '0', '0'), 'PFIP', 'PBASIC')
+    
+    if 'prpga-vs-prp' in flags:
+        prp_compare_two(myargs['-domain'], ('18000', '0', '0', '1', '1'), ('18000', '0', '0', '0', '1'), 'PRP+GA', 'PRP')
+    
+    if 'anova-time' in flags:
+        do_anova(myargs['-domain'], 'runtime')
+    
+    if 'anova-size' in flags:
+        do_anova(myargs['-domain'], 'size')
