@@ -130,6 +130,11 @@ if [[ "$1" == "ipc" ]]; then
     
     
     elif [[ "$CONFIG" == "policy-repair" ]]; then
+        echo "$PLANNER" \
+                --heuristic \""h=ff(cost_type=1)"\" \
+                --search \""lazy_greedy([h],preferred=[h])"\" \
+                --random-seed $SEED \
+                "$@" "<" output
         "$PLANNER" \
                 --heuristic "h=ff(cost_type=1)" \
                 --search "lazy_greedy([h],preferred=[h])" \
