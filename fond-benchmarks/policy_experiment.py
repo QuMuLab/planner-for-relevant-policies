@@ -14,7 +14,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           redundant: Run the comparison for domains that have redundancy
         """
 
-TRIALS = 10
+TRIALS = 1
 CORES = 16
 MEM_LIMIT = 2000
 TIME_LIMIT = 1800
@@ -25,13 +25,14 @@ PRP_PARAMS = {'all': {'--jic-limit': [18000],
                       '--forgetpolicy': [0],
                       '--fullstate': [0,1],
                       '--planlocal': [0,1],
+                      '--detect-deadends': [0,1],
                       '--trials': [100],
                       '--plan-with-policy': [0,1]},
 
               'best': {'--jic-limit': [18000],
                        '--forgetpolicy': [0],
                        '--fullstate': [0],
-                       '--planlocal': [1],
+                       '--planlocal': [0],
                        '--trials': [100],
                        '--plan-with-policy': [1]},
               
@@ -60,7 +61,7 @@ def parse_prp(outfile):
     
     runtime = get_value(outfile, '.*Total time: ([0-9]+\.?[0-9]*)s\n.*', float)
     jic_time = get_value(outfile, '.*Just-in-case Repairs: ([0-9]+\.?[0-9]*)s\n.*', float)
-    policy_eval_time = get_value(outfile, '.*Evaluating the policy: ([0-9]+\.?[0-9]*)s\n.*', float)
+    policy_eval_time = get_value(outfile, '.*Using the policy: ([0-9]+\.?[0-9]*)s\n.*', float)
     policy_construction_time = get_value(outfile, '.*Policy Construction: ([0-9]+\.?[0-9]*)s\n.*', float)
     search_time = get_value(outfile, '.*Search Time: ([0-9]+\.?[0-9]*)s\n.*', float)
     engine_init_time = get_value(outfile, '.*Engine Initialization: ([0-9]+\.?[0-9]*)s\n.*', float)
@@ -86,7 +87,7 @@ def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PAR
     
     if 'all' == domain:
         for dom in GOOD_DOMAINS:
-            doit(dom, dofip, doprp, prp_params)
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
         return
 
     if redundant > 0:
@@ -117,8 +118,8 @@ def doit_fip(domain, dom_probs):
         progress_file = None,
         processors = CORES,
         sandbox = 'fip',
-        output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+str(res.id)+'.out'),
-        error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+str(res.id)+'.err')
+        output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.'+str(res.id)+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.'+str(res.id)+'.err')
     )
     
     timeouts = 0
@@ -163,8 +164,8 @@ def doit_prp(domain, dom_probs, prp_params):
         processors = CORES,
         sandbox = 'prp',
         trials = TRIALS,
-        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+str(res.id)+'.out'),
-        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+str(res.id)+'.err')
+        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.err')
     )
     
     timeouts = 0
