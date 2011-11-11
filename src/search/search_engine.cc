@@ -26,6 +26,9 @@ SearchEngine::~SearchEngine() {
 void SearchEngine::reset() {
     solved = false;
     search_space.reset();
+    for (int i = 0; i < g_operators.size(); i++) {
+        g_operators[i].unmark();
+    }
 }
 
 void SearchEngine::statistics() const {

@@ -134,10 +134,10 @@ class VarValueRenaming(object):
                 new_var_no, new_value = self.translate_pair((var_no, value))
                 if new_value is always_true:
                     if DEBUG:
-                        print "Removed true proposition: %s" % value_name
+                        print "Removed true proposition: %s = %s" % (str(new_var_no), value_name)
                 elif new_value is always_false:
                     if DEBUG:
-                        print "Removed false proposition: %s" % value_name
+                        print "Removed false proposition: %s = %s" % (str(new_var_no),value_name)
                 else:
                     new_value_names[new_var_no][new_value] = value_name
         assert all((None not in value_names) for value_names in new_value_names)
