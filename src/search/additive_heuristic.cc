@@ -35,7 +35,8 @@ void AdditiveHeuristic::write_overflow_warning() {
 
 // initialization
 void AdditiveHeuristic::initialize() {
-    cout << "Initializing additive heuristic..." << endl;
+    if (!g_silent_planning)
+        cout << "Initializing additive heuristic..." << endl;
     RelaxationHeuristic::initialize();
 }
 

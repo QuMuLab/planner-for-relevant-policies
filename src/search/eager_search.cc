@@ -4,6 +4,7 @@
 #include "heuristic.h"
 #include "option_parser.h"
 #include "successor_generator.h"
+#include "policy-repair/deadend.h"
 #include "g_evaluator.h"
 #include "sum_evaluator.h"
 #include "plugin.h"
@@ -232,7 +233,8 @@ pair<SearchNode, bool> EagerSearch::fetch_next_node() {
 
     while (true) {
         if (open_list->empty()) {
-            cout << "Completely explored state space -- no solution!" << endl;
+            if (!g_silent_planning)
+                cout << "Completely explored state space -- no solution!" << endl;
             return make_pair(search_space.get_node(*g_initial_state), false);
         }
         vector<int> last_key_removed;

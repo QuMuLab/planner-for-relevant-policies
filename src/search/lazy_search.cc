@@ -3,6 +3,7 @@
 #include "g_evaluator.h"
 #include "heuristic.h"
 #include "successor_generator.h"
+#include "policy-repair/deadend.h"
 #include "sum_evaluator.h"
 #include "weighted_evaluator.h"
 #include "plugin.h"
@@ -27,6 +28,23 @@ LazySearch::LazySearch(const Options &opts)
 LazySearch::~LazySearch() {
 }
 
+void LazySearch::reset() {
+    SearchEngine::reset();
+
+    current_state = *g_initial_state;
+    current_predecessor_buffer = NULL;
+    current_operator = NULL;
+    current_g = 0;
+    current_real_g = 0;
+
+    open_list->clear();
+
+    for (int i = 0; i < heuristics.size(); i++) {
+        heuristics[i]->reset();
+    }
+
+}
+
 void LazySearch::set_pref_operator_heuristics(
     vector<Heuristic *> &heur) {
     preferred_operator_heuristics = heur;
@@ -34,7 +52,8 @@ void LazySearch::set_pref_operator_heuristics(
 
 void LazySearch::initialize() {
     //TODO children classes should output which kind of search
-    cout << "Conducting lazy best first search, (real) bound = " << bound << endl;
+    if (!g_silent_planning)
+        cout << "Conducting lazy best first search, (real) bound = " << bound << endl;
 
     assert(open_list != NULL);
     set<Heuristic *> hset;
@@ -114,7 +133,8 @@ void LazySearch::generate_successors() {
 
 int LazySearch::fetch_next_state() {
     if (open_list->empty()) {
-        cout << "Completely explored state space -- no solution!" << endl;
+        if (!g_silent_planning)
+            cout << "Completely explored state space -- no solution!" << endl;
         return FAILED;
     }
 
