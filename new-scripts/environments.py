@@ -101,7 +101,7 @@ class GkiGridEnvironment(Environment):
             for run in run_group:
                 # Change into the run dir
                 script += '  cd %s\n' % os.path.relpath(run.dir, exp.path)
-                script += '  echo "real_queue = \'$QUEUE\'" >> properties\n'
+                script += '  echo "queue = \'$QUEUE\'" >> properties\n'
                 script += '  ./run\n'
             script += 'fi\n'
 
