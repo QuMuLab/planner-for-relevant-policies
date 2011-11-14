@@ -258,9 +258,6 @@ class Run(object):
 
         self.properties = tools.Properties()
 
-        if hasattr(experiment, 'queue'):
-            self.set_property('queue', experiment.queue)
-
     def set_property(self, name, value):
         """
         Add a key-value property to a run. These can be used later for
