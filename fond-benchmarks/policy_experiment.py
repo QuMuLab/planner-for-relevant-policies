@@ -1,5 +1,5 @@
 
-from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS
+from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS, NEW_DOMAINS
 
 from krrt.utils import get_opts, run_experiment, match_value, get_value, load_CSV, write_file, append_file, read_file
 
@@ -88,6 +88,16 @@ def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PAR
     
     if 'all' == domain:
         for dom in GOOD_DOMAINS:
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+        return
+    
+    elif 'new' == domain:
+        for dom in NEW_DOMAINS:
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+        return
+    
+    elif 'fond' == domain:
+        for dom in FOND_DOMAINS:
             doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
         return
 

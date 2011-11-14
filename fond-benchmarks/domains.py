@@ -27,11 +27,23 @@ for i in range(1,11):
     for j in range(1,11):
         first.append(("first-responders/domain-fixed.pddl", "first-responders/p_%d_%d.pddl" % (i,j)))
 
+first_new = []
+for i in range(10,51,10):
+    first_new.append(("first-responders-new/domain-fixed.pddl", "first-responders-new/p_%d_%d.pddl" % (i,i)))
+    for j in range(i-9,i):
+        first_new.append(("first-responders-new/domain-fixed.pddl", "first-responders-new/p_%d_%d.pddl" % (i,j)))
+        first_new.append(("first-responders-new/domain-fixed.pddl", "first-responders-new/p_%d_%d.pddl" % (j,i)))
+
 # Forest
 forest = []
 for i in range(2,11):
     for j in range(1,11):
         forest.append(("forest/domain.pddl", "forest/p_%d_%d.pddl" % (i,j)))
+
+forest_new = []
+for i in range(2,11):
+    for j in range(1,11):
+        forest_new.append(("forest-new/domain.pddl", "forest-new/p_%d_%d.pddl" % (i,j)))
 
 # FINAL
 DOMAINS = {
@@ -40,7 +52,9 @@ DOMAINS = {
     'blocksworld-orig': blocks_orig,
     'faults': faults,
     'first' : first,
-    'forest' : forest
+    'first-new' : first_new,
+    'forest' : forest,
+    'forest-new' : forest_new
 }
 
 REDUNDANT_DOMAINS = {
@@ -49,3 +63,4 @@ REDUNDANT_DOMAINS = {
 
 GOOD_DOMAINS = ['blocksworld', 'blocksworld-new', 'blocksworld-orig', 'first', 'forest', 'faults']
 FOND_DOMAINS = ['blocksworld-orig', 'first', 'forest', 'faults']
+NEW_DOMAINS = ['blocksworld-new', 'first-new', 'forest-new']
