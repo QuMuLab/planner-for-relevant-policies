@@ -11,6 +11,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
         Where <TASK> may be:
           full: Run all experiment parameters
           fip-vs-prp: Run a comparison between fip and the best setting for PRP
+          fip: Just run fip on the given domains
           redundant: Run the comparison for domains that have redundancy
         """
 
@@ -223,6 +224,9 @@ if __name__ == '__main__':
     
     if 'full' in flags:
         doit(myargs['-domain'])
+    
+    if 'fip' in flags:
+        doit(myargs['-domain'], dofip=True, doprp=False)
     
     if 'fip-vs-prp' in flags:
         doit(myargs['-domain'], prp_params = PRP_PARAMS['best'])
