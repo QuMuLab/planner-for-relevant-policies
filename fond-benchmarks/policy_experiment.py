@@ -14,7 +14,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           redundant: Run the comparison for domains that have redundancy
         """
 
-TRIALS = 1
+TRIALS = 5
 CORES = 16
 MEM_LIMIT = 2000
 TIME_LIMIT = 1800
@@ -32,7 +32,8 @@ PRP_PARAMS = {'all': {'--jic-limit': [18000],
               'best': {'--jic-limit': [18000],
                        '--forgetpolicy': [0],
                        '--fullstate': [0],
-                       '--planlocal': [0],
+                       '--planlocal': [0,1],
+                       '--detect-deadends': [1],
                        '--trials': [100],
                        '--plan-with-policy': [1]},
               

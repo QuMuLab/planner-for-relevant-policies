@@ -49,10 +49,10 @@ def average_prp_data(data):
                 new_data[-1].append(mapping[(dom,prob)][0][i])
             else:
                 # Mean
-                new_data[-1].append(str(sum([float(item[i]) for item in mapping[(dom,prob)]], 0.0) / float(len(mapping[(dom,prob)]))))
+                #new_data[-1].append(str(sum([float(item[i]) for item in mapping[(dom,prob)]], 0.0) / float(len(mapping[(dom,prob)]))))
                 
                 # Median
-                #new_data[-1].append(str(sorted([float(item[i]) for item in mapping[(dom,prob)]])[int(len(mapping[(dom,prob)])/2)]))
+                new_data[-1].append(str(sorted([float(item[i]) for item in mapping[(dom,prob)]])[int(len(mapping[(dom,prob)])/2)]))
     
     return new_data
 
