@@ -113,10 +113,10 @@ bool perform_jit_repairs(Simulator *sim) {
     sim->set_state(g_initial_state);
     sim->set_goal(goal_orig);
     
-    if (!g_silent_planning) {
-        cout << "Could not close " << g_failed_open_states << " open leaf states." << endl;
+    //if (!g_silent_planning) {
+        cout << "\nCould not close " << g_failed_open_states << " open leaf states." << endl;
         cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
-    }
+    //}
         
     if (0 == g_failed_open_states)
         g_policy->mark_strong();
@@ -128,7 +128,7 @@ bool perform_jit_repairs(Simulator *sim) {
         double cur_score = g_policy->get_score();
         if (cur_score > g_best_policy_score) {
             
-            if (!g_silent_planning)
+            //if (!g_silent_planning)
                 cout << "Found a better policy of score " << cur_score << endl;
             
             if (g_best_policy && (g_best_policy != g_policy))
@@ -139,7 +139,7 @@ bool perform_jit_repairs(Simulator *sim) {
             
         } else {
             
-            if (!g_silent_planning)
+            //if (!g_silent_planning)
                 cout << "Went through another policy of score " << cur_score << endl;
             if (g_best_policy != g_policy)
                 delete g_policy;
