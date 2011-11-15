@@ -1,5 +1,5 @@
 
-from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS, NEW_DOMAINS
+from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS, NEW_DOMAINS, IPC06_DOMAINS
 
 from krrt.utils import get_opts, run_experiment, match_value, get_value, load_CSV, write_file, append_file, read_file
 

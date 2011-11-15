@@ -15,6 +15,12 @@ blocks_new = []
 for i in range(1,31):
     blocks_new.append(("blocksworld-new/domain.pddl", "blocksworld-new/p%d.pddl" % i))
 
+blocks2 = []
+for i in range(1,10):
+    blocks2.append(("blocksworld-2/domain.pddl", "blocksworld-2/p0%d.pddl" % i))
+for i in range(10,16):
+    blocks2.append(("blocksworld-2/domain.pddl", "blocksworld-2/p%d.pddl" % i))    
+
 # Faults
 faults = []
 for i in range(1,11):
@@ -45,16 +51,35 @@ for i in range(2,11):
     for j in range(1,11):
         forest_new.append(("forest-new/domain.pddl", "forest-new/p_%d_%d.pddl" % (i,j)))
 
+
+# Elevators
+elevators = []
+for i in range(1,10):
+    elevators.append(("elevators/domain.pddl", "elevators/p0%d.pddl" % i))
+for i in range(10,16):
+    elevators.append(("elevators/domain.pddl", "elevators/p%d.pddl" % i))
+
+# Zenotravel
+zenotravel = []
+for i in range(1,10):
+    zenotravel.append(("zenotravel/domain.pddl", "zenotravel/p0%d.pddl" % i))
+for i in range(10,16):
+    zenotravel.append(("zenotravel/domain.pddl", "zenotravel/p%d.pddl" % i))
+
+
 # FINAL
 DOMAINS = {
     'blocksworld': blocks,
     'blocksworld-new': blocks_new,
     'blocksworld-orig': blocks_orig,
+    'blocksworld-2': blocks2,
     'faults': faults,
     'first' : first,
     'first-new' : first_new,
     'forest' : forest,
-    'forest-new' : forest_new
+    'forest-new' : forest_new,
+    'elevators' : elevators,
+    'zenotravel' : zenotravel
 }
 
 REDUNDANT_DOMAINS = {
@@ -64,3 +89,4 @@ REDUNDANT_DOMAINS = {
 GOOD_DOMAINS = ['blocksworld', 'blocksworld-new', 'blocksworld-orig', 'first', 'forest', 'faults']
 FOND_DOMAINS = ['blocksworld-orig', 'first', 'forest', 'faults']
 NEW_DOMAINS = ['blocksworld-new', 'first-new', 'forest-new']
+IPC06_DOMAINS = ['blocksworld-2', 'elevators', 'zenotravel']
