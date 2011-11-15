@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -21,6 +22,9 @@ using namespace __gnu_cxx;
 #include "state.h"
 #include "successor_generator.h"
 #include "timer.h"
+#include "policy-repair/policy.h"
+#include "policy-repair/regression.h"
+#include "policy-repair/deadend.h"
 
 
 static const int PRE_FILE_VERSION = 3;
@@ -35,12 +39,42 @@ static const int PRE_FILE_VERSION = 3;
 static vector<vector<set<pair<int, int> > > > g_inconsistent_facts;
 
 bool test_goal(const State &state) {
+    if (g_policy && !(g_policy->empty()))
+        return test_policy(state);
+
     for (int i = 0; i < g_goal.size(); i++) {
         if (state[g_goal[i].first] != g_goal[i].second) {
             return false;
         }
     }
+    
+    g_matched_distance = 0;
+    g_matched_policy.clear();
+    for (int i = 0; i < g_goal.size(); i++) {
+        g_matched_policy.push_back(make_pair(g_goal[i].first, g_goal[i].second));
+    }
+    
     return true;
+}
+
+bool test_policy(const State &state) {
+    
+    RegressionStep * best_step = g_policy->get_best_step(state);
+    
+    if ((best_step && g_plan_with_policy) || (best_step && best_step->is_goal)) {
+        
+        g_matched_policy.clear();
+        g_matched_distance = best_step->distance;
+        
+        for (int i = 0; i < g_variable_name.size(); i++) {
+            if (state_var_t(-1) != (*(best_step->state))[i]) {
+                g_matched_policy.push_back(make_pair(i, (*(best_step->state))[i]));
+            }
+        }
+        return true;
+    } else {
+        return false;
+    }
 }
 
 int calculate_plan_cost(const vector<const Operator *> &plan) {
@@ -210,6 +244,7 @@ void read_goal(istream &in) {
         int var, val;
         in >> var >> val;
         g_goal.push_back(make_pair(var, val));
+        g_goal_orig.push_back(make_pair(var, val));
     }
     check_magic(in, "end_goal");
 }
@@ -248,10 +283,14 @@ void read_everything(istream &in) {
     read_operators(in);
     read_axioms(in);
     check_magic(in, "begin_SG");
-    g_successor_generator = read_successor_generator(in);
+    g_successor_generator_orig = read_successor_generator(in);
     check_magic(in, "end_SG");
     DomainTransitionGraph::read_all(in);
     g_causal_graph = new CausalGraph(in);
+    
+    for (int i = 0; i < g_operators.size(); i++) {
+        g_nondet_mapping[g_operators[i].get_nondet_name()].push_back(&g_operators[i]);
+    }
 }
 
 void dump_everything() {
@@ -325,9 +364,40 @@ vector<pair<int, int> > g_goal;
 vector<Operator> g_operators;
 vector<Operator> g_axioms;
 AxiomEvaluator *g_axiom_evaluator;
-SuccessorGenerator *g_successor_generator;
 vector<DomainTransitionGraph *> g_transition_graphs;
 CausalGraph *g_causal_graph;
+
+SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can be pruned based on deadends
+DeadendAwareSuccessorGenerator *g_successor_generator;
+
+map<string, vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
+vector<pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
+int g_matched_distance; // Containts the distance to the goal for the matched policy
+Policy *g_policy; // The policy to check while searching
+Policy *g_regressable_ops; // The policy to check what operators are applicable
+Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
+Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
+Policy *g_best_policy; // The best policy we've found so far
+double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
+int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
+bool g_silent_planning = false;
+bool g_forgetpolicy = false; // Forget the global policy after every simulation run
+bool g_fullstate = false; // Use the full state for regression
+bool g_plan_locally = false; // Plan for the expected state rather than replanning to the goal
+bool g_plan_with_policy = true; // Stop planning when the policy matches
+bool g_detect_deadends = false; // Decide whether or not deadends should be detected and avoided
+bool g_seeded = false; // Only want to seed once
+int g_num_trials = 1; // Number of trials that should be used for the simulation
+double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
+vector<pair<int, int> > g_goal_orig;
+
+Timer g_timer_regression;
+Timer g_timer_engine_init;
+Timer g_timer_search;
+Timer g_timer_policy_build;
+Timer g_timer_policy_eval;
+Timer g_timer_policy_use;
+Timer g_timer_jit;
 
 Timer g_timer;
 string g_plan_filename = "sas_plan";
