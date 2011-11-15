@@ -14,6 +14,7 @@ bool perform_jit_repairs(Simulator *sim) {
     State *current_goal;
     bool made_change = false;
     g_failed_open_states = 0;
+    int num_checked_states = 0;
     vector<State *> failed_states;
     
     State *old_initial_state = new State(*g_initial_state);
@@ -32,6 +33,7 @@ bool perform_jit_repairs(Simulator *sim) {
     created_states.push_back(current_goal);
     
     while (!open_list.empty() && (g_timer_jit() < g_jic_limit)) {
+        num_checked_states++;
         current_state = open_list.front().first;
         current_goal = open_list.front().second;
         open_list.pop();
@@ -111,8 +113,10 @@ bool perform_jit_repairs(Simulator *sim) {
     sim->set_state(g_initial_state);
     sim->set_goal(goal_orig);
     
-    if (!g_silent_planning)
+    if (!g_silent_planning) {
         cout << "Could not close " << g_failed_open_states << " open leaf states." << endl;
+        cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
+    }
         
     if (0 == g_failed_open_states)
         g_policy->mark_strong();
@@ -125,7 +129,7 @@ bool perform_jit_repairs(Simulator *sim) {
         if (cur_score > g_best_policy_score) {
             
             if (!g_silent_planning)
-                cout << "Found a better policy of score " << g_best_policy_score << endl;
+                cout << "Found a better policy of score " << cur_score << endl;
             
             if (g_best_policy && (g_best_policy != g_policy))
                 delete g_best_policy;

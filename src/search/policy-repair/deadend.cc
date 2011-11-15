@@ -54,6 +54,14 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &curr, 
             }
         }
         
+        // Add this state as a deadend if we have ruled out everything
+        if (ops.empty()) {
+            //cout << "Adding a new deadend state..." << endl;
+            vector<State *> failed_states;
+            failed_states.push_back(new State(curr));
+            update_deadends(failed_states);
+        }
+        
     } else {
         
         g_successor_generator_orig->generate_applicable_ops(curr, ops);

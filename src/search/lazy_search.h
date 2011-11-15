@@ -34,7 +34,8 @@ protected:
     const Operator *current_operator;
     int current_g;
     int current_real_g;
-
+    
+    bool was_initialized;
     virtual void initialize();
     virtual int step();
 

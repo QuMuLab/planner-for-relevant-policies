@@ -22,7 +22,8 @@ LazySearch::LazySearch(const Options &opts)
       current_predecessor_buffer(NULL),
       current_operator(NULL),
       current_g(0),
-      current_real_g(0) {
+      current_real_g(0),
+      was_initialized(false) {
 }
 
 LazySearch::~LazySearch() {
@@ -55,6 +56,12 @@ void LazySearch::initialize() {
     if (!g_silent_planning)
         cout << "Conducting lazy best first search, (real) bound = " << bound << endl;
 
+    // Only set up the heuristics on the first go
+    if (was_initialized)
+        return;
+    else
+        was_initialized = true;
+    
     assert(open_list != NULL);
     set<Heuristic *> hset;
     open_list->get_involved_heuristics(hset);
