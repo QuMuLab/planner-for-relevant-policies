@@ -220,9 +220,15 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--plan-with-policy") == 0) {
             ++i;
             g_plan_with_policy = (1 == atoi(argv[i]));
+        } else if (arg.compare("--limit-planlocal") == 0) {
+            ++i;
+            g_plan_locally_limited = (1 == atoi(argv[i]));
         } else if (arg.compare("--detect-deadends") == 0) {
             ++i;
             g_detect_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--optimized-scd") == 0) {
+            ++i;
+            g_optimized_scd = (1 == atoi(argv[i]));
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;
@@ -261,12 +267,16 @@ string OptionParser::usage(string progname) {
         "    Use full states in the regression.\n\n"
         "--planlocal 1/0\n"
         "    Plan locally to recover before planning for the goal.\n\n"
+        "--limit-planlocal 1/0\n"
+        "    Limit the planlocal searching to a fixed number of search steps.\n\n"
         "--plan-with-policy 1/0\n"
         "    Stop searching when the policy matches the current state.\n\n"
         "--trials NUM_TRIALS\n"
         "    Number of trials to run for the simulator.\n\n"
         "--detect-deadends 1/0\n"
         "    Use primitive deadend detection to ensure a strongly cyclic solution.\n\n"
+        "--optimized-scd 1/0\n"
+        "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }

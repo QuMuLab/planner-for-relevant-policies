@@ -66,11 +66,18 @@ State::State(const State &predecessor, const Operator &op, bool progress) {
     _copy_buffer_from_state(predecessor);
     // Update values affected by operator.
     if (progress) {
+        
         for (int i = 0; i < op.get_pre_post().size(); i++) {
             const PrePost &pre_post = op.get_pre_post()[i];
             if (pre_post.does_fire(predecessor))
                 vars[pre_post.var] = pre_post.post;
         }
+        
+        // HAZ: We do the prevail's as well in case we are progressing a partial state
+        for (int i = 0; i < op.get_prevail().size(); i++) {
+            vars[op.get_prevail()[i].var] = state_var_t(op.get_prevail()[i].prev);
+        }
+        
     } else {
         // Make sure there are no conditional effects
         assert(!op.has_conditional_effect());

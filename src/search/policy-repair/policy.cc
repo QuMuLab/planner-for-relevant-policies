@@ -33,6 +33,7 @@ public:
     virtual void generate_cpp_input(ofstream &outfile) const = 0;
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen) = 0;
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items) = 0;
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound) = 0;
     
     GeneratorBase *create_generator(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     int get_best_var(list<PolicyItem *> &reg_items, set<int> &vars_seen);
@@ -54,6 +55,7 @@ public:
     GeneratorSwitch(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items);
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -64,6 +66,7 @@ public:
     GeneratorLeaf(list<PolicyItem *> &reg_items);
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items);
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -72,6 +75,7 @@ class GeneratorEmpty : public GeneratorBase {
 public:
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     virtual void generate_applicable_items(const State &, vector<PolicyItem *> &) {}
+    virtual void generate_applicable_items(const State &, vector<PolicyItem *> &, int) {}
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -81,14 +85,55 @@ void GeneratorSwitch::generate_applicable_items(const State &curr, vector<Policy
     for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter)
         reg_items.push_back(*op_iter);
     
-    generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items);
+    if (curr[switch_var] != state_var_t(-1))
+        generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items);
     default_generator->generate_applicable_items(curr, reg_items);
+}
+
+void GeneratorSwitch::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound) {
+    int best_val = 9999999;
+    PolicyItem * best_rs = NULL;
+    for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter)
+    {
+        int cur_val = ((RegressionStep *)(*op_iter))->distance;
+        if (cur_val < best_val) {
+            best_val = cur_val;
+            best_rs = *op_iter;
+        }
+    }
+    if (best_val <= bound)
+        reg_items.push_back(best_rs);
+    
+    if (curr[switch_var] == state_var_t(-1)) {
+        for (int i = 0; i < g_variable_domain[switch_var]; i++) {
+            generator_for_value[i]->generate_applicable_items(curr, reg_items, bound);
+        }
+    } else {
+        generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items, bound);
+    }
+    default_generator->generate_applicable_items(curr, reg_items, bound);
 }
 
 void GeneratorLeaf::generate_applicable_items(const State &, vector<PolicyItem *> &reg_items) {
     for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter)
         reg_items.push_back(*op_iter);
 }
+
+void GeneratorLeaf::generate_applicable_items(const State &, vector<PolicyItem *> &reg_items, int bound) {
+    int best_val = 9999999;
+    PolicyItem * best_rs = NULL;
+    for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter)
+    {
+        int cur_val = ((RegressionStep *)(*op_iter))->distance;
+        if (cur_val < best_val) {
+            best_val = cur_val;
+            best_rs = *op_iter;
+        }
+    }
+    if (best_val <= bound)
+        reg_items.push_back(best_rs);
+}
+
 
 
 GeneratorSwitch::GeneratorSwitch(int switch_variable,
@@ -371,17 +416,33 @@ RegressionStep *Policy::get_best_step(const State &curr) {
         return 0;
     }
     
-    int best_index = 0;
-    int best_val = ((RegressionStep*)(current_steps[0]))->distance;
+    int best_index = -1;
+    int best_val = 999999; // This will only be invalid if a plan length was > 10^6
+    
+    int best_sc_index = -1;
+    int best_sc_val = 999999;
     
     for (int i = 0; i < current_steps.size(); i++) {
-        if (((RegressionStep*)(current_steps[i]))->distance < best_val) {
-            best_val = ((RegressionStep*)(current_steps[i]))->distance;
+        
+        int cur_val = ((RegressionStep*)(current_steps[i]))->distance;
+        
+        if (cur_val < best_val) {
+            best_val = cur_val;
             best_index = i;
+        }
+        
+        if (g_optimized_scd &&
+            ((RegressionStep*)(current_steps[i]))->is_sc &&
+            (cur_val < best_sc_val)) {
+            best_sc_val = cur_val;
+            best_sc_index = i;
         }
     }
     g_timer_policy_use.stop();
-    return (RegressionStep*)(current_steps[best_index]);
+    if (g_optimized_scd && (-1 != best_sc_index))
+        return (RegressionStep*)(current_steps[best_sc_index]);
+    else
+        return (RegressionStep*)(current_steps[best_index]);
 }
 
 Policy::Policy() {
@@ -443,3 +504,61 @@ void Policy::evaluate_random() {
     score = double(succeeded) / double(NUMTRIALS);
 }
 
+
+
+void Policy::init_scd() {
+    for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
+         op_iter != all_items.end(); ++op_iter)
+         ((RegressionStep *)(*op_iter))->is_sc = true;
+}
+
+bool Policy::step_scd() {
+    bool made_change = false;
+    int remaining_sc = 0;
+    for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
+         op_iter != all_items.end(); ++op_iter)
+    {
+        RegressionStep *rs = (RegressionStep *)(*op_iter);
+        if (rs->is_sc && !(rs->is_goal)) {
+            
+            remaining_sc++;
+            
+            for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
+                
+                State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
+                vector<PolicyItem *> guaranteed_steps;
+                root->generate_applicable_items(*succ_state, guaranteed_steps);
+                
+                int min_cost = 999999; // This will only be too low if we found a plan of length 10^6
+                for (int j = 0; j < guaranteed_steps.size(); j++) {
+                    if (((RegressionStep *)guaranteed_steps[j])->distance < min_cost)
+                        min_cost = ((RegressionStep *)guaranteed_steps[j])->distance;
+                }
+                
+                vector<PolicyItem *> possible_steps;
+                root->generate_applicable_items(*succ_state, possible_steps, min_cost);
+                
+                if (0 == possible_steps.size()) {
+                    rs->is_sc = false;
+                    made_change = true;
+                    i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+                }
+                
+                //cout << "Guaranteed steps / Possible steps: " << guaranteed_steps.size() << " / " << possible_steps.size() << endl;
+                
+                for (int j = 0; j < possible_steps.size(); j++) {
+                    if (!(((RegressionStep *)possible_steps[j])->is_sc)) {
+                        rs->is_sc = false;
+                        made_change = true;
+                        i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+                        j = possible_steps.size();
+                    }
+                }
+                
+                delete succ_state;
+            }
+        }
+    }
+    //cout << "Retained " << remaining_sc << " sc states." << endl;
+    return made_change;
+}

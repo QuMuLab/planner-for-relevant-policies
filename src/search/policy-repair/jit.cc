@@ -17,6 +17,19 @@ bool perform_jit_repairs(Simulator *sim) {
     int num_checked_states = 0;
     vector<State *> failed_states;
     
+    
+    
+    if (g_optimized_scd) {
+        g_policy->init_scd();
+        made_change = true;
+        
+        while (made_change) {
+            made_change = g_policy->step_scd();
+        }
+    }
+    
+    
+    
     State *old_initial_state = new State(*g_initial_state);
     
     // Build the goal state
@@ -52,6 +65,15 @@ bool perform_jit_repairs(Simulator *sim) {
                 sim->set_goal(current_goal);
                 have_solution = sim->replan();
                 
+                if (g_optimized_scd) {
+                    g_policy->init_scd();
+                    bool _made_change = true;
+                    
+                    while (_made_change) {
+                        _made_change = g_policy->step_scd();
+                    }
+                }
+                
                 if (have_solution) {
                     regstep = g_policy->get_best_step(*current_state);
                     made_change = true;
@@ -62,7 +84,7 @@ bool perform_jit_repairs(Simulator *sim) {
                 
                 assert(regstep);
                 
-                if (!(regstep->is_goal)) {
+                if ( ! (regstep->is_goal || (g_optimized_scd && regstep->is_sc))) {
                     // Record the expected state
                     State *expected_state = new State(*current_state, *(regstep->op));
                     created_states.push_back(expected_state);

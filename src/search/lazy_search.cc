@@ -169,7 +169,7 @@ int LazySearch::step() {
     // - current_g is the g value of the current state according to the cost_type
     // - current_g is the g value of the current state (using real costs)
 
-    if (limit_states) {
+    if (g_plan_locally_limited && limit_states) {
         if (state_count > 1000) // Gotta love magic numbers...
             return FAILED;
         else

@@ -51,6 +51,9 @@ public:
     double get_score();
     int get_size() { return all_items.size(); }
     bool is_complete() { return complete; }
+    
+    void init_scd();
+    bool step_scd();
 };
 
 #endif
