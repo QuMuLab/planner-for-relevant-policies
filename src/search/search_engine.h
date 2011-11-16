@@ -47,6 +47,8 @@ public:
     int get_bound() {return bound; }
     static void add_options_to_parser(OptionParser &parser);
     
+    bool limit_states; // Used to limit the search when replanning for a local goal
+    
     virtual void reset();
 };
 

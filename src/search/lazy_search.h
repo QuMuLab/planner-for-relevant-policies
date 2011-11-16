@@ -35,6 +35,8 @@ protected:
     int current_g;
     int current_real_g;
     
+    int state_count; // Used to limit the search when replanning for a local goal
+    
     bool was_initialized;
     virtual void initialize();
     virtual int step();

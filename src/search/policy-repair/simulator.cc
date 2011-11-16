@@ -198,9 +198,13 @@ bool Simulator::replan() {
     if (engine_ready) {
         if (verbose)
             cout << "Searching for a solution." << endl;
+        
+        if (try_again)
+            engine->limit_states = true;
         g_timer_search.resume();
         engine->search();
         g_timer_search.stop();
+        engine->limit_states = false;
         
         if (engine->found_solution()) {
             

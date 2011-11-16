@@ -37,6 +37,7 @@ void LazySearch::reset() {
     current_operator = NULL;
     current_g = 0;
     current_real_g = 0;
+    state_count = 0;
 
     open_list->clear();
 
@@ -168,6 +169,12 @@ int LazySearch::step() {
     // - current_g is the g value of the current state according to the cost_type
     // - current_g is the g value of the current state (using real costs)
 
+    if (limit_states) {
+        if (state_count > 1000) // Gotta love magic numbers...
+            return FAILED;
+        else
+            state_count++;
+    }
 
     SearchNode node = search_space.get_node(current_state);
     bool reopen = reopen_closed_nodes && (current_g < node.get_g()) && !node.is_dead_end() && !node.is_new();

@@ -11,7 +11,8 @@ using namespace std;
 SearchEngine::SearchEngine(const Options &opts)
     : search_space(OperatorCost(opts.get_enum("cost_type"))),
       cost_type(OperatorCost(opts.get_enum("cost_type"))),
-      options(&opts) {
+      options(&opts),
+      limit_states(false) {
     solved = false;
     if (opts.get<int>("bound") < 0) {
         cerr << "error: negative cost bound " << opts.get<int>("bound") << endl;
