@@ -12,7 +12,7 @@ for i in range(1,31):
     blocks_orig.append(("blocksworld/domain.pddl", "blocksworld/p%d.pddl" % i))
 
 blocks_new = []
-for i in range(1,31):
+for i in range(1,51):
     blocks_new.append(("blocksworld-new/domain.pddl", "blocksworld-new/p%d.pddl" % i))
 
 blocks2 = []
