@@ -130,8 +130,8 @@ def doit_fip(domain, dom_probs):
         progress_file = None,
         processors = CORES,
         sandbox = 'fip',
-        output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.'+str(res.id)+'.out'),
-        error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.'+str(res.id)+'.err')
+        output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.err')
     )
     
     timeouts = 0
