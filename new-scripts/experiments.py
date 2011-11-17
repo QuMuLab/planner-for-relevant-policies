@@ -19,13 +19,13 @@ EPILOG = """\
 PLEASE NOTE: The available options depend on the selected experiment type:
 
 global options:  %(exe)s --help
-special options: %(exe)s {local,gkigrid,argo} --help
+special options: %(exe)s {local,gkigrid} --help
 --------------------------------------------------------------------------------
 """ % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
                 'gkigrid': environments.GkiGridEnvironment,
-                'argo': environments.ArgoEnvironment}
+                'maia': environments.MaiaEnvironment}
 
 DEFAULT_ABORT_ON_FAILURE = True
 
@@ -40,8 +40,10 @@ class ExpArgParser(tools.ArgParser):
         self.add_argument(
             '--shard-size', type=int, default=100,
             help='how many tasks to group into one top-level directory')
-        self.add_argument('--build-main-script-only', action='store_true',
+        self.add_argument('--only-main-script', action='store_true',
             help='Only write the main experiment script to disk and exit.')
+        self.add_argument('--no-main-script', action='store_true',
+            help='Write a normal experiment, but omit the main script.')
 
 
 class Experiment(object):
@@ -123,18 +125,21 @@ class Experiment(object):
         """
         Apply all the actions to the filesystem
         """
-        tools.overwrite_dir(self.path)
-
         # Make the variables absolute
         self.env_vars = dict([(var, self._get_abs_path(path))
                               for (var, path) in self.env_vars.items()])
 
         self._set_run_dirs()
 
-        self._build_main_script()
-        if self.build_main_script_only:
+        if not self.no_main_script:
+            # This is the first part where we only write the main script.
+            # We only overwrite the exp dir in the first part.
+            tools.overwrite_dir(self.path)
+            self._build_main_script()
+        if self.only_main_script:
             sys.exit()
 
+        # This is the second part where we write everything else
         self._build_resources()
         self._build_runs()
         self._build_properties_file()
@@ -252,9 +257,6 @@ class Run(object):
         self.required_output = []
 
         self.properties = tools.Properties()
-
-        if hasattr(experiment, 'queue'):
-            self.set_property('queue', experiment.queue)
 
     def set_property(self, name, value):
         """
@@ -429,19 +431,7 @@ class Run(object):
         If we are building an argo experiment, add all linked resources to
         the resources list
         """
-        # Determine if we should link (gkigrid) or copy (argo)
-        if self.experiment.environment == environments.ArgoEnvironment:
-            # Copy into run dir by adding the linked resource to normal
-            # resources list
-            for resource_name in self.linked_resources:
-                source = self.experiment.env_vars.get(resource_name, None)
-                if not source:
-                    logging.error('If you require a resource you have to add '
-                                  'it to the experiment')
-                    sys.exit(1)
-                basename = os.path.basename(source)
-                dest = self._get_abs_path(basename)
-                self.resources.append((source, dest, True, False))
+        self.experiment.environment.build_linked_resources(self)
 
     def _build_resources(self):
         for name, content in self.new_files:

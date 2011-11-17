@@ -1,5 +1,0 @@
-revision 4e29aa5e01c9
-
-- PDBs haben sich geändert. Kanten werden nicht mehr repräsentiert.
-- Beim samplen wird jetzt die Länge durch die Durchschnittsaktionskosten 
-geteilt

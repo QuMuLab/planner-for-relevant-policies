@@ -1,5 +1,0 @@
-revision af45c5af0019
-
-- Bugfix: no applicable operators -> handle like dead end
-- Caching of pattern databases
-

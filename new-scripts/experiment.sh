@@ -53,15 +53,19 @@ if [[ -z $REPORTATTRS ]]; then
     REPORTATTRS=""
 fi
 
-# Support specifying an the module that is used for experiment creation.
+# Support specifying the module that is used for experiment creation.
 # This is useful for the issue*.py scripts.
 if [[ -z $EXPMODULE ]]; then
     EXPMODULE=downward_experiments.py
 fi
 
+# Support specifying various experiment options.
+if [[ -z $EXPOPTS ]]; then
+    EXPOPTS=""
+fi
+
 ## You can set EXPNAME manually or it will be derived from the
 ## basename of the script that called this one.
-
 if [[ -z $EXPNAME ]]; then
     EXPNAME="exp-$(basename "$0" .sh)"
 fi
@@ -86,7 +90,7 @@ elif [[ "$PHASE" == 2 ]]; then
 elif [[ "$PHASE" == 3 ]]; then
     ./resultfetcher.py $EXPNAME-p
 elif [[ "$PHASE" == 4 ]]; then
-    ./$EXPMODULE -s $SUITE -c $CONFIGS --path $EXPNAME $EXPTYPEOPT
+    ./$EXPMODULE -s $SUITE -c $CONFIGS --path $EXPNAME $EXPOPTS $EXPTYPEOPT
 elif [[ "$PHASE" == 5 ]]; then
     run_experiment $EXPNAME
 elif [[ "$PHASE" == 6 ]]; then
