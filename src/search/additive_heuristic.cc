@@ -16,6 +16,7 @@ using namespace std;
 AdditiveHeuristic::AdditiveHeuristic(const Options &opts)
     : RelaxationHeuristic(opts),
       did_write_overflow_warning(false) {
+    g_heuristic_for_reachability = this;
 }
 
 AdditiveHeuristic::~AdditiveHeuristic() {
@@ -65,8 +66,15 @@ void AdditiveHeuristic::setup_exploration_queue() {
 
 void AdditiveHeuristic::setup_exploration_queue_state(const State &state) {
     for (int var = 0; var < propositions.size(); var++) {
-        Proposition *init_prop = &propositions[var][state[var]];
-        enqueue_if_necessary(init_prop, 0, 0);
+        if (state_var_t(-1) == state[var]) {
+            for (int val = 0; val < propositions[var].size(); val++) {
+                Proposition *init_prop = &propositions[var][val];
+                enqueue_if_necessary(init_prop, 0, 0);
+            }
+        } else {
+            Proposition *init_prop = &propositions[var][state[var]];
+            enqueue_if_necessary(init_prop, 0, 0);
+        }
     }
 }
 

@@ -40,7 +40,7 @@ public:
     void generate_cpp_input(ofstream &outfile) const;
     
     void update_policy(list<PolicyItem *> &reg_items);
-    void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items);
+    void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all = false);
     RegressionStep *get_best_step(const State &curr);
     bool empty() { return (0 == root); }
     
@@ -53,7 +53,7 @@ public:
     bool is_complete() { return complete; }
     
     void init_scd();
-    bool step_scd();
+    bool step_scd(vector<State *> &failed_states);
 };
 
 #endif

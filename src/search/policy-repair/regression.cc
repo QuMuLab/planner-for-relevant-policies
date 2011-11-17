@@ -3,6 +3,7 @@
 
 void RegressionStep::dump() const {
     cout << "Regression Step (" << distance << ")" << endl;
+    cout << " SC: " << is_sc << endl;
     if (!is_goal) {
         cout << " -{ Operator }-" << endl;
         op->dump();

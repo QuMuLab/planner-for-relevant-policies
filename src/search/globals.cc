@@ -386,12 +386,15 @@ bool g_fullstate = false; // Use the full state for regression
 bool g_plan_locally = false; // Plan for the expected state rather than replanning to the goal
 bool g_plan_locally_limited = true; // Limit the local planning to a small number of search nodes
 bool g_plan_with_policy = true; // Stop planning when the policy matches
+bool g_partial_planlocal = false; // Plan locally to the partial state that would have matched our expected state
 bool g_detect_deadends = false; // Decide whether or not deadends should be detected and avoided
+bool g_generalize_deadends; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
 bool g_optimized_scd = false; // Do optimized strong cyclic detection
 bool g_seeded = false; // Only want to seed once
 int g_num_trials = 1; // Number of trials that should be used for the simulation
 double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
 vector<pair<int, int> > g_goal_orig;
+Heuristic *g_heuristic_for_reachability;
 
 Timer g_timer_regression;
 Timer g_timer_engine_init;

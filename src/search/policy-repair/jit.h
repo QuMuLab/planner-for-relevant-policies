@@ -1,7 +1,7 @@
 #ifndef JIT_H
 #define JIT_H
 
-#include <queue>
+#include <stack>
 #include <list>
 #include <set>
 

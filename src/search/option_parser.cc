@@ -217,6 +217,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--planlocal") == 0) {
             ++i;
             g_plan_locally = (1 == atoi(argv[i]));
+        } else if (arg.compare("--partial-planlocal") == 0) {
+            ++i;
+            g_partial_planlocal = (1 == atoi(argv[i]));
         } else if (arg.compare("--plan-with-policy") == 0) {
             ++i;
             g_plan_with_policy = (1 == atoi(argv[i]));
@@ -226,6 +229,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--detect-deadends") == 0) {
             ++i;
             g_detect_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--generalize-deadends") == 0) {
+            ++i;
+            g_generalize_deadends = (1 == atoi(argv[i]));
         } else if (arg.compare("--optimized-scd") == 0) {
             ++i;
             g_optimized_scd = (1 == atoi(argv[i]));
@@ -267,6 +273,8 @@ string OptionParser::usage(string progname) {
         "    Use full states in the regression.\n\n"
         "--planlocal 1/0\n"
         "    Plan locally to recover before planning for the goal.\n\n"
+        "--partial-planlocal 1/0\n"
+        "    Use the partial state that matches the expect state when planning locally.\n\n"
         "--limit-planlocal 1/0\n"
         "    Limit the planlocal searching to a fixed number of search steps.\n\n"
         "--plan-with-policy 1/0\n"
@@ -275,6 +283,8 @@ string OptionParser::usage(string progname) {
         "    Number of trials to run for the simulator.\n\n"
         "--detect-deadends 1/0\n"
         "    Use primitive deadend detection to ensure a strongly cyclic solution.\n\n"
+        "--generalize-deadends 1/0\n"
+        "    Generalize the deadends found based on relaxed reachability.\n\n"
         "--optimized-scd 1/0\n"
         "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
         "See http://www.fast-downward.org/ for details.";

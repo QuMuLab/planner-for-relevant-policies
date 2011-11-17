@@ -32,7 +32,7 @@ public:
     virtual void dump(string indent) const = 0;
     virtual void generate_cpp_input(ofstream &outfile) const = 0;
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen) = 0;
-    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items) = 0;
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all) = 0;
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound) = 0;
     
     GeneratorBase *create_generator(list<PolicyItem *> &reg_items, set<int> &vars_seen);
@@ -54,7 +54,7 @@ public:
                     GeneratorBase *default_gen);
     GeneratorSwitch(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
-    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items);
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all);
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
@@ -65,7 +65,7 @@ class GeneratorLeaf : public GeneratorBase {
 public:
     GeneratorLeaf(list<PolicyItem *> &reg_items);
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
-    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items);
+    virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all);
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
@@ -74,20 +74,26 @@ public:
 class GeneratorEmpty : public GeneratorBase {
 public:
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
-    virtual void generate_applicable_items(const State &, vector<PolicyItem *> &) {}
+    virtual void generate_applicable_items(const State &, vector<PolicyItem *> &, bool) {}
     virtual void generate_applicable_items(const State &, vector<PolicyItem *> &, int) {}
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
 
 
-void GeneratorSwitch::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items) {
+void GeneratorSwitch::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
     for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter)
         reg_items.push_back(*op_iter);
     
     if (curr[switch_var] != state_var_t(-1))
-        generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items);
-    default_generator->generate_applicable_items(curr, reg_items);
+        generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items, keep_all);
+    else if (keep_all) {
+        for (int i = 0; i < g_variable_domain[switch_var]; i++) {
+            generator_for_value[i]->generate_applicable_items(curr, reg_items, keep_all);
+        }
+    }
+    
+    default_generator->generate_applicable_items(curr, reg_items, keep_all);
 }
 
 void GeneratorSwitch::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound) {
@@ -114,7 +120,7 @@ void GeneratorSwitch::generate_applicable_items(const State &curr, vector<Policy
     default_generator->generate_applicable_items(curr, reg_items, bound);
 }
 
-void GeneratorLeaf::generate_applicable_items(const State &, vector<PolicyItem *> &reg_items) {
+void GeneratorLeaf::generate_applicable_items(const State &, vector<PolicyItem *> &reg_items, bool) {
     for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter)
         reg_items.push_back(*op_iter);
 }
@@ -397,9 +403,9 @@ void Policy::update_policy(list<PolicyItem *> &reg_items) {
     g_timer_policy_build.stop();
 }
 
-void Policy::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items) {
+void Policy::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
     if (root)
-        root->generate_applicable_items(curr, reg_items);
+        root->generate_applicable_items(curr, reg_items, keep_all);
 }
 
 RegressionStep *Policy::get_best_step(const State &curr) {
@@ -462,7 +468,10 @@ Policy::~Policy() {
 
 void Policy::dump() const {
     cout << "Policy:" << endl;
-    root->dump("  ");
+    //root->dump("  ");
+    for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
+         op_iter != all_items.end(); ++op_iter)
+         (*op_iter)->dump();
 }
 void Policy::generate_cpp_input(ofstream &outfile) const {
     root->generate_cpp_input(outfile);
@@ -512,7 +521,7 @@ void Policy::init_scd() {
          ((RegressionStep *)(*op_iter))->is_sc = true;
 }
 
-bool Policy::step_scd() {
+bool Policy::step_scd(vector<State *> &failed_states) {
     bool made_change = false;
     int remaining_sc = 0;
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
@@ -527,7 +536,7 @@ bool Policy::step_scd() {
                 
                 State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
                 vector<PolicyItem *> guaranteed_steps;
-                root->generate_applicable_items(*succ_state, guaranteed_steps);
+                root->generate_applicable_items(*succ_state, guaranteed_steps, false);
                 
                 int min_cost = 999999; // This will only be too low if we found a plan of length 10^6
                 for (int j = 0; j < guaranteed_steps.size(); j++) {
@@ -539,9 +548,32 @@ bool Policy::step_scd() {
                 root->generate_applicable_items(*succ_state, possible_steps, min_cost);
                 
                 if (0 == possible_steps.size()) {
-                    rs->is_sc = false;
-                    made_change = true;
-                    i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+                    
+                    bool is_failed_state = false;
+                    for (int j = 0; j < failed_states.size(); j++) {
+                        // Unfortunately, we can't just check the states equivalence,
+                        //  since the succ_state is a partial state.
+                        is_failed_state = true;
+                        for (int k = 0; k < g_variable_name.size(); k++) {
+                            if (((*(failed_states[j]))[k] != state_var_t(-1)) &&
+                                ((*(failed_states[j]))[k] != (*succ_state)[k])) {
+                                is_failed_state = false;
+                                break;
+                            }
+                        }
+                        
+                        if (is_failed_state)
+                            break;
+
+                    }
+                    
+                    
+                    if (!is_failed_state) {
+                        rs->is_sc = false;
+                        made_change = true;
+                        i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+                    }
+                    
                 }
                 
                 //cout << "Guaranteed steps / Possible steps: " << guaranteed_steps.size() << " / " << possible_steps.size() << endl;

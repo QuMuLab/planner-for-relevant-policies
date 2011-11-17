@@ -7,7 +7,7 @@ void UnhandledState::dump() const {
 
 
 bool perform_jit_repairs(Simulator *sim) {
-    queue<pair<State *, State *> > open_list;
+    stack<pair<State *, State *> > open_list;
     set<State> seen;
     vector<State *> created_states;
     State *current_state;
@@ -24,7 +24,7 @@ bool perform_jit_repairs(Simulator *sim) {
         made_change = true;
         
         while (made_change) {
-            made_change = g_policy->step_scd();
+            made_change = g_policy->step_scd(failed_states);
         }
     }
     
@@ -47,8 +47,8 @@ bool perform_jit_repairs(Simulator *sim) {
     
     while (!open_list.empty() && (g_timer_jit() < g_jic_limit)) {
         num_checked_states++;
-        current_state = open_list.front().first;
-        current_goal = open_list.front().second;
+        current_state = open_list.top().first;
+        current_goal = open_list.top().second;
         open_list.pop();
         
         if (0 == seen.count(*current_state)) {
@@ -70,7 +70,7 @@ bool perform_jit_repairs(Simulator *sim) {
                     bool _made_change = true;
                     
                     while (_made_change) {
-                        _made_change = g_policy->step_scd();
+                        _made_change = g_policy->step_scd(failed_states);
                     }
                 }
                 
@@ -89,6 +89,12 @@ bool perform_jit_repairs(Simulator *sim) {
                     State *expected_state = new State(*current_state, *(regstep->op));
                     created_states.push_back(expected_state);
                     
+                    if (g_partial_planlocal) {
+                        RegressionStep * expected_regstep = g_policy->get_best_step(*expected_state);
+                        expected_state = new State(*(expected_regstep->state));
+                        created_states.push_back(expected_state);
+                    }
+                    
                     for (int i = 0; i < g_nondet_mapping[regstep->op->get_nondet_name()].size(); i++) {
                         State *new_state = new State(*current_state, *(g_nondet_mapping[regstep->op->get_nondet_name()][i]));
                         created_states.push_back(new_state);
@@ -98,8 +104,12 @@ bool perform_jit_repairs(Simulator *sim) {
                 }
                 
             } else {
-                if (g_detect_deadends)
+                if (g_detect_deadends) {
+                    if (g_generalize_deadends)
+                        generalize_deadend(*current_state);
+                        
                     failed_states.push_back(current_state);
+                }
                 g_failed_open_states++;
                 
                 // This only matches when no strong cyclic solution exists
@@ -139,6 +149,7 @@ bool perform_jit_repairs(Simulator *sim) {
         cout << "\nCould not close " << g_failed_open_states << " open leaf states." << endl;
         cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
     //}
+    //g_policy->dump();
         
     if (0 == g_failed_open_states)
         g_policy->mark_strong();

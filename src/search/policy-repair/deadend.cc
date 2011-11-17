@@ -1,20 +1,53 @@
 #include "deadend.h"
 
+void generalize_deadend(State &state) {
+    
+    int h, old_val;
+    
+    ((AdditiveHeuristic *)g_heuristic_for_reachability)->reset();
+    
+    // If the whole state isn't recognized as a deadend, then don't bother
+    //  looking for a subset of the state
+    h = ((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_add_and_ff(state);
+    if (h != -1)
+        return;
+    
+    // We go through each variable and unset it, checking if the relaxed reachability
+    //  is violated.
+    for (int i = 0; i < g_variable_name.size(); i++) {
+        old_val = state[i];
+        state[i] = -1;
+        h = ((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_add_and_ff(state);
+        
+        // If relaxing variable i causes us to reach the goal, keep it in
+        if (h != -1)
+            state[i] = old_val;
+    }
+    
+    //cout << "Found relaxed deadend:" << endl;
+    //state.dump();
+}
+
 void update_deadends(vector<State *> &failed_states) {
     list<PolicyItem *> de_items;
     list<PolicyItem *> de_states;
     
     for (int i = 0; i < failed_states.size(); i++) {
+        // Generalize the deadend if need be
+        State * failed_state = failed_states[i];
+        //if (g_generalize_deadends)
+        //    generalize_deadend(*failed_state);
+        
         // Get the regressable operators for the given state.
         vector<PolicyItem *> reg_items;
-        g_regressable_ops->generate_applicable_items(*(failed_states[i]), reg_items);
+        g_regressable_ops->generate_applicable_items(*failed_state, reg_items, true);
         
         // For each operator, create a new deadend avoidance pair
         for (int j = 0; j < reg_items.size(); j++) {
             RegressableOperator *ro = (RegressableOperator*)(reg_items[j]);
-            de_items.push_back(new NondetDeadend(new State(*(failed_states[i]), *(ro->op), false),
+            de_items.push_back(new NondetDeadend(new State(*failed_state, *(ro->op), false),
                                                      ro->op->get_nondet_name()));
-            de_states.push_back(new NondetDeadend(new State(*(failed_states[i])),
+            de_states.push_back(new NondetDeadend(new State(*failed_state),
                                                      ro->op->get_nondet_name()));
         }
     }
@@ -55,12 +88,12 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &curr, 
         }
         
         // Add this state as a deadend if we have ruled out everything
-        if (ops.empty()) {
-            //cout << "Adding a new deadend state..." << endl;
-            vector<State *> failed_states;
-            failed_states.push_back(new State(curr));
-            update_deadends(failed_states);
-        }
+        //if (ops.empty()) {
+        //    cout << "Adding a new deadend state..." << endl;
+        //    vector<State *> failed_states;
+        //    failed_states.push_back(new State(curr));
+        //    update_deadends(failed_states);
+        //}
         
     } else {
         

@@ -14,6 +14,7 @@ class DomainTransitionGraph;
 class Operator;
 class Axiom;
 class State;
+class Heuristic;
 class SuccessorGenerator;
 class Timer;
 class RandomNumberGenerator;
@@ -79,12 +80,15 @@ extern bool g_fullstate; // Use the full state for regression
 extern bool g_plan_locally; // Plan for the expected state rather than replanning to the goal
 extern bool g_plan_locally_limited; // Limit the local planning to a small number of search nodes
 extern bool g_plan_with_policy; // Stop planning when the policy matches
+extern bool g_partial_planlocal; // Plan locally to the partial state that would have matched our expected state
 extern bool g_detect_deadends; // Decide whether or not deadends should be detected and avoided
+extern bool g_generalize_deadends; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
 extern bool g_optimized_scd; // Do optimized strong cyclic detection
 extern bool g_seeded; // Used to make sure we only seed the rng once
 extern int g_num_trials; // Number of trials that should be used for the simulation
 extern double g_jic_limit; // Limit for the just-in-case repairs
 extern std::vector<std::pair<int, int> > g_goal_orig;
+extern Heuristic *g_heuristic_for_reachability;
 
 /* Timers */
 extern Timer g_timer_regression;
