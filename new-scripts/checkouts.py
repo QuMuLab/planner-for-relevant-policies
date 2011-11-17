@@ -53,10 +53,14 @@ class Checkout(object):
         cwd = os.getcwd()
         os.chdir(self.src_dir)
         try:
-            subprocess.call(['./build_all'])
+            retcode = subprocess.call(['./build_all'])
         except OSError:
-            logging.warning('Changeset %s does not have the build_all script. '
-                            'Please compile it manually.' % self.rev)
+            logging.error('Changeset %s does not have the build_all script. '
+                          'Revision cannot be used by the scripts.' % self.rev)
+            sys.exit(1)
+        if not retcode == 0:
+            logging.error('Build script failed in: %s' % self.src_dir)
+            sys.exit(1)
         os.chdir(cwd)
 
     def get_path(self, *rel_path):
@@ -141,14 +145,15 @@ class HgCheckout(Checkout):
     def get_abs_rev(self, repo, rev):
         if str(rev).upper() == 'WORK':
             return 'WORK'
-        cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
-        if cmd in ABS_REV_CACHE:
-            return ABS_REV_CACHE[cmd]
+        cmd = ['hg', 'id', '-ir', '%s' % str(rev).lower(), '%s' % repo]
+        cmd_string = ' '.join(cmd)
+        if cmd_string in ABS_REV_CACHE:
+            return ABS_REV_CACHE[cmd_string]
         abs_rev = tools.run_command(cmd)
         if not abs_rev:
             logging.error('Revision %s not present in repo %s' % (rev, repo))
             sys.exit(1)
-        ABS_REV_CACHE[cmd] = abs_rev
+        ABS_REV_CACHE[cmd_string] = abs_rev
         return abs_rev
 
     def checkout(self):
@@ -182,7 +187,7 @@ class HgCheckout(Checkout):
         rev = self.rev
         if self.rev == 'WORK':
             rev = 'tip'
-        cmd = 'hg log -r %s --template {node|short}' % rev
+        cmd = ['hg', 'log', '-r', '%s' % rev, '--template', '{node|short}']
         self.parent = tools.run_command(cmd)
         return self.parent
 

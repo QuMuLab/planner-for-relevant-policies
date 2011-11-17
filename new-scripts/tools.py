@@ -195,9 +195,8 @@ def run_command(cmd, env=None):
     """
     Runs command cmd and returns the output
     """
-    logging.info('Running command "%s"' % cmd)
-    if type(cmd) == str:
-        cmd = cmd.split()
+    assert type(cmd) is list
+    logging.info('Running command: %s' % ' '.join(cmd))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
     output = p.communicate()[0].strip()
     return output

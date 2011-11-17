@@ -24,7 +24,8 @@ special options: %(exe)s {local,gkigrid} --help
 """ % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
-                'gkigrid': environments.GkiGridEnvironment}
+                'gkigrid': environments.GkiGridEnvironment,
+                'maia': environments.MaiaEnvironment}
 
 DEFAULT_ABORT_ON_FAILURE = True
 
@@ -256,9 +257,6 @@ class Run(object):
         self.required_output = []
 
         self.properties = tools.Properties()
-
-        if hasattr(experiment, 'queue'):
-            self.set_property('queue', experiment.queue)
 
     def set_property(self, name, value):
         """
