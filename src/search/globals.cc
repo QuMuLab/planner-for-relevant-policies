@@ -388,7 +388,7 @@ bool g_plan_locally_limited = true; // Limit the local planning to a small numbe
 bool g_plan_with_policy = true; // Stop planning when the policy matches
 bool g_partial_planlocal = false; // Plan locally to the partial state that would have matched our expected state
 bool g_detect_deadends = false; // Decide whether or not deadends should be detected and avoided
-bool g_generalize_deadends; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
+bool g_generalize_deadends = false; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
 bool g_optimized_scd = false; // Do optimized strong cyclic detection
 bool g_seeded = false; // Only want to seed once
 int g_num_trials = 1; // Number of trials that should be used for the simulation

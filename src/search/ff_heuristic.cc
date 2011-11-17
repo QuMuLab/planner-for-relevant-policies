@@ -24,6 +24,12 @@ FFHeuristic::FFHeuristic(const Options &opts)
 FFHeuristic::~FFHeuristic() {
 }
 
+
+void FFHeuristic::reset() {
+    AdditiveHeuristic::reset();
+    relaxed_plan.resize(g_operators.size(), false);
+}
+
 // initialization
 void FFHeuristic::initialize() {
     if (!g_silent_planning)

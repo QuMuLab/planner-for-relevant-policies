@@ -4,6 +4,10 @@
 using namespace std;
 
 SearchProgress::SearchProgress() {
+    reset();
+}
+
+void SearchProgress::reset() {
     expanded_states = 0;
     reopened_states = 0;
     evaluated_states = 0;
@@ -19,6 +23,9 @@ SearchProgress::SearchProgress() {
     lastjump_generated_states = 0;
 
     lastjump_f_value = -1;
+    
+    best_heuristic_values.clear();
+    initial_h_values.clear();
 }
 
 SearchProgress::~SearchProgress() {

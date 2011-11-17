@@ -27,6 +27,7 @@ SearchEngine::~SearchEngine() {
 void SearchEngine::reset() {
     solved = false;
     search_space.reset();
+    search_progress.reset();
     for (int i = 0; i < g_operators.size(); i++) {
         g_operators[i].unmark();
     }

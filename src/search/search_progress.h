@@ -72,6 +72,8 @@ public:
     void print_f_line() const;
     void print_h_line(int g) const;
     void print_statistics() const;
+    
+    void reset();
 };
 
 #endif
