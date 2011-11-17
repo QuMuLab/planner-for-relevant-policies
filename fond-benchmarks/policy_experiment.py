@@ -136,6 +136,7 @@ def doit_fip(domain, dom_probs):
     
     timeouts = 0
     memouts = 0
+    errorouts = 0
     fip_csv = ['domain,problem,runtime,size,status']
     for res_id in fip_results.get_ids():
         result = fip_results[res_id]
@@ -150,12 +151,16 @@ def doit_fip(domain, dom_probs):
             elif result.mem_out:
                 memouts += 1
                 fip_csv.append("%s,%s,-1,-1,M" % (domain, prob))
+            elif not result.clean_run:
+                errorouts += 1
+                fip_csv.append("%s,%s,-1,-1,E" % (domain, prob))
             else:
                 run, size = parse_fip(result.output_file)
                 fip_csv.append("%s,%s,%f,%d,-" % (domain, prob, run, size))
     
     print "\nTimed out %d times." % timeouts
-    print "Ran out of memory %d times.\n" % memouts
+    print "Ran out of memory %d times." % memouts
+    print "Unknown error %d times." % errorouts
     write_file("RESULTS/fip-%s-results.csv" % domain, fip_csv)
     
 
@@ -182,6 +187,7 @@ def doit_prp(domain, dom_probs, prp_params):
     
     timeouts = 0
     memouts = 0
+    errorouts = 0
     prp_csv = ['domain,problem,runtime,size,status,jic-limit,forgetpolicy,fullstate,planlocal,usepolicy,jic time,policy eval,policy creation,search time,engine time,regression time,successful states,replans,actions,strongly cyclic,succeeded']
     for res_id in prp_results.get_ids():
         result = prp_results[res_id]
@@ -197,7 +203,11 @@ def doit_prp(domain, dom_probs, prp_params):
             elif result.timed_out:
                 timeouts += 1
                 prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
-              
+            
+            elif not result.clean_run:
+                errorouts += 1
+                prp_csv.append("%s,%s,-1,-1,E,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+                
             else:
                 runtime, jic_time, policy_eval_time, policy_construction_time, \
                     search_time, engine_init_time, regression_time, successful_states, \
@@ -210,7 +220,8 @@ def doit_prp(domain, dom_probs, prp_params):
                                                             str(strongly_cyclic), str(succeeded)))
     
     print "\nTimed out %d times." % timeouts
-    print "Ran out of memory %d times.\n" % memouts
+    print "Ran out of memory %d times." % memouts
+    print "Unknown error %d times." % errorouts
     write_file("RESULTS/prp-%s-results.csv" % domain, prp_csv)
 
 
