@@ -66,20 +66,30 @@ for i in range(1,10):
 for i in range(10,16):
     zenotravel.append(("zenotravel/domain.pddl", "zenotravel/p%d.pddl" % i))
 
+# Triangle tireworld
+triangle_tire = []
+for i in range(1,26):
+    triangle_tire.append(("triangle-tireworld/domain.pddl", "triangle-tireworld/p%d.pddl" % i))
 
 # FINAL
 DOMAINS = {
     'blocksworld': blocks,
+    'blocksworld-test': [blocks_orig[0:2]],
     'blocksworld-new': blocks_new,
     'blocksworld-orig': blocks_orig,
     'blocksworld-2': blocks2,
     'faults': faults,
+    'faults-test': [faults[0:2]],
     'first' : first,
     'first-new' : first_new,
+    'first-test' : [first[0:2]],
     'forest' : forest,
     'forest-new' : forest_new,
+    'forest-test' : [forest_new[0:2]],
     'elevators' : elevators,
-    'zenotravel' : zenotravel
+    'zenotravel' : zenotravel,
+    'triangle-tire' : triangle_tire,
+    'triangle-tire-test' : [triangle_tire[0:2]]
 }
 
 REDUNDANT_DOMAINS = {
@@ -90,3 +100,5 @@ GOOD_DOMAINS = ['blocksworld', 'blocksworld-new', 'blocksworld-orig', 'first', '
 FOND_DOMAINS = ['blocksworld-orig', 'first', 'forest', 'faults']
 NEW_DOMAINS = ['blocksworld-new', 'first-new', 'forest-new']
 IPC06_DOMAINS = ['blocksworld-2', 'elevators', 'zenotravel']
+TEST_DOMAINS = ['blocksworld-test', 'first-test', 'forest-test', 'faults-test', 'triangle-tire-test']
+INTERESTING_DOMAINS = ['triangle-tire']

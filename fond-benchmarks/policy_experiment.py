@@ -1,5 +1,5 @@
 
-from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS, NEW_DOMAINS, IPC06_DOMAINS
+from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS, NEW_DOMAINS, IPC06_DOMAINS, TEST_DOMAINS, INTERESTING_DOMAINS
 
 from krrt.utils import get_opts, run_experiment, match_value, get_value, load_CSV, write_file, append_file, read_file
 
@@ -30,27 +30,51 @@ PRP_PARAMS = {'all': {'--jic-limit': [18000],
                       '--trials': [100],
                       '--plan-with-policy': [0,1]},
 
-              'best': {'--jic-limit': [18000],
-                       '--forgetpolicy': [0],
-                       '--fullstate': [0],
-                       '--planlocal': [0,1],
-                       '--detect-deadends': [1],
-                       '--trials': [100],
-                       '--plan-with-policy': [1]},
+              'best': { '--jic-limit': [18000],
+                        '--trials': [100],
+                        '--forgetpolicy': [0],
+                        '--fullstate': [0],
+                        '--planlocal': [1],
+                        '--partial-planlocal': [1],
+                        '--plan-with-policy': [1],
+                        '--limit-planlocal': [1],
+                        '--detect-deadends': [1],
+                        '--generalize-deadends': [1],
+                        '--online-deadends': [1],
+                        '--optimized-scd': [1]},
               
-              'ffreplan': {'--jic-limit': [0],
-                           '--forgetpolicy': [1],
-                           '--fullstate': [1],
-                           '--planlocal': [0],
-                           '--trials': [100],
-                           '--plan-with-policy': [1]},
+              'ffreplan': { '--jic-limit': [0],
+                            '--trials': [100],
+                            '--forgetpolicy': [1],
+                            '--fullstate': [1],
+                            '--planlocal': [0],
+                            '--partial-planlocal': [0],
+                            '--plan-with-policy': [1],
+                            '--limit-planlocal': [0],
+                            '--detect-deadends': [0],
+                            '--generalize-deadends': [0],
+                            '--online-deadends': [0],
+                            '--optimized-scd': [0]},
               
               'redundant': {'--jic-limit': [18000],
                             '--forgetpolicy': [0],
                             '--fullstate': [0,1],
                             '--planlocal': [0,1],
                             '--trials': [100],
-                            '--plan-with-policy': [1]}
+                            '--plan-with-policy': [1]},
+            
+              'test': { '--jic-limit': [0,18000],
+                        '--trials': [10],
+                        '--forgetpolicy': [0,1],
+                        '--fullstate': [0,1],
+                        '--planlocal': [0,1],
+                        '--partial-planlocal': [0,1],
+                        '--plan-with-policy': [0,1],
+                        '--limit-planlocal': [0,1],
+                        '--detect-deadends': [0,1],
+                        '--generalize-deadends': [0,1],
+                        '--online-deadends': [0,1],
+                        '--optimized-scd': [0,1]}
              }
 
 
@@ -99,6 +123,16 @@ def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PAR
     
     elif 'fond' == domain:
         for dom in FOND_DOMAINS:
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+        return
+    
+    elif 'test' == domain:
+        for dom in TEST_DOMAINS:
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+        return
+    
+    elif 'interesting' == domain:
+        for dom in INTERESTING_DOMAINS:
             doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
         return
 
