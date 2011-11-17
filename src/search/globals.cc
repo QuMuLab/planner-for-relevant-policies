@@ -378,6 +378,7 @@ Policy *g_regressable_ops; // The policy to check what operators are applicable
 Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
 Policy *g_best_policy; // The best policy we've found so far
+vector<State *> g_found_deadends; // Vector of deadends found while planning
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
 int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
 bool g_silent_planning = false;
@@ -389,6 +390,7 @@ bool g_plan_with_policy = true; // Stop planning when the policy matches
 bool g_partial_planlocal = false; // Plan locally to the partial state that would have matched our expected state
 bool g_detect_deadends = false; // Decide whether or not deadends should be detected and avoided
 bool g_generalize_deadends = false; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
+bool g_record_online_deadends = false; // Record the deadends as they occur online, and add them to the deadend policy after solving
 bool g_optimized_scd = false; // Do optimized strong cyclic detection
 bool g_seeded = false; // Only want to seed once
 int g_num_trials = 1; // Number of trials that should be used for the simulation

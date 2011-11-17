@@ -58,6 +58,7 @@ public:
     int get_reopened() const {return reopened_states; }
     int get_generated_ops() const {return generated_ops; }
     int get_pathmax_corrections() const {return pathmax_corrections; }
+    int get_deadend_states() const {return dead_end_states; }
 
     // f-value
     void report_f_value(int f);

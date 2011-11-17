@@ -60,7 +60,9 @@ public:
     static void add_options_to_parser(OptionParser &parser);
     static Options default_options();
     
+    // for policy handling
     virtual void reset() { preferred_operators.clear(); }
+    std::set<std::string> forbidden_ops;
 };
 
 #endif

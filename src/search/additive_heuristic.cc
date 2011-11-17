@@ -94,13 +94,20 @@ void AdditiveHeuristic::relaxed_exploration() {
         const vector<UnaryOperator *> &triggered_operators =
             prop->precondition_of;
         for (int i = 0; i < triggered_operators.size(); i++) {
-            UnaryOperator *unary_op = triggered_operators[i];
-            increase_cost(unary_op->cost, prop_cost);
-            unary_op->unsatisfied_preconditions--;
-            assert(unary_op->unsatisfied_preconditions >= 0);
-            if (unary_op->unsatisfied_preconditions == 0)
-                enqueue_if_necessary(unary_op->effect,
-                                     unary_op->cost, unary_op);
+            
+            // HAZ: This check exists to ensure that we aren't using forbidden
+            //       operators as achievers in the first layer. Future layers
+            //       is fine, so prop_cost > 0 will let it pass.
+            if (!g_detect_deadends || (prop_cost > 0) ||
+                (0 == forbidden_ops.count(g_operators[triggered_operators[i]->operator_no].get_nondet_name()))) {
+                UnaryOperator *unary_op = triggered_operators[i];
+                increase_cost(unary_op->cost, prop_cost);
+                unary_op->unsatisfied_preconditions--;
+                assert(unary_op->unsatisfied_preconditions >= 0);
+                if (unary_op->unsatisfied_preconditions == 0)
+                    enqueue_if_necessary(unary_op->effect,
+                                         unary_op->cost, unary_op);
+            }
         }
     }
 }

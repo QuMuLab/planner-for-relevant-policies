@@ -41,6 +41,7 @@ public:
     
     void update_policy(list<PolicyItem *> &reg_items);
     void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all = false);
+    bool check_match(const State &curr, bool keep_all = false);
     RegressionStep *get_best_step(const State &curr);
     bool empty() { return (0 == root); }
     

@@ -72,6 +72,7 @@ extern Policy *g_regressable_ops; // The policy to check what operators are appl
 extern Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 extern Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
 extern Policy *g_best_policy; // The best policy we've found so far
+extern std::vector<State *> g_found_deadends; // Vector of deadends found while planning
 extern double g_best_policy_score; // Score for the best policy we've seen so far
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_silent_planning; // Silence the planning output
@@ -83,6 +84,7 @@ extern bool g_plan_with_policy; // Stop planning when the policy matches
 extern bool g_partial_planlocal; // Plan locally to the partial state that would have matched our expected state
 extern bool g_detect_deadends; // Decide whether or not deadends should be detected and avoided
 extern bool g_generalize_deadends; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
+extern bool g_record_online_deadends; // Record the deadends as they occur online, and add them to the deadend policy after solving
 extern bool g_optimized_scd; // Do optimized strong cyclic detection
 extern bool g_seeded; // Used to make sure we only seed the rng once
 extern int g_num_trials; // Number of trials that should be used for the simulation

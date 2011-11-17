@@ -7,6 +7,7 @@ using namespace std;
 #include "search_engine.h"
 #include "timer.h"
 #include "option_parser.h"
+#include "policy-repair/deadend.h"
 
 SearchEngine::SearchEngine(const Options &opts)
     : search_space(OperatorCost(opts.get_enum("cost_type"))),
@@ -51,10 +52,25 @@ void SearchEngine::set_plan(const Plan &p) {
 }
 
 void SearchEngine::search() {
+    
+    if (g_record_online_deadends)
+        g_found_deadends.clear();
+    
     initialize();
     Timer timer;
     while (step() == IN_PROGRESS)
         ;
+    
+    if (g_record_online_deadends && !limit_states) {
+        if (g_generalize_deadends) {
+            for (int i = 0; i < g_found_deadends.size(); i++)
+                generalize_deadend(*(g_found_deadends[i]));
+        }
+        update_deadends(g_found_deadends);
+    }
+    
+    //cout << "Generated " << search_progress.get_generated() << " state(s).\n\n" << endl;
+    //cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
     if (!g_silent_planning)
         cout << "Actual search time: " << timer
             << " [t=" << g_timer << "]" << endl;

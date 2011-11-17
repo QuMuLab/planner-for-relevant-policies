@@ -222,6 +222,9 @@ int LazySearch::step() {
         } else {
             node.mark_as_dead_end();
             search_progress.inc_dead_ends();
+            if (g_record_online_deadends && !limit_states)
+                g_found_deadends.push_back(new State(node.get_state()));
+            
         }
     }
     return fetch_next_state();
