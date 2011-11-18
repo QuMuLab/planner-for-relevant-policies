@@ -1,11 +1,11 @@
 import os
 import sys
-import subprocess
 import logging
 import re
 import itertools
 
 import tools
+from tools import run_command
 
 CHECKOUTS_DIR = os.path.join(tools.SCRIPTS_DIR, 'checkouts')
 tools.makedirs(CHECKOUTS_DIR)
@@ -53,7 +53,7 @@ class Checkout(object):
         cwd = os.getcwd()
         os.chdir(self.src_dir)
         try:
-            retcode = subprocess.call(['./build_all'])
+            retcode, _, _ = run_command(['./build_all'])
         except OSError:
             logging.error('Changeset %s does not have the build_all script. '
                           'Revision cannot be used by the scripts.' % self.rev)
@@ -149,7 +149,7 @@ class HgCheckout(Checkout):
         cmd_string = ' '.join(cmd)
         if cmd_string in ABS_REV_CACHE:
             return ABS_REV_CACHE[cmd_string]
-        abs_rev = tools.run_command(cmd)
+        _, abs_rev, _ = run_command(cmd)
         if not abs_rev:
             logging.error('Revision %s not present in repo %s' % (rev, repo))
             sys.exit(1)
@@ -164,21 +164,18 @@ class HgCheckout(Checkout):
         path = self.checkout_dir
         if not os.path.exists(path):
             clone = ['hg', 'clone', '-r', self.rev, self.repo, path]
-            print ' '.join(clone)
-            subprocess.call(clone)
+            run_command(clone)
         else:
             logging.info('Checkout "%s" already exists' % path)
             pull = ['hg', 'pull', self.repo]
-            print ' '.join(pull)
-            subprocess.call(pull, cwd=path)
+            run_command(pull, cwd=path)
 
         update = ['hg', 'update', '-r', self.rev]
-        print ' '.join(update)
-        retcode = subprocess.call(update, cwd=path)
+        retcode, _, _ = run_command(update, cwd=path)
         if not retcode == 0:
             # Unknown revision
-            logging.error('Repo at %s has no revision %s. Please delete the '
-                          'checkouts directory' % (path, self.rev))
+            logging.error('Repo at %s has no revision %s.' % (path, self.rev))
+            sys.exit(1)
 
     @property
     def parent_rev(self):
@@ -188,7 +185,7 @@ class HgCheckout(Checkout):
         if self.rev == 'WORK':
             rev = 'tip'
         cmd = ['hg', 'log', '-r', rev, '--template', '{node|short}']
-        self.parent = tools.run_command(cmd)
+        _, self.parent, _ = run_command(cmd)
         return self.parent
 
 
