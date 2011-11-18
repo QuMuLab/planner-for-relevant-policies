@@ -197,10 +197,14 @@ def run_command(cmd, **kwargs):
     """
     assert type(cmd) is list
     logging.info('Running command: %s' % ' '.join(cmd))
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         **kwargs)
-    stdout, stderr = p.communicate()
-    return p.returncode, stdout.strip(), stderr.strip()
+    return subprocess.call(cmd, **kwargs)
+
+def get_command_output(cmd, **kwargs):
+    assert type(cmd) is list
+    logging.info('Running command: %s' % ' '.join(cmd))
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, **kwargs)
+    stdout, _ = p.communicate()
+    return stdout.strip()
 
 
 class Properties(ConfigObj):

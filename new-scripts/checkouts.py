@@ -5,7 +5,7 @@ import re
 import itertools
 
 import tools
-from tools import run_command
+from tools import run_command, get_command_output
 
 CHECKOUTS_DIR = os.path.join(tools.SCRIPTS_DIR, 'checkouts')
 tools.makedirs(CHECKOUTS_DIR)
@@ -51,7 +51,7 @@ class Checkout(object):
         of checking if something has to be recompiled.
         """
         try:
-            retcode, _, _ = run_command(['./build_all'], cwd=self.src_dir)
+            retcode = run_command(['./build_all'], cwd=self.src_dir)
         except OSError:
             logging.error('Changeset %s does not have the build_all script. '
                           'Revision cannot be used by the scripts.' % self.rev)
@@ -146,7 +146,7 @@ class HgCheckout(Checkout):
         cmd_string = ' '.join(cmd)
         if cmd_string in ABS_REV_CACHE:
             return ABS_REV_CACHE[cmd_string]
-        _, abs_rev, _ = run_command(cmd)
+        abs_rev = get_command_output(cmd)
         if not abs_rev:
             logging.error('Revision %s not present in repo %s' % (rev, repo))
             sys.exit(1)
@@ -160,15 +160,12 @@ class HgCheckout(Checkout):
 
         path = self.checkout_dir
         if not os.path.exists(path):
-            clone = ['hg', 'clone', '-r', self.rev, self.repo, path]
-            run_command(clone)
+            run_command(['hg', 'clone', '-r', self.rev, self.repo, path])
         else:
             logging.info('Checkout "%s" already exists' % path)
-            pull = ['hg', 'pull', self.repo]
-            run_command(pull, cwd=path)
+            run_command(['hg', 'pull', self.repo], cwd=path)
 
-        update = ['hg', 'update', '-r', self.rev]
-        retcode, _, _ = run_command(update, cwd=path)
+        retcode = run_command(['hg', 'update', '-r', self.rev], cwd=path)
         if not retcode == 0:
             # Unknown revision
             logging.error('Repo at %s has no revision %s.' % (path, self.rev))
@@ -182,7 +179,7 @@ class HgCheckout(Checkout):
         if self.rev == 'WORK':
             rev = 'tip'
         cmd = ['hg', 'log', '-r', rev, '--template', '{node|short}']
-        _, self.parent, _ = run_command(cmd)
+        self.parent = get_command_output(cmd)
         return self.parent
 
 
