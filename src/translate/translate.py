@@ -250,8 +250,6 @@ def translate_strips_operator_aux(operator, dictionary, ranges, mutex_dict,
                             # convoluted code, so we just warn and reject the operator.
                             print "Warning: %s rejected. Cross your fingers." % (
                                 operator.name)
-                            if DEBUG:
-                                operator.dump()
                             return None
                             assert False
 

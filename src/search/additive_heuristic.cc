@@ -16,6 +16,7 @@ using namespace std;
 AdditiveHeuristic::AdditiveHeuristic(const Options &opts)
     : RelaxationHeuristic(opts),
       did_write_overflow_warning(false) {
+    g_heuristic_for_reachability = this;
 }
 
 AdditiveHeuristic::~AdditiveHeuristic() {
@@ -35,7 +36,8 @@ void AdditiveHeuristic::write_overflow_warning() {
 
 // initialization
 void AdditiveHeuristic::initialize() {
-    cout << "Initializing additive heuristic..." << endl;
+    if (!g_silent_planning)
+        cout << "Initializing additive heuristic..." << endl;
     RelaxationHeuristic::initialize();
 }
 
@@ -64,8 +66,15 @@ void AdditiveHeuristic::setup_exploration_queue() {
 
 void AdditiveHeuristic::setup_exploration_queue_state(const State &state) {
     for (int var = 0; var < propositions.size(); var++) {
-        Proposition *init_prop = &propositions[var][state[var]];
-        enqueue_if_necessary(init_prop, 0, 0);
+        if (state_var_t(-1) == state[var]) {
+            for (int val = 0; val < propositions[var].size(); val++) {
+                Proposition *init_prop = &propositions[var][val];
+                enqueue_if_necessary(init_prop, 0, 0);
+            }
+        } else {
+            Proposition *init_prop = &propositions[var][state[var]];
+            enqueue_if_necessary(init_prop, 0, 0);
+        }
     }
 }
 
@@ -85,13 +94,20 @@ void AdditiveHeuristic::relaxed_exploration() {
         const vector<UnaryOperator *> &triggered_operators =
             prop->precondition_of;
         for (int i = 0; i < triggered_operators.size(); i++) {
-            UnaryOperator *unary_op = triggered_operators[i];
-            increase_cost(unary_op->cost, prop_cost);
-            unary_op->unsatisfied_preconditions--;
-            assert(unary_op->unsatisfied_preconditions >= 0);
-            if (unary_op->unsatisfied_preconditions == 0)
-                enqueue_if_necessary(unary_op->effect,
-                                     unary_op->cost, unary_op);
+            
+            // HAZ: This check exists to ensure that we aren't using forbidden
+            //       operators as achievers in the first layer. Future layers
+            //       is fine, so prop_cost > 0 will let it pass.
+            if (!g_detect_deadends || (prop_cost > 0) ||
+                (0 == forbidden_ops.count(g_operators[triggered_operators[i]->operator_no].get_nondet_name()))) {
+                UnaryOperator *unary_op = triggered_operators[i];
+                increase_cost(unary_op->cost, prop_cost);
+                unary_op->unsatisfied_preconditions--;
+                assert(unary_op->unsatisfied_preconditions >= 0);
+                if (unary_op->unsatisfied_preconditions == 0)
+                    enqueue_if_necessary(unary_op->effect,
+                                         unary_op->cost, unary_op);
+            }
         }
     }
 }
