@@ -145,7 +145,7 @@ class HgCheckout(Checkout):
     def get_abs_rev(self, repo, rev):
         if str(rev).upper() == 'WORK':
             return 'WORK'
-        cmd = ['hg', 'id', '-ir', '%s' % str(rev).lower(), '%s' % repo]
+        cmd = ['hg', 'id', '-ir', str(rev).lower(), repo]
         cmd_string = ' '.join(cmd)
         if cmd_string in ABS_REV_CACHE:
             return ABS_REV_CACHE[cmd_string]
@@ -187,7 +187,7 @@ class HgCheckout(Checkout):
         rev = self.rev
         if self.rev == 'WORK':
             rev = 'tip'
-        cmd = ['hg', 'log', '-r', '%s' % rev, '--template', '{node|short}']
+        cmd = ['hg', 'log', '-r', rev, '--template', '{node|short}']
         self.parent = tools.run_command(cmd)
         return self.parent
 
