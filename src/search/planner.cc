@@ -68,6 +68,22 @@ int main(int argc, const char **argv) {
         g_deadend_states = new Policy();
     }
     
+    
+    /***************************************
+     * Assert the settings are consistent. *
+     ***************************************/
+    if (((g_record_online_deadends || g_generalize_deadends) && !g_detect_deadends) ||
+        ((g_partial_planlocal || g_plan_locally_limited) && !g_plan_locally) ||
+        (g_optimized_scd && (g_jic_limit == 0)) ||
+        (g_forgetpolicy && (g_jic_limit > 0))) {
+            
+        cout << "\n  Parameter Error: Make sure that the set of parameters is consistent.\n" << endl;
+        exit(0);
+    }
+    
+    
+    
+    
     g_timer_search.resume();
     engine->search();
     g_timer_search.stop();

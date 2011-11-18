@@ -23,6 +23,19 @@ TIME_LIMIT = 1800
 SHOW_DATA = True
 BASEDIR = os.path.abspath(os.path.curdir)
 
+PARAMETERS = ['jic-limit',
+              'trials',
+              'forgetpolicy',
+              'fullstate',
+              'planlocal',
+              'partial-planlocal',
+              'plan-with-policy',
+              'limit-planlocal',
+              'detect-deadends',
+              'generalize-deadends',
+              'online-deadends',
+              'optimized-scd']
+
 PRP_PARAMS = {'all': {'--jic-limit': [18000],
                       '--forgetpolicy': [0],
                       '--fullstate': [0,1],
@@ -91,8 +104,9 @@ def parse_prp(outfile):
     
     runtime = get_value(outfile, '.*Total time: ([0-9]+\.?[0-9]*)s\n.*', float)
     jic_time = get_value(outfile, '.*Just-in-case Repairs: ([0-9]+\.?[0-9]*)s\n.*', float)
-    policy_eval_time = get_value(outfile, '.*Using the policy: ([0-9]+\.?[0-9]*)s\n.*', float)
+    policy_use_time = get_value(outfile, '.*Using the policy: ([0-9]+\.?[0-9]*)s\n.*', float)
     policy_construction_time = get_value(outfile, '.*Policy Construction: ([0-9]+\.?[0-9]*)s\n.*', float)
+    policy_eval_time = get_value(outfile, '.*Evaluating the policy quality: ([0-9]+\.?[0-9]*)s\n.*', float)
     search_time = get_value(outfile, '.*Search Time: ([0-9]+\.?[0-9]*)s\n.*', float)
     engine_init_time = get_value(outfile, '.*Engine Initialization: ([0-9]+\.?[0-9]*)s\n.*', float)
     regression_time = get_value(outfile, '.*Regression Computation: ([0-9]+\.?[0-9]*)s\n.*', float)
@@ -105,13 +119,15 @@ def parse_prp(outfile):
     strongly_cyclic = match_value(outfile, '.*Strongly Cyclic: True.*')
     succeeded = get_value(outfile, '.*Succeeded: (\d+) .*', int)
     
-    return runtime, jic_time, policy_eval_time, policy_construction_time, \
+    policy_score = get_value(outfile, '.*Policy Score: ([0-9]+\.?[0-9]*)\n.*', float)
+    
+    return runtime, jic_time, policy_eval_time, policy_construction_time, policy_use_time, \
            search_time, engine_init_time, regression_time, successful_states, \
-           replans, actions, size, strongly_cyclic, succeeded
+           replans, actions, size, strongly_cyclic, succeeded, policy_score
     
 
 def parse_prp_settings(res):
-    return ','.join([res.parameters[p] for p in ['--jic-limit', '--forgetpolicy', '--fullstate', '--planlocal', '--plan-with-policy']])
+    return ','.join([res.parameters['--' + p] for p in PARAMETERS])
 
 def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PARAMS['all']):
     
@@ -168,6 +184,7 @@ def doit_fip(domain, dom_probs):
         progress_file = None,
         processors = CORES,
         sandbox = 'fip',
+        clean_sandbox = True,
         output_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.out'),
         error_file_func = (lambda res: res.single_args['domprob'].split('/')[-1]+'.err')
     )
@@ -199,7 +216,7 @@ def doit_fip(domain, dom_probs):
     print "\nTimed out %d times." % timeouts
     print "Ran out of memory %d times." % memouts
     print "Unknown error %d times." % errorouts
-    write_file("RESULTS/fip-%s-results.csv" % domain, fip_csv)
+    append_file("RESULTS/fip-%s-results.csv" % domain, fip_csv)
     
 
 def doit_prp(domain, dom_probs, prp_params):
@@ -218,6 +235,7 @@ def doit_prp(domain, dom_probs, prp_params):
         progress_file = None,
         processors = CORES,
         sandbox = 'prp',
+        clean_sandbox = True,
         trials = TRIALS,
         output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.out'),
         error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.err')
@@ -226,41 +244,48 @@ def doit_prp(domain, dom_probs, prp_params):
     timeouts = 0
     memouts = 0
     errorouts = 0
-    prp_csv = ['domain,problem,runtime,size,status,jic-limit,forgetpolicy,fullstate,planlocal,usepolicy,jic time,policy eval,policy creation,search time,engine time,regression time,successful states,replans,actions,strongly cyclic,succeeded']
+    parametererrors = 0
+    prp_csv = ['domain,problem,runtime,size,status,%s,jic time,policy eval,policy creation,policy use,search time,engine time,regression time,successful states,replans,actions,policy score,strongly cyclic,succeeded' % ','.join(PARAMETERS)]
     for res_id in prp_results.get_ids():
         result = prp_results[res_id]
         prob = result.single_args['domprob'].split(' ')[1].split('/')[-1]
         
         if match_value(result.output_file, 'No solution -- aborting repairs.'):
-            prp_csv.append("%s,%s,-1,-1,N,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+            prp_csv.append("%s,%s,-1,-1,N,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*13)))
         else:
             if result.mem_out:
                 memouts += 1
-                prp_csv.append("%s,%s,-1,-1,M,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+                prp_csv.append("%s,%s,-1,-1,M,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*13)))
             
             elif result.timed_out:
                 timeouts += 1
-                prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+                prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*13)))
             
             elif not result.clean_run or check_segfault(res.output_file):
                 errorouts += 1
-                prp_csv.append("%s,%s,-1,-1,E,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
+                prp_csv.append("%s,%s,-1,-1,E,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*13)))
+            
+            elif match_value(result.output_file, '.*Parameter Error.*'):
+                parametererrors += 1
+                prp_csv.append("%s,%s,-1,-1,P,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*13)))
                 
             else:
-                runtime, jic_time, policy_eval_time, policy_construction_time, \
-                    search_time, engine_init_time, regression_time, successful_states, \
-                    replans, actions, size, strongly_cyclic, succeeded = parse_prp(result.output_file)
-                prp_csv.append("%s,%s,%f,%d,-,%s,%f,%f,%f,%f,%f,%f,%d,%d,%d,%s,%s" % (domain, prob,
+                runtime, jic_time, policy_eval_time, policy_construction_time, policy_use_time, \
+                search_time, engine_init_time, regression_time, successful_states, \
+                replans, actions, size, strongly_cyclic, succeeded, policy_score = parse_prp(result.output_file)
+                
+                prp_csv.append("%s,%s,%f,%d,-,%s,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%f,%s,%s" % (domain, prob,
                                                             runtime, size, parse_prp_settings(result),
-                                                            jic_time, policy_eval_time, policy_construction_time,
+                                                            jic_time, policy_eval_time, policy_construction_time, policy_use_time,
                                                             search_time, engine_init_time, regression_time,
-                                                            successful_states, replans, actions,
+                                                            successful_states, replans, actions, policy_score,
                                                             str(strongly_cyclic), str(succeeded)))
     
     print "\nTimed out %d times." % timeouts
     print "Ran out of memory %d times." % memouts
     print "Unknown error %d times." % errorouts
-    write_file("RESULTS/prp-%s-results.csv" % domain, prp_csv)
+    print "Invalid parameter settings %d times." % parametererrors
+    append_file("RESULTS/prp-%s-results.csv" % domain, prp_csv)
 
 
 if __name__ == '__main__':
