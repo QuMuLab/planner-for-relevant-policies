@@ -50,10 +50,8 @@ class Checkout(object):
         We issue the build_all command unconditionally and let "make" take care
         of checking if something has to be recompiled.
         """
-        cwd = os.getcwd()
-        os.chdir(self.src_dir)
         try:
-            retcode, _, _ = run_command(['./build_all'])
+            retcode, _, _ = run_command(['./build_all'], cwd=self.src_dir)
         except OSError:
             logging.error('Changeset %s does not have the build_all script. '
                           'Revision cannot be used by the scripts.' % self.rev)
@@ -61,7 +59,6 @@ class Checkout(object):
         if not retcode == 0:
             logging.error('Build script failed in: %s' % self.src_dir)
             sys.exit(1)
-        os.chdir(cwd)
 
     def get_path(self, *rel_path):
         return os.path.join(self.checkout_dir, *rel_path)
