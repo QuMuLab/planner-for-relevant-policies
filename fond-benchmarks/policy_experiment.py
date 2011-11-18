@@ -13,6 +13,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           fip-vs-prp: Run a comparison between fip and the best setting for PRP
           fip: Just run fip on the given domains
           redundant: Run the comparison for domains that have redundancy
+          test: Run a complete test of all parameter settings (make sure to limit the domains)
         """
 
 TRIALS = 5
@@ -82,6 +83,9 @@ def parse_fip(outfile):
     runtime = get_value(outfile, '.* ([0-9]+\.?[0-9]+) seconds searching.*', float)
     policy_size = len(filter(lambda x: 'case S' in x, read_file(outfile)))
     return runtime, policy_size
+
+def check_segfault(outfile):
+    return match_value(outfile, '.*Segmentation fault.*')
 
 def parse_prp(outfile):
     
@@ -185,7 +189,7 @@ def doit_fip(domain, dom_probs):
             elif result.mem_out:
                 memouts += 1
                 fip_csv.append("%s,%s,-1,-1,M" % (domain, prob))
-            elif not result.clean_run:
+            elif not result.clean_run or check_segfault(res.output_file):
                 errorouts += 1
                 fip_csv.append("%s,%s,-1,-1,E" % (domain, prob))
             else:
@@ -238,7 +242,7 @@ def doit_prp(domain, dom_probs, prp_params):
                 timeouts += 1
                 prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
             
-            elif not result.clean_run:
+            elif not result.clean_run or check_segfault(res.output_file):
                 errorouts += 1
                 prp_csv.append("%s,%s,-1,-1,E,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*11)))
                 
@@ -269,6 +273,11 @@ if __name__ == '__main__':
     
     if 'full' in flags:
         doit(myargs['-domain'])
+
+    if 'test' in flags:
+        global TRIALS
+        TRIALS = 1
+        doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['test'])
     
     if 'fip' in flags:
         doit(myargs['-domain'], dofip=True, doprp=False)
