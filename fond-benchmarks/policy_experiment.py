@@ -237,8 +237,8 @@ def doit_prp(domain, dom_probs, prp_params):
         sandbox = 'prp',
         clean_sandbox = True,
         trials = TRIALS,
-        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.out'),
-        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.err')
+        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.trial)+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.trial)+'.err')
     )
     
     timeouts = 0
