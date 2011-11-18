@@ -206,7 +206,7 @@ def doit_fip(domain, dom_probs):
             elif result.mem_out:
                 memouts += 1
                 fip_csv.append("%s,%s,-1,-1,M" % (domain, prob))
-            elif not result.clean_run or check_segfault(res.output_file):
+            elif not result.clean_run or check_segfault(result.output_file):
                 errorouts += 1
                 fip_csv.append("%s,%s,-1,-1,E" % (domain, prob))
             else:
@@ -237,8 +237,8 @@ def doit_prp(domain, dom_probs, prp_params):
         sandbox = 'prp',
         clean_sandbox = True,
         trials = TRIALS,
-        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.trial)+'.out'),
-        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.trial)+'.err')
+        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.err')
     )
     
     timeouts = 0
@@ -261,7 +261,7 @@ def doit_prp(domain, dom_probs, prp_params):
                 timeouts += 1
                 prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*13)))
             
-            elif not result.clean_run or check_segfault(res.output_file):
+            elif not result.clean_run or check_segfault(result.output_file):
                 errorouts += 1
                 prp_csv.append("%s,%s,-1,-1,E,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*13)))
             
@@ -300,7 +300,6 @@ if __name__ == '__main__':
         doit(myargs['-domain'])
 
     if 'test' in flags:
-        global TRIALS
         TRIALS = 1
         doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['test'])
     
