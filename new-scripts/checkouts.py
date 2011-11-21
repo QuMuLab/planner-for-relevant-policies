@@ -1,11 +1,11 @@
 import os
 import sys
-import subprocess
 import logging
 import re
 import itertools
 
 import tools
+from tools import run_command, get_command_output
 
 CHECKOUTS_DIR = os.path.join(tools.SCRIPTS_DIR, 'checkouts')
 tools.makedirs(CHECKOUTS_DIR)
@@ -50,10 +50,8 @@ class Checkout(object):
         We issue the build_all command unconditionally and let "make" take care
         of checking if something has to be recompiled.
         """
-        cwd = os.getcwd()
-        os.chdir(self.src_dir)
         try:
-            retcode = subprocess.call(['./build_all'])
+            retcode = run_command(['./build_all'], cwd=self.src_dir)
         except OSError:
             logging.error('Changeset %s does not have the build_all script. '
                           'Revision cannot be used by the scripts.' % self.rev)
@@ -61,7 +59,6 @@ class Checkout(object):
         if not retcode == 0:
             logging.error('Build script failed in: %s' % self.src_dir)
             sys.exit(1)
-        os.chdir(cwd)
 
     def get_path(self, *rel_path):
         return os.path.join(self.checkout_dir, *rel_path)
@@ -124,13 +121,6 @@ class HgCheckout(Checkout):
                           'copy. Please specify a specific revision.')
             sys.exit(1)
 
-        if not os.path.abspath(repo) == HgCheckout.DEFAULT_URL and not dest:
-            logging.warning('You should set "dest" explicitly when using a '
-                            'remote repo. Otherwise local checkouts might '
-                            'overwrite checkouts of the same revision from '
-                            'the remote repo.')
-            sys.exit(1)
-
         # Find proper absolute revision
         rev = self.get_abs_rev(repo, rev)
 
@@ -145,11 +135,11 @@ class HgCheckout(Checkout):
     def get_abs_rev(self, repo, rev):
         if str(rev).upper() == 'WORK':
             return 'WORK'
-        cmd = ['hg', 'id', '-ir', '%s' % str(rev).lower(), '%s' % repo]
+        cmd = ['hg', 'id', '-ir', str(rev).lower(), repo]
         cmd_string = ' '.join(cmd)
         if cmd_string in ABS_REV_CACHE:
             return ABS_REV_CACHE[cmd_string]
-        abs_rev = tools.run_command(cmd)
+        abs_rev = get_command_output(cmd)
         if not abs_rev:
             logging.error('Revision %s not present in repo %s' % (rev, repo))
             sys.exit(1)
@@ -163,22 +153,16 @@ class HgCheckout(Checkout):
 
         path = self.checkout_dir
         if not os.path.exists(path):
-            clone = ['hg', 'clone', '-r', self.rev, self.repo, path]
-            print ' '.join(clone)
-            subprocess.call(clone)
+            run_command(['hg', 'clone', '-r', self.rev, self.repo, path])
         else:
             logging.info('Checkout "%s" already exists' % path)
-            pull = ['hg', 'pull', self.repo]
-            print ' '.join(pull)
-            subprocess.call(pull, cwd=path)
+            run_command(['hg', 'pull', self.repo], cwd=path)
 
-        update = ['hg', 'update', '-r', self.rev]
-        print ' '.join(update)
-        retcode = subprocess.call(update, cwd=path)
+        retcode = run_command(['hg', 'update', '-r', self.rev], cwd=path)
         if not retcode == 0:
             # Unknown revision
-            logging.error('Repo at %s has no revision %s. Please delete the '
-                          'checkouts directory' % (path, self.rev))
+            logging.error('Repo at %s has no revision %s.' % (path, self.rev))
+            sys.exit(1)
 
     @property
     def parent_rev(self):
@@ -187,8 +171,8 @@ class HgCheckout(Checkout):
         rev = self.rev
         if self.rev == 'WORK':
             rev = 'tip'
-        cmd = ['hg', 'log', '-r', '%s' % rev, '--template', '{node|short}']
-        self.parent = tools.run_command(cmd)
+        cmd = ['hg', 'log', '-r', rev, '--template', '{node|short}']
+        self.parent = get_command_output(cmd)
         return self.parent
 
 
