@@ -93,9 +93,9 @@ bool perform_jit_repairs(Simulator *sim) {
                     
                     // We augment the sc_state to include the stronger conditions
                     for (int i = 0; i < g_variable_name.size(); i++) {
-                        assert ((state_var_t(-1) != (*prev_state)[i]) &&
-                                (state_var_t(-1) != (*(prev_regstep->sc_state))[i]) &&
-                               ((*prev_state)[i] != (*(prev_regstep->sc_state))[i]));
+                        assert ((state_var_t(-1) == (*prev_state)[i]) ||
+                                (state_var_t(-1) == (*(prev_regstep->sc_state))[i]) ||
+                               ((*prev_state)[i] == (*(prev_regstep->sc_state))[i]));
                         
                         if (state_var_t(-1) != (*prev_state)[i])
                             (*(prev_regstep->sc_state))[i] = (*prev_state)[i];

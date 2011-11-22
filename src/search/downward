@@ -15,7 +15,8 @@ else
 fi
 
 TIME="$TIME --output=elapsed.time --format=%S\n%U\n"
-SEED=`date +%s`
+#SEED=`date +%s`
+SEED=814102613
 
 STATE_SIZE=$($TIME --append "$BASEDIR/dispatch" $TEMPFILE)
 echo Dispatcher selected state size $STATE_SIZE.
