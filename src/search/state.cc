@@ -70,7 +70,7 @@ State::State(const State &predecessor, const Operator &op, bool progress) {
         for (int i = 0; i < op.get_pre_post().size(); i++) {
             const PrePost &pre_post = op.get_pre_post()[i];
             if (pre_post.does_fire(predecessor))
-                vars[pre_post.var] = pre_post.post;
+                vars[pre_post.var] = state_var_t(pre_post.post);
         }
         
         // HAZ: We do the prevail's as well in case we are progressing a partial state
