@@ -12,12 +12,16 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           full: Run all experiment parameters
           fip-vs-prp: Run a comparison between fip and the best setting for PRP
           fip: Just run fip on the given domains
+          prp: Just run prp on the given domains
           redundant: Run the comparison for domains that have redundancy
           test: Run a complete test of all parameter settings (make sure to limit the domains)
+          test-planlocal: Test the impact of the various planlocal settings
+          test-deadend: Test the impact of the various deadend settings
+          test-optscd: Test the impact of optimized-scd
         """
 
 TRIALS = 5
-CORES = 16
+CORES = 12
 MEM_LIMIT = 2000
 TIME_LIMIT = 1800
 SHOW_DATA = True
@@ -36,15 +40,7 @@ PARAMETERS = ['jic-limit',
               'online-deadends',
               'optimized-scd']
 
-PRP_PARAMS = {'all': {'--jic-limit': [18000],
-                      '--forgetpolicy': [0],
-                      '--fullstate': [0,1],
-                      '--planlocal': [0,1],
-                      '--detect-deadends': [0,1],
-                      '--trials': [100],
-                      '--plan-with-policy': [0,1]},
-
-              'best': { '--jic-limit': [18000],
+PRP_PARAMS = {'best': { '--jic-limit': [18000],
                         '--trials': [100],
                         '--forgetpolicy': [0],
                         '--fullstate': [0],
@@ -57,6 +53,19 @@ PRP_PARAMS = {'all': {'--jic-limit': [18000],
                         '--online-deadends': [1],
                         '--optimized-scd': [1]},
               
+              'full': { '--jic-limit': [18000],
+                        '--trials': [100],
+                        '--forgetpolicy': [0],
+                        '--fullstate': [0],
+                        '--planlocal': [0,1],
+                        '--partial-planlocal': [0,1],
+                        '--plan-with-policy': [1],
+                        '--limit-planlocal': [0,1],
+                        '--detect-deadends': [0,1],
+                        '--generalize-deadends': [0,1],
+                        '--online-deadends': [0,1],
+                        '--optimized-scd': [0,1]},
+
               'ffreplan': { '--jic-limit': [0],
                             '--trials': [100],
                             '--forgetpolicy': [1],
@@ -77,6 +86,19 @@ PRP_PARAMS = {'all': {'--jic-limit': [18000],
                             '--trials': [100],
                             '--plan-with-policy': [1]},
             
+              'planlocal': { '--jic-limit': [18000],
+                             '--trials': [100],
+                             '--forgetpolicy': [0],
+                             '--fullstate': [0],
+                             '--planlocal': [0,1],
+                             '--partial-planlocal': [0,1],
+                             '--plan-with-policy': [1],
+                             '--limit-planlocal': [0,1],
+                             '--detect-deadends': [1],
+                             '--generalize-deadends': [1],
+                             '--online-deadends': [1],
+                             '--optimized-scd': [1]},
+
               'test': { '--jic-limit': [0,18000],
                         '--trials': [10],
                         '--forgetpolicy': [0,1],
@@ -129,7 +151,7 @@ def parse_prp(outfile):
 def parse_prp_settings(res):
     return ','.join([res.parameters['--' + p] for p in PARAMETERS])
 
-def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PARAMS['all']):
+def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PARAMS['full']):
     
     if 'all' == domain:
         for dom in GOOD_DOMAINS:
@@ -299,9 +321,15 @@ if __name__ == '__main__':
     if 'full' in flags:
         doit(myargs['-domain'])
 
+    if 'test-planlocal' in flags:
+        doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['planlocal'])
+    
     if 'test' in flags:
         TRIALS = 1
         doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['test'])
+    
+    if 'prp' in flags:
+        doit(myargs['-domain'], dofip=False, doprp=True)
     
     if 'fip' in flags:
         doit(myargs['-domain'], dofip=True, doprp=False)
