@@ -10,6 +10,7 @@
 
 #include "regression.h"
 #include "simulator.h"
+#include "deadend.h"
 
 using namespace std;
 

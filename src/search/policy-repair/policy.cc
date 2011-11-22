@@ -561,36 +561,37 @@ void Policy::init_scd() {
 
 bool Policy::step_scd(vector<State *> &failed_states) {
     bool made_change = false;
-    int remaining_sc = 0;
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
     {
         RegressionStep *rs = (RegressionStep *)(*op_iter);
         if (rs->is_sc && !(rs->is_goal)) {
             
-            remaining_sc++;
-            
             for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
                 
-                State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
+                // We use the sc_state for computing the guaranteed items, rather than
+                //  the original state for the regression step. The sc_state will be a
+                //  superset of the original state that includes the regression of newly
+                //  closed leafs from the jic compilation phase. This may increase the
+                //  number of regression steps we are guaranteed to see in a state matching
+                //  succ_state, but as long as we remain in parts of the policy that return
+                //  regression steps based on their sc_state then this will be valid.
+                State *succ_state = new State(*(rs->sc_state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
                 vector<PolicyItem *> guaranteed_steps;
                 root->generate_applicable_items(*succ_state, guaranteed_steps, false);
                 
-                int min_cost = 999999; // This will only be too low if we found a plan of length 10^6
-                for (int j = 0; j < guaranteed_steps.size(); j++) {
-                    if (((RegressionStep *)guaranteed_steps[j])->distance < min_cost)
-                        min_cost = ((RegressionStep *)guaranteed_steps[j])->distance;
-                }
                 
-                vector<PolicyItem *> possible_steps;
-                root->generate_applicable_items(*succ_state, possible_steps, min_cost);
-                
-                if (0 == possible_steps.size()) {
+                // We need at least one guaranteed step to be sure that we can continue
+                //  executing. The one exception is if the state is already known to be
+                //  a deadend, in which case we can assume that it will be handled by
+                //  the jic compiler.
+                if (0 == guaranteed_steps.size()) {
                     
                     bool is_failed_state = false;
                     for (int j = 0; j < failed_states.size(); j++) {
                         // Unfortunately, we can't just check the states equivalence,
-                        //  since the succ_state is a partial state.
+                        //  since the succ_state is a partial state. So we instead check
+                        //  that succ_state entails the failed state.
                         is_failed_state = true;
                         for (int k = 0; k < g_variable_name.size(); k++) {
                             if (((*(failed_states[j]))[k] != state_var_t(-1)) &&
@@ -605,17 +606,58 @@ bool Policy::step_scd(vector<State *> &failed_states) {
 
                     }
                     
+                    // We may have stumbled across a new failed state, in which
+                    //  case, we can add it to the list and assume it will be
+                    //  handled later.
+                    if (!is_failed_state) {
+                        if (is_deadend(*succ_state)) {
+                            if (g_generalize_deadends)
+                                generalize_deadend(*succ_state);
+                                
+                            // Use a new state since succ_state is deleted below
+                            failed_states.push_back(new State(*succ_state));
+                            is_failed_state = true;
+                        }
+                    }
                     
+                    
+                    // If succ_state isn't a failed state (as far as we're aware
+                    //  of), then it may be reached during rollout. The possibility
+                    //  of not handling the reached state means that this can't be
+                    //  strongly cyclic. The break take us to the next regression
+                    //  step to check (i.e., no need to check the rest of the action
+                    //  outcomes for the current regression step).
                     if (!is_failed_state) {
                         rs->is_sc = false;
                         made_change = true;
-                        i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+                        delete succ_state;
+                        break;
                     }
-                    
                 }
+                
+                // We only consider the possible steps that have a cheaper cost than
+                //  the cheapest guaranteed cost. We will be returning the cheapest
+                //  cost in a get_best_step, so only those regsteps with a chance of
+                //  overiding all guaranteed regsteps must be looked at.
+                int min_cost = 999999; // This will only be too low if we found a plan of length 10^6
+                for (int j = 0; j < guaranteed_steps.size(); j++) {
+                    if (((RegressionStep *)guaranteed_steps[j])->distance < min_cost)
+                        min_cost = ((RegressionStep *)guaranteed_steps[j])->distance;
+                }
+                
+                vector<PolicyItem *> possible_steps;
+                root->generate_applicable_items(*succ_state, possible_steps, min_cost);
+                //root->generate_applicable_items(*succ_state, possible_steps, true);
                 
                 //cout << "Guaranteed steps / Possible steps: " << guaranteed_steps.size() << " / " << possible_steps.size() << endl;
                 
+                
+                // If any possible successor state that we reach has a matching
+                //  regression step that isn't strongly cyclic, then neither are
+                //  we. A place for optimization is to prune the set of possible
+                //  regression steps returned -- if we can guarantee that the call
+                //  to the get_best_step function won't return a regression step,
+                //  then we need not confirm it is strongly cyclic.
                 for (int j = 0; j < possible_steps.size(); j++) {
                     if (!(((RegressionStep *)possible_steps[j])->is_sc)) {
                         rs->is_sc = false;
@@ -629,6 +671,5 @@ bool Policy::step_scd(vector<State *> &failed_states) {
             }
         }
     }
-    //cout << "Retained " << remaining_sc << " sc states." << endl;
     return made_change;
 }

@@ -45,11 +45,13 @@ struct RegressionStep : PolicyItem {
     int distance;
     bool is_goal;
     bool is_sc;
-
-    RegressionStep(const Operator &o, State *s, int d) : PolicyItem(s), op(&o), distance(d), is_goal(false), is_sc(false) {}
-    RegressionStep(State *s, int d) : PolicyItem(s), distance(d), is_goal(true), is_sc(false) {}
     
-    ~RegressionStep() {}
+    State *sc_state;
+
+    RegressionStep(const Operator &o, State *s, int d) : PolicyItem(s), op(&o), distance(d), is_goal(false), is_sc(false) { sc_state = new State(*state); }
+    RegressionStep(State *s, int d) : PolicyItem(s), distance(d), is_goal(true), is_sc(false) { sc_state = new State(*state); }
+    
+    ~RegressionStep() { delete sc_state; }
 
     string get_name();
     void dump() const;
