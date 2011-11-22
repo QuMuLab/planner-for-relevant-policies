@@ -1,26 +1,27 @@
 #include "deadend.h"
 
-void generalize_deadend(State &state) {
-    
-    int h, old_val;
-    
+
+bool is_deadend(State &state) {
     ((AdditiveHeuristic *)g_heuristic_for_reachability)->reset();
+    return (-1 == ((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_add_and_ff(state));
+}
+
+
+void generalize_deadend(State &state) {
     
     // If the whole state isn't recognized as a deadend, then don't bother
     //  looking for a subset of the state
-    h = ((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_add_and_ff(state);
-    if (h != -1)
+    if (!is_deadend(state))
         return;
     
     // We go through each variable and unset it, checking if the relaxed reachability
     //  is violated.
     for (int i = 0; i < g_variable_name.size(); i++) {
-        old_val = state[i];
+        int old_val = state[i];
         state[i] = -1;
-        h = ((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_add_and_ff(state);
         
         // If relaxing variable i causes us to reach the goal, keep it in
-        if (h != -1)
+        if (!is_deadend(state))
             state[i] = old_val;
     }
     

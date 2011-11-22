@@ -12,6 +12,8 @@
 
 void update_deadends(vector<State *> &failed_states);
 
+bool is_deadend(State &state);
+
 void generalize_deadend(State &state);
 
 struct DeadendAwareSuccessorGenerator {
