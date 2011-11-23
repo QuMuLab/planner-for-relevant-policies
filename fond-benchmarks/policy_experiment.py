@@ -50,7 +50,7 @@ PRP_PARAMS = {'best': { '--jic-limit': [18000],
                         '--limit-planlocal': [1],
                         '--detect-deadends': [1],
                         '--generalize-deadends': [1],
-                        '--online-deadends': [1],
+                        '--online-deadends': [0],
                         '--optimized-scd': [1]},
               
               'full': { '--jic-limit': [18000],
