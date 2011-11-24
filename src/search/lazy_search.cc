@@ -105,8 +105,9 @@ void LazySearch::get_successor_operators(vector<const Operator *> &ops) {
         }
 
         for (int i = 0; i < all_operators.size(); i++)
-            if (!all_operators[i]->is_marked())
+            if (!all_operators[i]->is_marked()) {
                 ops.push_back(all_operators[i]);
+            }
     } else {
         for (int i = 0; i < preferred_operators.size(); i++)
             if (!preferred_operators[i]->is_marked())
@@ -174,8 +175,8 @@ int LazySearch::step() {
 
     if (node.is_new() || reopen) {
         
-        if (g_plan_locally_limited && limit_states) {
-            if (state_count > 10000) // Gotta love magic numbers...
+        if (g_plan_locally_limited && g_limit_states) {
+            if (state_count > 100) // Gotta love magic numbers...
                 return FAILED;
             else
                 state_count++;
@@ -224,9 +225,6 @@ int LazySearch::step() {
         } else {
             node.mark_as_dead_end();
             search_progress.inc_dead_ends();
-            if (g_record_online_deadends && !limit_states)
-                g_found_deadends.push_back(new State(node.get_state()));
-            
         }
     }
     return fetch_next_state();

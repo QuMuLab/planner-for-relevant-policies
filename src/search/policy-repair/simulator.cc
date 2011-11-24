@@ -123,6 +123,10 @@ bool Simulator::replan() {
         if (g_deadend_states->check_match(*current_state, false))
             return false;
     }
+
+    // If we can detect that this is a deadend for the original goal, forget about it
+    if (is_deadend(*current_state))
+        return false;
     
     if (verbose)
         cout << "\nRequired to replan..." << endl;
@@ -197,11 +201,11 @@ bool Simulator::replan() {
             cout << "Searching for a solution." << endl;
         
         if (try_again)
-            engine->limit_states = true;
+            g_limit_states = true;
         g_timer_search.resume();
         engine->search();
         g_timer_search.stop();
-        engine->limit_states = false;
+        g_limit_states = false;
         
         if (engine->found_solution()) {
             

@@ -83,7 +83,8 @@ int main(int argc, const char **argv) {
     
     
     
-    
+    // We start the jit timer here since we should include the initial search / policy construction
+    g_timer_jit.resume();
     g_timer_search.resume();
     engine->search();
     g_timer_search.stop();
@@ -114,7 +115,7 @@ int main(int argc, const char **argv) {
     g_best_policy_score = g_policy->get_score();
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
-    g_timer_jit.resume();
+    //g_timer_jit.resume(); // Placed above to include the initial search time
     bool changes_made = true;
     while (changes_made) {
         changes_made = perform_jit_repairs(sim);

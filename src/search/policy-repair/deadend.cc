@@ -82,7 +82,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &curr, 
                  *      the operator from being added. See LazySearch::get_successor_operators
                  *      for where this occurrs.
                  */
-                //orig_ops[i]->mark();
+                orig_ops[i]->mark();
                 
                 //cout << "Forbidding operator " << orig_ops[i]->get_name() << endl;
             }

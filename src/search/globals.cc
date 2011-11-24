@@ -386,6 +386,7 @@ bool g_forgetpolicy = false; // Forget the global policy after every simulation 
 bool g_fullstate = false; // Use the full state for regression
 bool g_plan_locally = false; // Plan for the expected state rather than replanning to the goal
 bool g_plan_locally_limited = false; // Limit the local planning to a small number of search nodes
+bool g_limit_states = false; // Used to limit the search when replanning for a local goal
 bool g_plan_with_policy = true; // Stop planning when the policy matches
 bool g_partial_planlocal = false; // Plan locally to the partial state that would have matched our expected state
 bool g_detect_deadends = false; // Decide whether or not deadends should be detected and avoided

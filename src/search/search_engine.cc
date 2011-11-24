@@ -12,8 +12,7 @@ using namespace std;
 SearchEngine::SearchEngine(const Options &opts)
     : search_space(OperatorCost(opts.get_enum("cost_type"))),
       cost_type(OperatorCost(opts.get_enum("cost_type"))),
-      options(&opts),
-      limit_states(false) {
+      options(&opts) {
     solved = false;
     if (opts.get<int>("bound") < 0) {
         cerr << "error: negative cost bound " << opts.get<int>("bound") << endl;
@@ -61,16 +60,18 @@ void SearchEngine::search() {
     while (step() == IN_PROGRESS)
         ;
     
-    if (g_record_online_deadends && !limit_states) {
+    if (g_record_online_deadends && !g_limit_states) {
         if (g_generalize_deadends) {
             for (int i = 0; i < g_found_deadends.size(); i++)
                 generalize_deadend(*(g_found_deadends[i]));
         }
+//cout << "Number of online deadends: " << g_found_deadends.size() << endl;
         update_deadends(g_found_deadends);
     }
-    
-    //cout << "Generated " << search_progress.get_generated() << " state(s).\n\n" << endl;
-    //cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
+    if (search_progress.get_generated() > 2) {
+        cout << "Generated " << search_progress.get_generated() << " state(s)." << endl;
+        cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
+    }
     if (!g_silent_planning)
         cout << "Actual search time: " << timer
             << " [t=" << g_timer << "]" << endl;

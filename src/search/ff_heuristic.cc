@@ -71,8 +71,11 @@ int FFHeuristic::compute_heuristic(const State &state) {
         return DEAD_END;
     
     int h_add = compute_add_and_ff(state);
-    if (h_add == DEAD_END)
+    if (h_add == DEAD_END) {
+        if (g_record_online_deadends && !g_limit_states)
+            g_found_deadends.push_back(new State(state));
         return h_add;
+    }
 
     // Collecting the relaxed plan also sets the preferred operators.
     for (int i = 0; i < goal_propositions.size(); i++)
