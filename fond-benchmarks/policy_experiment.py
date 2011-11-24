@@ -21,7 +21,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
         """
 
 TRIALS = 5
-CORES = 12
+CORES = 13
 MEM_LIMIT = 2000
 TIME_LIMIT = 1800
 SHOW_DATA = True
@@ -50,7 +50,7 @@ PRP_PARAMS = {'best': { '--jic-limit': [18000],
                         '--limit-planlocal': [1],
                         '--detect-deadends': [1],
                         '--generalize-deadends': [1],
-                        '--online-deadends': [0],
+                        '--online-deadends': [1],
                         '--optimized-scd': [1]},
               
               'full': { '--jic-limit': [18000],
