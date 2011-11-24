@@ -62,9 +62,9 @@ for i in range(10,16):
 # Zenotravel
 zenotravel = []
 for i in range(1,10):
-    zenotravel.append(("zenotravel/domain.pddl", "zenotravel/p0%d.pddl" % i))
+    zenotravel.append(("zenotravel/d0%d.pddl" % i, "zenotravel/p0%d.pddl" % i))
 for i in range(10,16):
-    zenotravel.append(("zenotravel/domain.pddl", "zenotravel/p%d.pddl" % i))
+    zenotravel.append(("zenotravel/d%d.pddl" % i, "zenotravel/p%d.pddl" % i))
 
 # Triangle tireworld
 triangle_tire = []
