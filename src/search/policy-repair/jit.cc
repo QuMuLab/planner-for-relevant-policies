@@ -151,11 +151,7 @@ bool perform_jit_repairs(Simulator *sim) {
                 }
                 
             } else {
-                if (g_detect_deadends) {
-                    if (g_generalize_deadends)
-                        generalize_deadend(*current_state);
-                    failed_states.push_back(current_state);
-                }
+
                 g_failed_open_states++;
                 
                 // This only matches when no strong cyclic solution exists
@@ -185,6 +181,12 @@ bool perform_jit_repairs(Simulator *sim) {
                     
                     // Return false so jic stops
                     return false;
+                } else {
+                    if (g_detect_deadends) {
+                        if (g_generalize_deadends)
+                            generalize_deadend(*current_state);
+                        failed_states.push_back(current_state);
+                    }
                 }
             }
         }
