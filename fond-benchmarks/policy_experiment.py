@@ -1,5 +1,5 @@
 
-from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS, NEW_DOMAINS, IPC06_DOMAINS, TEST_DOMAINS, INTERESTING_DOMAINS
+from domains import DOMAINS, REDUNDANT_DOMAINS, GOOD_DOMAINS, NEW_DOMAINS, IPC06_DOMAINS, TEST_DOMAINS, INTERESTING_DOMAINS, FOND_DOMAINS
 
 from krrt.utils import get_opts, run_experiment, match_value, get_value, load_CSV, write_file, append_file, read_file
 
@@ -79,13 +79,19 @@ PRP_PARAMS = {'best': { '--jic-limit': [18000],
                             '--online-deadends': [0],
                             '--optimized-scd': [0]},
               
-              'redundant': {'--jic-limit': [18000],
-                            '--forgetpolicy': [0],
-                            '--fullstate': [0,1],
-                            '--planlocal': [0,1],
-                            '--trials': [100],
-                            '--plan-with-policy': [1]},
-            
+              'redundant': { '--jic-limit': [18000],
+                             '--trials': [100],
+                             '--forgetpolicy': [0],
+                             '--fullstate': [0,1],
+                             '--planlocal': [0,1],
+                             '--partial-planlocal': [0],
+                             '--plan-with-policy': [1],
+                             '--limit-planlocal': [0],
+                             '--detect-deadends': [0],
+                             '--generalize-deadends': [0],
+                             '--online-deadends': [0],
+                             '--optimized-scd': [0]},
+
               'planlocal': { '--jic-limit': [18000],
                              '--trials': [100],
                              '--forgetpolicy': [0],
