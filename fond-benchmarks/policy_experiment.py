@@ -174,6 +174,11 @@ def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PAR
             doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
         return
     
+    elif 'ipc' == domain:
+        for dom in IPC06_DOMAINS:
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+        return
+    
     elif 'test' == domain:
         for dom in TEST_DOMAINS:
             doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
