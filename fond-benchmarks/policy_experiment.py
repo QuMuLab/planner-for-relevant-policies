@@ -335,7 +335,7 @@ if __name__ == '__main__':
         doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['test'])
     
     if 'prp' in flags:
-        doit(myargs['-domain'], dofip=False, doprp=True)
+        doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['best'])
     
     if 'fip' in flags:
         doit(myargs['-domain'], dofip=True, doprp=False)
