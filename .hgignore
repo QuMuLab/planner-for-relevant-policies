@@ -19,4 +19,4 @@
 ^new-scripts/reports/
 ^new-scripts/preprocessed-tasks/
 ^new-scripts/exp-.*/
-^fond-benchmarks/RESULTS/*
+^fond-benchmarks/RESULTS/backup/
