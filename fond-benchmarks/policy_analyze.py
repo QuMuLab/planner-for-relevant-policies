@@ -3,7 +3,7 @@ from krrt.utils import get_opts, match_value, get_value, load_CSV, write_file, a
 from krrt.stats.plots import plot, create_time_profile
 from krrt.stats import anova
 
-from domains import GOOD_DOMAINS, FOND_DOMAINS
+from domains import GOOD_DOMAINS, FOND_DOMAINS, IPC06_DOMAINS, NEW_DOMAINS, INTERESTING_DOMAINS
 
 import os, time
 
@@ -23,12 +23,30 @@ Usage: python policy_analyze.py <TASK> -domain <domain> ...
 
 BASEDIR = os.path.abspath(os.path.curdir)
 
-def filter_prp_settings(data, jiclimit, forgetpolicy, fullstate, planlocal, usepolicy):
+def filter_prp_settings(data,
+                        jiclimit,
+                        forgetpolicy,
+                        fullstate,
+                        planlocal,
+                        partial_planlocal,
+                        use_policy,
+                        limit_planlocal,
+                        detect_deadends,
+                        generalize_deadends,
+                        online_deadends,
+                        optimized_scd):
+    
     return filter(lambda x: x[5] == jiclimit and \
-                            x[6] == forgetpolicy and \
-                            x[7] == fullstate and \
-                            x[8] == planlocal and \
-                            x[9] == usepolicy,
+                            x[7] == forgetpolicy and \
+                            x[8] == fullstate and \
+                            x[9] == planlocal and \
+                            x[10] == partial_planlocal and \
+                            x[11] == use_policy and \
+                            x[12] == limit_planlocal and \
+                            x[13] == detect_deadends and \
+                            x[14] == generalize_deadends and \
+                            x[15] == online_deadends and \
+                            x[16] == optimized_scd,
                     data)
 
 def average_prp_data(data):
@@ -171,10 +189,10 @@ def fip_vs_prp(domain):
     print "\nAnalyzing FIP vs PRP for %s:" % domain
     
     # Load both sets
-    solved_fip_data = filter(lambda x: x[-1] == '-', fip_data)
+    solved_fip_data = filter(lambda x: x[-1] == '-' and x[-2] != '0', fip_data)
     
-    prp_data = [prp_data[0]] + filter_prp_settings(prp_data, '18000', '0', '0', '0', '1')
-    solved_prp_data = filter(lambda x: x[-2] == 'True', prp_data)
+    prp_data = [prp_data[0]] + filter_prp_settings(prp_data, '18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1')
+    solved_prp_data = filter(lambda x: x[-3] != '-' and float(x[-3]) == 1.0, prp_data[1:])
     solved_prp_data = average_prp_data(solved_prp_data) # Filter and average based on what FIP has solved.
     
     fip_mapping = {}
@@ -195,6 +213,7 @@ def fip_vs_prp(domain):
     print "FIP Coverage: %d" % len(fip_solved)
     print "PRP Coverage: %d" % len(prp_solved)
     print "Combined Coverage: %d" % len(both_solved)
+    print "FIP - PRP: %s" % str(fip_solved - prp_solved)
     
     time_data = []
     size_data = []
@@ -203,7 +222,7 @@ def fip_vs_prp(domain):
     
     for (dom,prob) in both_solved:
         probs.append(prob)
-        time_data.append((float(fip_mapping[(dom,prob)][2]), float(prp_mapping[(dom,prob)][2])))
+        time_data.append((float(fip_mapping[(dom,prob)][2]), float(prp_mapping[(dom,prob)][17])))
         size_data.append((float(fip_mapping[(dom,prob)][3]), float(prp_mapping[(dom,prob)][3])))
     
     #HACK: We assign 0.001 seconds to a reported time of 0: This is needed for log plots to work
