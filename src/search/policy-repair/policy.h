@@ -53,6 +53,7 @@ public:
     double get_score();
     int get_size() { return all_items.size(); }
     bool is_complete() { return complete; }
+    bool is_strong_cyclic() { return (1.0 == score); }
     
     void init_scd();
     bool step_scd(vector<State *> &failed_states);

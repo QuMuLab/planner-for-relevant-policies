@@ -84,6 +84,7 @@ extern bool g_limit_states; // Used to limit the search when replanning for a lo
 extern bool g_plan_with_policy; // Stop planning when the policy matches
 extern bool g_partial_planlocal; // Plan locally to the partial state that would have matched our expected state
 extern bool g_detect_deadends; // Decide whether or not deadends should be detected and avoided
+extern bool g_check_with_forbidden; // We set this when a strong cyclic policy is failed to be found without using forbidden ops in the heuristic
 extern bool g_generalize_deadends; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
 extern bool g_record_online_deadends; // Record the deadends as they occur online, and add them to the deadend policy after solving
 extern bool g_optimized_scd; // Do optimized strong cyclic detection

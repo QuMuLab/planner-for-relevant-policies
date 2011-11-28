@@ -308,7 +308,7 @@ void Simulator::dump() {
     cout << "Replans: " << average(record_failed_states) << " +/- " << standard_dev(record_failed_states) << endl;
     cout << "Actions: " << average(record_total_states) << " +/- " << standard_dev(record_total_states) << endl;
     cout << "State-Action Pairs: " << g_policy->get_size() << endl;
-    cout << "Strongly Cyclic: " << ((g_failed_open_states > 0) ? "False" : "True") << endl;
+    cout << "Strongly Cyclic: " << (g_policy->is_strong_cyclic() ? "True" : "False") << endl;
     cout << "Policy Score: " << g_policy->get_score() << endl;
     cout << "Succeeded: " << record_succeeded << " / " << g_num_trials << endl;
     

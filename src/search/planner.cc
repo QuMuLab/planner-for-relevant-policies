@@ -121,6 +121,25 @@ int main(int argc, const char **argv) {
         changes_made = perform_jit_repairs(sim);
         if (!g_silent_planning)
             cout << "Finished repair round." << endl;
+        
+        // Check if we should re-run the repairs with forbidden ops used
+        //  in the heurstic computation.
+        if (!changes_made && !g_check_with_forbidden &&
+            g_detect_deadends && !(g_policy->is_strong_cyclic())) {
+            
+            g_check_with_forbidden = true;
+            changes_made = true;
+            if (g_best_policy != g_policy)
+                delete g_policy;
+            g_policy = new Policy();
+            
+            // We need to reset the deadends since they may have been
+            //  generated based on faulty heuristic computations that
+            //  ignored the forbidden state-action pairs.
+            g_deadend_policy = new Policy();
+            g_deadend_states = new Policy();
+            
+        }
     }
     if (!g_silent_planning)
         cout << "Done repairing..." << endl;

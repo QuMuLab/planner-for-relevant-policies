@@ -79,7 +79,7 @@ void AdditiveHeuristic::setup_exploration_queue_state(const State &state) {
     }
 }
 
-void AdditiveHeuristic::relaxed_exploration() {
+bool AdditiveHeuristic::relaxed_exploration(bool include_forbidden) {
     int unsolved_goals = goal_propositions.size();
     while (!queue.empty()) {
         pair<int, Proposition *> top_pair = queue.pop();
@@ -91,7 +91,7 @@ void AdditiveHeuristic::relaxed_exploration() {
         if (prop_cost < distance)
             continue;
         if (prop->is_goal && --unsolved_goals == 0)
-            return;
+            return true;
         const vector<UnaryOperator *> &triggered_operators =
             prop->precondition_of;
         for (int i = 0; i < triggered_operators.size(); i++) {
@@ -99,18 +99,21 @@ void AdditiveHeuristic::relaxed_exploration() {
             UnaryOperator *unary_op = triggered_operators[i];
             increase_cost(unary_op->cost, prop_cost);
             unary_op->unsatisfied_preconditions--;
+            
             // HAZ: This assertion no longer holds with forbidden operators
             //assert(unary_op->unsatisfied_preconditions >= 0);
             
-            // HAZ: This check exists to ensure that we aren't using forbidden
-            //       operators as achievers in the first layer. Future layers
-            //       is fine, so prop_cost > 0 will let it pass.
-            if ((unary_op->unsatisfied_preconditions <= 0) &&
-                (!g_detect_deadends || (unary_op->cost != unary_op->base_cost) || 
-                (0 == forbidden_ops.count(g_operators[triggered_operators[i]->operator_no].get_nondet_name()))))
+            if (unary_op->unsatisfied_preconditions == 0) {
+                
+                bool is_forbidden = (0 != forbidden_ops.count(g_operators[unary_op->operator_no].get_nondet_name()));
+                
+                if (!g_detect_deadends || !is_forbidden ||
+                    (include_forbidden && (unary_op->cost != unary_op->base_cost)))
                     enqueue_if_necessary(unary_op->effect,
                                          unary_op->cost,
                                          unary_op);
+                
+            }
             
             // HAZ: If we have a unary operator with an effect that triggers
             //       a forbidden operator that is already satisfied (precondition
@@ -118,9 +121,7 @@ void AdditiveHeuristic::relaxed_exploration() {
             //       in rare cases where the forbidden op is required later in
             //       the plan, and this approach relies on the fact that all of
             //       the initial state props are handled first.
-            if (g_detect_deadends && (forbidden_ops.size() > 0)) {
-                //unary_op->effect->cost != -1 &&
-                //unary_op->effect->cost <= unary_op->cost) {
+            if (g_detect_deadends && include_forbidden && (forbidden_ops.size() > 0)) {
                 
                 const vector<UnaryOperator *> &new_triggered_operators = unary_op->effect->precondition_of;
         
@@ -138,6 +139,7 @@ void AdditiveHeuristic::relaxed_exploration() {
             }
         }
     }
+    return false;
 }
 
 void AdditiveHeuristic::mark_preferred_operators(
@@ -164,9 +166,16 @@ void AdditiveHeuristic::mark_preferred_operators(
 }
 
 int AdditiveHeuristic::compute_add_and_ff(const State &state) {
+    
     setup_exploration_queue();
     setup_exploration_queue_state(state);
-    relaxed_exploration();
+    bool worked = relaxed_exploration(false);
+    
+    if (g_check_with_forbidden && !worked) {
+        setup_exploration_queue();
+        setup_exploration_queue_state(state);
+        relaxed_exploration(true);
+    }
 
     int total_cost = 0;
     for (int i = 0; i < goal_propositions.size(); i++) {
