@@ -56,9 +56,10 @@ void AdditiveHeuristic::setup_exploration_queue() {
     // Deal with operators and axioms without preconditions.
     for (int i = 0; i < unary_operators.size(); i++) {
         UnaryOperator &op = unary_operators[i];
+        
         op.unsatisfied_preconditions = op.precondition.size();
         op.cost = op.base_cost; // will be increased by precondition costs
-
+        
         if (op.unsatisfied_preconditions == 0)
             enqueue_if_necessary(op.effect, op.base_cost, &op);
     }
@@ -95,18 +96,45 @@ void AdditiveHeuristic::relaxed_exploration() {
             prop->precondition_of;
         for (int i = 0; i < triggered_operators.size(); i++) {
             
+            UnaryOperator *unary_op = triggered_operators[i];
+            increase_cost(unary_op->cost, prop_cost);
+            unary_op->unsatisfied_preconditions--;
+            // HAZ: This assertion no longer holds with forbidden operators
+            //assert(unary_op->unsatisfied_preconditions >= 0);
+            
             // HAZ: This check exists to ensure that we aren't using forbidden
             //       operators as achievers in the first layer. Future layers
             //       is fine, so prop_cost > 0 will let it pass.
-            if (!g_detect_deadends || (prop_cost > 0) ||
-                (0 == forbidden_ops.count(g_operators[triggered_operators[i]->operator_no].get_nondet_name()))) {
-                UnaryOperator *unary_op = triggered_operators[i];
-                increase_cost(unary_op->cost, prop_cost);
-                unary_op->unsatisfied_preconditions--;
-                assert(unary_op->unsatisfied_preconditions >= 0);
-                if (unary_op->unsatisfied_preconditions == 0)
+            if ((unary_op->unsatisfied_preconditions <= 0) &&
+                (!g_detect_deadends || (unary_op->cost != unary_op->base_cost) || 
+                (0 == forbidden_ops.count(g_operators[triggered_operators[i]->operator_no].get_nondet_name()))))
                     enqueue_if_necessary(unary_op->effect,
-                                         unary_op->cost, unary_op);
+                                         unary_op->cost,
+                                         unary_op);
+            
+            // HAZ: If we have a unary operator with an effect that triggers
+            //       a forbidden operator that is already satisfied (precondition
+            //       wise), then we should trigger the forbidden op. This arises
+            //       in rare cases where the forbidden op is required later in
+            //       the plan, and this approach relies on the fact that all of
+            //       the initial state props are handled first.
+            if (g_detect_deadends && (forbidden_ops.size() > 0)) {
+                //unary_op->effect->cost != -1 &&
+                //unary_op->effect->cost <= unary_op->cost) {
+                
+                const vector<UnaryOperator *> &new_triggered_operators = unary_op->effect->precondition_of;
+        
+                for (int j = 0; j < new_triggered_operators.size(); j++) {
+                    if (0 != forbidden_ops.count(g_operators[new_triggered_operators[j]->operator_no].get_nondet_name())) {
+                        
+                        if (new_triggered_operators[j]->unsatisfied_preconditions <= 0) {
+                            increase_cost(new_triggered_operators[j]->cost, unary_op->cost);
+                            enqueue_if_necessary(new_triggered_operators[j]->effect,
+                                                 new_triggered_operators[j]->cost,
+                                                 new_triggered_operators[j]);
+                        }
+                    }
+                }
             }
         }
     }

@@ -28,15 +28,17 @@ struct UnaryOperator {
 
 struct Proposition {
     bool is_goal;
-    int id;
+    int id, var, val;
     std::vector<UnaryOperator *> precondition_of;
 
     int cost; // Used for h^max cost or h^add cost
     UnaryOperator *reached_by;
     bool marked; // used when computing preferred operators for h^add and h^FF
 
-    Proposition(int id_) {
+    Proposition(int id_, int var_, int val_) {
         id = id_;
+        var = var_;
+        val = val_;
         is_goal = false;
         cost = -1;
         reached_by = 0;

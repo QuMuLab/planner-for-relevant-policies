@@ -24,7 +24,8 @@ void SearchProgress::reset() {
 
     lastjump_f_value = -1;
     
-    best_heuristic_values.clear();
+    for (int i = 0; i < best_heuristic_values.size(); i++)
+        best_heuristic_values[i] = -1;
     initial_h_values.clear();
 }
 

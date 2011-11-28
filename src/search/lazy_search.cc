@@ -168,7 +168,7 @@ int LazySearch::step() {
     // - current_predecessor is a permanent pointer to the predecessor of that state.
     // - current_operator is the operator which leads to current_state from predecessor.
     // - current_g is the g value of the current state according to the cost_type
-    // - current_g is the g value of the current state (using real costs)
+    // - current_real_g is the g value of the current state (using real costs)
 
     SearchNode node = search_space.get_node(current_state);
     bool reopen = reopen_closed_nodes && (current_g < node.get_g()) && !node.is_dead_end() && !node.is_new();

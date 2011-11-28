@@ -20,6 +20,9 @@ RelaxationHeuristic::~RelaxationHeuristic() {
 }
 
 void RelaxationHeuristic::reset() {
+    
+    Heuristic::reset();
+    
     // Rebuild the goal propositions (there may be a new goal)
     for (int i = 0; i < goal_propositions.size(); i++) {
         goal_propositions[i]->is_goal = false;
@@ -41,7 +44,7 @@ void RelaxationHeuristic::initialize() {
     propositions.resize(g_variable_domain.size());
     for (int var = 0; var < g_variable_domain.size(); var++) {
         for (int value = 0; value < g_variable_domain[var]; value++)
-            propositions[var].push_back(Proposition(prop_id++));
+            propositions[var].push_back(Proposition(prop_id++, var, value));
     }
 
     // Build goal propositions.

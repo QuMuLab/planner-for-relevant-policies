@@ -28,14 +28,18 @@ Heuristic::~Heuristic() {
 void Heuristic::set_preferred(const Operator *op) {
     if (!op->is_marked()) {
         op->mark();
-        preferred_operators.push_back(op);
+        if (0 == forbidden_ops.count(op->get_nondet_name()))
+            preferred_operators.push_back(op);
     }
 }
 
 void Heuristic::evaluate(const State &state) {
     if (heuristic == NOT_INITIALIZED)
         initialize();
+    
     preferred_operators.clear();
+    for (int i = 0; i < g_operators.size(); i++)
+        g_operators[i].unmark();
     
     if (g_detect_deadends) {
         forbidden_ops.clear();
