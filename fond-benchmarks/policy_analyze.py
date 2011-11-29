@@ -12,11 +12,7 @@ Usage: python policy_analyze.py <TASK> -domain <domain> ...
 
         Where <TASK> may be:
           fip-vs-prp: Run a comparison between fip and the best setting for prp
-          prpga-vs-prp: Run a comparison between the best setting for prp, and the same settings with goal alternative
           pfip-vs-prp: Run a comparison between fip settings of prp, and the best setting for prp
-          pfip-vs-psr: Run a comparison between fip settings of prp, and fip settings without goal alternative
-          pfip-vs-pga: Run a comparison between fip settings of prp, and fip settings without state reuse
-          pfip-vs-pbasic: Run a comparison between fip settings of prp, and fip settings without state reuse or goal alternative
           anova-time: Run an anova analysis of the parameters for prp, with time as the dependent variable
           anova-size: Run an anova analysis of the parameters for prp, with size as the dependent variable
         """
@@ -70,12 +66,18 @@ def average_prp_data(data):
                 #new_data[-1].append(str(sum([float(item[i]) for item in mapping[(dom,prob)]], 0.0) / float(len(mapping[(dom,prob)]))))
                 
                 # Median
-                new_data[-1].append(str(sorted([float(item[i]) for item in mapping[(dom,prob)]])[int(len(mapping[(dom,prob)])/2)]))
+                if mapping[(dom,prob)][0][i] == '-':
+                    new_data[-1].append('-')
+                else:
+                    new_data[-1].append(str(sorted([float(item[i]) for item in mapping[(dom,prob)]])[int(len(mapping[(dom,prob)])/2)]))
     
     return new_data
 
-def print_setting(s):
-    print "jic-limit(%s), forgetpolicy(%s), fullstate(%s), planlocal(%s), usepolicy(%s)" % (s[0], s[1], s[2], s[3], s[4])
+def print_setting(s):   
+    print "jic-limit(%s), forgetpolicy(%s), fullstate(%s),\
+           \nplanlocal(%s), partial-planloca(%s), usepolicy(%s),\
+           \nlimit-planlocal(%s), detect-deadends(%s), generalize-deadends(%s),\
+           \nonline-deadends(%s), optimized-scd(%s)" % (s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9], s[10])
 
 def do_anova(domain, dep):
     if 'every' == domain:
@@ -83,9 +85,19 @@ def do_anova(domain, dep):
             do_anova(dom)
         return
     
-    elif 'all' == domain:
+    elif 'all' in domain:
         prp_data = []
-        for dom in FOND_DOMAINS:
+        dom_type = []
+        if 'fond' in domain:
+            dom_type = FOND_DOMAINS
+        elif 'new' in domain:
+            dom_type = NEW_DOMAINS
+        elif 'ipc' in domain:
+            dom_type = IPC06_DOMAINS
+        elif 'interesting' in domain:
+            dom_type = INTERESTING_DOMAINS
+        
+        for dom in dom_type:
             prp_data.extend(load_CSV("RESULTS/prp-%s-results.csv" % dom))
     
     else:
@@ -101,9 +113,19 @@ def prp_compare_two(domain, type1, type2, name1, name2):
             prp_compare_two(dom, type1, type2)
         return
     
-    elif 'all' == domain:
+    elif ('all' in domain) and ('redundant' not in domain):
         prp_data = []
-        for dom in FOND_DOMAINS:
+        dom_type = []
+        if 'fond' in domain:
+            dom_type = FOND_DOMAINS
+        elif 'new' in domain:
+            dom_type = NEW_DOMAINS
+        elif 'ipc' in domain:
+            dom_type = IPC06_DOMAINS
+        elif 'interesting' in domain:
+            dom_type = INTERESTING_DOMAINS
+        
+        for dom in dom_type:
             prp_data.extend(load_CSV("RESULTS/prp-%s-results.csv" % dom))
     
     elif 'all-redundant' == domain:
@@ -116,7 +138,9 @@ def prp_compare_two(domain, type1, type2, name1, name2):
     
     print "\nAnalyzing Two PRP Settings for %s:" % domain
     print_setting(type1)
+    print "\n  -vs-\n"
     print_setting(type2)
+    print
     
     # Load both sets
     prp_data1 = [prp_data[0]] + filter_prp_settings(prp_data, *type1)
@@ -170,15 +194,40 @@ def prp_compare_two(domain, type1, type2, name1, name2):
     print
 
 def fip_vs_prp(domain):
-    if 'every' == domain:
-        for dom in FOND_DOMAINS:
+    if 'every' in domain:
+        dom_type = []
+        if 'fond' in domain:
+            dom_type = FOND_DOMAINS
+        elif 'new' in domain:
+            dom_type = NEW_DOMAINS
+        elif 'ipc' in domain:
+            dom_type = IPC06_DOMAINS
+        elif 'interesting' in domain:
+            dom_type = INTERESTING_DOMAINS
+        
+        for dom in dom_type:
             fip_vs_prp(dom)
         return
     
-    elif 'all' == domain:
+    elif 'all' in domain:
         fip_data = []
         prp_data = []
-        for dom in FOND_DOMAINS:
+        dom_type = []
+        if 'fond' in domain:
+            dom_type = FOND_DOMAINS
+        elif 'new' in domain:
+            dom_type = NEW_DOMAINS
+        elif 'ipc' in domain:
+            dom_type = IPC06_DOMAINS
+        elif 'interesting' in domain:
+            dom_type = INTERESTING_DOMAINS
+        
+        for dom in dom_type:
+            prp_data.extend(load_CSV("RESULTS/prp-%s-results.csv" % dom))
+            
+        fip_data = []
+        prp_data = []
+        for dom in dom_type:
             fip_data.extend(load_CSV("RESULTS/fip-%s-results.csv" % dom))
             prp_data.extend(load_CSV("RESULTS/prp-%s-results.csv" % dom))
     
@@ -190,10 +239,13 @@ def fip_vs_prp(domain):
     
     # Load both sets
     solved_fip_data = filter(lambda x: x[-1] == '-' and x[-2] != '0', fip_data)
+    nosol_fip_data = filter(lambda x: x[-1] == 'N', fip_data)
     
     prp_data = [prp_data[0]] + filter_prp_settings(prp_data, '18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1')
-    solved_prp_data = filter(lambda x: x[-3] != '-' and float(x[-3]) == 1.0, prp_data[1:])
-    solved_prp_data = average_prp_data(solved_prp_data) # Filter and average based on what FIP has solved.
+    solved_prp_data = filter(lambda x: x[-2] == 'True', prp_data)
+    solved_prp_data = average_prp_data(solved_prp_data)
+    nosol_prp_data = filter(lambda x: x[4] == 'N' or x[-2] == 'False', prp_data)
+    nosol_prp_data = average_prp_data(nosol_prp_data)
     
     fip_mapping = {}
     prp_mapping = {}
@@ -210,11 +262,12 @@ def fip_vs_prp(domain):
     prp_solved = set(prp_mapping.keys())
     both_solved = fip_solved & prp_solved
     
-    print "FIP Coverage: %d" % len(fip_solved)
-    print "PRP Coverage: %d" % len(prp_solved)
+    print "FIP Coverage: %d / %d" % (len(fip_solved), len(nosol_fip_data))
+    print "PRP Coverage: %d / %d" % (len(prp_solved), len(nosol_prp_data))
     print "Combined Coverage: %d" % len(both_solved)
     print "FIP - PRP: %s" % str(fip_solved - prp_solved)
-    
+   
+    all_time_data = [] 
     time_data = []
     size_data = []
     probs = []
@@ -233,8 +286,9 @@ def fip_vs_prp(domain):
     plot([item[0] for item in size_data], [item[1] for item in size_data],
          x_label = "FIP Policy Size", y_label = "PRP Policy Size", graph_name = "FIP -vs- PRP: %s (Size)" % domain, makesquare = True, x_log = True, y_log = True)
     
-    x1,y1 = create_time_profile([item[0] for item in time_data])
-    x2,y2 = create_time_profile([item[1] for item in time_data])
+    x1,y1 = create_time_profile([max(0.001, float(fip_mapping[(dom,prob)][2])) for (dom,prob) in fip_solved])
+    x2,y2 = create_time_profile([max(0.001, float(prp_mapping[(dom,prob)][17])) for (dom,prob) in prp_solved])
+    
     plot([x1,x2], [y1,y2], x_label = "Time", y_label = "Problems Solved", no_scatter = True,
          xyline = False, legend_name = "Method", names = ["FIP", "PRP"], x_log = True)
     
@@ -253,19 +307,10 @@ if __name__ == '__main__':
         fip_vs_prp(myargs['-domain'])
     
     if 'pfip-vs-prp' in flags:
-        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '0', '0', '1'), 'PFIP', 'PRP')
-    
-    if 'pfip-vs-psr' in flags:
-        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '1', '0', '1'), 'PFIP', 'PSR')
-    
-    if 'pfip-vs-pga' in flags:
-        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '1', '1', '0'), 'PFIP', 'PGA')
-    
-    if 'pfip-vs-pbasic' in flags:
-        prp_compare_two(myargs['-domain'], ('18000', '0', '1', '1', '1'), ('18000', '0', '1', '0', '0'), 'PFIP', 'PBASIC')
-    
-    if 'prpga-vs-prp' in flags:
-        prp_compare_two(myargs['-domain'], ('18000', '0', '0', '1', '1'), ('18000', '0', '0', '0', '1'), 'PRP+GA', 'PRP')
+        prp_compare_two(myargs['-domain'],
+                        ('18000', '0', '1', '1', '0', '1', '0', '0', '0', '0', '0'),
+                        ('18000', '0', '0', '1', '0', '1', '0', '0', '0', '0', '0'),
+                        'PFIP', 'PRP')
     
     if 'anova-time' in flags:
         do_anova(myargs['-domain'], 'runtime')
