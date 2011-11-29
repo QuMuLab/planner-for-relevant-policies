@@ -230,7 +230,7 @@ def doit_fip(domain, dom_probs):
         result = fip_results[res_id]
         prob = result.single_args['domprob'].split(' ')[3].split('/')[-1]
         
-        if match_value(result.output_file, 'No plan will solve it'):
+        if match_value(result.output_file, 'No plan will solve it') or 'No solutions are found!' in read_file(result.output_file)[-1]:
             fip_csv.append("%s,%s,-1,-1,N" % (domain, prob))
         else:
             if result.timed_out:
