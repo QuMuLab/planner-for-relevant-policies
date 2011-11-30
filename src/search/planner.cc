@@ -32,6 +32,7 @@ int main(int argc, const char **argv) {
     g_policy = 0;
     
     g_timer_regression.stop();
+    g_timer_simulator.stop();
     g_timer_engine_init.stop();
     g_timer_search.stop();
     g_timer_policy_build.stop();
@@ -40,6 +41,7 @@ int main(int argc, const char **argv) {
     g_timer_jit.stop();
     
     g_timer_regression.reset();
+    g_timer_simulator.reset();
     g_timer_engine_init.reset();
     g_timer_search.reset();
     g_timer_policy_build.reset();
@@ -136,6 +138,10 @@ int main(int argc, const char **argv) {
             // We need to reset the deadends since they may have been
             //  generated based on faulty heuristic computations that
             //  ignored the forbidden state-action pairs.
+            if (g_deadend_policy)
+                delete g_deadend_policy;
+            if (g_deadend_states)
+                delete g_deadend_states;
             g_deadend_policy = new Policy();
             g_deadend_states = new Policy();
             
@@ -146,7 +152,9 @@ int main(int argc, const char **argv) {
     g_timer_jit.stop();
 
     cout << "\n\nRunning the simulation..." << endl;
+    g_timer_simulator.resume();
     sim->run();
+    g_timer_simulator.stop();
     
     cout << "\n\n" << endl;
     

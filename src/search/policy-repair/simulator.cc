@@ -22,6 +22,13 @@ void Simulator::run() {
         if (g_forgetpolicy) {
             delete g_policy;
             g_policy = new Policy();
+
+            if (g_deadend_policy)
+                delete g_deadend_policy;
+            if (g_deadend_states)
+                delete g_deadend_states;
+            g_deadend_policy = new Policy();
+            g_deadend_states = new Policy();
         }
         
         run_once();
@@ -320,5 +327,6 @@ void Simulator::dump() {
     cout << "Evaluating the policy quality: " << g_timer_policy_eval << endl;
     cout << "Using the policy: " << g_timer_policy_use << endl;
     cout << "Just-in-case Repairs: " << g_timer_jit << endl;
+    cout << "Simulator time: " << g_timer_simulator << endl;
     cout << "Total time: " << g_timer << endl;
 }

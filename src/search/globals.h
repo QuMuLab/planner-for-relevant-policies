@@ -96,6 +96,7 @@ extern Heuristic *g_heuristic_for_reachability;
 
 /* Timers */
 extern Timer g_timer_regression;
+extern Timer g_timer_simulator;
 extern Timer g_timer_engine_init;
 extern Timer g_timer_search;
 extern Timer g_timer_policy_build;

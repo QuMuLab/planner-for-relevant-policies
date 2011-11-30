@@ -401,6 +401,7 @@ vector<pair<int, int> > g_goal_orig;
 Heuristic *g_heuristic_for_reachability;
 
 Timer g_timer_regression;
+Timer g_timer_simulator;
 Timer g_timer_engine_init;
 Timer g_timer_search;
 Timer g_timer_policy_build;
