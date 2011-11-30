@@ -75,9 +75,9 @@ PRP_PARAMS = {'best': { '--jic-limit': [18000],
                                '--partial-planlocal': [1],
                                '--plan-with-policy': [1],
                                '--limit-planlocal': [1],
-                               '--detect-deadends': [1],
-                               '--generalize-deadends': [1],
-                               '--online-deadends': [1],
+                               '--detect-deadends': [0],
+                               '--generalize-deadends': [0],
+                               '--online-deadends': [0],
                                '--optimized-scd': [0]},
 
               'ffreplan': { '--jic-limit': [0],
@@ -176,32 +176,32 @@ def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PAR
     
     if 'all' == domain:
         for dom in GOOD_DOMAINS:
-            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params, exp_name=exp_name)
         return
     
     elif 'new' == domain:
         for dom in NEW_DOMAINS:
-            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params, exp_name=exp_name)
         return
     
     elif 'fond' == domain:
         for dom in FOND_DOMAINS:
-            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params, exp_name=exp_name)
         return
     
     elif 'ipc' == domain:
         for dom in IPC06_DOMAINS:
-            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params, exp_name=exp_name)
         return
     
     elif 'test' == domain:
         for dom in TEST_DOMAINS:
-            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params, exp_name=exp_name)
         return
     
     elif 'interesting' == domain:
         for dom in INTERESTING_DOMAINS:
-            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params)
+            doit(dom, dofip=dofip, doprp=doprp, prp_params=prp_params, exp_name=exp_name)
         return
 
     if redundant > 0:
@@ -322,7 +322,7 @@ def doit_prp(domain, dom_probs, prp_params, exp_name = 'prp'):
                 
             else:
                 runtime, jic_time, policy_eval_time, policy_construction_time, policy_use_time, \
-                search_time, engine_init_time, regression_time, successful_states, \
+                search_time, engine_init_time, regression_time, simulator_time, successful_states, \
                 replans, actions, size, strongly_cyclic, succeeded, policy_score = parse_prp(result.output_file)
                 
                 prp_csv.append("%s,%s,%f,%d,-,%s,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%f,%s,%s" % (domain, prob,
@@ -341,6 +341,9 @@ def doit_prp(domain, dom_probs, prp_params, exp_name = 'prp'):
 
 if __name__ == '__main__':
     myargs, flags = get_opts()
+    
+    if '-trials' in myargs:
+        TRIALS = int(myargs['-trials'])
     
     if '-domain' not in myargs:
         print "Error: Must choose a domain:"
