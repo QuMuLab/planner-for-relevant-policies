@@ -98,7 +98,8 @@ REDUNDANT_DOMAINS = {
 
 GOOD_DOMAINS = ['blocksworld', 'blocksworld-new', 'blocksworld-orig', 'first', 'forest', 'faults']
 FOND_DOMAINS = ['blocksworld-orig', 'first', 'forest', 'faults']
-NEW_DOMAINS = ['blocksworld-new', 'first-new', 'forest-new']
+#NEW_DOMAINS = ['blocksworld-new', 'first-new', 'forest-new']
+NEW_DOMAINS = ['blocksworld-new', 'forest-new']
 IPC06_DOMAINS = ['blocksworld-2', 'elevators', 'zenotravel']
 TEST_DOMAINS = ['blocksworld-test', 'first-test', 'forest-test', 'faults-test', 'triangle-tire-test']
 INTERESTING_DOMAINS = ['triangle-tire']
