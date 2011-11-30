@@ -13,6 +13,7 @@ Usage: python policy_analyze.py <TASK> -domain <domain> ...
         Where <TASK> may be:
           fip-vs-prp: Run a comparison between fip and the best setting for prp
           pfip-vs-prp: Run a comparison between fip settings of prp, and the best setting for prp
+          ffreplan-vs-prp: Run a comparison between ffreplan, and prp in online replanning
           anova-time: Run an anova analysis of the parameters for prp, with time as the dependent variable
           anova-size: Run an anova analysis of the parameters for prp, with size as the dependent variable
         """
@@ -295,6 +296,96 @@ def fip_vs_prp(domain):
     print
 
 
+def online_compare(domain):
+    if 'every' in domain:
+        dom_type = []
+        if 'fond' in domain:
+            dom_type = FOND_DOMAINS
+        elif 'new' in domain:
+            dom_type = NEW_DOMAINS
+        elif 'ipc' in domain:
+            dom_type = IPC06_DOMAINS
+        elif 'interesting' in domain:
+            dom_type = INTERESTING_DOMAINS
+        
+        for dom in dom_type:
+            fip_vs_prp(dom)
+        return
+    
+    elif 'all' in domain:
+        prp_data = []
+        ffr_data = []
+        dom_type = []
+        if 'fond' in domain:
+            dom_type = FOND_DOMAINS
+        elif 'new' in domain:
+            dom_type = NEW_DOMAINS
+        elif 'ipc' in domain:
+            dom_type = IPC06_DOMAINS
+        elif 'interesting' in domain:
+            dom_type = INTERESTING_DOMAINS
+        
+        for dom in dom_type:
+            prp_data.extend(load_CSV("RESULTS/bo-prp-%s-results.csv" % dom))
+            ffr_data.extend(load_CSV("RESULTS/ffr-prp-%s-results.csv" % dom))
+
+    else:
+        prp_data = load_CSV("RESULTS/bo-prp-%s-results.csv" % domain)
+        ffr_data = load_CSV("RESULTS/ffr-prp-%s-results.csv" % domain)
+        
+    # Load both sets
+    solved_prp_data = filter(lambda x: x[4] == '-', prp_data)
+    solved_ffr_data = filter(lambda x: x[4] == '-', ffr_data)
+    
+    prp_mapping = {}
+    ffr_mapping = {}
+    
+    for line in solved_ffr_data:
+        assert (line[0], line[1]) not in ffr_mapping
+        ffr_mapping[(line[0], line[1])] = line
+    
+    for line in solved_prp_data:
+        assert (line[0], line[1]) not in prp_mapping
+        prp_mapping[(line[0], line[1])] = line
+    
+    ffr_solved = set(ffr_mapping.keys())
+    prp_solved = set(prp_mapping.keys())
+    both_solved = ffr_solved & prp_solved
+    
+    ffr_actions = []
+    prp_actions = []
+    ffr_replans = []
+    prp_replans = []
+    ffr_times = []
+    prp_times = []
+    ffr_success = []
+    prp_success = []
+    
+    for (dom,prob) in both_solved:
+        ffr_actions.append(float(ffr_mapping[(dom,prob)][-4]))
+        prp_actions.append(float(prp_mapping[(dom,prob)][-4]))
+        ffr_replans.append(float(ffr_mapping[(dom,prob)][-5]))
+        prp_replans.append(float(prp_mapping[(dom,prob)][-5]))
+        ffr_success.append(float(ffr_mapping[(dom,prob)][-1]))
+        prp_success.append(float(prp_mapping[(dom,prob)][-1]))
+        ffr_times.append(float(ffr_mapping[(dom,prob)][-7]) / float(ffr_mapping[(dom,prob)][6]))
+        prp_times.append(float(prp_mapping[(dom,prob)][-7]) / float(prp_mapping[(dom,prob)][6]))
+    
+    print "Online replanning for domain %s:\n" % domain
+    print "Total shared successful runs: %d" % len(both_solved)
+    print "FFR Average Actions: %f" % (sum(ffr_actions) / float(len(ffr_actions)))
+    print "PRP Average Actions: %f\n" % (sum(prp_actions) / float(len(prp_actions)))
+    print "FFR Average Replans: %f" % (sum(ffr_replans) / float(len(ffr_replans)))
+    print "PRP Average Replans: %f\n" % (sum(prp_replans) / float(len(prp_replans)))
+    print "FFR Average Success: %f" % (sum(ffr_success) / float(len(ffr_success)))
+    print "PRP Average Success: %f\n" % (sum(prp_success) / float(len(prp_success)))
+    print "FFR Total Success: %d" % int(sum(ffr_success))
+    print "PRP Total Success: %d\n" % int(sum(prp_success))
+    print "FFR Average Time: %f" % (sum(ffr_times) / float(len(ffr_times)))
+    print "PRP Average Time: %f\n" % (sum(prp_times) / float(len(prp_times)))
+    return
+    
+
 if __name__ == '__main__':
     myargs, flags = get_opts()
     
@@ -311,6 +402,9 @@ if __name__ == '__main__':
                         ('18000', '0', '1', '1', '0', '1', '0', '0', '0', '0', '0'),
                         ('18000', '0', '0', '1', '0', '1', '0', '0', '0', '0', '0'),
                         'PFIP', 'PRP')
+    
+    if 'ffreplan-vs-prp' in flags:
+        online_compare(myargs['-domain'])
     
     if 'anova-time' in flags:
         do_anova(myargs['-domain'], 'runtime')
