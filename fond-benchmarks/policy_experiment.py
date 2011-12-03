@@ -364,8 +364,13 @@ if __name__ == '__main__':
         doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['best'])
    
     if 'ffreplan-vs-prp' in flags:
-        doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['best-online'], exp_name='bo')
-        doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['ffreplan'], exp_name='ffr')
+        if '-redundant' in myargs:
+            dom_probs = REDUNDANT_DOMAINS[myargs['-domain']][int(myargs['-redundant'])]
+            doit_prp("%s-redundant-%s" % (myargs['-domain'], myargs['-redundant']), dom_probs, PRP_PARAMS['best-online'], exp_name='bo-prp')
+            doit_prp("%s-redundant-%s" % (myargs['-domain'], myargs['-redundant']), dom_probs, PRP_PARAMS['ffreplan'], exp_name='ffr-prp')
+        else:
+            doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['best-online'], exp_name='bo')
+            doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['ffreplan'], exp_name='ffr')
  
     if 'fip' in flags:
         doit(myargs['-domain'], dofip=True, doprp=False)

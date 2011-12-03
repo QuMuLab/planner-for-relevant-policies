@@ -309,7 +309,7 @@ def online_compare(domain):
             dom_type = INTERESTING_DOMAINS
         
         for dom in dom_type:
-            fip_vs_prp(dom)
+            online_compare(dom)
         return
     
     elif 'all' in domain:
@@ -372,7 +372,9 @@ def online_compare(domain):
         prp_times.append(float(prp_mapping[(dom,prob)][-7]) / float(prp_mapping[(dom,prob)][6]))
     
     print "Online replanning for domain %s:\n" % domain
-    print "Total shared successful runs: %d" % len(both_solved)
+    print "Total ffr successful runs: %d" % len(ffr_solved)
+    print "Total prp successful runs: %d" % len(prp_solved)
+    print "Total shared successful runs: %d\n" % len(both_solved)
     print "FFR Average Actions: %f" % (sum(ffr_actions) / float(len(ffr_actions)))
     print "PRP Average Actions: %f\n" % (sum(prp_actions) / float(len(prp_actions)))
     print "FFR Average Replans: %f" % (sum(ffr_replans) / float(len(ffr_replans)))
