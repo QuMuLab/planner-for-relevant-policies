@@ -36,8 +36,8 @@ void update_deadends(vector<State *> &failed_states) {
     for (int i = 0; i < failed_states.size(); i++) {
         // Generalize the deadend if need be
         State * failed_state = failed_states[i];
-        //if (g_generalize_deadends)
-        //    generalize_deadend(*failed_state);
+        //cout << "Creating forbidden state-action pairs for deadend:" << endl;
+        //failed_state->dump();
         
         // Get the regressable operators for the given state.
         vector<PolicyItem *> reg_items;
@@ -48,6 +48,10 @@ void update_deadends(vector<State *> &failed_states) {
             RegressableOperator *ro = (RegressableOperator*)(reg_items[j]);
             de_items.push_back(new NondetDeadend(new State(*failed_state, *(ro->op), false),
                                                      ro->op->get_nondet_name()));
+
+            //cout << "Creating new forbidden state-action pair:" << endl;
+            //de_items.back()->dump();
+
             de_states.push_back(new NondetDeadend(new State(*failed_state),
                                                      ro->op->get_nondet_name()));
         }
