@@ -71,6 +71,12 @@ triangle_tire = []
 for i in range(1,26):
     triangle_tire.append(("triangle-tireworld/domain.pddl", "triangle-tireworld/p%d.pddl" % i))
 
+# Interesting (toy) domains
+bus_fare = [('interesting/bus-fare-domain.pddl', 'interesting/bus-fare-prob.pddl')]
+climber = [('interesting/climber-domain.pddl', 'interesting/climber-prob.pddl')]
+river = [('interesting/river-domain.pddl', 'interesting/river-prob.pddl')]
+
+
 # FINAL
 DOMAINS = {
     'blocksworld': blocks,
@@ -89,7 +95,10 @@ DOMAINS = {
     'elevators' : elevators,
     'zenotravel' : zenotravel,
     'triangle-tire' : triangle_tire,
-    'triangle-tire-test' : triangle_tire[0:2]
+    'triangle-tire-test' : triangle_tire[0:2],
+    'bus-fare' : bus_fare,
+    'climber' : climber,
+    'river' : river
 }
 
 REDUNDANT_DOMAINS = {
@@ -102,5 +111,5 @@ FOND_DOMAINS = ['blocksworld-orig', 'first', 'forest', 'faults']
 NEW_DOMAINS = ['blocksworld-new', 'forest-new']
 IPC06_DOMAINS = ['blocksworld-2', 'elevators', 'zenotravel']
 TEST_DOMAINS = ['blocksworld-test', 'first-test', 'forest-test', 'faults-test', 'triangle-tire-test']
-INTERESTING_DOMAINS = ['triangle-tire']
+INTERESTING_DOMAINS = ['triangle-tire', 'bus-fare', 'climber', 'river']
 
