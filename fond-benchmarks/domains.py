@@ -68,7 +68,7 @@ for i in range(10,16):
 
 # Triangle tireworld
 triangle_tire = []
-for i in range(1,31):
+for i in range(1,41):
     triangle_tire.append(("triangle-tireworld/domain.pddl", "triangle-tireworld/p%d.pddl" % i))
 
 # Interesting (toy) domains
