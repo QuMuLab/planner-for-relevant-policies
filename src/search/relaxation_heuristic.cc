@@ -60,11 +60,8 @@ void RelaxationHeuristic::initialize() {
     for (int i = 0; i < g_axioms.size(); i++)
         build_unary_operators(g_axioms[i], -1);
 
-    // HAZ: We shouldn't simplify the operators since we may disable some unary
-    //       operators, but use the others (even if they have precisely the same
-    //       condition, effect, and cost).
     // Simplify unary operators.
-    //simplify();
+    simplify();
 
     // Cross-reference unary operators.
     for (int i = 0; i < unary_operators.size(); i++) {
