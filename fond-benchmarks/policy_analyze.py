@@ -13,6 +13,7 @@ Usage: python policy_analyze.py <TASK> -domain <domain> ...
         Where <TASK> may be:
           fip-vs-prp: Run a comparison between fip and the best setting for prp
           pfip-vs-prp: Run a comparison between fip settings of prp, and the best setting for prp
+          prp: Run a comparison with the best prp settings and itself (just used to get prp stats)
           ffreplan-vs-prp: Run a comparison between ffreplan, and prp in online replanning
           anova-time: Run an anova analysis of the parameters for prp, with time as the dependent variable
           anova-size: Run an anova analysis of the parameters for prp, with size as the dependent variable
@@ -181,16 +182,26 @@ def prp_compare_two(domain, type1, type2, name1, name2):
         time_data.append((float(prp_mapping1[(dom,prob)][2]), float(prp_mapping2[(dom,prob)][2])))
         size_data.append((float(prp_mapping1[(dom,prob)][3]), float(prp_mapping2[(dom,prob)][3])))
     
+    print "%s Avg time: %f" % (name1, sum([item[0] for item in time_data]) / float(len(time_data)))
+    print "%s Avg time: %f" % (name2, sum([item[1] for item in time_data]) / float(len(time_data)))
+    print "%s Total time: %f" % (name1, sum([item[0] for item in time_data]))
+    print "%s Total time: %f" % (name2, sum([item[1] for item in time_data]))
+    print "%s Avg size: %f" % (name1, sum([item[0] for item in size_data]) / float(len(size_data)))
+    print "%s Avg size: %f" % (name2, sum([item[1] for item in size_data]) / float(len(size_data)))
+    
+    if name1 == name2:
+        return
+    
     plot([item[0] for item in time_data], [item[1] for item in time_data],
-         x_label = "%s Time (s)" % name1, y_label = "%s Time (s)" % name2, graph_name = "%s (Time)" % domain, makesquare = True, x_log = True, y_log = True)
+         x_label = "%s Time (s)" % name1, y_label = "%s Time (s)" % name2, makesquare = True, x_log = True, y_log = True, col = False)
     
     plot([item[0] for item in size_data], [item[1] for item in size_data],
-         x_label = "%s Policy Size" % name1, y_label = "%s Policy Size" % name2, graph_name = "%s (Size)" % domain, makesquare = True, x_log = True, y_log = True)
+         x_label = "%s Policy Size" % name1, y_label = "%s Policy Size" % name2, makesquare = True, x_log = True, y_log = True, col = False)
     
     x1,y1 = create_time_profile([float(item[2]) for item in prp_mapping1.values()])
     x2,y2 = create_time_profile([float(item[2]) for item in prp_mapping2.values()])
     plot([x1,x2], [y1,y2], x_label = "Time (s)", y_label = "Problems Solved", no_scatter = True,
-         xyline = False, legend_name = "Method", names = [name1, name2], x_log = True)
+         xyline = False, names = [name1, name2], x_log = True, col = False)
     
     print
 
@@ -282,16 +293,16 @@ def fip_vs_prp(domain):
     #HACK: We assign 0.001 seconds to a reported time of 0: This is needed for log plots to work
     
     plot([max(0.001, item[0]) for item in time_data], [max(0.001, item[1]) for item in time_data],
-         x_label = "FIP Time (s)", y_label = "PRP Time (s)", graph_name = "FIP -vs- PRP: %s (Time)" % domain, makesquare = True, x_log = True, y_log = True)
+         x_label = "FIP Time (s)", y_label = "PRP Time (s)", makesquare = True, x_log = True, y_log = True, col = False)
     
     plot([item[0] for item in size_data], [item[1] for item in size_data],
-         x_label = "FIP Policy Size", y_label = "PRP Policy Size", graph_name = "FIP -vs- PRP: %s (Size)" % domain, makesquare = True, x_log = True, y_log = True)
+         x_label = "FIP Policy Size", y_label = "PRP Policy Size", makesquare = True, x_log = True, y_log = True, col = False)
     
     x1,y1 = create_time_profile([max(0.001, float(fip_mapping[(dom,prob)][2])) for (dom,prob) in fip_solved])
     x2,y2 = create_time_profile([max(0.001, float(prp_mapping[(dom,prob)][17])) for (dom,prob) in prp_solved])
     
     plot([x1,x2], [y1,y2], x_label = "Time", y_label = "Problems Solved", no_scatter = True,
-         xyline = False, legend_name = "Method", names = ["FIP", "PRP"], x_log = True)
+         xyline = False, names = ["FIP", "PRP"], x_log = True, col = False)
     
     print
 
@@ -399,11 +410,17 @@ if __name__ == '__main__':
     if 'fip-vs-prp' in flags:
         fip_vs_prp(myargs['-domain'])
     
+    if 'prp' in flags:
+        prp_compare_two(myargs['-domain'],
+                        ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
+                        ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
+                        'PRP', 'PRP')
+
     if 'pfip-vs-prp' in flags:
         prp_compare_two(myargs['-domain'],
                         ('18000', '0', '1', '1', '0', '1', '0', '0', '0', '0', '0'),
                         ('18000', '0', '0', '1', '0', '1', '0', '0', '0', '0', '0'),
-                        'PFIP', 'PRP')
+                        'PRP$_{\\textrm{Full}}$', 'PRP$_{\\textrm{Partial}}$')
     
     if 'ffreplan-vs-prp' in flags:
         online_compare(myargs['-domain'])
