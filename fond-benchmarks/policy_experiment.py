@@ -14,6 +14,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           ffreplan-vs-prp: Run a comparison between ffreplan and prp in online mode
           fip: Just run fip on the given domains
           prp: Just run prp on the given domains
+          jic: Test the varied jic limit (must specify -problem and -limit)
           redundant: Run the comparison for domains that have redundancy
           test: Run a complete test of all parameter settings (make sure to limit the domains)
           test-planlocal: Test the impact of the various planlocal settings
@@ -43,6 +44,19 @@ PARAMETERS = ['jic-limit',
 
 PRP_PARAMS = {'best': { '--jic-limit': [18000],
                         '--trials': [100],
+                        '--forgetpolicy': [0],
+                        '--fullstate': [0],
+                        '--planlocal': [1],
+                        '--partial-planlocal': [1],
+                        '--plan-with-policy': [1],
+                        '--limit-planlocal': [1],
+                        '--detect-deadends': [1],
+                        '--generalize-deadends': [1],
+                        '--online-deadends': [1],
+                        '--optimized-scd': [1]},
+              
+              'jic':  { '--jic-limit': [],
+                        '--trials': [0],
                         '--forgetpolicy': [0],
                         '--fullstate': [0],
                         '--planlocal': [1],
@@ -339,6 +353,43 @@ def doit_prp(domain, dom_probs, prp_params, exp_name = 'prp'):
     append_file("RESULTS/%s-%s-results.csv" % (exp_name, domain), prp_csv)
 
 
+def dojic(dom, prob, max_jic):
+    print "Running a varied jic experiment for the following domain / problem:"
+    print dom
+    print prob
+    
+    exp_name = "jic"
+    domain = dom.split('/')[-1].split('.')[0]
+    
+    PRP_PARAMS['jic']['--jic-limit'] = list(range(1, max_jic+1))
+    
+    prp_results = run_experiment(
+        base_command = './../../src/plan-prp',
+        single_arguments = {'domprob': ["../%s ../%s RES" % (dom, prob)]},
+        parameters = PRP_PARAMS['jic'],
+        time_limit = TIME_LIMIT,
+        memory_limit = MEM_LIMIT,
+        results_dir = "RESULTS/%s-%s" % (exp_name, domain),
+        progress_file = None,
+        processors = CORES,
+        sandbox = exp_name,
+        clean_sandbox = True,
+        trials = TRIALS,
+        output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.out'),
+        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.err')
+    )
+    
+    prp_csv = ['jic limit,jic time,policy score']
+    for res_id in prp_results.get_ids():
+        result = prp_results[res_id]
+        jic_lim = result.parameters['--jic-limit']
+        jic_time = get_value(result.output_file, '.*Just-in-case Repairs: ([0-9]+\.?[0-9]*)s\n.*', float)
+        policy_score = get_value(result.output_file, '.*Policy Score: ([0-9]+\.?[0-9]*)\n.*', float)
+        
+        prp_csv.append("%d,%f,%f" % (jic_lim, jic_time, policy_score))
+        
+    append_file("RESULTS/%s-%s-results.csv" % (exp_name, domain), prp_csv)
+
 if __name__ == '__main__':
     myargs, flags = get_opts()
     
@@ -381,3 +432,15 @@ if __name__ == '__main__':
     if 'redundant' in flags:
         for i in REDUNDANT_DOMAINS[myargs['-domain']].keys():
             doit(myargs['-domain'], redundant = i)
+    
+    if 'jic' in flags:
+        if '-problem' not in myargs:
+            print "Error: Must choose a problem:"
+            print USAGE_STRING
+            os._exit(1)
+        if '-limit' not in myargs:
+            print "Error: Must choose a limit:"
+            print USAGE_STRING
+            os._exit(1)
+        
+        dojic(myargs['-domain'], myargs['-problem'])
