@@ -152,6 +152,18 @@ int main(int argc, const char **argv) {
         cout << "Done repairing..." << endl;
     g_timer_jit.stop();
 
+    // Use the best policy found so far
+    if (g_policy && g_best_policy && (g_best_policy != g_policy)) {
+        if (g_best_policy->get_score() > g_policy->get_score())
+            g_policy = g_best_policy;
+    }
+
+    // Reset the deadend and scd settings for the online simulation(s)
+    g_detect_deadends = false;
+    g_generalize_deadends = false;
+    g_record_online_deadends = false;
+    g_optimized_scd = false;
+
     cout << "\n\nRunning the simulation..." << endl;
     g_timer_simulator.resume();
     sim->run();
