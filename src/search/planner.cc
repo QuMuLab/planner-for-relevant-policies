@@ -127,7 +127,8 @@ int main(int argc, const char **argv) {
         // Check if we should re-run the repairs with forbidden ops used
         //  in the heurstic computation.
         if (!changes_made && !g_check_with_forbidden &&
-            g_detect_deadends && !(g_policy->is_strong_cyclic())) {
+            g_detect_deadends && !(g_policy->is_strong_cyclic()) &&
+            (g_timer_jit() < g_jic_limit)) {
             
             g_check_with_forbidden = true;
             changes_made = true;

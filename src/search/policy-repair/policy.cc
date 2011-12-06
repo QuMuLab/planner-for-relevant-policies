@@ -423,7 +423,10 @@ Policy::Policy(list<PolicyItem *> &reg_items) {
 
 void Policy::update_policy(list<PolicyItem *> &reg_items) {
     g_timer_policy_build.resume();
-    
+
+    // Reset the score since a change is being made to the policy
+    score = 0.0;
+
     set<int> vars_seen;
     if (root)
         root->update_policy(reg_items, vars_seen);

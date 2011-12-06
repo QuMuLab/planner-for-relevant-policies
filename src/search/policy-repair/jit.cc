@@ -171,7 +171,9 @@ bool perform_jit_repairs(Simulator *sim) {
                     if (g_best_policy != g_policy)
                         delete g_policy;
                     g_policy = g_best_policy;
-                    g_policy->mark_complete();
+
+                    if (g_timer_jit() < g_jic_limit)
+                        g_policy->mark_complete();
                     
                     // Clean up the states we've created
                     for (int i = 0; i < created_states.size(); i++) {
@@ -202,13 +204,11 @@ bool perform_jit_repairs(Simulator *sim) {
     sim->set_state(g_initial_state);
     sim->set_goal(goal_orig);
     
-    //if (!g_silent_planning) {
-        cout << "\nCould not close " << g_failed_open_states << " of " << num_fixed_states + g_failed_open_states << " open leaf states." << endl;
-        cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
-    //}
+    cout << "\nCould not close " << g_failed_open_states << " of " << num_fixed_states + g_failed_open_states << " open leaf states." << endl;
+    cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
     
     // If we closed every open state, then the policy must be strongly cyclic.
-    if (0 == g_failed_open_states)
+    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit))
         g_policy->mark_strong();
         
     if (g_detect_deadends && (g_failed_open_states > 0)) {
@@ -218,8 +218,7 @@ bool perform_jit_repairs(Simulator *sim) {
         double cur_score = g_policy->get_score();
         if (cur_score > g_best_policy_score) {
             
-            //if (!g_silent_planning)
-                cout << "Found a better policy of score " << cur_score << endl;
+            cout << "Found a better policy of score " << cur_score << endl;
             
             if (g_best_policy && (g_best_policy != g_policy))
                 delete g_best_policy;
@@ -229,8 +228,7 @@ bool perform_jit_repairs(Simulator *sim) {
             
         } else {
             
-            //if (!g_silent_planning)
-                cout << "Went through another policy of score " << cur_score << endl;
+            cout << "Went through another policy of score " << cur_score << endl;
             if (g_best_policy != g_policy)
                 delete g_policy;
         }
