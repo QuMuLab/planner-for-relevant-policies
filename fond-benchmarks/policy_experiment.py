@@ -359,7 +359,7 @@ def dojic(dom, prob, max_jic):
     print prob
     
     exp_name = "jic"
-    domain = dom.split('/')[-1].split('.')[0]
+    domain = dom.split('/')[-2]
     
     PRP_PARAMS['jic']['--jic-limit'] = list(range(1, max_jic+1))
     
@@ -386,7 +386,7 @@ def dojic(dom, prob, max_jic):
         jic_time = get_value(result.output_file, '.*Just-in-case Repairs: ([0-9]+\.?[0-9]*)s\n.*', float)
         policy_score = get_value(result.output_file, '.*Policy Score: ([0-9]+\.?[0-9]*)\n.*', float)
         
-        prp_csv.append("%d,%f,%f" % (jic_lim, jic_time, policy_score))
+        prp_csv.append("%s,%f,%f" % (jic_lim, jic_time, policy_score))
         
     append_file("RESULTS/%s-%s-results.csv" % (exp_name, domain), prp_csv)
 
@@ -443,4 +443,4 @@ if __name__ == '__main__':
             print USAGE_STRING
             os._exit(1)
         
-        dojic(myargs['-domain'], myargs['-problem'])
+        dojic(myargs['-domain'], myargs['-problem'], int(myargs['-limit']))
