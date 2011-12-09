@@ -292,7 +292,13 @@ class Report(object):
                 logging.error('The operator module has no operator "%s"' % op)
                 sys.exit()
 
-            filter_funcs.append(lambda run: op(run[attribute], value))
+            def filter_func(run):
+                actual_value = run.get(attribute)
+                if actual_value is None:
+                    return True
+                return op(actual_value, value)
+
+            filter_funcs.append(filter_func)
 
         self.data.filter(*filter_funcs)
 
