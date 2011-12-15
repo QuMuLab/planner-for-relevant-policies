@@ -420,7 +420,7 @@ if __name__ == '__main__':
         prp_compare_two(myargs['-domain'],
                         ('18000', '0', '1', '1', '0', '1', '0', '0', '0', '0', '0'),
                         ('18000', '0', '0', '1', '0', '1', '0', '0', '0', '0', '0'),
-                        'PRP$_{\\textrm{Full}}$', 'PRP$_{\\textrm{Partial}}$')
+                        'PRP$_{\\textrm{Full}}$', 'PRP')
     
     if 'ffreplan-vs-prp' in flags:
         online_compare(myargs['-domain'])
