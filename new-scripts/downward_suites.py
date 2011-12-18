@@ -260,6 +260,9 @@ def suite_ipc11_sat():
         "woodworking-sat11-strips",
         ]
 
+def suite_ipc11_all():
+    return suite_ipc11_opt() + suite_ipc11_sat()
+
 def suite_pdb_tests():
     return [
         "logistics00",
@@ -350,7 +353,7 @@ def suite_optimal():
 
 def suite_all():
     domains = suite_ipc_one_to_five() + suite_lmcut_domains()
-    domains += suite_ipc08_all()
+    domains += suite_ipc08_all() + suite_ipc11_all()
     return list(sorted(set(domains)))
 
 
