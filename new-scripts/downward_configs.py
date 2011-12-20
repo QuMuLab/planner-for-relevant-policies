@@ -787,6 +787,10 @@ iterated_search = """\
 repeat_last=false)"\
 """
 
+lmcut = "--search 'astar(lmcut())'"
+
+bjolp = lmopt_rhw_hm1
+
 
 def get_configs(configs_strings):
     """
