@@ -143,6 +143,11 @@ def build_suite(descriptions):
     return result
 
 
+def setdiff(seq1, seq2):
+    prune = set(seq2)
+    return [elem for elem in seq1 if elem not in prune]
+
+
 def suite_ipc_one_to_five():
     # All IPC1-5 domains, including the trivial Movie.
     return [
@@ -348,13 +353,65 @@ def suite_strips_ipc12345():
     ipc08 = set(suite_ipc08_all())
     return [domain for domain in suite_strips() if domain not in ipc08]
 
-def suite_optimal():
-    return suite_lmcut_domains() + suite_ipc08_opt_strips()
-
 def suite_all():
     domains = suite_ipc_one_to_five() + suite_lmcut_domains()
     domains += suite_ipc08_all() + suite_ipc11_all()
     return list(sorted(set(domains)))
+
+def suite_satisficing_unit_cost():
+    # The four IPC 2011 domains listed here are unit-cost.
+    # Two of them (tidybot and visitall) use :action-costs, but
+    # add 1 for every action. The others don't use the requirement.
+    #
+    # While we don't have a separate suite for that, a bunch of
+    # IPC 2008 and IPC 2011 domains are "binary cost", i.e., only
+    # have actions with cost 0 or cost 1. In addition to the
+    # unit-cost ones, they are openstacks, pegsol and sokoban.
+
+    domains = suite_ipc_one_to_five() + suite_lmcut_domains()
+    domains += [
+        "nomystery-sat11-strips",
+        "parking-sat11-strips",
+        "tidybot-sat11-strips",
+        "visitall-sat11-strips",
+        ]
+    return list(sorted(set(domains)))
+
+
+def suite_satisficing_general_cost():
+    return setdiff(suite_ipc08_sat() + suite_ipc11_sat(), suite_satisficing_unit_cost())
+
+
+def suite_satisficing():
+    return suite_satisficing_unit_cost() + suite_satisficing_general_cost()
+
+
+def suite_optimal_unit_cost():
+    # The four IPC 2011 domains listed here are unit-cost.
+    # Two of them (tidybot and visitall) use :action-costs, but
+    # add 1 for every action. The others don't use the requirement.
+    #
+    # While we don't have a separate suite for that, a bunch of
+    # IPC 2008 and IPC 2011 domains are "binary cost", i.e., only
+    # have actions with cost 0 or cost 1. In addition to the
+    # unit-cost ones, they are openstacks, pegsol and sokoban.
+
+    domains = suite_lmcut_domains()
+    domains += [
+        "nomystery-opt11-strips",
+        "parking-opt11-strips",
+        "tidybot-opt11-strips",
+        "visitall-opt11-strips",
+        ]
+    return list(sorted(set(domains)))
+
+
+def suite_optimal_general_cost():
+    return setdiff(suite_ipc08_opt() + suite_ipc11_opt(), suite_optimal_unit_cost())
+
+
+def suite_optimal():
+    return suite_optimal_unit_cost() + suite_optimal_general_cost()
 
 
 def suite_five_per_domain():

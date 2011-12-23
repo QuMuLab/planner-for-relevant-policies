@@ -14,3 +14,7 @@
 #$ -t 1-%(num_tasks)d
 ### Priority ([-1023,1024], default: 0)
 #$ -p %(priority)d
+### Restrict to certain machines
+#$ -l hostname="uni[012][0-9]*|uni3[12]*|ugi[0-9][0-9]*"
+
+export PATH=~/bin:$PATH
