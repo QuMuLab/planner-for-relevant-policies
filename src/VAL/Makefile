@@ -30,27 +30,28 @@
 MYCODEDIR := .
 
 ## [Added for Fast Downward]
+OS = auto
 ## We link statically by default, but not on OS X.
 ## The OS can either be auto-detected (default) or
 ## specified by setting "OS" to either "osx" or "linux".
 ifeq ($(OS), auto)
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-OS=osx
+OS = osx
 endif
 ifeq ($(UNAME), Linux)
-OS=linux
+OS = linux
 endif
 ifeq ($(OS), auto)
 $(warning OS detection failed -- setting to Linux and hoping for the best!)
-OS=linux
+OS = linux
 endif
 endif
 ifeq ($(OS), osx)
 ## Disable static linking on OS X.
-LINK_STATICALLY=0
+LINK_STATICALLY = 0
 else
-LINK_STATICALLY=1
+LINK_STATICALLY = 1
 endif
 
 # Directories to search for header files
