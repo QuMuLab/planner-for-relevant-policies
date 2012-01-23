@@ -22,7 +22,7 @@ def check(props):
         assert props.get('preprocess_error') == 1, msg
 
     if props.get('cost') is not None:
-        assert props.get('search_time') is not None
+        assert props.get('search_time') is not None, 'cost without search_time'
 
 
 # Preprocessing functions -----------------------------------------------------
