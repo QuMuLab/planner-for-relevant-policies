@@ -76,10 +76,14 @@ bool perform_jit_repairs(Simulator *sim) {
             bool have_solution = true;
             
             if (0 == regstep) {
-                
+            
                 sim->set_state(current_state);
                 sim->set_goal(current_goal);
                 have_solution = sim->replan();
+                
+                // It may happen that solving creates a bad policy, and a second pass catches this
+                if (!(g_policy->get_best_step(*current_state)))
+                    have_solution = sim->replan();
                 
                 
                 // Add the new goals to the sc condition for the previous reg step
@@ -93,9 +97,9 @@ bool perform_jit_repairs(Simulator *sim) {
                     
                     // We augment the sc_state to include the stronger conditions
                     for (int i = 0; i < g_variable_name.size(); i++) {
-                        assert ((state_var_t(-1) == (*prev_state)[i]) ||
+                        /*assert ((state_var_t(-1) == (*prev_state)[i]) ||
                                 (state_var_t(-1) == (*(prev_regstep->sc_state))[i]) ||
-                               ((*prev_state)[i] == (*(prev_regstep->sc_state))[i]));
+                               ((*prev_state)[i] == (*(prev_regstep->sc_state))[i]));*/
                         
                         if (state_var_t(-1) != (*prev_state)[i])
                             (*(prev_regstep->sc_state))[i] = (*prev_state)[i];
@@ -125,16 +129,16 @@ bool perform_jit_repairs(Simulator *sim) {
                 
                 if ( ! (regstep->is_goal || (g_optimized_scd && regstep->is_sc))) {
                     // Record the expected state
-                    State *expected_state;
                     State *full_expected_state = new State(*current_state, *(regstep->op));
+                    State *expected_state = full_expected_state;
                     created_states.push_back(full_expected_state);
                     
                     if (g_partial_planlocal) {
                         RegressionStep * expected_regstep = g_policy->get_best_step(*full_expected_state);
-                        expected_state = new State(*(expected_regstep->state));
-                        created_states.push_back(expected_state);
-                    } else {
-                        expected_state = full_expected_state;
+                        if (expected_regstep) {
+                            expected_state = new State(*(expected_regstep->state));
+                            created_states.push_back(expected_state);
+                        }
                     }
                     
                     for (int i = 0; i < g_nondet_mapping[regstep->op->get_nondet_name()].size(); i++) {

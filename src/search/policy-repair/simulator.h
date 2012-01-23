@@ -45,7 +45,7 @@ public:
     Simulator(bool verb = true);
     
     void run();
-    void run_once(bool stop_on_failure = false, Policy *pol = g_policy);
+    void run_once(bool stop_on_failure = false, Policy *pol = g_policy, int action_limit = 1000);
     bool replan();
     
     void set_state(State * s) { current_state = new State(*s); }

@@ -12,7 +12,7 @@
 #include "../state_var_t.h"
 
 struct PolicyItem {
-    const State *state;
+    State *state;
     PolicyItem(State *s) : state(s) {}
     virtual string get_name() = 0;
     virtual void dump() const = 0;
@@ -52,6 +52,8 @@ struct RegressionStep : PolicyItem {
     RegressionStep(State *s, int d) : PolicyItem(s), distance(d), is_goal(true), is_sc(false) { sc_state = new State(*state); }
     
     ~RegressionStep() { delete sc_state; }
+    
+    void strengthen(State *s);
 
     string get_name();
     void dump() const;

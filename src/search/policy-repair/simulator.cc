@@ -45,7 +45,7 @@ void Simulator::record_stats() {
         record_succeeded++;
 }
 
-void Simulator::run_once(bool stop_on_failure, Policy *pol) {
+void Simulator::run_once(bool stop_on_failure, Policy *pol, int action_limit) {
     found_solution = false;
     succeeded = false;
     RegressionStep * current_step;
@@ -57,8 +57,8 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol) {
     
     reset_goal();
     
-    
-    while(!found_solution) {
+    // To prevent infinite loops with 0-probability exit, we limit the loops
+    while(!found_solution && (failed_states + successful_states < action_limit)) {
         // Get the best action (if any)
         current_step = pol->get_best_step(*current_state);
         

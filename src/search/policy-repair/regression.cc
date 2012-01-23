@@ -114,6 +114,23 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
         delete reg_steps.front();
         reg_steps.pop_front();
     }
+    
+    // Strengthen all of the steps so they don't fire a forbidden state-action
+    //  pair at some point. The strengthening is sufficient but not neccessary
+    s = new State(*g_initial_state);
+    State * old_s = s;
+    int i = 0;
+    for (list<PolicyItem *>::reverse_iterator op_iter = reg_steps.rbegin(); op_iter != reg_steps.rend(); ++op_iter) {
+        assert(i < plan.size() || create_goal);
+        if (i < plan.size()) {
+            ((RegressionStep*)(*op_iter))->strengthen(s);
+            s = new State(*old_s, *plan[i], true);
+            delete old_s;
+            old_s = s;
+            i++;
+        }
+    }
+    
     g_timer_regression.stop();
     return reg_steps;
 }
@@ -135,5 +152,40 @@ void generate_regressable_ops() {
         reg_steps.push_back(new RegressableOperator(g_operators[i], s));
     }
     g_regressable_ops = new Policy(reg_steps);
+}
+
+void RegressionStep::strengthen(State *s) {
+    
+    if (is_goal)
+        return;
+    
+    vector<PolicyItem *> reg_items;
+    g_deadend_policy->generate_applicable_items(*state, reg_items, true);
+    
+    // Each item could potentially be a forbidden state-action pair
+    for (int i = 0; i < reg_items.size(); i++) {
+        
+        // If this holds, then we may trigger the forbidden pair
+        if (((NondetDeadend*)(reg_items[i]))->op_name == op->get_nondet_name()) {
+            
+            for (int j = 0; j < g_variable_name.size(); j++) {
+                // We may have broken it in a previous iteration
+                if (((*(((NondetDeadend*)(reg_items[i]))->state))[j] != state_var_t(-1)) &&
+                    ((*(((NondetDeadend*)(reg_items[i]))->state))[j] != (*state)[j]) &&
+                    ((*state)[j] != state_var_t(-1)))
+                    break;
+                
+                // Just need to break one of the decisions
+                if (((*(((NondetDeadend*)(reg_items[i]))->state))[j] != state_var_t(-1)) &&
+                    ((*(((NondetDeadend*)(reg_items[i]))->state))[j] != (*s)[j])) {
+                    assert((*state)[j] == state_var_t(-1));
+                    (*state)[j] = (*s)[j];
+                    (*sc_state)[j] = (*s)[j];
+                    break;
+                    
+                }
+            }
+        }
+    }
 }
 

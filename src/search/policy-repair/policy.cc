@@ -463,6 +463,13 @@ RegressionStep *Policy::get_best_step(const State &curr) {
         return 0;
     }
     
+    // We should only return steps that aren't forbidden
+    vector<PolicyItem *> forbidden_items;
+    set<string> forbidden;
+    g_deadend_policy->generate_applicable_items(curr, forbidden_items);
+    for (int i = 0; i < forbidden_items.size(); i++)
+        forbidden.insert(((NondetDeadend*)(forbidden_items[i]))->op_name);
+    
     int best_index = -1;
     int best_val = 999999; // This will only be invalid if a plan length was > 10^6
     
@@ -470,23 +477,28 @@ RegressionStep *Policy::get_best_step(const State &curr) {
     int best_sc_val = 999999;
     
     for (int i = 0; i < current_steps.size(); i++) {
-        
-        int cur_val = ((RegressionStep*)(current_steps[i]))->distance;
-        
-        if (cur_val < best_val) {
-            best_val = cur_val;
-            best_index = i;
-        }
-        
-        if (g_optimized_scd &&
-            ((RegressionStep*)(current_steps[i]))->is_sc &&
-            (cur_val < best_sc_val)) {
-            best_sc_val = cur_val;
-            best_sc_index = i;
+        if (((RegressionStep*)(current_steps[i]))->is_goal ||
+            (0 == forbidden.count(((RegressionStep*)(current_steps[i]))->op->get_nondet_name()))) {
+            int cur_val = ((RegressionStep*)(current_steps[i]))->distance;
+            
+            if (cur_val < best_val) {
+                best_val = cur_val;
+                best_index = i;
+            }
+            
+            if (g_optimized_scd &&
+                ((RegressionStep*)(current_steps[i]))->is_sc &&
+                (cur_val < best_sc_val)) {
+                best_sc_val = cur_val;
+                best_sc_index = i;
+            }
         }
     }
     g_timer_policy_use.stop();
-    if (g_optimized_scd && (-1 != best_sc_index))
+    
+    if (-1 == best_index)
+        return 0;
+    else if (g_optimized_scd && (-1 != best_sc_index))
         return (RegressionStep*)(current_steps[best_sc_index]);
     else
         return (RegressionStep*)(current_steps[best_index]);
