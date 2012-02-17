@@ -135,8 +135,8 @@ def parse_domain(domain_pddl):
                                  [pddl_types.TypedObject("?x", "object"),
                                   pddl_types.TypedObject("?y", "object")])]
         elif field == ":functions":
-            the_functions = [functions.Function.parse(entry)
-                             for entry in opt[1:]]
+            the_functions = functions.parse_functions(opt[1:])
+
     pddl_types.set_supertypes(the_types)
     # for type in the_types:
     #   print repr(type), type.supertype_names

@@ -1,22 +1,36 @@
 import pddl_types
 
+
+def parse_functions(seq):
+    # seq is ":functions" block without the leading ":functions" tag.
+    result = pddl_types.parse_typed_list(
+        seq, constructor=Function.parse, default_type="number")
+    for function in result:
+        if function.result_type != "number":
+            raise SystemExit(
+                "function with bad type (only \"number\" supported): %s"
+                % function)
+    return result
+
+
 class Function(object):
-    def __init__(self, name, arguments):
+    def __init__(self, name, parameters, result_type):
         self.name = name
-        self.arguments = arguments
+        self.parameters = parameters
+        self.result_type = result_type
+
     @classmethod
-    def parse(cls, alist):
+    def parse(cls, alist, type_):
         name = alist[0]
-        arguments = pddl_types.parse_typed_list(alist[1:],
-                                                default_type="number")
-        return cls(name, arguments)
-    @classmethod
-    def parse_typed(cls, alist, _type):
-        function = cls.parse(alist)
-        function.type = _type
-        return function
+        parameters = pddl_types.parse_typed_list(alist[1:], only_variables=True)
+        ## TODO: BUG: FIXME: This default_type stuff here is wrong.
+        ## There are types at two levels here -- the types of the
+        ## parameters and the type that the function maps to (which
+        ## should always be "number"). Need to fix this, and also fix
+        ## __str__ below which currently should fail because of the missing
+        ## type attribute.
+        return cls(name, parameters, type_)
+
     def __str__(self):
-        result = "%s(%s)" % (self.name, ", ".join(map(str, self.arguments)))
-        if self.type:
-            result += ": %s" % self.type
-        return result
+        return "%s(%s): %s" % (
+            self.name, ", ".join(map(str, self.parameters)), self.result_type)
