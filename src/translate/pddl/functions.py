@@ -8,7 +8,7 @@ def parse_functions(seq):
     for function in result:
         if function.result_type != "number":
             raise SystemExit(
-                "function with bad type (only \"number\" supported): %s"
+                "function with bad result type (only \"number\" supported): %s"
                 % function)
     return result
 
@@ -20,16 +20,10 @@ class Function(object):
         self.result_type = result_type
 
     @classmethod
-    def parse(cls, alist, type_):
+    def parse(cls, alist, result_type):
         name = alist[0]
         parameters = pddl_types.parse_typed_list(alist[1:], only_variables=True)
-        ## TODO: BUG: FIXME: This default_type stuff here is wrong.
-        ## There are types at two levels here -- the types of the
-        ## parameters and the type that the function maps to (which
-        ## should always be "number"). Need to fix this, and also fix
-        ## __str__ below which currently should fail because of the missing
-        ## type attribute.
-        return cls(name, parameters, type_)
+        return cls(name, parameters, result_type)
 
     def __str__(self):
         return "%s(%s): %s" % (
