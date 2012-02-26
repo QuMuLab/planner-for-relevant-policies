@@ -289,14 +289,19 @@ def configs_jacm_pdbs():
             ] + [config_pdbs_baseline()]
 
 
-def config_random(merge_strategy):
-    name = "RAND-%s" % abbrev(merge_strategy)
-    mas_args = "merge_strategy=%s,shrink_strategy=shrink_random()" % (
-        merge_strategy)
+def config_random(merge_strategy, bound):
+    name = "RAND-M%s-B%s" % (abbrev(merge_strategy), abbrev_num(bound))
+    mas_args = """
+        merge_strategy=%s,
+        shrink_strategy=shrink_random(max_states=%s)
+    """ % (merge_strategy, bound)
     config = "--search 'astar(merge_and_shrink(%s))'" % mas_args
     return conf(name, config)
 
 
 def configs_random():
-    return [config_random("merge_linear_reverse_level"),
-            config_random("merge_linear_cg_goal_level")]
+    return [
+        config_random(merge_strategy=m, bound=b)
+        for m in ["merge_linear_reverse_level", "merge_linear_cg_goal_level"]
+        for b in [100000]
+        ]
