@@ -150,6 +150,14 @@ CUMULATIVE_PATTERNS = [
     # anything before the "cumulative" line and stop the search. For single
     # searches we will find the h value if it isn't a multi-heuristic search.
     ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
+
+    ('ipdb_iterations', re.compile(r'iPDB: iterations = (.+)'), int),
+    ('ipdb_num_patterns' re.compile(r'iPDB: num_patterns = (.+)'), int),
+    ('ipdb_size', re.compile(r'iPDB: size = (.+)'), int),
+    ('ipdb_improvement', re.compile(r'iPDB: improvement = (.+)'), int),
+    ('ipdb_generated', re.compile(r'iPDB: generated = (.+)'), int),
+    ('ipdb_rejected', re.compile(r'iPDB: rejected = (.+)'), int),
+    ('ipdb_max_pdb_size', re.compile(r'iPDB: max_pdb_size = (.+)'), int),
     ]
 
 
