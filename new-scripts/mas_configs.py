@@ -157,6 +157,18 @@ def config_jacm(merge_strategy, reduce_labels, greedy, bound, threshold):
     return conf(name, config)
 
 
+def config_jacm_hhh(merge_strategy, reduce_labels, bound):
+    name = "M%s-R%s-HHH-B%s" % (
+        abbrev(merge_strategy), abbrev(reduce_labels), abbrev_num(bound))
+    mas_args = """
+        reduce_labels=%s,
+        merge_strategy=%s,
+        shrink_strategy=shrink_fh(max_states=%s)
+    """ % (reduce_labels, merge_strategy, bound)
+    config = "--search 'astar(merge_and_shrink(%s))'" % mas_args
+    return conf(name, config)
+
+
 def configs_issue310():
     return [
         config_jacm(merge_strategy=m, reduce_labels=r, greedy=g,
@@ -212,3 +224,79 @@ def set_difference(configs1, configs2):
     configs2_dict = dict(configs2)
     return [(name, config) for (name, config) in configs1
             if name not in configs2_dict]
+
+
+def configs_jacm_hhh_with_label_reduction():
+    return [
+        config_jacm_hhh(merge_strategy=m, reduce_labels=r, bound=b)
+        for m in ["merge_linear_reverse_level", "merge_linear_cg_goal_level"]
+        for r in ["true"]
+        for b in [10000, 100000, 200000, "infinity"]
+        ]
+
+
+def config_ipdb(pdb_size, collection_size, samples, improvement):
+    name = "PDBI-P%s-C%s-S%s-I%s" % (
+        abbrev_num(pdb_size), abbrev_num(collection_size),
+        samples, improvement)
+    args = """
+        pdb_max_size=%d,
+        collection_max_size=%d,
+        num_samples=%d,
+        min_improvement=%d
+    """ % (pdb_size, collection_size, samples, improvement)
+    config = "--search 'astar(ipdb(%s))'" % args
+    return conf(name, config)
+
+
+def config_pdb(pdb_size):
+    name = "PDB-%s" % abbrev_num(pdb_size)
+    config = "--search 'astar(pdb(max_states=%d))'" % pdb_size
+    return conf(name, config)
+
+
+def config_pdbs_baseline():
+    name = "PDBS-base"
+    config = "--search 'astar(cpdbs())'"
+    return conf(name, config)
+
+
+def configs_jacm_ipdb():
+    return [config_ipdb(p, c, s, i)
+            for (p, c) in [
+                (1000000, 10000000),
+                (2000000, 20000000),
+                (5000000, 50000000),
+                (10000000, 100000000),
+                ]
+            for (s, i) in [
+                (100, 1),
+                (100, 10),
+                (1000, 10),
+                (1000, 100),
+                ]
+            ]
+
+
+def configs_jacm_pdbs():
+    return [config_pdb(p)
+            for p in [
+                100000,
+                1000000,
+                10000000,
+                100000000,
+                ]
+            ] + [config_pdbs_baseline()]
+
+
+def config_random(merge_strategy):
+    name = "RAND-%s" % abbrev(merge_strategy)
+    mas_args = "merge_strategy=%s,shrink_strategy=shrink_random()" % (
+        merge_strategy)
+    config = "--search 'astar(merge_and_shrink(%s))'" % mas_args
+    return conf(name, config)
+
+
+def configs_random():
+    return [config_random("merge_linear_reverse_level"),
+            config_random("merge_linear_cg_goal_level")]
