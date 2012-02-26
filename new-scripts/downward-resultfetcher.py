@@ -152,7 +152,7 @@ CUMULATIVE_PATTERNS = [
     ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
 
     ('ipdb_iterations', re.compile(r'iPDB: iterations = (.+)'), int),
-    ('ipdb_num_patterns' re.compile(r'iPDB: num_patterns = (.+)'), int),
+    ('ipdb_num_patterns', re.compile(r'iPDB: num_patterns = (.+)'), int),
     ('ipdb_size', re.compile(r'iPDB: size = (.+)'), int),
     ('ipdb_improvement', re.compile(r'iPDB: improvement = (.+)'), int),
     ('ipdb_generated', re.compile(r'iPDB: generated = (.+)'), int),
