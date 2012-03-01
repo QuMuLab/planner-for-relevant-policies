@@ -255,6 +255,12 @@ def config_pdb(pdb_size):
     return conf(name, config)
 
 
+def config_combo_pdbs(pdb_size):
+    name = "COMPDB-%s" % abbrev_num(pdb_size)
+    config = "--search 'astar(zopdbs(combo=true,max_states=%d))'" % pdb_size
+    return conf(name, config)
+
+
 def config_pdbs_baseline():
     name = "PDBS-base"
     config = "--search 'astar(cpdbs())'"
@@ -287,6 +293,17 @@ def configs_jacm_pdbs():
                 100000000,
                 ]
             ] + [config_pdbs_baseline()]
+
+
+def configs_jacm_combo_pdbs():
+    return [config_combo_pdbs(p)
+            for p in [
+                100000,
+                1000000,
+                10000000,
+                100000000,
+                ]
+            ]
 
 
 def config_random(merge_strategy, bound):
