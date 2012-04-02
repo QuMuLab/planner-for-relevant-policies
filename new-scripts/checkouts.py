@@ -1,17 +1,16 @@
 import os
 import sys
-import subprocess
 import logging
 import re
 import itertools
 
 import tools
+from tools import run_command, get_command_output
 
 CHECKOUTS_DIR = os.path.join(tools.SCRIPTS_DIR, 'checkouts')
 tools.makedirs(CHECKOUTS_DIR)
 
 ABS_REV_CACHE = {}
-_sentinel = object()
 
 
 class Checkout(object):
@@ -44,21 +43,6 @@ class Checkout(object):
         return os.path.basename(self.checkout_dir)
 
     def checkout(self):
-        # We don't need to check out the working copy
-        if self.rev == 'WORK':
-            return
-
-        # If there's already a checkout, don't checkout again
-        path = self.checkout_dir
-        if os.path.exists(path):
-            logging.info('Checkout "%s" already exists' % path)
-        else:
-            cmd = self.get_checkout_cmd()
-            print cmd
-            subprocess.call(cmd, shell=True)
-        assert os.path.exists(path), 'Could not checkout to "%s"' % path
-
-    def get_checkout_cmd(self):
         raise Exception('Not implemented')
 
     def compile(self):
@@ -66,20 +50,21 @@ class Checkout(object):
         We issue the build_all command unconditionally and let "make" take care
         of checking if something has to be recompiled.
         """
-        cwd = os.getcwd()
-        os.chdir(self.src_dir)
         try:
-            subprocess.call(['./build_all'])
+            retcode = run_command(['./build_all'], cwd=self.src_dir)
         except OSError:
-            logging.warning('Changeset %s does not have the build_all script. '
-                            'Please compile it manually.' % self.rev)
-        os.chdir(cwd)
+            logging.error('Changeset %s does not have the build_all script. '
+                          'Revision cannot be used by the scripts.' % self.rev)
+            sys.exit(1)
+        if not retcode == 0:
+            logging.error('Build script failed in: %s' % self.src_dir)
+            sys.exit(1)
 
     def get_path(self, *rel_path):
         return os.path.join(self.checkout_dir, *rel_path)
 
     def get_bin(self, *bin_path):
-        """Return the absolute path to this part's src directory."""
+        """Return the absolute path to one of this part's executables."""
         return os.path.join(self.bin_dir, *bin_path)
 
     def get_path_dest(self, *rel_path):
@@ -136,13 +121,6 @@ class HgCheckout(Checkout):
                           'copy. Please specify a specific revision.')
             sys.exit(1)
 
-        if not os.path.abspath(repo) == HgCheckout.DEFAULT_URL and not dest:
-            logging.warning('You should set "dest" explicitly when using a '
-                            'remote repo. Otherwise local checkouts might '
-                            'overwrite checkouts of the same revision from '
-                            'the remote repo.')
-            sys.exit(1)
-
         # Find proper absolute revision
         rev = self.get_abs_rev(repo, rev)
 
@@ -157,24 +135,34 @@ class HgCheckout(Checkout):
     def get_abs_rev(self, repo, rev):
         if str(rev).upper() == 'WORK':
             return 'WORK'
-        cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
-        if cmd in ABS_REV_CACHE:
-            return ABS_REV_CACHE[cmd]
-        abs_rev = tools.run_command(cmd)
+        cmd = ['hg', 'id', '-ir', str(rev).lower(), repo]
+        cmd_string = ' '.join(cmd)
+        if cmd_string in ABS_REV_CACHE:
+            return ABS_REV_CACHE[cmd_string]
+        abs_rev = get_command_output(cmd)
         if not abs_rev:
             logging.error('Revision %s not present in repo %s' % (rev, repo))
             sys.exit(1)
-        ABS_REV_CACHE[cmd] = abs_rev
+        ABS_REV_CACHE[cmd_string] = abs_rev
         return abs_rev
 
-    def get_checkout_cmd(self):
-        cwd = os.getcwd()
-        clone = 'hg clone -r %s %s %s' % (self.rev, self.repo,
-                                          self.checkout_dir)
-        cd_to_repo_dir = 'cd %s' % self.checkout_dir
-        update = 'hg update -r %s' % self.rev
-        cd_back = 'cd %s' % cwd
-        return '; '.join([clone, cd_to_repo_dir, update, cd_back])
+    def checkout(self):
+        # We don't need to check out the working copy
+        if self.rev == 'WORK':
+            return
+
+        path = self.checkout_dir
+        if not os.path.exists(path):
+            run_command(['hg', 'clone', '-r', self.rev, self.repo, path])
+        else:
+            logging.info('Checkout "%s" already exists' % path)
+            run_command(['hg', 'pull', self.repo], cwd=path)
+
+        retcode = run_command(['hg', 'update', '-r', self.rev], cwd=path)
+        if not retcode == 0:
+            # Unknown revision
+            logging.error('Repo at %s has no revision %s.' % (path, self.rev))
+            sys.exit(1)
 
     @property
     def parent_rev(self):
@@ -183,8 +171,8 @@ class HgCheckout(Checkout):
         rev = self.rev
         if self.rev == 'WORK':
             rev = 'tip'
-        cmd = 'hg log -r %s --template {node|short}' % rev
-        self.parent = tools.run_command(cmd)
+        cmd = ['hg', 'log', '-r', rev, '--template', '{node|short}']
+        self.parent = get_command_output(cmd)
         return self.parent
 
 
@@ -201,85 +189,6 @@ class Preprocessor(HgCheckout):
 class Planner(HgCheckout):
     def __init__(self, *args, **kwargs):
         HgCheckout.__init__(self, 'search', *args, **kwargs)
-
-
-# ---------- Subversion -------------------------------------------------------
-
-class SvnCheckout(Checkout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/'
-    DEFAULT_REV = 'WORK'
-
-    REV_REGEX = re.compile(r'Revision: (\d+)')
-
-    def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV):
-        rev = str(rev)
-        rev = self._get_abs_rev(repo, rev)
-
-        if rev == 'WORK':
-            logging.error('Comparing SVN working copy is not supported')
-            sys.exit(1)
-
-        checkout_dir = rev
-
-        Checkout.__init__(self, part, repo, rev, checkout_dir)
-
-    def _get_abs_rev(self, repo, rev):
-        try:
-            # If we have a number string, return it
-            int(rev)
-            return rev
-        except ValueError:
-            pass
-
-        if rev.upper() == 'WORK':
-            return 'WORK'
-        elif rev.upper() == 'HEAD':
-            # We want the HEAD revision number
-            return self._get_rev(repo)
-        else:
-            logging.error('Invalid SVN revision specified: %s' % rev)
-            sys.exit()
-
-    def _get_rev(self, repo):
-        """
-        Returns the revision for the given repo. If the repo is a remote URL,
-        the HEAD revision is returned. If the repo is a local path, the
-        working copy's version is returned.
-        """
-        env = {'LANG': 'C'}
-        cmd = 'svn info %s' % repo
-        if cmd in ABS_REV_CACHE:
-            return ABS_REV_CACHE[cmd]
-        output = tools.run_command(cmd, env=env)
-        match = self.REV_REGEX.search(output)
-        if not match:
-            logging.error('Unable to get HEAD revision number')
-            sys.exit()
-        rev_number = match.group(1)
-        ABS_REV_CACHE[cmd] = rev_number
-        return rev_number
-
-    def get_checkout_cmd(self):
-        return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
-
-    @property
-    def parent_rev(self):
-        return self._get_rev(self.checkout_dir)
-
-
-class TranslatorSvn(SvnCheckout):
-    def __init__(self, *args, **kwargs):
-        SvnCheckout.__init__(self, 'translate', *args, **kwargs)
-
-
-class PreprocessorSvn(SvnCheckout):
-    def __init__(self, *args, **kwargs):
-        SvnCheckout.__init__(self, 'preprocess', *args, **kwargs)
-
-
-class PlannerSvn(SvnCheckout):
-    def __init__(self, *args, **kwargs):
-        SvnCheckout.__init__(self, 'search', *args, **kwargs)
 
 # -----------------------------------------------------------------------------
 

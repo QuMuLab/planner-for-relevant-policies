@@ -53,7 +53,7 @@ if [[ -z $REPORTATTRS ]]; then
     REPORTATTRS=""
 fi
 
-# Support specifying an the module that is used for experiment creation.
+# Support specifying the module that is used for experiment creation.
 # This is useful for the issue*.py scripts.
 if [[ -z $EXPMODULE ]]; then
     EXPMODULE=downward_experiments.py
@@ -66,7 +66,6 @@ fi
 
 ## You can set EXPNAME manually or it will be derived from the
 ## basename of the script that called this one.
-
 if [[ -z $EXPNAME ]]; then
     EXPNAME="exp-$(basename "$0" .sh)"
 fi

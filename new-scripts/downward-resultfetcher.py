@@ -8,7 +8,9 @@ from __future__ import with_statement, division
 import logging
 import re
 import math
+import os
 from collections import defaultdict
+from glob import glob
 
 from resultfetcher import Fetcher, FetchOptionParser
 import tools
@@ -20,7 +22,7 @@ def check(props):
         assert props.get('preprocess_error') == 1, msg
 
     if props.get('cost') is not None:
-        assert props.get('search_time') is not None
+        assert props.get('search_time') is not None, 'cost without search_time'
 
 
 # Preprocessing functions -----------------------------------------------------
@@ -98,7 +100,8 @@ def translator_mutex_groups(content, props):
     # The file normally starts with "begin_groups\n7\ngroup", but if no groups
     # are found, it has the form "begin_groups\n0\nend_groups".
     match = re.search(r'begin_groups\n(\d+)$', content, re.M | re.S)
-    props['translator_mutex_groups'] = int(match.group(1))
+    if match:
+        props['translator_mutex_groups'] = int(match.group(1))
 
 
 def translator_mutex_groups_total_size(content, props):
@@ -147,6 +150,14 @@ CUMULATIVE_PATTERNS = [
     # anything before the "cumulative" line and stop the search. For single
     # searches we will find the h value if it isn't a multi-heuristic search.
     ('initial_h_value', re.compile(r'Initial state h value: (\d+)\.'), int),
+
+    ('ipdb_iterations', re.compile(r'iPDB: iterations = (.+)'), int),
+    ('ipdb_num_patterns', re.compile(r'iPDB: num_patterns = (.+)'), int),
+    ('ipdb_size', re.compile(r'iPDB: size = (.+)'), int),
+    ('ipdb_improvement', re.compile(r'iPDB: improvement = (.+)'), int),
+    ('ipdb_generated', re.compile(r'iPDB: generated = (.+)'), int),
+    ('ipdb_rejected', re.compile(r'iPDB: rejected = (.+)'), int),
+    ('ipdb_max_pdb_size', re.compile(r'iPDB: max_pdb_size = (.+)'), int),
     ]
 
 
@@ -253,8 +264,11 @@ def check_memory(content, props):
     Set "memory" to the max value if it was exceeded and "-1 KB" was reported
     """
     memory = props.get('memory')
-    memory_limit = props.get('memory_limit')
-    if memory == -1 and memory_limit:
+    memory_limit = props.get('limit_search_memory', None)
+    if memory == -1:
+        if memory_limit is not None:
+            # Turn into KB
+            memory_limit *= 1024
         props['memory'] = memory_limit
 
 
@@ -277,10 +291,15 @@ def scores(content, props):
         score = min_score + (1 - min_score) * (raw_score / best_raw_score)
         return round(score * 100, 2)
 
+    # Maximum memory in KB
+    max_memory = (props.get('limit_search_memory') or 2048) * 1024
+
     props.update({'score_expansions': log_score(props.get('expansions'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
             'score_evaluations': log_score(props.get('evaluations'),
                     min_bound=100, max_bound=1000000, min_score=0.0),
+            'score_memory': log_score(props.get('memory'),
+                    min_bound=2000, max_bound=max_memory, min_score=0.0),
             'score_total_time': log_score(props.get('total_time'),
                     min_bound=1.0, max_bound=1800.0, min_score=0.0),
             'score_search_time': log_score(props.get('search_time'),
@@ -382,6 +401,11 @@ def add_preprocess_functions(eval):
     eval.add_function(preprocessor_facts, file='output')
     eval.add_function(translator_derived_vars, file='output.sas')
     eval.add_function(preprocessor_derived_vars, file='output')
+
+
+def add_mutex_groups_functions(eval):
+    # Those functions will only parse the output files if we haven't found the
+    # values in the log.
     eval.add_function(translator_mutex_groups, file='all.groups')
     eval.add_function(translator_mutex_groups_total_size, file='all.groups')
 
@@ -398,12 +422,200 @@ def add_search_functions(eval):
     #eval.add_function(completely_explored)
     eval.add_function(get_iterative_results)
     eval.add_function(get_cumulative_results)
+    eval.add_function(check_memory)
     eval.add_function(set_search_time)
     eval.add_function(coverage)
     eval.add_function(get_status)
     eval.add_function(scores)
-    eval.add_function(check_memory)
 
+
+def quality(problem_runs):
+    min_cost = tools.minimum(run.get('cost') for run in problem_runs)
+    for run in problem_runs:
+        cost = run.get('cost')
+        if cost is None:
+            quality = 0.0
+        elif cost == 0:
+            assert min_cost == 0
+            quality = 1.0
+        else:
+            quality = min_cost / cost
+        run['quality'] = round(quality, 4)
+
+
+def get_bisimulation_results(content, props):
+    # Sets "mas_complete" to 1 if a M&S heuristic was computed completely
+    # and resulted in an abstraction with finite goal distance for the
+    # initial state; to 0 otherwise.
+    #
+    # If the abstraction computation already shows unsolvability, then
+    # we stop the process prematurely, so it is a bit hard to compare
+    # this to other abstraction methods in a clean fashion. Hence, in
+    # that case, we don't gather complete statistics but merely set
+    # "mas_unsolvable" to 1. These two variables are always set; all
+    # other variables are only set if mas_complete == 1 (which implies
+    # mas_unsolvable == 0).
+
+    # The code below assumes that complete M&S computations perform at
+    # least one merge step -- this is not necessarily true since we
+    # could have a problem with only have 1 state variable. However,
+    # in our benchmark collection, all such problems are unsolvable ones,
+    # so we don't need to implement this case.
+
+    # All following variables here are only set if mas_complete == 1.
+    # The code assumes implicitly that only a single abstraction is
+    # computed. Otherwise, it will probably raise an assertion.
+
+    # Explanation of variables:
+    # - mas_max_states, mas_max_arcs: number of abstract states and
+    #   transitions in the largest abstraction that is computed during
+    #   M&S construction (parallel arcs with different labels are counted
+    #   multiple times)
+    # - mas_max_states_vars: the number of represented variables (in
+    #   the range 1..preprocessor_variables) in the merged abstraction
+    #   which has the maximum number of states; ties broken in favour
+    #   of lower values. For example, value of "3" means that the
+    #   second merged abstraction (which includes info from the first
+    #   three variables) had the maximal number of states among all
+    #   composites. (The idea of this variable is to check whether the
+    #   largest abstractions are encountered at the end of the M&S
+    #   process, closer to the middle, or somewhere else.)
+    # - mas_max_arcs_vars: same, but for arcs instead of states
+    # - mas_max_intermediate_states, mas_max_intermediate_arcs,
+    #   mas_max_intermediate_states_vars, mas_max_intermediate_arcs_vars:
+    #   Like the previous four variables, but includes "intermediate"
+    #   abstractions, i.e. ones that are not yet bisimulated. This gives
+    #   a better measure for peak memory consumption *during construction*.
+    # - mas_final_states, mas_final_arcs: like mas_max_states and
+    #   mas_max_arcs, but for the final abstraction in the chain.
+    #   NOTE THE "HACK" COMMENTS BELOW -- the arc counts for the final
+    #   abstraction are *unnormalized*. (Also affects mas_max_arcs and
+    #   mas_max_arcs_vars!)
+    # - mas_total_size: total number of table entries in the M&S lookup
+    #   tables. This does not include the final "distance" lookup table,
+    #   since that one is in principle redundant.
+    # - mas_pdb_size: the size that a PDB for all variables would have
+    #   (in other words, the number of syntactically correct states)
+    #
+    # Note: All the mas_max_... variables only maximize over all composite
+    # abstractions, not the initial atomic abstractions (which should
+    # be smaller except in really degenerate cases).
+
+    variable_count = props["preprocessor_variables"]
+    states = []
+    intermediate_states = []
+    arcs = []
+    intermediate_arcs = []
+    total_size = 0
+    skip_next = False
+    last_states = None
+    last_arcs = None
+    atomic_vars_seen = set()
+    pdb_size = 1
+    for line in content.splitlines():
+        parts = line.split()
+        if parts == ["Abstract", "problem", "is", "unsolvable!"]:
+            # Task shown unsolvable during abstraction computation.
+            # HACK: Treat these -- somewhat arbitrarily -- as if the M&S
+            # heuristic could not be computed.
+            props["mas_complete"] = int(False)
+            props["mas_unsolvable"] = int(True)
+            return
+        if parts[:4] == ["Done", "initializing", "merge-and-shrink",
+                         "heuristic"]:
+            break
+        if parts[:2] == ["Atomic", "abstraction"] and parts[4:5] == ["states,"]:
+            var_desc = parts[2]
+            if var_desc not in atomic_vars_seen:
+                var_range = int(parts[3])
+                total_size += var_range
+                pdb_size *= var_range
+                atomic_vars_seen.add(var_desc)
+        if parts[:1] == ["Abstraction"] and parts[4:5] == ["states,"]:
+            # print "***", parts
+            num_vars = int(parts[1].lstrip("(").partition("/")[0])
+            num_states = int(parts[3])
+            num_arcs = int(parts[5].partition("/")[2])
+            # There are three occurrences of abstraction statistics for
+            # each composite. We determine which one we're at based on
+            # the size of "intermediate_states", the size of "states",
+            # and the number of variables mentioned.
+
+            is_last_variable = num_vars == variable_count
+            # HACK! The last composite is not normalized, so we treat it
+            # a bit differently. Note that this messes up the final arc
+            # numbers (and hence potentially also the maximum arc numbers!).
+
+            if num_vars == len(intermediate_states) + 2:
+                # First occurrence: update intermediate states
+                # and representation size, since the number of states
+                # here is also the size of the 2D look-up table for
+                # this composite.
+                assert num_vars == len(states) + 2
+                total_size += num_states
+                intermediate_states.append(num_states)
+                intermediate_arcs.append(num_arcs)
+                skip_next = True
+            elif skip_next and not is_last_variable:
+                # Second occurrence: this is already bisimulated, but
+                # not yet normalized. Skip this, but remember
+                # last_states and last_arcs below for assertions.
+                skip_next = False
+                assert num_states <= last_states
+                assert num_arcs <= last_arcs
+            else:
+                # Third occurrence: this contains the results after
+                # bisimulation and normalization
+                assert num_vars == len(states) + 2
+                if is_last_variable:
+                    assert num_states <= last_states
+                else:
+                    assert num_states == last_states
+                assert num_arcs <= last_arcs
+                states.append(num_states)
+                arcs.append(num_arcs)
+            last_states = num_states
+            last_arcs = num_arcs
+    else:
+        props["mas_complete"] = int(False)
+        props["mas_unsolvable"] = int(False)
+        return # incomplete run -- don't set variables
+
+    assert len(states) == variable_count - 1
+    assert len(arcs) == variable_count - 1
+    assert len(intermediate_states) == variable_count - 1
+    assert len(intermediate_arcs) == variable_count - 1
+
+    max_states = max(states)
+    max_arcs = max(arcs)
+    props["mas_complete"] = int(True)
+    props["mas_unsolvable"] = int(False)
+    props["mas_max_states"] = max(states)
+    props["mas_max_arcs"] = max(arcs)
+    props["mas_max_states_vars"] = states.index(max(states)) + 2
+    props["mas_max_arcs_vars"] = arcs.index(max(arcs)) + 2
+
+    props["mas_max_intermediate_states"] = max(intermediate_states)
+    props["mas_max_intermediate_arcs"] = max(intermediate_arcs)
+    props["mas_max_intermediate_states_vars"] = intermediate_states.index(
+        max(intermediate_states)) + 2
+    props["mas_max_intermediate_arcs_vars"] = intermediate_arcs.index(
+        max(intermediate_arcs)) + 2
+    props["mas_final_states"] = states[-1]
+    props["mas_final_arcs"] = arcs[-1]
+    props["mas_total_size"] = total_size
+    props["mas_pdb_size"] = pdb_size
+    # print "+++", sorted((k, v) for k, v in props.iteritems()
+    #                     if k.startswith("mas_"))
+
+
+def get_error(content, props):
+    if not content.strip():
+        props["error"] = "none"
+    elif "bad_alloc" in content:
+        props["error"] = "memory"
+    else:
+        props["error"] = "unknown"
 
 def build_fetcher(parser=FetchOptionParser()):
     parser.add_argument('--no-preprocess', action='store_true',
@@ -415,20 +627,22 @@ def build_fetcher(parser=FetchOptionParser()):
 
     # Do not parse preprocess files if it has been disabled on the commandline
     if not eval.no_preprocess:
-        if eval.exp_props.get('compact', False):
-            # For compact experiments the preprocess files do not reside in the
-            # run's directory so we can't parse them
-            logging.info('You are parsing a compact experiment, so preprocess '
-                         'files will not be parsed')
-        else:
-            add_preprocess_parsing(eval)
-            add_preprocess_functions(eval)
+        add_preprocess_parsing(eval)
+        add_preprocess_functions(eval)
+        # Only try to parse all.groups files if there are any.
+        all_groups_files = glob(os.path.join(eval.exp_dir, 'runs-*-*', '*',
+                                             'all.groups'))
+        if all_groups_files:
+            add_mutex_groups_functions(eval)
     if not eval.no_search:
         add_search_parsing(eval)
         add_search_functions(eval)
+        eval.add_function(get_bisimulation_results)
+        eval.add_function(get_error, "run.err")
 
     eval.add_function(check_min_values)
     eval.set_check(check)
+    eval.postprocess_functions.append(quality)
 
     return eval
 

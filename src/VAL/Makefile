@@ -29,6 +29,31 @@
 
 MYCODEDIR := .
 
+## [Added for Fast Downward]
+OS = auto
+## We link statically by default, but not on OS X.
+## The OS can either be auto-detected (default) or
+## specified by setting "OS" to either "osx" or "linux".
+ifeq ($(OS), auto)
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+OS = osx
+endif
+ifeq ($(UNAME), Linux)
+OS = linux
+endif
+ifeq ($(OS), auto)
+$(warning OS detection failed -- setting to Linux and hoping for the best!)
+OS = linux
+endif
+endif
+ifeq ($(OS), osx)
+## Disable static linking on OS X.
+LINK_STATICALLY = 0
+else
+LINK_STATICALLY = 1
+endif
+
 # Directories to search for header files
 
 SEARCHDIRS := -iquote -I${MYCODEDIR}
@@ -36,7 +61,7 @@ SEARCHDIRS := -iquote -I${MYCODEDIR}
 
 # makemake variables
 
-DEPENDFLAGS := -g -Wall -Werror ${SEARCHDIRS}
+DEPENDFLAGS := -g -Wall ${SEARCHDIRS}
 
 # C preprocessor (C, C++, FORTRAN)
 
@@ -81,18 +106,23 @@ CXXFLAGS  = ${DEPENDFLAGS} -ansi -Wall
 # FORTRAN compiler
 
 FC     := f77
-FFLAGS  = 
+FFLAGS  =
 
 # C/C++/Eiffel/FORTRAN linker
 
-LINKER    := g++ -g -static -static-libgcc
-LDFLAGS    = 
-LOADLIBES := 
+LINKER    := g++ -g
+ifeq ($(LINK_STATICALLY), 1)
+LINKER += -static -static-libgcc
+endif
+
+
+LDFLAGS    =
+LOADLIBES :=
 
 # Java compiler
 
 JAVAC  := javac
-JFLAGS  = 
+JFLAGS  =
 JAR    := jar
 
 %.class : %.java

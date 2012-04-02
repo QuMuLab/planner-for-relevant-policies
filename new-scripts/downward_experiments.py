@@ -32,30 +32,30 @@ LIMIT_SEARCH_MEMORY = 2048
 PLANNER_BINARIES = ['downward', 'downward-debug', 'downward-profile',
                     'release-search', 'search']
 # The following are added only if they are present
-PLANNER_HELPERS = ['downward-1', 'downward-2', 'downward-4',
-                   'dispatch', 'downward-seq-opt-fdss-1.py', 'unitcost']
+PLANNER_HELPERS = ['downward-1', 'downward-2', 'downward-4', 'dispatch',
+                   'seq_opt_portfolio.py', 'seq_sat_portfolio.py', 'unitcost']
 
 
-def _get_configs(planner_rev, config_list):
+def shell_escape(s):
+    return s.upper().replace('-', '_').replace(' ', '_').replace('.', '_')
+
+
+def _get_configs(config_and_porfolio_list):
     """
     Turn the list of config names from the command line into a list of
     (config_nick, config_string) pairs
     """
-    # New syntax <=> we use mercurial (hex, not numbers) or rev >= 4425
-    try:
-        rev_number = int(planner_rev)
-    except ValueError:
-        rev_number = None
-    new_syntax = rev_number is None or rev_number >= 4425
+    portfolios = []
+    config_nicks = []
+    for name in config_and_porfolio_list:
+        if name.endswith('.py'):
+            portfolios.append((name, ''))
+        else:
+            config_nicks.append(name)
 
-    if new_syntax:
-        # configs is a list of (nickname,config) pairs
-        configs = downward_configs.get_configs(config_list)
-    else:
-        # Use the old config names
-        # We use the config names also as nicknames
-        configs = zip(config_list, config_list)
-    return configs
+    # configs is a list of (config_nick, config) pairs
+    configs = downward_configs.get_configs(config_nicks)
+    return configs + portfolios
 
 
 def require_src_dirs(exp, combinations):
@@ -93,8 +93,12 @@ class DownwardRun(experiments.Run):
         self.set_property('domain', self.domain_name)
         self.set_property('problem', self.problem_name)
 
-        # Add memory limit information in KB
-        self.set_property('memory_limit', LIMIT_SEARCH_MEMORY * 1024)
+        self.set_property('limit_translate_time', LIMIT_TRANSLATE_TIME)
+        self.set_property('limit_translate_memory', LIMIT_TRANSLATE_MEMORY)
+        self.set_property('limit_preprocess_time', LIMIT_PREPROCESS_TIME)
+        self.set_property('limit_preprocess_memory', LIMIT_PREPROCESS_MEMORY)
+        self.set_property('limit_search_time', LIMIT_SEARCH_TIME)
+        self.set_property('limit_search_memory', LIMIT_SEARCH_MEMORY)
 
         self.set_property('experiment_name', self.experiment.name)
 
@@ -124,20 +128,27 @@ def _prepare_preprocess_run(exp, run):
         run.declare_optional_output(output_file)
 
 
-def _prepare_search_run(exp, run, config_nick, config, preprocess_dir=''):
+def _prepare_search_run(exp, run, config_nick, config):
     """
     If preprocess_dir is None we are assuming all relevant files are present
     in the dir (output, domain.pddl, problem.pddl).
     Else we use the absolute paths to the preprocess_dir to specify these
     files.
-
-    In the code we use the fact that "os.path.join('', 'filename') = filename".
     """
     run.require_resource(run.planner.shell_name)
-    run.add_command('search', [run.planner.shell_name] + shlex.split(config),
-                    stdin='output',
+    if config:
+        # We have a single planner configuration
+        config = config.replace('\n', ' ').replace('\t', ' ')
+        search_cmd = [run.planner.shell_name] + shlex.split(config)
+    else:
+        # We have a portfolio, config_nick is the path to the portfolio file
+        config_nick = os.path.basename(config_nick)
+        search_cmd = [run.planner.shell_name, '--portfolio', config_nick,
+                      '--plan-file', 'sas_plan']
+    run.add_command('search', search_cmd, stdin='output',
                     time_limit=LIMIT_SEARCH_TIME,
-                    mem_limit=LIMIT_SEARCH_MEMORY)
+                    mem_limit=LIMIT_SEARCH_MEMORY,
+                    abort_on_failure=False)
     run.declare_optional_output("sas_plan")
 
     # Validation
@@ -177,12 +188,13 @@ class DownwardExperiment(experiments.Experiment):
         parser.add_argument('-s', '--suite', default=[], type=tools.csv,
                             required=True, help=downward_suites.HELP)
         parser.add_argument('-c', '--configs', default=[], type=tools.csv,
-                            required=False, help=downward_configs.HELP)
+                            required=False, dest='config_nicks',
+                            help=downward_configs.HELP)
 
         experiments.Experiment.__init__(self, parser)
 
         config_needed = self.complete or not self.preprocess
-        if config_needed and not self.configs:
+        if config_needed and not self.config_nicks:
             logging.error('Please specify at least one planner configuration')
             sys.exit(2)
 
@@ -194,6 +206,7 @@ class DownwardExperiment(experiments.Experiment):
         checkouts.compile(combinations)
         #require_src_dirs(self, combinations)
         self.problems = downward_suites.build_suite(self.suite)
+        self.configs = _get_configs(self.config_nicks)
 
         self.make_runs()
 
@@ -237,6 +250,9 @@ class DownwardExperiment(experiments.Experiment):
         # We need the "output" file, not only the properties file
         self.set_property('copy_all', True)
 
+        # Don't write the combined properties file for preprocess experiments
+        self.set_property('no_props_file', True)
+
     def _prepare_translator_and_preprocessor(self, translator, preprocessor):
         # Copy the whole translate directory
         self.add_resource(translator.shell_name + '_DIR', translator.bin_dir,
@@ -259,7 +275,7 @@ class DownwardExperiment(experiments.Experiment):
                 break
         if not bin:
             logging.error('None of the binaries %s could be found in %s' %
-                          PLANNER_BINARIES, planner.bin_dir)
+                          (PLANNER_BINARIES, planner.bin_dir))
             sys.exit(1)
         self.add_resource(planner.shell_name, bin, planner.get_bin_dest())
         for bin in PLANNER_HELPERS:
@@ -270,18 +286,24 @@ class DownwardExperiment(experiments.Experiment):
                 continue
             self.add_resource('NONAME', src_path, planner.get_path_dest(bin))
 
+        # Find all portfolios and copy them into the experiment directory
+        for portfolio in [name for name in self.config_nicks if name.endswith('.py')]:
+            if not os.path.isfile(portfolio):
+                logging.error('Portfolio file %s could not be found.' % portfolio)
+                sys.exit(1)
+            shell_name = shell_escape(os.path.basename(portfolio))
+            self.add_resource(shell_name, portfolio, planner.get_path_dest(os.path.basename(portfolio)))
+
         # The tip changeset has the newest validator version so we use this one
         validate = os.path.join(tools.SCRIPTS_DIR, '..', 'src', 'validate')
         if not os.path.exists(validate):
             logging.error('Please run ./build_all in the src directory first '
                           'to compile the validator')
+            sys.exit(1)
         self.add_resource('VALIDATE', validate, 'validate')
 
         downward_validate = os.path.join(tools.SCRIPTS_DIR, 'downward-validate.py')
         self.add_resource('DOWNWARD_VALIDATE', downward_validate, 'downward-validate')
-
-    def _get_configs(self, rev):
-        return _get_configs(rev, self.configs)
 
     def make_runs(self):
         # Save the experiment stage in the properties
@@ -309,7 +331,7 @@ class DownwardExperiment(experiments.Experiment):
         for translator, preprocessor, planner in self.combinations:
             self._prepare_planner(planner)
 
-            for config_nick, config in self._get_configs(planner.rev):
+            for config_nick, config in self.configs:
                 for prob in self.problems:
                     self._make_search_run(translator, preprocessor, planner,
                                           config_nick, config, prob)
@@ -341,16 +363,17 @@ class DownwardExperiment(experiments.Experiment):
         run.add_resource('PROBLEM', path('problem.pddl'), 'problem.pddl', symlink=sym)
         run.add_resource('PREPROCESS_PROPERTIES', path('properties'),
                          'preprocess-properties', symlink=sym)
-        if not self.compact:
-            run.add_resource('RUN_LOG', path('run.log'), 'run.log')
-            run.add_resource('RUN_ERR', path('run.err'), 'run.err')
+
+        # The logs have to be copied, not linked
+        run.add_resource('RUN_LOG', path('run.log'), 'run.log')
+        run.add_resource('RUN_ERR', path('run.err'), 'run.err')
 
     def _make_complete_runs(self):
         for translator, preprocessor, planner in self.combinations:
             self._prepare_translator_and_preprocessor(translator, preprocessor)
             self._prepare_planner(planner)
 
-            for config_nick, config in self._get_configs(planner.rev):
+            for config_nick, config in self.configs:
                 for prob in self.problems:
                     run = DownwardRun(self, translator, preprocessor, planner, prob)
                     _prepare_preprocess_run(self, run)

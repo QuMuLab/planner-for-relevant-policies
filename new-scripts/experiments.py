@@ -19,13 +19,13 @@ EPILOG = """\
 PLEASE NOTE: The available options depend on the selected experiment type:
 
 global options:  %(exe)s --help
-special options: %(exe)s {local,gkigrid,argo} --help
+special options: %(exe)s {local,gkigrid} --help
 --------------------------------------------------------------------------------
 """ % {'exe': sys.argv[0]}
 
 ENVIRONMENTS = {'local': environments.LocalEnvironment,
                 'gkigrid': environments.GkiGridEnvironment,
-                'argo': environments.ArgoEnvironment}
+                'maia': environments.MaiaEnvironment}
 
 DEFAULT_ABORT_ON_FAILURE = True
 
@@ -258,9 +258,6 @@ class Run(object):
 
         self.properties = tools.Properties()
 
-        if hasattr(experiment, 'queue'):
-            self.set_property('queue', experiment.queue)
-
     def set_property(self, name, value):
         """
         Add a key-value property to a run. These can be used later for
@@ -434,19 +431,7 @@ class Run(object):
         If we are building an argo experiment, add all linked resources to
         the resources list
         """
-        # Determine if we should link (gkigrid) or copy (argo)
-        if self.experiment.environment == environments.ArgoEnvironment:
-            # Copy into run dir by adding the linked resource to normal
-            # resources list
-            for resource_name in self.linked_resources:
-                source = self.experiment.env_vars.get(resource_name, None)
-                if not source:
-                    logging.error('If you require a resource you have to add '
-                                  'it to the experiment')
-                    sys.exit(1)
-                basename = os.path.basename(source)
-                dest = self._get_abs_path(basename)
-                self.resources.append((source, dest, True, False))
+        self.experiment.environment.build_linked_resources(self)
 
     def _build_resources(self):
         for name, content in self.new_files:

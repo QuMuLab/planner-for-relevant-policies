@@ -64,6 +64,17 @@ def prod(values):
     return prod
 
 
+def minimum(values):
+    """Filter out None values and return the minimum.
+
+    If there are only None values, return None.
+    """
+    values = [v for v in values if v is not None]
+    if values:
+        return min(values)
+    return None
+
+
 def divide_list(seq, size):
     """
     >>> divide_list(range(10), 4)
@@ -180,16 +191,20 @@ def import_python_file(filename):
         sys.exit(1)
 
 
-def run_command(cmd, env=None):
+def run_command(cmd, **kwargs):
     """
     Runs command cmd and returns the output
     """
-    logging.info('Running command "%s"' % cmd)
-    if type(cmd) == str:
-        cmd = cmd.split()
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
-    output = p.communicate()[0].strip()
-    return output
+    assert type(cmd) is list
+    logging.info('Running command: %s' % ' '.join(cmd))
+    return subprocess.call(cmd, **kwargs)
+
+def get_command_output(cmd, **kwargs):
+    assert type(cmd) is list
+    logging.info('Running command: %s' % ' '.join(cmd))
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, **kwargs)
+    stdout, _ = p.communicate()
+    return stdout.strip()
 
 
 class Properties(ConfigObj):
@@ -200,7 +215,6 @@ class Properties(ConfigObj):
     def get_dataset(self):
         data = DataSet()
         for run_id, run in sorted(self.items()):
-            run['id-string'] = run_id
             data.append(**run)
         return data
 
@@ -257,8 +271,7 @@ def copy(src, dest, required=True):
                       (os.path.abspath(src), os.path.abspath(dest)))
         sys.exit(1)
     else:
-        logging.warning('Optional path %s cannot be copied to %s' %
-                        (os.path.abspath(src), os.path.abspath(dest)))
+        # Do not warn if an optional file cannot be copied.
         return
     try:
         func(src, dest)
@@ -274,17 +287,37 @@ def csv(string):
     return string.split(',')
 
 
+def get_terminal_size():
+    import struct
+    try:
+        import fcntl, termios
+    except ImportError:
+        return (None, None)
+
+    try:
+        data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, 4 * '00')
+        height, width = struct.unpack('4H',data)[:2]
+        return (height, width)
+    except Exception:
+        return (None, None)
+
+
 class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
     """
     Help message formatter which retains any formatting in descriptions and adds
     default values to argument help.
     """
+    def __init__(self, prog, **kwargs):
+        # Use the whole terminal width
+        height, width = get_terminal_size()
+        argparse.HelpFormatter.__init__(self, prog, width=width, **kwargs)
+
     def _fill_text(self, text, width, indent):
         return ''.join([indent + line for line in text.splitlines(True)])
 
     def _get_help_string(self, action):
         help = action.help
-        if '%(default)' not in action.help:
+        if '%(default)' not in action.help and not 'default' in action.help:
             if action.default is not argparse.SUPPRESS:
                 defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
