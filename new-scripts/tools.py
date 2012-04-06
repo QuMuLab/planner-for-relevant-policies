@@ -3,16 +3,52 @@ import sys
 import shutil
 import subprocess
 import re
-import logging
 import traceback
-from shutil import *
-from collections import MutableMapping
+import logging
+import contextlib
+import time
+import math
 
 from external import argparse
 from external.configobj import ConfigObj
+from external.datasets import DataSet
+
+# Patch configobj's unrepr method. Our version is much faster, but depends on
+# Python 2.6.
+import external.configobj
+from ast import literal_eval as unrepr
+external.configobj.unrepr = unrepr
 
 
 LOG_LEVEL = None
+
+# Directories and files
+
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SCRIPTS_DIR)
+DATA_DIR = os.path.join(SCRIPTS_DIR, 'data')
+CALLS_DIR = os.path.join(SCRIPTS_DIR, 'calls')
+REPORTS_DIR = os.path.join(SCRIPTS_DIR, 'reports')
+
+
+def setup_logging(level):
+    # Python adds a default handler if some log is written before now
+    # Remove all handlers that have been added automatically
+    root_logger = logging.getLogger('')
+    for handler in root_logger.handlers:
+        root_logger.removeHandler(handler)
+
+    # Handler which writes LOG_LEVEL messages or higher to stdout
+    console = logging.StreamHandler(sys.stdout)
+    #console.setLevel(level)
+    # set a format which is simpler for console use
+    format='%(asctime)-s %(levelname)-8s %(message)s'
+    formatter = logging.Formatter(format)
+    # tell the handler to use this format
+    console.setFormatter(formatter)
+    # add the handler to the root logger
+    root_logger.addHandler(console)
+    root_logger.setLevel(level)
 
 
 def prod(values):
@@ -28,34 +64,61 @@ def prod(values):
     return prod
 
 
+def minimum(values):
+    """Filter out None values and return the minimum.
+
+    If there are only None values, return None.
+    """
+    values = [v for v in values if v is not None]
+    if values:
+        return min(values)
+    return None
+
+
 def divide_list(seq, size):
     """
     >>> divide_list(range(10), 4)
     [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9]]
     """
-    return [seq[i:i+size] for i  in range(0, len(seq), size)]
-    
-    
+    return [seq[i:i + size] for i  in range(0, len(seq), size)]
+
+
+def round_to_next_power_of_ten(i):
+    assert i > 0
+    return 10**math.ceil(math.log10(i))
+
+
 def makedirs(dir):
     """
     mkdir variant that does not complain when the dir already exists
     """
-    if not os.path.exists(dir):
+    try:
         os.makedirs(dir)
-    
+    except OSError:
+        # directory probably exists
+        pass
+
 
 def overwrite_dir(dir):
     if os.path.exists(dir):
-        if not os.path.exists(os.path.join(dir, 'run')):
-            msg = 'The experiment directory "%s" ' % dir
-            msg += 'is not empty, do you want to overwrite it? (Y/N): '
-            answer = raw_input(msg).upper().strip()
-            if not answer == 'Y':
-                sys.exit('Aborted')
+        msg = 'The directory "%s" ' % dir
+        msg += 'is not empty, do you want to overwrite it? (Y/N): '
+        answer = raw_input(msg).upper().strip()
+        if not answer == 'Y':
+            sys.exit('Aborted')
         shutil.rmtree(dir)
+    # We use the os.makedirs method instead of our own here to check if the dir
+    # has really been properly deleted.
     os.makedirs(dir)
-    
-    
+
+
+def remove(filename):
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
+
 def natural_sort(alist):
     """Sort alist alphabetically, but special-case numbers to get
     file2.txt before file10.ext."""
@@ -63,11 +126,13 @@ def natural_sort(alist):
         if text.isdigit():
             return int(text)
         else:
-            return text
+            return text.lower()
+
     def extract_numbers(text):
         parts = re.split("([0-9]+)", text)
         return map(to_int_if_number, parts)
-    alist.sort(key=extract_numbers)
+
+    return sorted(alist, key=extract_numbers)
 
 
 def listdir(path):
@@ -81,23 +146,33 @@ def find_file(basenames, dir='.'):
         if os.path.exists(path):
             return path
     raise IOError('none found in %r: %r' % (dir, basenames))
-    
-    
+
+
 def convert_to_correct_type(val):
     """
-    Safely evaluate an expression node or a string containing a Python expression. 
-    The string or node provided may only consist of the following Python literal 
-    structures: strings, numbers, tuples, lists, dicts, booleans, and None.
+    Safely evaluate an expression node or a string containing a Python
+    expression.
+    The string or node provided may only consist of the following Python
+    literal structures: strings, numbers, tuples, lists, dicts, booleans
+    and None.
+
+    Unused for now.
     """
     import ast
     try:
-        val = ast.literal_eval(val)
+        out_val = ast.literal_eval(str(val))
+        logging.debug('Converted value %s to %s' % (repr(val), repr(out_val)))
+        return out_val
     except (ValueError, SyntaxError):
         pass
+    #logging.debug('Could not convert value %s' % repr(val))
     return val
-    
-    
+
+
 def import_python_file(filename):
+    parent_dir =  os.path.dirname(filename)
+    if parent_dir not in sys.path:
+        sys.path.insert(0, parent_dir)
     filename = os.path.normpath(filename)
     filename = os.path.basename(filename)
     if filename.endswith('.py'):
@@ -106,7 +181,7 @@ def import_python_file(filename):
         module_name = filename[:-4]
     else:
         module_name = filename
-        
+
     try:
         module = __import__(module_name)
         return module
@@ -114,311 +189,213 @@ def import_python_file(filename):
         logging.error('File "%s" could not be imported: %s' % (filename, err))
         print traceback.format_exc()
         sys.exit(1)
-        
-        
-def run_command(cmd, env=None):
+
+
+def run_command(cmd, **kwargs):
     """
     Runs command cmd and returns the output
     """
-    logging.info('Running command "%s"' % cmd)
-    if type(cmd) == str:
-        cmd = cmd.split()
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
-    output = p.communicate()[0].strip()
-    return output
-    
-                
-                
+    assert type(cmd) is list
+    logging.info('Running command: %s' % ' '.join(cmd))
+    return subprocess.call(cmd, **kwargs)
+
+def get_command_output(cmd, **kwargs):
+    assert type(cmd) is list
+    logging.info('Running command: %s' % ' '.join(cmd))
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, **kwargs)
+    stdout, _ = p.communicate()
+    return stdout.strip()
+
+
 class Properties(ConfigObj):
     def __init__(self, *args, **kwargs):
         kwargs['unrepr'] = True
-        ConfigObj.__init__(self, *args, **kwargs)
-        
-                
-                
-def updatetree(src, dst, symlinks=False, ignore=None):
+        ConfigObj.__init__(self, *args, interpolation=False, **kwargs)
+
+    def get_dataset(self):
+        data = DataSet()
+        for run_id, run in sorted(self.items()):
+            data.append(**run)
+        return data
+
+
+def fast_updatetree(src, dst):
     """
-    Copies the contents from src onto the tree at dst, overwrites files with the
-    same name
-    
+    Copies the contents from src onto the tree at dst, overwrites files with
+    the same name
+
     Code taken and expanded from python docs
     """
-    
     names = os.listdir(src)
-    if ignore is not None:
-        ignored_names = ignore(src, names)
-    else:
-        ignored_names = set()
 
-    if not os.path.exists(dst):
-        os.makedirs(dst)
-        
+    makedirs(dst)
+
     errors = []
     for name in names:
-        if name in ignored_names:
+        # Skip over svn directories
+        if name.startswith('.svn'):
             continue
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         try:
-            if symlinks and os.path.islink(srcname):
-                linkto = os.readlink(srcname)
-                os.symlink(linkto, dstname)
-            elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks, ignore)
-            else:
-                copy2(srcname, dstname)
-            # XXX What about devices, sockets etc.?
-        except (IOError, os.error), why:
-            errors.append((srcname, dstname, str(why)))
-        # catch the Error from the recursive copytree so that we can
-        # continue with other files
-        except Error, err:
-            errors.extend(err.args[0])
-    try:
-        copystat(src, dst)
-    except WindowsError:
-        # can't copy file access times on Windows
-        pass
-    except OSError, why:
-        errors.extend((src, dst, str(why)))
-    if errors:
-        raise Error(errors)
-        
-        
-def fast_updatetree(src, dst):
-    """
-    Copies the contents from src onto the tree at dst, overwrites files with the
-    same name
-    
-    Code taken and expanded from python docs
-    """
-    
-    names = os.listdir(src)
-
-    makedirs(dst)
-        
-    errors = []
-    for name in names:
-        srcname = os.path.join(src, name)
-        dstname = os.path.join(dst, name)
-        try:
             if os.path.isdir(srcname):
-                copytree(srcname, dstname)
+                fast_updatetree(srcname, dstname)
             else:
-                copy2(srcname, dstname)
+                shutil.copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?
         except (IOError, os.error), why:
             errors.append((srcname, dstname, str(why)))
         # catch the Error from the recursive copytree so that we can
         # continue with other files
-        except Error, err:
-            errors.extend(err.args[0])
-    #try:
-    #    copystat(src, dst)
-    #except WindowsError:
-    #    # can't copy file access times on Windows
-    #    pass
-    #except OSError, why:
-    #    errors.extend((src, dst, str(why)))
+        except Exception, err:
+            errors.append(err.args[0])
     if errors:
-        raise Error(errors)
-        
-        
+        raise Exception(errors)
+
+
+def copy(src, dest, required=True):
+    """
+    Copies a file or directory to another file or directory
+    """
+    if os.path.isfile(src) and os.path.isdir(dest):
+        makedirs(dest)
+        dest = os.path.join(dest, os.path.basename(src))
+        func = shutil.copy2
+    elif os.path.isfile(src):
+        makedirs(os.path.dirname(dest))
+        func = shutil.copy2
+    elif os.path.isdir(src):
+        func = fast_updatetree
+    elif required:
+        logging.error('Required path %s cannot be copied to %s' %
+                      (os.path.abspath(src), os.path.abspath(dest)))
+        sys.exit(1)
+    else:
+        # Do not warn if an optional file cannot be copied.
+        return
+    try:
+        func(src, dest)
+    except IOError, err:
+        logging.error('The file "%s" could not be copied to "%s": %s' %
+                      (os.path.abspath(src), os.path.abspath(dest), err))
+        if required:
+            sys.exit(1)
+
+
 def csv(string):
     string = string.strip(', ')
     return string.split(',')
 
 
+def get_terminal_size():
+    import struct
+    try:
+        import fcntl, termios
+    except ImportError:
+        return (None, None)
+
+    try:
+        data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, 4 * '00')
+        height, width = struct.unpack('4H',data)[:2]
+        return (height, width)
+    except Exception:
+        return (None, None)
+
+
+class RawDescriptionAndArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
+    """
+    Help message formatter which retains any formatting in descriptions and adds
+    default values to argument help.
+    """
+    def __init__(self, prog, **kwargs):
+        # Use the whole terminal width
+        height, width = get_terminal_size()
+        argparse.HelpFormatter.__init__(self, prog, width=width, **kwargs)
+
+    def _fill_text(self, text, width, indent):
+        return ''.join([indent + line for line in text.splitlines(True)])
+
+    def _get_help_string(self, action):
+        help = action.help
+        if '%(default)' not in action.help and not 'default' in action.help:
+            if action.default is not argparse.SUPPRESS:
+                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+                if action.option_strings or action.nargs in defaulting_nargs:
+                    help += ' (default: %(default)s)'
+        return help
+
+    def _format_args(self, action, default_metavar):
+        """
+        We want to show "[environment-specific options]" instead of "...".
+        """
+        get_metavar = self._metavar_formatter(action, default_metavar)
+        if action.nargs == argparse.PARSER:
+            return '%s [environment-specific options]' % get_metavar(1)
+        else:
+            return argparse.HelpFormatter._format_args(self, action, default_metavar)
+
+
 class ArgParser(argparse.ArgumentParser):
-    def __init__(self, *args, **kwargs):
-        argparse.ArgumentParser.__init__(self, *args, #add_help=False,
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs)
-                
-        # The option may have already been added by a parent
-        try:
-            self.add_argument('-l', '--log-level', choices=['DEBUG', 'INFO', 'WARNING'],
-                            dest='log_level', default='INFO')
-        except argparse.ArgumentError:
-            pass
-            
+    def __init__(self, add_log_option=True, *args, **kwargs):
+        argparse.ArgumentParser.__init__(self, *args, formatter_class=
+                                RawDescriptionAndArgumentDefaultsHelpFormatter,
+                                         **kwargs)
+        if add_log_option:
+            try:
+                self.add_argument('-l', '--log-level', dest='log_level',
+                        choices=['DEBUG', 'INFO', 'WARNING'], default='INFO')
+            except argparse.ArgumentError:
+                # The option may have already been added by a parent
+                pass
+
     def parse_known_args(self, *args, **kwargs):
-        args, remaining = argparse.ArgumentParser.parse_known_args(self, *args, **kwargs)
-        
+        args, remaining = argparse.ArgumentParser.parse_known_args(self, *args,
+                                                                   **kwargs)
+
         global LOG_LEVEL
         # Set log level only once (May have already been deleted from sys.argv)
-        if not LOG_LEVEL:
-            # Python adds a default handler if some log is generated before here
-            # Remove all handlers that have been added automatically
-            root_logger = logging.getLogger('')
-            for handler in root_logger.handlers:
-                root_logger.removeHandler(handler)
-            
+        if getattr(args, 'log_level', None) and not LOG_LEVEL:
             LOG_LEVEL = getattr(logging, args.log_level.upper())
-            logging.basicConfig(level=LOG_LEVEL, format='%(asctime)-s %(levelname)-8s %(message)s',)
-        
+            setup_logging(LOG_LEVEL)
+
         return (args, remaining)
-                
+
     def set_help_active(self):
         self.add_argument(
                 '-h', '--help', action='help', default=argparse.SUPPRESS,
                 help=('show this help message and exit'))
-      
+
     def directory(self, string):
         if not os.path.isdir(string):
             msg = '%r is not an evaluation directory' % string
             raise argparse.ArgumentTypeError(msg)
         return string
-        
-        
-        
-################################################################################
-### OrderedDict
-################################################################################
 
-class OrderedDict(dict, MutableMapping):
-    'Dictionary that remembers insertion order'
-    # An inherited dict maps keys to values.
-    # The inherited dict provides __getitem__, __len__, __contains__, and get.
-    # The remaining methods are order-aware.
-    # Big-O running times for all methods are the same as for regular dictionaries.
 
-    # The internal self.__map dictionary maps keys to links in a doubly linked list.
-    # The circular doubly linked list starts and ends with a sentinel element.
-    # The sentinel element never gets deleted (this simplifies the algorithm).
-    # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
+# Parse the log-level and set it
+ArgParser(add_help=False).parse_known_args()
 
-    def __init__(self, *args, **kwds):
-        '''Initialize an ordered dictionary.  Signature is the same as for
-        regular dictionaries, but keyword arguments are not recommended
-        because their insertion order is arbitrary.
 
-        '''
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        try:
-            self.__root
-        except AttributeError:
-            self.__root = root = [None, None, None]     # sentinel node
-            PREV = 0
-            NEXT = 1
-            root[PREV] = root[NEXT] = root
-            self.__map = {}
-        self.update(*args, **kwds)
+class Timer(object):
+    def __init__(self):
+        self.start_time = time.time()
+        self.start_clock = self._clock()
 
-    def __setitem__(self, key, value, PREV=0, NEXT=1, dict_setitem=dict.__setitem__):
-        'od.__setitem__(i, y) <==> od[i]=y'
-        # Setting a new item creates a new link which goes at the end of the linked
-        # list, and the inherited dictionary is updated with the new key/value pair.
-        if key not in self:
-            root = self.__root
-            last = root[PREV]
-            last[NEXT] = root[PREV] = self.__map[key] = [last, root, key]
-        dict_setitem(self, key, value)
+    def _clock(self):
+        times = os.times()
+        return times[0] + times[1]
 
-    def __delitem__(self, key, PREV=0, NEXT=1, dict_delitem=dict.__delitem__):
-        'od.__delitem__(y) <==> del od[y]'
-        # Deleting an existing item uses self.__map to find the link which is
-        # then removed by updating the links in the predecessor and successor nodes.
-        dict_delitem(self, key)
-        link = self.__map.pop(key)
-        link_prev = link[PREV]
-        link_next = link[NEXT]
-        link_prev[NEXT] = link_next
-        link_next[PREV] = link_prev
+    def __str__(self):
+        return "[%.3fs CPU, %.3fs wall-clock]" % (
+            self._clock() - self.start_clock,
+            time.time() - self.start_time)
 
-    def __iter__(self, NEXT=1, KEY=2):
-        'od.__iter__() <==> iter(od)'
-        # Traverse the linked list in order.
-        root = self.__root
-        curr = root[NEXT]
-        while curr is not root:
-            yield curr[KEY]
-            curr = curr[NEXT]
 
-    def __reversed__(self, PREV=0, KEY=2):
-        'od.__reversed__() <==> reversed(od)'
-        # Traverse the linked list in reverse order.
-        root = self.__root
-        curr = root[PREV]
-        while curr is not root:
-            yield curr[KEY]
-            curr = curr[PREV]
-
-    def __reduce__(self):
-        'Return state information for pickling'
-        items = [[k, self[k]] for k in self]
-        tmp = self.__map, self.__root
-        del self.__map, self.__root
-        inst_dict = vars(self).copy()
-        self.__map, self.__root = tmp
-        if inst_dict:
-            return (self.__class__, (items,), inst_dict)
-        return self.__class__, (items,)
-
-    def clear(self):
-        'od.clear() -> None.  Remove all items from od.'
-        try:
-            for node in self.__map.itervalues():
-                del node[:]
-            self.__root[:] = [self.__root, self.__root, None]
-            self.__map.clear()
-        except AttributeError:
-            pass
-        dict.clear(self)
-
-    setdefault = MutableMapping.setdefault
-    update = MutableMapping.update
-    pop = MutableMapping.pop
-    keys = MutableMapping.keys
-    values = MutableMapping.values
-    items = MutableMapping.items
-    iterkeys = MutableMapping.iterkeys
-    itervalues = MutableMapping.itervalues
-    iteritems = MutableMapping.iteritems
-    __ne__ = MutableMapping.__ne__
-
-    def popitem(self, last=True):
-        '''od.popitem() -> (k, v), return and remove a (key, value) pair.
-        Pairs are returned in LIFO order if last is true or FIFO order if false.
-
-        '''
-        if not self:
-            raise KeyError('dictionary is empty')
-        key = next(reversed(self) if last else iter(self))
-        value = self.pop(key)
-        return key, value
-
-    def __repr__(self):
-        'od.__repr__() <==> repr(od)'
-        if not self:
-            return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, self.items())
-
-    def copy(self):
-        'od.copy() -> a shallow copy of od'
-        return self.__class__(self)
-
-    @classmethod
-    def fromkeys(cls, iterable, value=None):
-        '''OD.fromkeys(S[, v]) -> New ordered dictionary with keys from S
-        and values equal to v (which defaults to None).
-
-        '''
-        d = cls()
-        for key in iterable:
-            d[key] = value
-        return d
-
-    def __eq__(self, other):
-        '''od.__eq__(y) <==> od==y.  Comparison to another OD is order-sensitive
-        while comparison to a regular mapping is order-insensitive.
-
-        '''
-        if isinstance(other, OrderedDict):
-            return len(self)==len(other) and \
-                   all(_imap(_eq, self.iteritems(), other.iteritems()))
-        return dict.__eq__(self, other)
-
-    def __del__(self):
-        self.clear()                # eliminate cyclical references
-
+@contextlib.contextmanager
+def timing(text):
+    timer = Timer()
+    logging.info("%s..." % text)
+    sys.stdout.flush()
+    yield
+    logging.info("%s: %s" % (text, timer))
+    sys.stdout.flush()

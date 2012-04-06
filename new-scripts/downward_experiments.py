@@ -6,599 +6,394 @@ experiments with them.
 """
 import os
 import sys
-import subprocess
 import logging
-import re
+import shlex
 
 import experiments
+import environments
+import checkouts
 import downward_suites
 import downward_configs
 import tools
 
-# e.g. issue69.py -> issue69-checkouts
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '../'))
-CHECKOUTS_DIRNAME = 'checkouts'
-CHECKOUTS_DIR = os.path.join(SCRIPTS_DIR, CHECKOUTS_DIRNAME)
-if not os.path.exists(CHECKOUTS_DIR):
-    os.mkdir(CHECKOUTS_DIR)
 
-PREPROCESSED_TASKS_DIR = os.path.join(SCRIPTS_DIR, 'preprocessed-tasks')
-if not os.path.exists(PREPROCESSED_TASKS_DIR):
-    os.mkdir(PREPROCESSED_TASKS_DIR)
-
-BASE_DIR = os.path.abspath(os.path.join(SCRIPTS_DIR, '../'))
+PREPROCESSED_TASKS_DIR = os.path.join(tools.SCRIPTS_DIR, 'preprocessed-tasks')
+tools.makedirs(PREPROCESSED_TASKS_DIR)
 
 
-ABS_REV_CACHE = {}
+LIMIT_TRANSLATE_TIME = 7200
+LIMIT_TRANSLATE_MEMORY = 8192
+LIMIT_PREPROCESS_TIME = 7200
+LIMIT_PREPROCESS_MEMORY = 8192
+LIMIT_SEARCH_TIME = 1800
+LIMIT_SEARCH_MEMORY = 2048
+
+# At least one of those must be found (First is taken if many are present)
+PLANNER_BINARIES = ['downward', 'downward-debug', 'downward-profile',
+                    'release-search', 'search']
+# The following are added only if they are present
+PLANNER_HELPERS = ['downward-1', 'downward-2', 'downward-4', 'dispatch',
+                   'seq_opt_portfolio.py', 'seq_sat_portfolio.py', 'unitcost']
 
 
-
-class Checkout(object):
-    def __init__(self, part, repo, rev, checkout_dir, name):
-        # Directory name of the planner part (translate, preprocess, search)
-        self.part = part
-        self.repo = repo
-        self.rev = str(rev)
-        # Nickname for the checkout (used for reports and checkout directory)
-        self.name = name
-
-        if not os.path.isabs(checkout_dir):
-            checkout_dir = os.path.join(CHECKOUTS_DIR, checkout_dir)
-        self.checkout_dir = checkout_dir
-
-    def checkout(self):
-        # We don't need to check out the working copy
-        if not self.rev == 'WORK':
-            # If there's already a checkout, don't checkout again
-            path = self.checkout_dir
-            if os.path.exists(path):
-                logging.debug('Checkout "%s" already exists' % path)
-            else:
-                cmd = self.get_checkout_cmd()
-                print cmd
-                ret = subprocess.call(cmd.split())
-            assert os.path.exists(path), \
-                    'Could not checkout to "%s"' % path
-
-    def get_checkout_cmd(self):
-        raise Exception('Not implemented')
-
-    def compile(self):
-        """
-        """
-        # Needs compiling?
-        executable = self.get_executable()
-        if executable is None or not os.path.exists(executable):
-            os.chdir(self.exe_dir)
-            subprocess.call(['make'])
-            os.chdir(SCRIPTS_DIR)
-
-    def get_executable(self):
-        """ Returns the path to the python module or a binary """
-        names = ['translate.py', 'preprocess',
-                'downward', 'release-search', 'search']
-        for name in names:
-            planner = os.path.join(self.exe_dir, name)
-            if os.path.exists(planner):
-                return planner
-        return ''
-        
-    @property
-    def parent_rev(self):
-        raise Exception('Not implemented')
+def shell_escape(s):
+    return s.upper().replace('-', '_').replace(' ', '_').replace('.', '_')
 
 
-
-# ---------- Mercurial ---------------------------------------------------------
-
-class HgCheckout(Checkout):
-    DEFAULT_URL = BASE_DIR # 'ssh://downward'
-    DEFAULT_REV = 'WORK'
-
-    def __init__(self, part, repo=DEFAULT_URL, rev=DEFAULT_REV, name=''):
-        rev_nick = str(rev).upper()
-        # Find proper absolute revision
-        rev_abs = self.get_rev_abs(repo, rev)
-
-        if rev_nick == 'WORK':
-            checkout_dir = os.path.join(SCRIPTS_DIR, '../')
-        else:
-            checkout_dir = name if name else rev_abs
-
-        if not name:
-            name = part + '-' + rev_nick
-
-        Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
-        self.parent = None
-
-    def get_rev_abs(self, repo, rev):
-        if str(rev).upper() == 'WORK':
-            return 'WORK' #cmd = 'hg id -i'
-        cmd = 'hg id -ir %s %s' % (str(rev).lower(), repo)
-        if cmd in ABS_REV_CACHE:
-            return ABS_REV_CACHE[cmd]
-        abs_rev = tools.run_command(cmd)
-        if not abs_rev:
-            logging.error('Revision %s is not present in repo %s' % (rev, repo))
-            sys.exit(1)
-        ABS_REV_CACHE[cmd] = abs_rev
-        return abs_rev
-
-    def get_checkout_cmd(self):
-        return 'hg clone -r %s %s %s' % (self.rev, self.repo, self.checkout_dir)
-
-    @property
-    def parent_rev(self):
-        if self.parent:
-            return self.parent
-        rev = self.rev
-        if self.rev == 'WORK':
-            rev = 'tip'
-        cmd = 'hg log -r %s --template {node|short}' % rev
-        self.parent = tools.run_command(cmd)
-        return self.parent
-
-    @property
-    def exe_dir(self):
-        assert os.path.exists(self.checkout_dir)
-        exe_dir = os.path.join(self.checkout_dir, 'downward', self.part)
-        # "downward" dir has been renamed to "src"
-        if not os.path.exists(exe_dir):
-            exe_dir = os.path.join(self.checkout_dir, 'src', self.part)
-        return exe_dir
-
-
-class TranslatorHgCheckout(HgCheckout):
-    def __init__(self, *args, **kwargs):
-        HgCheckout.__init__(self, 'translate', *args, **kwargs)
-
-class PreprocessorHgCheckout(HgCheckout):
-    def __init__(self, *args, **kwargs):
-        HgCheckout.__init__(self, 'preprocess', *args, **kwargs)
-
-class PlannerHgCheckout(HgCheckout):
-    def __init__(self, *args, **kwargs):
-        HgCheckout.__init__(self, 'search', *args, **kwargs)
-
-
-
-# ---------- Subversion --------------------------------------------------------
-
-class SvnCheckout(Checkout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward'
-    DEFAULT_REV = 'WORK'
-
-    REV_REGEX = re.compile(r'Revision: (\d+)')
-
-    def __init__(self, part, repo, rev=DEFAULT_REV):
-        rev = str(rev)
-        name = part + '-' + rev
-        rev_abs = self.get_rev_abs(repo, rev)
-
-        if rev == 'WORK':
-            logging.error('Comparing SVN working copy is not supported')
-            sys.exit(1)
-
-        checkout_dir = part + '-' + rev_abs
-
-        Checkout.__init__(self, part, repo, rev_abs, checkout_dir, name)
-
-    def get_rev_abs(self, repo, rev):
-        try:
-            rev_number = int(rev)
-            return rev
-        except ValueError:
-            pass
-
-        if rev.upper() == 'WORK':
-            return 'WORK'
-        elif rev.upper() == 'HEAD':
-            # We want the HEAD revision number
-            env = {'LANG': 'C'}
-            cmd = 'svn info %s' % repo
-            if cmd in ABS_REV_CACHE:
-                return ABS_REV_CACHE[cmd]
-            output = tools.run_command(cmd, env=env)
-            match = self.REV_REGEX.search(output)
-            if not match:
-                logging.error('Unable to get HEAD revision number')
-                sys.exit()
-            rev_number = match.group(1)
-            ABS_REV_CACHE[cmd] = rev_number
-            return rev_number
-        else:
-            logging.error('Invalid SVN revision specified: %s' % rev)
-            sys.exit()
-
-    def get_checkout_cmd(self):
-        return 'svn co %s@%s %s' % (self.repo, self.rev, self.checkout_dir)
-
-    @property
-    def exe_dir(self):
-        # checkout_dir is exe_dir for SVN
-        assert os.path.exists(self.checkout_dir)
-        return self.checkout_dir
-
-
-class TranslatorSvnCheckout(SvnCheckout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/translate'
-
-    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
-        SvnCheckout.__init__(self, 'translate', repo, rev)
-
-
-class PreprocessorSvnCheckout(SvnCheckout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/preprocess'
-
-    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
-        SvnCheckout.__init__(self, 'preprocess', repo, rev)
-
-
-class PlannerSvnCheckout(SvnCheckout):
-    DEFAULT_URL = 'svn+ssh://downward-svn/trunk/downward/search'
-
-    def __init__(self, repo=DEFAULT_URL, rev=SvnCheckout.DEFAULT_REV):
-        SvnCheckout.__init__(self, 'search', repo, rev)
-
-# ------------------------------------------------------------------------------
-
-
-def make_checkouts(combinations):
-    """
-    Checks out and compiles the code
-    We allow both lists of checkouts and list of checkout tuples
-    """
-    parts = []
-
-    for combo in combinations:
-        if isinstance(combo, Checkout):
-            parts.append(combo)
-        else:
-            for part in combo:
-                parts.append(part)
-
-    for part in parts:
-        part.checkout()
-        part.compile()
-
-
-def _get_configs(planner_rev, config_list):
+def _get_configs(config_and_porfolio_list):
     """
     Turn the list of config names from the command line into a list of
     (config_nick, config_string) pairs
     """
-    # New syntax <=> we use mercurial (hex, not numbers) or rev >= 4425
-    try:
-        rev_number = int(planner_rev)
-    except ValueError:
-        rev_number = None
-    new_syntax = rev_number is None or rev_number >= 4425
-
-    if new_syntax:
-        # configs is a list of (nickname,config) pairs
-        configs = downward_configs.get_configs(config_list)
-    else:
-        # Use the old config names
-        # We use the config names also as nicknames
-        configs = zip(config_list, config_list)
-    return configs
-
-def _get_preprocess_cmd(translator, preprocessor_name, domain, problem):
-    translator = os.path.abspath(translator)
-    translate_cmd = '%s %s %s' % (translator, domain, problem)
-    preprocess_cmd = '$%s < %s' % (preprocessor_name, 'output.sas')
-    return 'set -e; %s; %s' % (translate_cmd, preprocess_cmd)
-
-
-
-def build_preprocess_exp(combinations, parser=experiments.ExpArgParser()):
-    """
-    When the option --preprocess is passed on the commandline this method
-    is invoked an creates a preprocessing experiment.
-
-    When the resultfetcher is run the following directory structure is created:
-
-    SCRIPTS_DIR
-        - preprocessed-tasks
-            - TRANSLATOR_REV-PREPROCESSOR_REV
-                - DOMAIN
-                    - PROBLEM
-                        - output
-    """
-    exp = experiments.build_experiment(parser)
-
-    # Use unique name for the preprocess experiment
-    if not exp.name.endswith('-p'):
-        exp.name += '-p'
-        logging.info('Experiment name set to %s' % exp.name)
-
-    # Use unique dir for the preprocess experiment
-    if not exp.base_dir.endswith('-p'):
-        exp.base_dir += '-p'
-        logging.info('Experiment directory set to %s' % exp.base_dir)
-
-    # Add some instructions
-    if type(exp) == experiments.LocalExperiment:
-        exp.end_instructions = 'Preprocess experiment has been created. ' \
-            'Before you can create the search experiment you have to run\n' \
-            './%(exp_name)s/run\n' \
-            './resultfetcher.py %(exp_name)s' % {'exp_name': exp.name}
-    elif type(exp) == experiments.GkiGridExperiment:
-        exp.end_instructions = 'You can submit the preprocessing ' \
-            'experiment to the queue now by calling ' \
-            '"qsub ./%(name)s/%(filename)s"' % exp.__dict__
-
-    # Set the eval directory already here, we don't want the results to land
-    # in the default testname-eval
-    exp.set_property('eval_dir', PREPROCESSED_TASKS_DIR)
-
-    # We need the "output" file, not only the properties file
-    exp.set_property('copy_all', True)
-
-    make_checkouts(combinations)
-
-    problems = downward_suites.build_suite(exp.suite)
-
-    for combo in combinations:
-
-        # Omit a possible search checkout
-        translator_co, preprocessor_co = combo[:2]
-
-        translator = translator_co.get_executable()
-        assert os.path.exists(translator), translator
-
-        preprocessor = preprocessor_co.get_executable()
-        assert os.path.exists(preprocessor)
-        preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
-        exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
-
-        for problem in problems:
-            run = exp.add_run()
-            run.require_resource(preprocessor_name)
-
-            domain_file = problem.domain_file()
-            problem_file = problem.problem_file()
-            run.add_resource("DOMAIN", domain_file, "domain.pddl")
-            run.add_resource("PROBLEM", problem_file, "problem.pddl")
-
-            pre_cmd = _get_preprocess_cmd(translator, preprocessor_name, \
-                                        domain_file, problem_file)
-
-            # We can use the main command here, because preprocessing uses
-            # a separate directory
-            run.set_command(pre_cmd)
-
-            run.declare_optional_output("*.groups")
-            run.declare_optional_output("output.sas")
-            run.declare_optional_output("output")
-
-            ext_config = '-'.join([translator_co.rev, preprocessor_co.rev])
-
-            run.set_property('translator', translator_co.rev)
-            run.set_property('preprocessor', preprocessor_co.rev)
-            
-            run.set_property('translator_parent', translator_co.parent_rev)
-            run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
-
-            run.set_property('config', ext_config)
-            run.set_property('domain', problem.domain)
-            run.set_property('problem', problem.problem)
-            run.set_property('id', [ext_config, problem.domain, problem.problem])
-
-    exp.build()
-
-
-
-def build_search_exp(combinations, parser=experiments.ExpArgParser()):
-    """
-    combinations can either be a list of PlannerCheckouts or a list of tuples
-    (translator_co, preprocessor_co, planner_co)
-
-    In the first case we fill the list with Translate and Preprocessor
-    "Checkouts" that use the working copy code
-    """
-    exp = experiments.build_experiment(parser)
-
-    make_checkouts(combinations)
-
-    problems = downward_suites.build_suite(exp.suite)
-
-    experiment_combos = []
-
-    for combo in combinations:
-
-        if isinstance(combo, Checkout):
-            planner_co = combo
-            assert planner_co.part == 'search'
-            translator_co = TranslatorHgCheckout(rev='WORK')
-            preprocessor_co = PreprocessorHgCheckout(rev='WORK')
+    portfolios = []
+    config_nicks = []
+    for name in config_and_porfolio_list:
+        if name.endswith('.py'):
+            portfolios.append((name, ''))
         else:
-            assert len(combo) == 3
-            translator_co, preprocessor_co, planner_co = combo
-            assert translator_co.part == 'translate'
-            assert preprocessor_co.part == 'preprocess'
-            assert planner_co.part == 'search'
+            config_nicks.append(name)
 
-        experiment_combos.append((translator_co, preprocessor_co, planner_co))
-
-    for translator_co, preprocessor_co, planner_co in experiment_combos:
-
-        planner = planner_co.get_executable()
-        assert os.path.exists(planner)
-        planner_name = "PLANNER_%s" % planner_co.rev
-        exp.add_resource(planner_name, planner, planner_co.name)
-
-        configs = _get_configs(planner_co.rev, exp.configs)
-
-        for config_name, config in configs:
-            for problem in problems:
-                run = exp.add_run()
-                run.require_resource(planner_name)
-
-                tasks_dir = PREPROCESSED_TASKS_DIR
-                preprocess_version = translator_co.rev+'-'+preprocessor_co.rev
-                preprocess_dir = os.path.join(tasks_dir, preprocess_version,
-                                    problem.domain, problem.problem)
-                output = os.path.join(preprocess_dir, 'output')
-                # Add the preprocess files for later parsing
-                test_groups = os.path.join(preprocess_dir, 'test.groups')
-                all_groups = os.path.join(preprocess_dir, 'all.groups')
-                output_sas = os.path.join(preprocess_dir, 'output.sas')
-                run_log = os.path.join(preprocess_dir, 'run.log')
-                run_err = os.path.join(preprocess_dir, 'run.err')
-                if not os.path.exists(output):
-                    msg = 'Preprocessed file not found at "%s". ' % output
-                    msg += 'Have you run the preprocessing experiment '
-                    msg += 'and ./resultfetcher.py ?'
-                    logging.warning(msg)
-                run.add_resource('OUTPUT', output, 'output')
-                run.add_resource('TEST_GROUPS', test_groups, 'test.groups')
-                run.add_resource('ALL_GROUPS', all_groups, 'all.groups')
-                run.add_resource('OUTPUT_SAS', output_sas, 'output.sas')
-                run.add_resource('RUN_LOG', run_log, 'run.log')
-                run.add_resource('RUN_ERR', run_err, 'run.err')
-
-                run.set_command("$%s %s < $OUTPUT" % (planner_name, config))
-
-                run.declare_optional_output("sas_plan")
-
-                ext_config = '-'.join([translator_co.rev, preprocessor_co.rev,
-                                        planner_co.rev, config_name])
-
-                run.set_property('translator', translator_co.rev)
-                run.set_property('preprocessor', preprocessor_co.rev)
-                run.set_property('planner', planner_co.rev)
-                
-                run.set_property('translator_parent', translator_co.parent_rev)
-                run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
-                run.set_property('planner_parent', planner_co.parent_rev)
-
-                run.set_property('commandline_config', config)
-
-                run.set_property('config', ext_config)
-                run.set_property('domain', problem.domain)
-                run.set_property('problem', problem.problem)
-                run.set_property('id', [ext_config, problem.domain,
-                                        problem.problem])
-    exp.build()
+    # configs is a list of (config_nick, config) pairs
+    configs = downward_configs.get_configs(config_nicks)
+    return configs + portfolios
 
 
-def build_complete_experiment(combinations, parser=experiments.ExpArgParser()):
-    exp = experiments.build_experiment(parser)
-
-    make_checkouts(combinations)
-
-    problems = downward_suites.build_suite(exp.suite)
-
-    for translator_co, preprocessor_co, planner_co in combinations:
-
-        translator = translator_co.get_executable()
-        assert os.path.exists(translator), translator
-
-        preprocessor = preprocessor_co.get_executable()
-        assert os.path.exists(preprocessor)
-        preprocessor_name = "PREPROCESSOR_%s" % preprocessor_co.rev
-        exp.add_resource(preprocessor_name, preprocessor, preprocessor_co.name)
-
-        planner = planner_co.get_executable()
-        assert os.path.exists(planner), planner
-        planner_name = "PLANNER_%s" % planner_co.rev
-        exp.add_resource(planner_name, planner, planner_co.name)
-
-        configs = _get_configs(planner_co.rev, exp.configs)
-
-        for config_name, config in configs:
-            for problem in problems:
-                run = exp.add_run()
-                run.require_resource(preprocessor_name)
-                run.require_resource(planner_name)
-
-                domain_file = problem.domain_file()
-                problem_file = problem.problem_file()
-                run.add_resource("DOMAIN", domain_file, "domain.pddl")
-                run.add_resource("PROBLEM", problem_file, "problem.pddl")
-
-                pre_cmd = _get_preprocess_cmd(translator, preprocessor_name, \
-                                        domain_file, problem_file)
-                run.set_preprocess(pre_cmd)
-
-                run.set_command("$%s %s < output" % (planner_name, config))
-
-                run.declare_optional_output("*.groups")
-                run.declare_optional_output("output")
-                run.declare_optional_output("output.sas")
-                run.declare_optional_output("sas_plan")
-
-                ext_config = '-'.join([translator_co.rev, preprocessor_co.rev,
-                                        planner_co.rev, config_name])
-
-                run.set_property('translator', translator_co.rev)
-                run.set_property('preprocessor', preprocessor_co.rev)
-                run.set_property('planner', planner_co.rev)
-                
-                run.set_property('translator_parent', translator_co.parent_rev)
-                run.set_property('preprocessor_parent', preprocessor_co.parent_rev)
-                run.set_property('planner_parent', planner_co.parent_rev)
-
-                run.set_property('commandline_config', config)
-
-                run.set_property('config', ext_config)
-                run.set_property('domain', problem.domain)
-                run.set_property('problem', problem.problem)
-                run.set_property('id', [ext_config, problem.domain,
-                                        problem.problem])
-    exp.build()
-    return exp
+def require_src_dirs(exp, combinations):
+    import itertools
+    checkouts = set(itertools.chain(*combinations))
+    for checkout in checkouts:
+        exp.add_resource('SRC_%s' % checkout.name, checkout.src_dir,
+                         'code-%s' % checkout.name)
 
 
-def test():
-    combinations = [
-        (TranslatorHgCheckout(), PreprocessorHgCheckout(rev='TIP'),
-                                PlannerHgCheckout(rev='WORK')),
-        (TranslatorSvnCheckout(), PreprocessorSvnCheckout(rev='head'),
-                                PlannerSvnCheckout(rev='WORK')),
-        (TranslatorSvnCheckout(rev=4321), PreprocessorHgCheckout(rev='tip'),
-                                PlannerSvnCheckout(rev='HEAD')),
-        (TranslatorHgCheckout(rev='a640c9a9284c'),
-            PreprocessorHgCheckout(rev='work'), PlannerHgCheckout(rev='623')),
-                   ]
-    build_experiment(combinations)
+class DownwardRun(experiments.Run):
+    def __init__(self, exp, translator, preprocessor, planner, problem):
+        experiments.Run.__init__(self, exp)
+
+        self.translator = translator
+        self.preprocessor = preprocessor
+        self.planner = planner
+
+        self.problem = problem
+
+        self.set_properties()
+
+    def set_properties(self):
+        self.domain_name = self.problem.domain
+        self.problem_name = self.problem.problem
+
+        self.set_property('translator', self.translator.rev)
+        self.set_property('preprocessor', self.preprocessor.rev)
+        self.set_property('planner', self.planner.rev)
+
+        self.set_property('translator_parent', self.translator.parent_rev)
+        self.set_property('preprocessor_parent', self.preprocessor.parent_rev)
+        self.set_property('planner_parent', self.planner.parent_rev)
+
+        self.set_property('domain', self.domain_name)
+        self.set_property('problem', self.problem_name)
+
+        self.set_property('limit_translate_time', LIMIT_TRANSLATE_TIME)
+        self.set_property('limit_translate_memory', LIMIT_TRANSLATE_MEMORY)
+        self.set_property('limit_preprocess_time', LIMIT_PREPROCESS_TIME)
+        self.set_property('limit_preprocess_memory', LIMIT_PREPROCESS_MEMORY)
+        self.set_property('limit_search_time', LIMIT_SEARCH_TIME)
+        self.set_property('limit_search_memory', LIMIT_SEARCH_MEMORY)
+
+        self.set_property('experiment_name', self.experiment.name)
+
+
+def _prepare_preprocess_run(exp, run):
+    output_files = ["*.groups", "output.sas", "output"]
+
+    run.require_resource(run.preprocessor.shell_name)
+
+    run.add_resource("DOMAIN", run.problem.domain_file(), "domain.pddl")
+    run.add_resource("PROBLEM", run.problem.problem_file(), "problem.pddl")
+
+    run.add_command('translate', [run.translator.shell_name, 'DOMAIN',
+                                  'PROBLEM'],
+                    time_limit=LIMIT_TRANSLATE_TIME,
+                    mem_limit=LIMIT_TRANSLATE_MEMORY)
+    run.add_command('preprocess', [run.preprocessor.shell_name],
+                    stdin='output.sas',
+                    time_limit=LIMIT_PREPROCESS_TIME,
+                    mem_limit=LIMIT_PREPROCESS_MEMORY)
+
+    ext_config = '-'.join([run.translator.name, run.preprocessor.name])
+    run.set_property('config', ext_config)
+    run.set_property('id', [ext_config, run.domain_name, run.problem_name])
+
+    for output_file in output_files:
+        run.declare_optional_output(output_file)
+
+
+def _prepare_search_run(exp, run, config_nick, config):
+    """
+    If preprocess_dir is None we are assuming all relevant files are present
+    in the dir (output, domain.pddl, problem.pddl).
+    Else we use the absolute paths to the preprocess_dir to specify these
+    files.
+    """
+    run.require_resource(run.planner.shell_name)
+    if config:
+        # We have a single planner configuration
+        config = config.replace('\n', ' ').replace('\t', ' ')
+        search_cmd = [run.planner.shell_name] + shlex.split(config)
+    else:
+        # We have a portfolio, config_nick is the path to the portfolio file
+        config_nick = os.path.basename(config_nick)
+        search_cmd = [run.planner.shell_name, '--portfolio', config_nick,
+                      '--plan-file', 'sas_plan']
+    run.add_command('search', search_cmd, stdin='output',
+                    time_limit=LIMIT_SEARCH_TIME,
+                    mem_limit=LIMIT_SEARCH_MEMORY,
+                    abort_on_failure=False)
+    run.declare_optional_output("sas_plan")
+
+    # Validation
+    run.require_resource('VALIDATE')
+    run.require_resource('DOWNWARD_VALIDATE')
+    run.add_command('validate', ['DOWNWARD_VALIDATE', 'VALIDATE', 'DOMAIN',
+                                 'PROBLEM'])
+
+    run.set_property('config_nick', config_nick)
+    run.set_property('commandline_config', config)
+
+    # If all three parts have the same revision don't clutter the reports
+    names = [run.translator.name, run.preprocessor.name, run.planner.name]
+    if len(set(names)) == 1:
+        names = [run.translator.name]
+    ext_config = '-'.join(names + [config_nick])
+
+    run.set_property('config', ext_config)
+    run.set_property('id', [ext_config, run.domain_name, run.problem_name])
+
+
+class DownwardExperiment(experiments.Experiment):
+    def __init__(self, combinations, parser=None):
+        self.combinations = combinations
+        parser = parser or experiments.ExpArgParser()
+        parser.add_argument('--preprocess', action='store_true',
+                            help='build preprocessing experiment')
+        parser.add_argument('--complete', action='store_true',
+                            help='build complete experiment (overrides -p)')
+        compact_help = ('link to preprocessing files instead of copying them. '
+                        'Only use this option if the preprocessed files will '
+                        'NOT be changed during the experiment. This option '
+                        'only has an effect if neither --preprocess nor '
+                        '--complete are set.')
+        parser.add_argument('--compact', action='store_true',
+                            help=compact_help)
+        parser.add_argument('-s', '--suite', default=[], type=tools.csv,
+                            required=True, help=downward_suites.HELP)
+        parser.add_argument('-c', '--configs', default=[], type=tools.csv,
+                            required=False, dest='config_nicks',
+                            help=downward_configs.HELP)
+
+        experiments.Experiment.__init__(self, parser)
+
+        config_needed = self.complete or not self.preprocess
+        if config_needed and not self.config_nicks:
+            logging.error('Please specify at least one planner configuration')
+            sys.exit(2)
+
+        # Save if this is a compact experiment i.e. preprocess files are copied
+        compact = self.compact and not self.preprocess and not self.complete
+        self.set_property('compact', compact)
+
+        checkouts.checkout(combinations)
+        checkouts.compile(combinations)
+        #require_src_dirs(self, combinations)
+        self.problems = downward_suites.build_suite(self.suite)
+        self.configs = _get_configs(self.config_nicks)
+
+        self.make_runs()
+
+    def _prepare_preprocess(self):
+        """
+        When the option --preprocess is passed on the commandline this method
+        is invoked and it creates a preprocessing experiment.
+
+        When the resultfetcher is run the following directory structure is created:
+
+        SCRIPTS_DIR
+            - preprocessed-tasks
+                - TRANSLATOR_REV-PREPROCESSOR_REV
+                    - DOMAIN
+                        - PROBLEM
+                            - output
+        """
+        # Use unique name for the preprocess experiment
+        if not self.name.endswith('-p'):
+            self.name += '-p'
+            logging.info('Experiment name set to %s' % self.name)
+
+        # Use unique dir for the preprocess experiment
+        if not self.path.endswith('-p'):
+            self.path += '-p'
+            logging.info('Experiment directory set to %s' % self.path)
+
+        # Add some instructions
+        if self.environment == environments.LocalEnvironment:
+            self.end_instructions = ('Preprocess experiment has been created. '
+                'Before you can create the search experiment you have to run\n'
+                '%(run_script)s\n'
+                './resultfetcher.py %(exp_path)s' %
+                {'run_script': self.compact_main_script_path,
+                 'exp_path': self.compact_exp_path})
+
+        # Set the eval directory already here, we don't want the results to
+        # land in the default testname-eval
+        self.set_property('eval_dir', os.path.relpath(PREPROCESSED_TASKS_DIR))
+
+        # We need the "output" file, not only the properties file
+        self.set_property('copy_all', True)
+
+        # Don't write the combined properties file for preprocess experiments
+        self.set_property('no_props_file', True)
+
+    def _prepare_translator_and_preprocessor(self, translator, preprocessor):
+        # Copy the whole translate directory
+        self.add_resource(translator.shell_name + '_DIR', translator.bin_dir,
+                          translator.get_path_dest('translate'))
+        # In order to set an environment variable, overwrite the executable
+        self.add_resource(translator.shell_name,
+                          translator.get_bin('translate.py'),
+                          translator.get_path_dest('translate', 'translate.py'))
+        self.add_resource(preprocessor.shell_name,
+                          preprocessor.get_bin('preprocess'),
+                          preprocessor.get_bin_dest())
+
+    def _prepare_planner(self, planner):
+        # Get the planner binary
+        bin = None
+        for name in PLANNER_BINARIES:
+            path = os.path.join(planner.get_bin(name))
+            if os.path.isfile(path):
+                bin = path
+                break
+        if not bin:
+            logging.error('None of the binaries %s could be found in %s' %
+                          (PLANNER_BINARIES, planner.bin_dir))
+            sys.exit(1)
+        self.add_resource(planner.shell_name, bin, planner.get_bin_dest())
+        for bin in PLANNER_HELPERS:
+            src_path = planner.get_bin(bin)
+            if not os.path.isfile(src_path):
+                logging.warning('File %s could not be found. Is it required?' %
+                                src_path)
+                continue
+            self.add_resource('NONAME', src_path, planner.get_path_dest(bin))
+
+        # Find all portfolios and copy them into the experiment directory
+        for portfolio in [name for name in self.config_nicks if name.endswith('.py')]:
+            if not os.path.isfile(portfolio):
+                logging.error('Portfolio file %s could not be found.' % portfolio)
+                sys.exit(1)
+            shell_name = shell_escape(os.path.basename(portfolio))
+            self.add_resource(shell_name, portfolio, planner.get_path_dest(os.path.basename(portfolio)))
+
+        # The tip changeset has the newest validator version so we use this one
+        validate = os.path.join(tools.SCRIPTS_DIR, '..', 'src', 'validate')
+        if not os.path.exists(validate):
+            logging.error('Please run ./build_all in the src directory first '
+                          'to compile the validator')
+            sys.exit(1)
+        self.add_resource('VALIDATE', validate, 'validate')
+
+        downward_validate = os.path.join(tools.SCRIPTS_DIR, 'downward-validate.py')
+        self.add_resource('DOWNWARD_VALIDATE', downward_validate, 'downward-validate')
+
+    def make_runs(self):
+        # Save the experiment stage in the properties
+        if self.complete:
+            self.set_property('stage', 'complete')
+            self._make_complete_runs()
+        elif self.preprocess:
+            self.set_property('stage', 'preprocess')
+            self._prepare_preprocess()
+            self._make_preprocess_runs()
+        else:
+            self.set_property('stage', 'search')
+            self._make_search_runs()
+
+    def _make_preprocess_runs(self):
+        for translator, preprocessor, planner in self.combinations:
+            self._prepare_translator_and_preprocessor(translator, preprocessor)
+
+            for prob in self.problems:
+                run = DownwardRun(self, translator, preprocessor, planner, prob)
+                _prepare_preprocess_run(self, run)
+                self.add_run(run)
+
+    def _make_search_runs(self):
+        for translator, preprocessor, planner in self.combinations:
+            self._prepare_planner(planner)
+
+            for config_nick, config in self.configs:
+                for prob in self.problems:
+                    self._make_search_run(translator, preprocessor, planner,
+                                          config_nick, config, prob)
+
+    def _make_search_run(self, translator, preprocessor, planner, config_nick,
+                         config, prob):
+        preprocess_dir = os.path.join(PREPROCESSED_TASKS_DIR,
+                                      translator.name + '-' + preprocessor.name,
+                                      prob.domain, prob.problem)
+        def path(filename):
+            return os.path.join(preprocess_dir, filename)
+
+        run = DownwardRun(self, translator, preprocessor, planner, prob)
+        self.add_run(run)
+
+        run.set_property('preprocess_dir', preprocess_dir)
+
+        run.set_property('compact', self.compact)
+        sym = self.compact
+
+        _prepare_search_run(self, run, config_nick, config)
+
+        # Add the preprocess files for later parsing
+        run.add_resource('OUTPUT', path('output'), 'output', symlink=sym)
+        run.add_resource('ALL_GROUPS', path('all.groups'), 'all.groups', symlink=sym, required=False)
+        run.add_resource('TEST_GROUPS', path('test.groups'), 'test.groups', symlink=sym, required=False)
+        run.add_resource('OUTPUT_SAS', path('output.sas'), 'output.sas', symlink=sym)
+        run.add_resource('DOMAIN', path('domain.pddl'), 'domain.pddl', symlink=sym)
+        run.add_resource('PROBLEM', path('problem.pddl'), 'problem.pddl', symlink=sym)
+        run.add_resource('PREPROCESS_PROPERTIES', path('properties'),
+                         'preprocess-properties', symlink=sym)
+
+        # The logs have to be copied, not linked
+        run.add_resource('RUN_LOG', path('run.log'), 'run.log')
+        run.add_resource('RUN_ERR', path('run.err'), 'run.err')
+
+    def _make_complete_runs(self):
+        for translator, preprocessor, planner in self.combinations:
+            self._prepare_translator_and_preprocessor(translator, preprocessor)
+            self._prepare_planner(planner)
+
+            for config_nick, config in self.configs:
+                for prob in self.problems:
+                    run = DownwardRun(self, translator, preprocessor, planner, prob)
+                    _prepare_preprocess_run(self, run)
+                    _prepare_search_run(self, run, config_nick, config)
+                    self.add_run(run)
 
 
 def build_experiment(combinations):
-    parser = tools.ArgParser(add_help=False)
-    parser.add_argument('-p', '--preprocess', action='store_true', default=False,
-                        help='build preprocessing experiment')
-    parser.add_argument('--complete', action='store_true', default=False,
-                        help='build complete experiment (overrides -p)')
+    for translator, preprocessor, planner in combinations:
+        assert translator.part == 'translate'
+        assert preprocessor.part == 'preprocess'
+        assert planner.part == 'search'
 
-    known_args, remaining_args = parser.parse_known_args()
-    # delete parsed args
-    sys.argv = [sys.argv[0]] + remaining_args
-
-    logging.info('Preprocess exp: %s' % known_args.preprocess)
-
-    config_needed = known_args.complete or not known_args.preprocess
-
-    parser = experiments.ExpArgParser()
-    parser.add_argument('-s', '--suite', default=[], type=tools.csv,
-                            required=True, help=downward_suites.HELP)
-    parser.add_argument('-c', '--configs', default=[], type=tools.csv,
-                            required=config_needed, help=downward_configs.HELP)
-
-    if known_args.complete:
-        build_complete_experiment(combinations, parser)
-    elif known_args.preprocess:
-        build_preprocess_exp(combinations, parser)
-    else:
-        build_search_exp(combinations, parser)
+    exp = DownwardExperiment(combinations)
+    exp.build()
 
 
 if __name__ == '__main__':
-    combinations = [(TranslatorHgCheckout(rev='WORK'),
-                    PreprocessorHgCheckout(rev='WORK'),
-                    PlannerHgCheckout(rev='WORK'))]
+    combinations = [(checkouts.Translator(rev='WORK'),
+                     checkouts.Preprocessor(rev='WORK'),
+                     checkouts.Planner(rev='WORK'))]
 
     build_experiment(combinations)
-
-

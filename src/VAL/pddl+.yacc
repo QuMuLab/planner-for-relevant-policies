@@ -201,7 +201,7 @@ using namespace VAL;
 %type <t_length_spec> c_length_spec 
 
 %type <t_domain> c_domain c_preamble
-%type <t_dummy> /*c_action_kind*/ c_args_head c_rule_head 
+%type <t_dummy> /*c_action_kind*/ c_args_head c_rule_head c_ntype;
 
 %type <t_optimization> c_optimization
 %type <t_metric> c_metric_spec
@@ -218,7 +218,8 @@ using namespace VAL;
        OPEN_SQ CLOSE_SQ
        DEFINE PDDLDOMAIN REQS EQUALITY STRIPS ADL NEGATIVE_PRECONDITIONS
        TYPING DISJUNCTIVE_PRECONDS EXT_PRECS UNIV_PRECS QUANT_PRECS COND_EFFS
-       FLUENTS TIME DURATIVE_ACTIONS DURATION_INEQUALITIES CONTINUOUS_EFFECTS
+       FLUENTS OBJECTFLUENTS NUMERICFLUENTS ACTIONCOSTS
+       TIME DURATIVE_ACTIONS DURATION_INEQUALITIES CONTINUOUS_EFFECTS
        DERIVED_PREDICATES TIMED_INITIAL_LITERALS PREFERENCES CONSTRAINTS
        ACTION PROCESS EVENT DURATIVE_ACTION DERIVED
        CONSTANTS PREDS FUNCTIONS TYPES ARGS PRE CONDITION PREFERENCE
@@ -232,7 +233,7 @@ using namespace VAL;
        MINIMIZE MAXIMIZE
        HASHT DURATION_VAR TOTAL_TIME
        INCREASE DECREASE SCALE_UP SCALE_DOWN ASSIGN
-       GREATER GREATEQ LESS LESSEQ /* EQUALS */ Q COLON
+       GREATER GREATEQ LESS LESSEQ /* EQUALS */ Q COLON NUMBER
        ALWAYS SOMETIME WITHIN ATMOSTONCE SOMETIMEAFTER SOMETIMEBEFORE
        ALWAYSWITHIN HOLDDURING HOLDAFTER ISVIOLATED
        BOGUS
@@ -350,7 +351,7 @@ c_func_decls :
 ;
 
 c_func_decl :
-    OPEN_BRAC c_new_func_symbol c_typed_var_list CLOSE_BRAC
+    OPEN_BRAC c_new_func_symbol c_typed_var_list CLOSE_BRAC c_ntype
        {$$= new func_decl($2,$3,current_analysis->var_tab_stack.pop());}
 |   OPEN_BRAC error CLOSE_BRAC
 	{yyerrok; 
@@ -358,6 +359,9 @@ c_func_decl :
 	 $$= NULL; }
 ;
 
+c_ntype :
+    HYPHEN NUMBER {$$ = 0;}| /* empty */ {$$=0;};
+    
 c_new_func_symbol :
      NAME 
          { $$=current_analysis->func_tab.symbol_put($1);
@@ -520,7 +524,7 @@ c_new_primitive_types :
         {$$= $1; $$->push_back($2);}
 |   /* empty */ {$$= new pddl_type_list;}
 ;
-
+ 
 c_primitive_types :
     c_primitive_types c_primitive_type 
         {$$= $1; $$->push_back($2);}
@@ -531,7 +535,15 @@ c_init_els :
     c_init_els OPEN_BRAC EQ c_f_head c_number CLOSE_BRAC
         { $$=$1;
 	  $$->assign_effects.push_back(new assignment($4,E_ASSIGN,$5));  
-          requires(E_FLUENTS); 
+          if($4->getFunction()->getName()=="total-cost")
+          {
+          	requires(E_ACTIONCOSTS); 
+          	// Should also check that $5 is 0...
+		  }
+          else
+          {
+          	requires(E_NFLUENTS); 
+          }
 	}
 |   c_init_els c_init_pos_simple_effect
         { $$=$1; $$->add_effects.push_back($2); }
@@ -583,7 +595,7 @@ c_p_effect :
         {$$=new effect_lists; $$->add_effects.push_front($1);}
 |   c_assignment        
         {$$=new effect_lists; $$->assign_effects.push_front($1);
-         requires(E_FLUENTS);}
+         requires(E_NFLUENTS);}
 ;
 
 
@@ -591,7 +603,7 @@ c_p_effects :
     c_p_effects c_neg_simple_effect {$$= $1; $$->del_effects.push_back($2);}
 |   c_p_effects c_pos_simple_effect {$$= $1; $$->add_effects.push_back($2);}
 |   c_p_effects c_assignment        {$$= $1; $$->assign_effects.push_back($2);
-                                     requires(E_FLUENTS); }
+                                     requires(E_NFLUENTS); }
 |   /* empty */  { $$= new effect_lists; }
 ;
 
@@ -632,7 +644,7 @@ c_da_effect :
 |   c_assignment
         { $$= new effect_lists;
 	  $$->assign_effects.push_front($1);
-          requires(E_FLUENTS); }
+          requires(E_NFLUENTS); }
 ;
 
 c_da_effects :
@@ -710,7 +722,7 @@ c_p_effect_da :
         {$$=new effect_lists; $$->add_effects.push_front($1);}
 |   c_f_assign_da
         {$$=new effect_lists; $$->assign_effects.push_front($1);
-         requires(E_FLUENTS);}
+         requires(E_NFLUENTS);}
 ;
 
 
@@ -718,7 +730,7 @@ c_p_effects_da :
     c_p_effects_da c_neg_simple_effect {$$= $1; $$->del_effects.push_back($2);}
 |   c_p_effects_da c_pos_simple_effect {$$= $1; $$->add_effects.push_back($2);}
 |   c_p_effects_da c_f_assign_da       {$$= $1; $$->assign_effects.push_back($2);
-                                     requires(E_FLUENTS); }
+                                     requires(E_NFLUENTS); }
 |   /* empty */  { $$= new effect_lists; }
 ;
 
@@ -859,17 +871,17 @@ c_assignment :
 
 c_f_exp : 
     OPEN_BRAC HYPHEN c_f_exp CLOSE_BRAC %prec UMINUS  
-        { $$= new uminus_expression($3); requires(E_FLUENTS); }
+        { $$= new uminus_expression($3); requires(E_NFLUENTS); }
 |   OPEN_BRAC PLUS c_f_exp c_f_exp CLOSE_BRAC   
-        { $$= new plus_expression($3,$4); requires(E_FLUENTS); }
+        { $$= new plus_expression($3,$4); requires(E_NFLUENTS); }
 |   OPEN_BRAC HYPHEN c_f_exp c_f_exp CLOSE_BRAC
-        { $$= new minus_expression($3,$4); requires(E_FLUENTS); }
+        { $$= new minus_expression($3,$4); requires(E_NFLUENTS); }
 |   OPEN_BRAC MUL c_f_exp c_f_exp CLOSE_BRAC
-        { $$= new mul_expression($3,$4); requires(E_FLUENTS); }
+        { $$= new mul_expression($3,$4); requires(E_NFLUENTS); }
 |   OPEN_BRAC DIV c_f_exp c_f_exp CLOSE_BRAC
-        { $$= new div_expression($3,$4); requires(E_FLUENTS); }
+        { $$= new div_expression($3,$4); requires(E_NFLUENTS); }
 |   c_number { $$=$1; }
-|   c_f_head  { $$= $1; requires(E_FLUENTS); }
+|   c_f_head  { $$= $1; requires(E_NFLUENTS); }
 ;
 
 c_f_exp_t : 
@@ -1057,7 +1069,7 @@ c_goal_descriptor :
        {$$= new qfied_goal($2,$4,$6,current_analysis->var_tab_stack.pop());} 
 |  OPEN_BRAC c_comparison_op c_f_exp c_f_exp CLOSE_BRAC 
        {$$= new comparison($2,$3,$4); 
-        requires(E_FLUENTS);}
+        requires(E_NFLUENTS);}
 ;
 
 c_pre_goal_descriptor_list :
@@ -1300,12 +1312,17 @@ c_require_key :
    | EXT_PRECS   {$$= E_EXT_PRECS;}
    | UNIV_PRECS  {$$= E_UNIV_PRECS;}
    | COND_EFFS   {$$= E_COND_EFFS;}
-   | FLUENTS     {$$= E_FLUENTS;}
+   | FLUENTS     {$$= E_NFLUENTS | E_OFLUENTS;}
    | DURATIVE_ACTIONS
                  {$$= E_DURATIVE_ACTIONS;}
    | TIME        {$$= E_TIME |
-                      E_FLUENTS |
+                      E_NFLUENTS |
                       E_DURATIVE_ACTIONS; }
+   | ACTIONCOSTS {$$=E_ACTIONCOSTS | E_NFLUENTS;} // Note that this is a hack: should
+   											// just be ACTIONCOSTS and then checks 
+   											// throughout for the right requirement
+   | OBJECTFLUENTS {$$=E_OFLUENTS;}
+   | NUMERICFLUENTS {$$=E_NFLUENTS;}
 
    | ADL         {$$= E_STRIPS |
 		      E_TYPING | 

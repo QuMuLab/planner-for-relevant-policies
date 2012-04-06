@@ -1,24 +1,31 @@
 #! /usr/bin/env python
 
 import sys
+import os
 import multiprocessing
 import subprocess
-import time
+
+# make sure we're in the run directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
-def run_cmd(command):
+def process_dir(dir):
     try:
-        run = subprocess.call(command, shell=True, stdout=sys.stdout, stderr=sys.stderr)
+        number = dir.split('/')[-1]
+        print 'Starting run %s/%s' % (number, str(len(dirs)).zfill(5))
+        run = subprocess.call(['./run'], cwd=dir, stdout=sys.stdout, stderr=sys.stderr)
     except KeyboardInterrupt:
         print 'Call to run interrupted'
         run.terminate()
+    except OSError, err:
+        print err
 
-commands = [\
-***COMMANDS***
+dirs = [
+"""DIRS"""
 ]
 
-pool = multiprocessing.Pool(processes=***PROCESSES***)
-res = pool.map_async(run_cmd, commands)
+pool = multiprocessing.Pool(processes="""PROCESSES""")
+res = pool.map_async(process_dir, dirs)
 pool.close()
 
 try:

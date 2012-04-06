@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import operator
+import logging
 
 
 def uniq(seq):
@@ -17,8 +18,6 @@ def uniq(seq):
 
 
 def normalize_tuple(atuple):
-    ##
-    return atuple
     if len(atuple) == 1:
         return atuple[0]
     else:
@@ -30,6 +29,10 @@ class MissingType(object):
         return "missing"
 
 missing = MissingType()
+
+
+def not_missing(val):
+    return val is not missing
 
 
 class ascending(object):
@@ -83,6 +86,27 @@ class DataSet(Bunch):
         else:
             return [item.get(key, missing) for item in self.items]
 
+    def get(self, key, default=missing):
+        if key in self:
+            return [Bunch.__getitem__(self, key)]
+        else:
+            return [item.get(key, default) for item in self.items]
+
+    def get_single_value(self, key, default=missing):
+        """
+        Convenience method for a dataset with only one entry
+        """
+        if key in self:
+            return Bunch.__getitem__(self, key)
+        else:
+            values = [item.get(key, default) for item in self.items]
+            assert len(values) <= 1, 'More than one value found for %s in %s' % \
+                                        (key, self)
+            if len(values) == 0:
+                logging.warning('No value found for %s in %s' % (key, self))
+                return default
+            return values[0]
+
     def keys(self, *attrs, **kwargs):
         default = kwargs.pop("default", None)
         assert not kwargs
@@ -119,7 +143,6 @@ class DataSet(Bunch):
         predicates = list(predicates)
         for key, val in pairs.iteritems():
             predicates.append(lambda item, k=key, v=val: item[k] == v)
-        ##result = DataSet(**self)
         new_items = []
         for item in self.items:
             if all(predicate(item) for predicate in predicates):
@@ -162,7 +185,7 @@ class DataSet(Bunch):
         for item in self.items:
             key_to_page[item.key(*attrs)].append(item)
         return pages
-        
+
     def get_attributes(self):
         """
         """
@@ -170,12 +193,12 @@ class DataSet(Bunch):
         for item in self.items:
             attrs |= set(item.keys())
         return sorted(list(attrs))
-        
+
     def copy(self):
         """
         """
         return DataSet(self)
-    
+
 
 
 def testme():
