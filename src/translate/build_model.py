@@ -72,7 +72,7 @@ class JoinRule(BuildRule):
         right_args = conditions[1].args
         left_vars = set([var for var in left_args if isinstance(var, int)])
         right_vars = set([var for var in right_args if isinstance(var, int)])
-        common_vars = left_vars & right_vars
+        common_vars = sorted(left_vars & right_vars)
         self.common_var_positions = [
             [args.index(var) for var in common_vars]
             for args in (list(left_args), list(right_args))]
@@ -278,7 +278,7 @@ class MatchGenerator:
 
 class Queue:
     def __init__(self, atoms):
-        self.queue = atoms
+        self.queue = sorted(atoms)
         self.queue_pos = 0
         self.enqueued = set([(atom.predicate,) + tuple(atom.args)
                              for atom in self.queue])
