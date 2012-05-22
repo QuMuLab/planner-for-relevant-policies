@@ -157,7 +157,7 @@ class ProductRule(BuildRule):
 
         eff_args = self.prepare_effect(new_atom, cond_index)
 
-        for bindings_list in tools.product(*bindings_factors):
+        for bindings_list in itertools.product(*bindings_factors):
             bindings = itertools.chain(*bindings_list)
             for var_no, obj in bindings:
                 eff_args[var_no] = obj
@@ -299,7 +299,7 @@ class Queue:
         self.queue_pos += 1
         return result
     def popped_elements(self):
-        return queue.queue[:self.queue_pos]
+        return self.queue[:self.queue_pos]
 
 def compute_model(prog):
     with timers.timing("Preparing model"):
