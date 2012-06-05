@@ -787,6 +787,10 @@ iterated_search = """\
 repeat_last=false)"\
 """
 
+lmcut = "--search 'astar(lmcut())'"
+
+bjolp = lmopt_rhw_hm1
+
 
 def get_configs(configs_strings):
     """
@@ -818,9 +822,9 @@ def get_configs(configs_strings):
                 msg = 'Config "%s" could not be found in "%s"'
                 logging.error(msg % (config_name, file))
                 sys.exit()
-            try:
+            if callable(config_or_func):
                 config_list = config_or_func()
-            except TypeError:
+            else:
                 config_list = [(config_name, config_or_func)]
 
             all_configs.extend(config_list)
