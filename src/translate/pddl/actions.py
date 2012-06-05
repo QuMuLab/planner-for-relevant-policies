@@ -76,7 +76,7 @@ class Action(object):
         for effect in self.effects:
             effect.uniquify_variables(self.type_map)
     def unary_actions(self):
-        # TODO: An neue Effect-Repräsentation anpassen.
+        # TODO: An neue Effect-Representation anpassen.
         result = []
         for i, effect in enumerate(self.effects):
             unary_action = copy.copy(self)
