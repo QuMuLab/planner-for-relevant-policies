@@ -175,6 +175,14 @@ int main(int argc, const char **argv) {
     sim->dump();
     
     cout << "\n\n" << endl;
+    
+    if (g_dump_policy) {
+        cout << "Dumping the policy..." << endl;
+        ofstream outfile;
+        outfile.open("policy.out", ios::out);
+        g_policy->generate_cpp_input(outfile);
+        outfile.close();
+    }
 
     return sim->succeeded ? 0 : 1;
 }
