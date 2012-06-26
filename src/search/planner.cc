@@ -176,12 +176,15 @@ int main(int argc, const char **argv) {
     
     cout << "\n\n" << endl;
     
-    if (g_dump_policy) {
+    if (1 == g_dump_policy) {
         cout << "Dumping the policy..." << endl;
         ofstream outfile;
         outfile.open("policy.out", ios::out);
         g_policy->generate_cpp_input(outfile);
         outfile.close();
+    } else if (2 == g_dump_policy) {
+        cout << "Dumping the policy..." << endl;
+        g_policy->dump_human_policy();
     }
 
     return sim->succeeded ? 0 : 1;

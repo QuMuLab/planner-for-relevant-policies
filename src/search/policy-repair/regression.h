@@ -57,6 +57,13 @@ struct RegressionStep : PolicyItem {
 
     string get_name();
     void dump() const;
+    
+    bool operator< (const RegressionStep& other) const {
+        if (is_sc != other.is_sc)
+            return is_sc;
+        else
+            return distance < other.distance;
+    }
 };
 
 void generate_regressable_ops();

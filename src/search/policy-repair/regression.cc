@@ -19,7 +19,7 @@ string RegressionStep::get_name() {
     if (is_goal)
         return "goal,1,0";
     else
-        return op->get_name() + "," + (is_sc ? "1" : "0") + "," + static_cast<ostringstream*>( &(ostringstream() << distance) )->str();
+        return op->get_nondet_name() + "," + (is_sc ? "1" : "0") + "," + static_cast<ostringstream*>( &(ostringstream() << distance) )->str();
 }
 
 
