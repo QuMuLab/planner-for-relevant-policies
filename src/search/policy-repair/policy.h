@@ -58,6 +58,8 @@ public:
     
     void init_scd();
     bool step_scd(vector<State *> &failed_states);
+    
+    void dump_human_policy();
 };
 
 #endif

@@ -240,7 +240,7 @@ SearchEngine *OptionParser::parse_cmd_line(
             g_optimized_scd = (1 == atoi(argv[i]));
         } else if (arg.compare("--dump-policy") == 0) {
             ++i;
-            g_dump_policy = (1 == atoi(argv[i]));
+            g_dump_policy = atoi(argv[i]);
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;

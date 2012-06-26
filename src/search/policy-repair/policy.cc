@@ -688,3 +688,35 @@ bool Policy::step_scd(vector<State *> &failed_states) {
     }
     return made_change;
 }
+
+bool regstep_compare(PolicyItem* first, PolicyItem* second) {
+    if (((RegressionStep*)first)->is_sc != ((RegressionStep*)second)->is_sc)
+		return ((RegressionStep*)first)->is_sc;
+	else
+		return ((RegressionStep*)first)->distance < ((RegressionStep*)second)->distance;
+}
+void Policy::dump_human_policy() {
+	
+	all_items.sort(regstep_compare);
+	
+    fstream outfile;
+    outfile.open("policy.out", ios::out);
+        
+    for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
+         op_iter != all_items.end(); ++op_iter) {
+        
+        outfile << "\nIf holds:";
+        for (int i = 0; i < g_variable_domain.size(); i++) {
+			if (state_var_t(-1) != (*((*op_iter)->state))[i]) {
+				outfile << " ";
+				outfile << g_variable_name[i] << ":"
+				     << static_cast<int>((*((*op_iter)->state))[i]);
+			}
+		}
+		outfile << endl;
+        outfile << "Execute: " << ((RegressionStep*)(*op_iter))->get_name() << endl;
+    }
+    
+    outfile.close();
+}
+
