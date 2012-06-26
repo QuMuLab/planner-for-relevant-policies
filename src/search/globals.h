@@ -93,6 +93,7 @@ extern int g_num_trials; // Number of trials that should be used for the simulat
 extern double g_jic_limit; // Limit for the just-in-case repairs
 extern std::vector<std::pair<int, int> > g_goal_orig;
 extern Heuristic *g_heuristic_for_reachability;
+extern bool g_dump_policy; // Whether or not we should dump the policy
 
 /* Timers */
 extern Timer g_timer_regression;

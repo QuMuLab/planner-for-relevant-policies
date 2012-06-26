@@ -202,7 +202,7 @@ void GeneratorSwitch::dump(string indent) const {
 }
 
 void GeneratorSwitch::generate_cpp_input(ofstream &outfile) const {
-    outfile << "switch " << endl;
+    outfile << "switch " << switch_var << endl;
     outfile << "check " << immediate_items.size() << endl;
     for (list<PolicyItem *>::const_iterator op_iter = immediate_items.begin();
          op_iter != immediate_items.end(); ++op_iter)
@@ -230,7 +230,7 @@ void GeneratorLeaf::generate_cpp_input(ofstream &outfile) const {
     outfile << "check " << applicable_items.size() << endl;
     for (list<PolicyItem *>::const_iterator op_iter = applicable_items.begin();
          op_iter != applicable_items.end(); ++op_iter)
-        outfile << *op_iter << endl;
+        outfile << (*op_iter)->get_name() << endl;
 }
 
 void GeneratorEmpty::dump(string indent) const {

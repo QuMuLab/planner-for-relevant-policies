@@ -399,6 +399,7 @@ int g_num_trials = 1; // Number of trials that should be used for the simulation
 double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
 vector<pair<int, int> > g_goal_orig;
 Heuristic *g_heuristic_for_reachability;
+bool g_dump_policy = true; // Whether or not we should dump the policy
 
 Timer g_timer_regression;
 Timer g_timer_simulator;

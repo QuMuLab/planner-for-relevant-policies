@@ -37,6 +37,7 @@ public:
     Policy();
     Policy(list<PolicyItem *> &reg_items);
     ~Policy();
+    
     void dump() const;
     void generate_cpp_input(ofstream &outfile) const;
     
