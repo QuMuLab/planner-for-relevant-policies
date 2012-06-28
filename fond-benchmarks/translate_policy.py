@@ -1,5 +1,45 @@
 
-from krrt.utils import get_lines, read_file
+import re
+
+def read_file(file_name):
+    """Return a list of the lines of a file."""
+    f = open(file_name, 'r')
+    file_lines = [line.rstrip("\n") for line in f.readlines()]
+    f.close()
+    return file_lines
+
+def get_lines(file_name, lower_bound = None, upper_bound = None):
+    """ Gets all of the lines between the regex lower bound and upper bound. """
+
+    toReturn = []
+
+    # Get the file
+    f = open(file_name, 'r')
+    file_lines = [line.rstrip("\n") for line in f.readlines()]
+    f.close()
+
+    if not lower_bound:
+        accepting = True
+    else:
+        accepting = False
+        pattern_low = re.compile(lower_bound, re.MULTILINE)
+
+    if not upper_bound:
+        upper_bound = 'THIS IS SOME CRAZY STRING THAT NOONE SHOULD EVER HAVE -- NARF!'
+
+    pattern_high = re.compile(upper_bound, re.MULTILINE)
+
+    for line in file_lines:
+        if accepting:
+            if pattern_high.search(line):
+                return toReturn
+
+            toReturn.append(line)
+        else:
+            if pattern_low.search(line):
+                accepting = True
+
+    return toReturn
 
 index = 0
 var_lines = get_lines('output', lower_bound = 'end_metric', upper_bound = 'begin_state')
