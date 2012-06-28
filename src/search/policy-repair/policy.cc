@@ -707,10 +707,10 @@ void Policy::dump_human_policy() {
         
         outfile << "\nIf holds:";
         for (int i = 0; i < g_variable_domain.size(); i++) {
-			if (state_var_t(-1) != (*((*op_iter)->state))[i]) {
+			if (state_var_t(-1) != (*(((RegressionStep*)(*op_iter))->sc_state))[i]) {
 				outfile << " ";
 				outfile << g_variable_name[i] << ":"
-				     << static_cast<int>((*((*op_iter)->state))[i]);
+				     << static_cast<int>((*(((RegressionStep*)(*op_iter))->sc_state))[i]);
 			}
 		}
 		outfile << endl;
