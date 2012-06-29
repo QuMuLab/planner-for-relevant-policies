@@ -1,0 +1,50 @@
+Planner: PRP -- (P)lanning for (R)elevant (P)olicies
+Version: 0.1
+
+Build:
+cd src/
+./build_all
+
+Usage:
+./src/plan-prp <domain> <problem> <output file> OPTIONS
+
+Options:
+--jic-limit TIME_LIMIT
+    Only perform JIC for the given time.
+
+--forgetpolicy 1/0
+    Throw out the policy after every simulation.
+
+--fullstate 1/0
+    Use full states in the regression.
+
+--planlocal 1/0
+    Plan locally to recover before planning for the goal.
+
+--partial-planlocal 1/0
+    Use the partial state that matches the expect state when planning locally.
+
+--limit-planlocal 1/0
+    Limit the planlocal searching to a fixed number of search steps.
+
+--plan-with-policy 1/0
+    Stop searching when the policy matches the current state.
+
+--trials NUM_TRIALS
+    Number of trials to run for the simulator.
+
+--detect-deadends 1/0
+    Use primitive deadend detection to ensure a strongly cyclic solution.
+
+--generalize-deadends 1/0
+    Generalize the deadends found based on relaxed reachability.
+
+--online-deadends 1/0
+    Generate and store deadend states that are found online.
+
+--optimized-scd 1/0
+    Perform optimized strong cyclic detection when checking the partial policy.
+
+--dump-policy 1/2
+    Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.
+

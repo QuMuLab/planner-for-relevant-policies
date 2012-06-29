@@ -295,6 +295,8 @@ string OptionParser::usage(string progname) {
         "    Generate and store deadend states that are found online.\n\n"
         "--optimized-scd 1/0\n"
         "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
+        "--dump-policy 1/2\n"
+        "    Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }
