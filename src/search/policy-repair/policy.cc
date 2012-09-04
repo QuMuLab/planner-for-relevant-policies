@@ -466,7 +466,8 @@ RegressionStep *Policy::get_best_step(const State &curr) {
     // We should only return steps that aren't forbidden
     vector<PolicyItem *> forbidden_items;
     set<string> forbidden;
-    g_deadend_policy->generate_applicable_items(curr, forbidden_items);
+    if (!complete)
+        g_deadend_policy->generate_applicable_items(curr, forbidden_items);
     for (int i = 0; i < forbidden_items.size(); i++)
         forbidden.insert(((NondetDeadend*)(forbidden_items[i]))->op_name);
     

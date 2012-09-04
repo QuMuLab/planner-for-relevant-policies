@@ -48,7 +48,7 @@ public:
     bool empty() { return (0 == root); }
     
     void mark_strong() { score = 1.0; }
-    void mark_complete() { complete = true; }
+    void mark_complete() { complete = true; score = 0.0; }
     
     void evaluate();
     double get_score();
