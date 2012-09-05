@@ -5,6 +5,9 @@ Build:
 cd src/
 ./build_all
 
+Citation:
+./src/plan-prp --citation
+
 Usage:
 ./src/plan-prp <domain> <problem> <output file> OPTIONS
 
