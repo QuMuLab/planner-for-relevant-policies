@@ -66,9 +66,11 @@ int main(int argc, const char **argv) {
      *      since we need to know if g_detect_deadends is true or not. */
     if (g_detect_deadends) {
         generate_regressable_ops();
-        g_deadend_policy = new Policy();
-        g_deadend_states = new Policy();
     }
+    /* HAZ: We create the policies even if we aren't using deadends, as
+     *      they may be consulted by certain parts of the code. */
+    g_deadend_policy = new Policy();
+    g_deadend_states = new Policy();
     
     
     /***************************************
