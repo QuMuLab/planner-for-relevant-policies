@@ -1,5 +1,6 @@
 #include "utilities.h"
 
+#include <unistd.h>
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
