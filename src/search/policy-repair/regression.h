@@ -14,6 +14,7 @@
 struct PolicyItem {
     State *state;
     PolicyItem(State *s) : state(s) {}
+    virtual ~PolicyItem() {}
     virtual string get_name() = 0;
     virtual void dump() const = 0;
 };
