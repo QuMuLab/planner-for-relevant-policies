@@ -61,7 +61,7 @@ extern bool LaTeXRecord;
 extern ostream*report;
 extern int NoGraphPoints;
 extern bool makespanDefault;
-
+extern bool stepLengthDefault;
 
 };
 

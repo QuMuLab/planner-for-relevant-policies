@@ -573,7 +573,7 @@ Action::handleEffects(Ownership & o,EffectsRecord & e,
 		{
 			return false;
 		};
-		e.pushAdd(p);
+		e.pushAdd(p,this);
 	};
 
 	for(list<simple_effect*>::const_iterator i1 = effs->del_effects.begin();
@@ -585,7 +585,7 @@ Action::handleEffects(Ownership & o,EffectsRecord & e,
 		{
 			return false;
 		};
-		e.pushDel(p);
+		e.pushDel(p,this);
 	};
 	
 	for(list<cond_effect*>::const_iterator i2 = effs->cond_effects.begin();
@@ -626,7 +626,7 @@ Action::handleEffects(Ownership & o,EffectsRecord & e,
 		{
 			return false;
 		};
-		e.addFEffect(lhs,(*i3)->getOp(),v);
+		e.addFEffect(lhs,(*i3)->getOp(),v,this);
 	};
 
 	for(list<forall_effect*>::const_iterator i4 = effs->forall_effects.begin();
@@ -982,7 +982,7 @@ bool CtsEffectAction::constructEffects(Ownership & o,EffectsRecord & e,const Sta
 		{
 
 	                     
-		      e.addFEffect(i->first,E_ASSIGN_CTS, i->second->evaluate(ace->localUpdateTime) );
+		      e.addFEffect(i->first,E_ASSIGN_CTS, i->second->evaluate(ace->localUpdateTime), this );
 		  
 		};
 

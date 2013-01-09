@@ -77,12 +77,17 @@ private:
 	
 	double time;
 
-   //record which literals and PNEs have changed by appliaction of an happening (for triggering events)
-   set<const SimpleProposition *> changedLiterals;
-   set<const FuncExp *> changedPNEs;
- 	 FEScalar evaluateFE(const FuncExp * fe) const;
+   	//record which literals and PNEs have changed by appliaction of an happening (for triggering events)
+   	set<const SimpleProposition *> changedLiterals;
+   	set<const FuncExp *> changedPNEs;
 
-   static vector<StateObserver *> sos;
+	// Record which actions changed things.
+   	map<const SimpleProposition *,set<const Action*> > responsibleForProps;
+   	map<const FuncExp *,set<const Action*> > responsibleForPNEs;
+   	
+   	FEScalar evaluateFE(const FuncExp * fe) const;
+
+   	static vector<StateObserver *> sos;
    
 public:
 	State(Validator * const v,const effect_lists* is);
@@ -179,6 +184,20 @@ public:
 	
 	static void addObserver(StateObserver * s) {sos.push_back(s);}
 	bool hasObservers() const {return !sos.empty();}
+	void recordResponsibles(const map<const SimpleProposition *,set<const Action *> >& m1,
+				const map<const FuncExp *,set<const Action *> > & m2)
+	{
+		responsibleForProps = m1;
+		responsibleForPNEs = m2;
+	}
+	const set<const Action *> & whatDidThis(const SimpleProposition * sp) const
+	{
+		return responsibleForProps.find(sp)->second;
+	}
+	const set<const Action *> & whatDidThis(const FuncExp * fe) const
+	{
+		return responsibleForPNEs.find(fe)->second;
+	}
 };
 
 inline ostream & operator<<(ostream & o,const State & s)
