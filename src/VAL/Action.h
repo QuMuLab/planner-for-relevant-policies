@@ -158,9 +158,10 @@ public:
 		o << getName();
 	};
 
-	bool isRealAction() const {return !timedInitialLiteral;};
-	bool isRegAction() const {return true;};
-  
+	virtual bool isRealAction() const {return !timedInitialLiteral;};
+	virtual bool isRegAction() const {return true;};
+
+  	virtual const Action * startOfAction() const {return this;};
 	bool operator==(const plan_step & ps) const;
 };
 
@@ -198,6 +199,8 @@ public:
 	};
 
 	const Action * partner() const;
+
+	const Action * startOfAction() const {return (const Action *) start;};
 };
 
 
@@ -265,6 +268,7 @@ public:
    bool isRealAction() const {return false;};
 	bool isRegAction() const {return false;};
 	const Action * partner() const;
+	const Action * startOfAction() const {return (const Action *) start;};
 };
 
 void buildForAllCondActions(Validator * vld,const durative_action * da,
@@ -307,6 +311,7 @@ public:
 			o << "Update of continuously changing Primitive Numerical Expressions";
 	};
 	const Action * partner() const;
+	const Action * startOfAction() const {return (const Action *) start;};
 };
 
 class DurativeActionElement : public Action {
@@ -449,6 +454,7 @@ public:
 			o << " - end";
 		};
 	};
+	const Action * startOfAction() const {return otherEnd;};
 
 };
 

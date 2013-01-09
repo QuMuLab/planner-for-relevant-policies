@@ -346,7 +346,7 @@ public :
 		// Create new symbol for name and add to table
 		symbol_class* sym= factory->build(name);
 
-		this->insert(std::make_pair(name,sym));
+		insert(std::make_pair(name,sym));
 		return sym;
 	    }
 	};
@@ -389,7 +389,7 @@ public :
 		log_error( E_WARNING,
 			   "Undeclared symbol: " + name );
 		symbol_class* sym= factory->build(name);
-		this->insert(std::make_pair(name,sym));
+		insert(std::make_pair(name,sym));
 
 		return(sym);
  	    }
@@ -413,7 +413,7 @@ public :
  	    {
 		// add new symbol
 		symbol_class* sym= factory->build(name);
-		this->insert(std::make_pair(name,sym));
+		insert(std::make_pair(name,sym));
 
 		return(sym);
  	    }
@@ -1621,14 +1621,28 @@ public:
 class metric_spec : public parse_category
 {
 public:
-    optimization opt;
-    expression* expr;
+    list<optimization> opt;
+    pc_list<expression*> * expr;
 
-    metric_spec(optimization o, expression* e) : opt(o), expr(e) {};
-    virtual ~metric_spec() { delete expr; };
+    metric_spec(optimization o, expression* e) : opt(), 
+    	expr(new pc_list<expression*>()) {
+    	opt.push_back(o);
+    	expr->push_back(e);
+    };
+    virtual ~metric_spec() { 
+    	delete expr;
+    };
     virtual void display(int ind) const;
     virtual void write(ostream & o) const;
 	virtual void visit(VisitController * v) const;
+
+	void add(metric_spec * m)
+	{
+		opt.push_back(m->opt.front());
+		expr->push_back(m->expr->front());
+		m->expr->clear();
+		delete m;
+	}
 };
 
 
