@@ -1962,15 +1962,15 @@ vector<string> Gantt::getSigObjs(const Action * a)
 	{
 		par = a->getBindings().find(*i)->second->getName();
 		//is parameter a sigificant object?
-		vector<string>::iterator i = std::find(sigObjs.begin(),sigObjs.end(),par);
-		if(i != sigObjs.end())
+		vector<string>::iterator j = std::find(sigObjs.begin(),sigObjs.end(),par);
+		if(j != sigObjs.end())
 		{
 
 			so.push_back(par);
 
 			//add to list of used sig objs if nec
-			vector<string>::iterator j = std::find(usedSigObjs.begin(),usedSigObjs.end(),par);
-			if(j == usedSigObjs.end()) usedSigObjs.push_back(par);
+			vector<string>::iterator k = std::find(usedSigObjs.begin(),usedSigObjs.end(),par);
+			if(k == usedSigObjs.end()) usedSigObjs.push_back(par);
 		};
 
 		
