@@ -19,6 +19,7 @@ using namespace __gnu_cxx;
 #include "operator.h"
 #include "rng.h"
 #include "state.h"
+#include "state_registry.h"
 #include "successor_generator.h"
 #include "timer.h"
 
@@ -235,7 +236,6 @@ void read_axioms(istream &in) {
         g_axioms.push_back(Operator(in, true));
 
     g_axiom_evaluator = new AxiomEvaluator;
-    g_axiom_evaluator->evaluate(*g_initial_state);
 }
 
 void read_everything(istream &in) {
@@ -243,10 +243,23 @@ void read_everything(istream &in) {
     read_metric(in);
     read_variables(in);
     read_mutexes(in);
-    g_initial_state = new State(in);
+    // Read initial state and keep it until after the axioms are read.
+    state_var_t *initial_state_vars = new state_var_t[g_variable_domain.size()];
+    check_magic(in, "begin_state");
+    for (int i = 0; i < g_variable_domain.size(); i++) {
+        int var;
+        in >> var;
+        initial_state_vars[i] = var;
+    }
+    check_magic(in, "end_state");
+    g_default_axiom_values.assign(initial_state_vars,
+                                  initial_state_vars + g_variable_domain.size());
+
     read_goal(in);
     read_operators(in);
     read_axioms(in);
+    // After the axioms are known, we can create the initial state (see above).
+    g_initial_state = State::create_initial_state(initial_state_vars);
     check_magic(in, "begin_SG");
     g_successor_generator = read_successor_generator(in);
     check_magic(in, "end_SG");
@@ -332,3 +345,5 @@ CausalGraph *g_causal_graph;
 Timer g_timer;
 string g_plan_filename = "sas_plan";
 RandomNumberGenerator g_rng(2011); // Use an arbitrary default seed.
+StateRegistry g_state_registry;
+
