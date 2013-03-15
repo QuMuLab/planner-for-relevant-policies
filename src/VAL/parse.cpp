@@ -42,7 +42,7 @@
 #include <iostream>
 #include <fstream>
 #include "ptree.h"
-#include <FlexLexer.h>
+#include "FlexLexer.h"
 
 extern int yyparse();
 extern int yydebug;

@@ -30,7 +30,7 @@
 #include "TIM.h"
 #include "FuncAnalysis.h"
 #include "PinguPlanGenerator.h"
-#include <FlexLexer.h>
+#include "FlexLexer.h"
 
 using namespace std;
 using namespace TIM;
