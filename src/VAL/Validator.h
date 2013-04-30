@@ -62,6 +62,9 @@
 
 
 namespace VAL {
+
+  extern bool makespanDefault;
+  extern bool stepLengthDefault;
   
 class plan;
 class TypeChecker;
@@ -221,6 +224,8 @@ private:
 	TrajectoryConstraintsMonitor tjm;
 
 	bool step();
+
+	void computeMetric(const State *,vector<double> &) const;
   
 public:
 	Validator(const DerivationRules * dr,double tol,TypeChecker & tc,const operator_list * ops,const effect_lists * is,const plan * p,const metric_spec * m,
@@ -234,7 +239,7 @@ public:
 
 	bool execute();
 	bool checkGoal(const goal * g);
-	double finalValue() const;
+	vector<double> finalValue() const;
 	int simpleLength() const;
 	bool durativePlan() const;
 	double getTolerance() const {return tolerance;};

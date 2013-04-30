@@ -1504,7 +1504,7 @@ void EffectsRecord::enact(State * s) const
    else
 
    {
-      
+      	s->recordResponsibles(responsibleForProps,responsibleForPNEs);
           	for(vector<const SimpleProposition *>::const_iterator i = dels.begin();i != dels.end();++i)
       	{
       		s->delChange(*i);
