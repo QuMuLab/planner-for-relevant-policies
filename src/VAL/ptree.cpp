@@ -703,8 +703,16 @@ void violation_term::write(ostream & o) const
 void metric_spec::display(int ind) const
 {
     TITLE(metric_spec);
-    LEAF(opt);
-    FIELD(expr);
+    pc_list<expression*>::const_iterator j = expr->begin();
+    for(list<optimization>::const_iterator i = opt.begin();
+    	i != opt.end();++i,++j)
+    {
+    	indent(ind);
+    	cout << "opt: " << *i;
+    	LABEL(expr);
+    	indent(ind);
+    	(*j)->display(ind+1);
+    }
 }
 
 void metric_spec::write(ostream & o) const

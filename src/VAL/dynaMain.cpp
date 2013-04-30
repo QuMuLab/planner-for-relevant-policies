@@ -52,7 +52,7 @@ bool ContinueAnyway;
 bool ErrorReport;
 bool InvariantWarnings;
 bool LaTeX;
-bool makespanDefault;
+
 };
 
 int main(int argc,char * argv[])

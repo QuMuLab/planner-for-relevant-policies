@@ -49,7 +49,7 @@
 #include <iostream>
 #include <fstream>
 #include "ptree.h"
-#include <FlexLexer.h>
+#include "FlexLexer.h"
 #include "TypeStripWC.h"
 
 using std::ifstream;

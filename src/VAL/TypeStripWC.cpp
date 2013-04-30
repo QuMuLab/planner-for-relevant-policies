@@ -588,18 +588,23 @@ void TypeStripWriteController::write_domain(ostream & o,const domain * p)
 
 void TypeStripWriteController::write_metric_spec(ostream & o,const metric_spec * p)
 {
-	switch(p->opt)
+	list<optimization>::const_iterator i = p->opt.begin();
+	pc_list<expression*>::const_iterator j = p->expr->begin();
+	for(;i != p->opt.end();++i,++j)
 	{
-		case E_MAXIMIZE:
-			o << "(:metric maximize ";
-			break;
-		case E_MINIMIZE:
-			o << "(:metric minimize ";
-			break;
-		default:
-			break;
-	};
-	o << *(p->expr) << ")\n";
+		switch(*i)
+		{
+			case E_MAXIMIZE:
+				o << "(:metric maximize ";
+				break;
+			case E_MINIMIZE:
+				o << "(:metric minimize ";
+				break;
+			default:
+				break;
+		};
+		o << **j << ")\n";
+	}
 };
 
 void TypeStripWriteController::write_length_spec(ostream & o,const length_spec * p)

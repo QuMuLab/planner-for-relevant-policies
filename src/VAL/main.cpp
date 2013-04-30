@@ -55,7 +55,7 @@
 #include <iostream>
 #include <fstream>
 #include "ptree.h"
-#include <FlexLexer.h>
+#include "FlexLexer.h"
 #include "Utils.h"
 
 #include "LaTeXSupport.h"
@@ -91,12 +91,12 @@ bool LaTeX;
 
 ostream * report = &cout;
 
-bool makespanDefault;
+
 };
 
 char * current_filename;
 
-typedef map<double,vector<string> > Ranking;
+typedef map<double,vector<pair<string,vector<double> > > > Ranking;
 
 using namespace VAL;
 
@@ -129,6 +129,7 @@ void usage()
 	     <<         "    -s         -- Silent mode: output is generated only when errors occur\n"
 	     << "    -S         -- Silent mode with values: outputs only plan values in order (failed for bad plan)\n"
 			 << "    -m         -- Use makespan as metric for temporal plans (overrides any other metric).\n"
+	     << "    -L         -- Add step length as metric (in addition to any other metric).\n"
 			 << "    -f <file>  -- LaTeX report will be stored in file 'file.tex'\n" 
 		     << "Multiple plan file arguments can be appended for checking.\n\n";
 
@@ -278,21 +279,33 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 		    	{
 		    		if(!(pr.getValidator().hasInvariantWarnings()))
 		    		{
-		    			rnk[pr.getValidator().finalValue()].push_back(name);
+		    			vector<double> vs(pr.getValidator().finalValue());
+		    			rnk[vs[0]].push_back(make_pair(name,vs));
 		    			if(!Silent && !LaTeX) *report << "Plan valid\n";
 		    			if(LaTeX) *report << "\\\\\n";
-		    			if(!Silent && !LaTeX) *report << "Final value: " << pr.getValidator().finalValue() << "\n";
-		    			if(Silent > 1) 
+		    			if(!Silent && !LaTeX) *report << "Final value: "; 
+		    			if(Silent > 1 || (!Silent && !LaTeX)) 
 		    			{
-		    				*report << pr.getValidator().finalValue() << "\n";
+		    				vector<double> vs(pr.getValidator().finalValue());
+		    				for(unsigned int i = 0;i < vs.size();++i)
+		    					*report << vs[i] << " ";
+		    				*report << "\n";
 		    			}
 		    		}
 		    		else
 		    		{
-						rnkInv[pr.getValidator().finalValue()].push_back(name);
+		    			vector<double> vs(pr.getValidator().finalValue());
+						rnkInv[vs[0]].push_back(make_pair(name,vs));
 		    			if(!Silent && !LaTeX) *report << "Plan valid (subject to further invariant checks)\n";
 		    			if(LaTeX) *report << "\\\\\n";
-		    			if(!Silent && !LaTeX) *report << "Final value: " << pr.getValidator().finalValue();
+		    			if(!Silent && !LaTeX) 
+		    			{
+		    				*report << "Final value: ";
+		    				vector<double> vs(pr.getValidator().finalValue());
+		    				for(unsigned int i = 0;i < vs.size();++i)
+		    					*report << vs[i] << " ";
+		    				*report << "\n";
+		    			};
 						if(Silent > 1)
 						{
 							*report << "failed\n";
@@ -409,7 +422,7 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 
 
 		if(an_analysis.the_problem->metric &&
-				an_analysis.the_problem->metric->opt == E_MINIMIZE)
+				an_analysis.the_problem->metric->opt.front() == E_MINIMIZE)
 		{
 			if(LaTeX)
 			{
@@ -457,7 +470,7 @@ void executePlans(int & argc,char * argv[],int & argcount,TypeChecker & tc,const
 
 
 		if(an_analysis.the_problem->metric &&
-				an_analysis.the_problem->metric->opt == E_MINIMIZE)
+				an_analysis.the_problem->metric->opt.front() == E_MINIMIZE)
 		{
 			if(LaTeX)
 			{
@@ -588,6 +601,7 @@ int main(int argc,char * argv[])
 	LaTeX = false;
 	ofstream possibleLatexReport;
 	makespanDefault = false;
+	stepLengthDefault = false;
    bool CheckDPs = true;
    bool giveAdvice = true;
 
@@ -784,6 +798,10 @@ int main(int argc,char * argv[])
 
  	    		++argcount;
 	    		break;
+		case 'L':
+		  stepLengthDefault = true;
+		  ++argcount;
+		  break;
 	    	case 'a':
 	    		giveAdvice = false;
  	    		++argcount;
