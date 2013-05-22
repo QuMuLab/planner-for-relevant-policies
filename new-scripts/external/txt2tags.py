@@ -1021,11 +1021,14 @@ def getTags(config):
 		'deflistItem2LinePrefix': ' :: '          ,
 		'bar1'                  : '----'          ,
 		'bar2'                  : '--------'      ,
-		'url'                   : '[\a]'          ,
-		'urlMark'               : '[\a \a]'       ,
-		'email'                 : '[\a]'          ,
-		'emailMark'             : '[\a \a]'       ,
-		'img'                   : '[\a]'          ,
+                #note: the following rules for urls were wrong.
+                #Submitted a patch to the txt2tags-developers.
+                #-- Moritz
+		'url'                   : '[[\a]]'          ,
+		'urlMark'               : '[[\a|\a]]'       ,
+		'email'                 : '\a'          ,
+		'emailMark'             : '[[mailto:\a|\a]'       ,
+		'img'                   : '{{\a}}'          ,
 		'tableRowOpen'          : '||'            ,
 		'tableCellOpen'         : '~A~'           ,
 		'tableCellClose'        : '||'            ,
