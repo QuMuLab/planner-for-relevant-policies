@@ -581,10 +581,11 @@ bool Policy::step_scd(vector<State *> &failed_states) {
          op_iter != all_items.end(); ++op_iter)
     {
         RegressionStep *rs = (RegressionStep *)(*op_iter);
+        
         if (rs->is_sc && !(rs->is_goal)) {
             
             for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
-                
+				
                 // We use the sc_state for computing the guaranteed items, rather than
                 //  the original state for the regression step. The sc_state will be a
                 //  superset of the original state that includes the regression of newly
@@ -602,7 +603,6 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 //  a deadend, in which case we can assume that it will be handled by
                 //  the jic compiler.
                 if (0 == guaranteed_steps.size()) {
-                    
                     bool is_failed_state = false;
                     for (int j = 0; j < failed_states.size(); j++) {
                         // Unfortunately, we can't just check the states equivalence,
@@ -656,32 +656,57 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 //  cost in a get_best_step, so only those regsteps with a chance of
                 //  overiding all guaranteed regsteps must be looked at.
                 int min_cost = 999999; // This will only be too low if we found a plan of length 10^6
+                int min_sc_cost = 999999;
                 for (int j = 0; j < guaranteed_steps.size(); j++) {
+                    
                     if (((RegressionStep *)guaranteed_steps[j])->distance < min_cost)
                         min_cost = ((RegressionStep *)guaranteed_steps[j])->distance;
+                        
+					if ((((RegressionStep *)guaranteed_steps[j])->distance < min_sc_cost) &&
+						((RegressionStep *)guaranteed_steps[j])->is_sc)
+                        min_sc_cost = ((RegressionStep *)guaranteed_steps[j])->distance;
+                
                 }
                 
-                vector<PolicyItem *> possible_steps;
-                root->generate_applicable_items(*succ_state, possible_steps, min_cost);
-                //root->generate_applicable_items(*succ_state, possible_steps, true);
+                // The guaranteed step can't be further from the goal than
+                //  the current candidate strong cyclic pair. Otherwise,
+                //  we could get an unsound loop of presumed strong cyclicity.
+                if ((999999 != min_sc_cost) && (min_sc_cost > rs->distance)) {
+					//cout << "Min sc cost = " << min_sc_cost << endl;
+					rs->is_sc = false;
+					made_change = true;
+					i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+					
+				} else {
                 
-                //cout << "Guaranteed steps / Possible steps: " << guaranteed_steps.size() << " / " << possible_steps.size() << endl;
-                
-                
-                // If any possible successor state that we reach has a matching
-                //  regression step that isn't strongly cyclic, then neither are
-                //  we. A place for optimization is to prune the set of possible
-                //  regression steps returned -- if we can guarantee that the call
-                //  to the get_best_step function won't return a regression step,
-                //  then we need not confirm it is strongly cyclic.
-                for (int j = 0; j < possible_steps.size(); j++) {
-                    if (!(((RegressionStep *)possible_steps[j])->is_sc)) {
-                        rs->is_sc = false;
-                        made_change = true;
-                        i = g_nondet_mapping[rs->op->get_nondet_name()].size();
-                        j = possible_steps.size();
-                    }
-                }
+					vector<PolicyItem *> possible_steps;
+					root->generate_applicable_items(*succ_state, possible_steps, min_cost);
+					//root->generate_applicable_items(*succ_state, possible_steps, true);
+					
+					//cout << "Guaranteed steps / Possible steps: " << guaranteed_steps.size() << " / " << possible_steps.size() << endl;
+					//cout << "Min cost = " << min_cost << endl;
+					
+					// If any possible successor state that we reach has a matching
+					//  regression step that isn't strongly cyclic, then neither are
+					//  we. A place for optimization is to prune the set of possible
+					//  regression steps returned -- if we can guarantee that the call
+					//  to the get_best_step function won't return a regression step,
+					//  then we need not confirm it is strongly cyclic.
+					for (int j = 0; j < possible_steps.size(); j++) {
+						if (!(((RegressionStep *)possible_steps[j])->is_sc)) {
+							rs->is_sc = false;
+							made_change = true;
+							i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+							j = possible_steps.size();
+						}
+					}
+					
+					/*if (rs->is_sc && (999999 != min_sc_cost) && (min_sc_cost > rs->distance)) {
+						cout << "New prune at distance (" << min_sc_cost << " vs " << rs->distance << ")..." << endl;
+						rs->dump();
+					}*/
+					
+				}
                 
                 delete succ_state;
             }
