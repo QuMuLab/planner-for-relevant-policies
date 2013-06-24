@@ -20,7 +20,7 @@ LOCAL_SUITE = ['gripper:prob01.pddl', 'zenotravel:pfile1']
 GRID_SUITE = suites.suite_satisficing_with_ipc11()
 
 # Switch between local or grid experiment setup
-LOCAL = 1
+LOCAL = 0
 if (LOCAL == 1):
 	HOME = LOCAL_HOME
 	PATH = LOCAL_PATH
