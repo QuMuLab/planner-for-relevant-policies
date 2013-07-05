@@ -16,6 +16,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           prp: Just run prp on the given domains
           jic: Test the varied jic limit (must specify -problem and -limit)
           redundant: Run the comparison for domains that have redundancy
+          ablation: Run with various features disabled to see the impact they have.
           test: Run a complete test of all parameter settings (make sure to limit the domains)
           test-planlocal: Test the impact of the various planlocal settings
           test-deadend: Test the impact of the various deadend settings
@@ -53,6 +54,45 @@ PRP_PARAMS = {'best': { '--jic-limit': [18000],
                         '--detect-deadends': [1],
                         '--generalize-deadends': [1],
                         '--online-deadends': [1],
+                        '--optimized-scd': [1]},
+              
+              'no-local': { '--jic-limit': [18000],
+                        '--trials': [100],
+                        '--forgetpolicy': [0],
+                        '--fullstate': [0],
+                        '--planlocal': [1],
+                        '--partial-planlocal': [0],
+                        '--plan-with-policy': [1],
+                        '--limit-planlocal': [0],
+                        '--detect-deadends': [1],
+                        '--generalize-deadends': [1],
+                        '--online-deadends': [1],
+                        '--optimized-scd': [1]},
+              
+              'no-scd': { '--jic-limit': [18000],
+                        '--trials': [100],
+                        '--forgetpolicy': [0],
+                        '--fullstate': [0],
+                        '--planlocal': [1],
+                        '--partial-planlocal': [1],
+                        '--plan-with-policy': [1],
+                        '--limit-planlocal': [1],
+                        '--detect-deadends': [1],
+                        '--generalize-deadends': [1],
+                        '--online-deadends': [1],
+                        '--optimized-scd': [0]},
+              
+              'no-dead': { '--jic-limit': [18000],
+                        '--trials': [100],
+                        '--forgetpolicy': [0],
+                        '--fullstate': [0],
+                        '--planlocal': [1],
+                        '--partial-planlocal': [1],
+                        '--plan-with-policy': [1],
+                        '--limit-planlocal': [1],
+                        '--detect-deadends': [1],
+                        '--generalize-deadends': [0],
+                        '--online-deadends': [0],
                         '--optimized-scd': [1]},
               
               'jic':  { '--jic-limit': [],
@@ -400,6 +440,10 @@ if __name__ == '__main__':
         print "Error: Must choose a domain:"
         print USAGE_STRING
         os._exit(1)
+    
+    if 'ablation' in flags:
+        for ab in ['no-local', 'no-dead', 'no-scd', 'best']:
+            doit(myargs['-domain'], dofip=False, doprp=True, prp_params=PRP_PARAMS[ab], exp_name=ab)
     
     if 'full' in flags:
         doit(myargs['-domain'])
