@@ -139,6 +139,9 @@ def prp_compare_two(domain, type1, type2, name1, name2):
     else:
         prp_data = load_CSV("RESULTS/prp-%s-results.csv" % domain)
     
+    return _prp_compare_two(domain, type1, type2, name1, name2, prp_data)
+
+def _prp_compare_two(domain, type1, type2, name1, name2, prp_data):
     print "\nAnalyzing Two PRP Settings for %s:" % domain
     print_setting(type1)
     print "\n  -vs-\n"
@@ -433,17 +436,24 @@ if __name__ == '__main__':
         do_anova(myargs['-domain'], 'size')
     
     if 'ablation' in flags:
-        prp_compare_two(myargs['-domain'],
+        
+        prp_data = load_CSV("RESULTS/best-prp-%s-results.csv" % myargs['-domain']) + \
+                   load_CSV("RESULTS/no-local-prp-%s-results.csv" % myargs['-domain'])
+        _prp_compare_two(myargs['-domain'],
                         ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
                         ('18000', '0', '0', '1', '0', '1', '0', '1', '1', '1', '1'),
-                        'PRP', 'PRP$_{\\textrm{-local}}$')
+                        'PRP', 'PRP$_{\\textrm{-local}}$', prp_data)
         
-        prp_compare_two(myargs['-domain'],
+        prp_data = load_CSV("RESULTS/best-prp-%s-results.csv" % myargs['-domain']) + \
+                   load_CSV("RESULTS/no-scd-prp-%s-results.csv" % myargs['-domain'])
+        _prp_compare_two(myargs['-domain'],
                         ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
                         ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '0'),
-                        'PRP', 'PRP$_{\\textrm{-scd}}$')
+                        'PRP', 'PRP$_{\\textrm{-scd}}$', prp_data)
         
-        prp_compare_two(myargs['-domain'],
+        prp_data = load_CSV("RESULTS/best-prp-%s-results.csv" % myargs['-domain']) + \
+                   load_CSV("RESULTS/no-deadend-prp-%s-results.csv" % myargs['-domain'])
+        _prp_compare_two(myargs['-domain'],
                         ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
                         ('18000', '0', '0', '1', '1', '1', '1', '1', '0', '0', '1'),
-                        'PRP', 'PRP$_{\\textrm{-deadend}}$')
+                        'PRP', 'PRP$_{\\textrm{-deadend}}$', prp_data)
