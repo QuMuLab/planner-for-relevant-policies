@@ -95,6 +95,19 @@ PRP_PARAMS = {'best': { '--jic-limit': [18000],
                         '--online-deadends': [0],
                         '--optimized-scd': [1]},
               
+              'no-partial': { '--jic-limit': [18000],
+                           '--trials': [100],
+                           '--forgetpolicy': [0],
+                           '--fullstate': [1],
+                           '--planlocal': [1],
+                           '--partial-planlocal': [0],
+                           '--plan-with-policy': [1],
+                           '--limit-planlocal': [1],
+                           '--detect-deadends': [1],
+                           '--generalize-deadends': [0],
+                           '--online-deadends': [1],
+                           '--optimized-scd': [1]},
+              
               'jic':  { '--jic-limit': [],
                         '--trials': [0],
                         '--forgetpolicy': [0],
@@ -366,7 +379,8 @@ def doit_prp(domain, dom_probs, prp_params, exp_name = 'prp'):
                 timeouts += 1
                 prp_csv.append("%s,%s,-1,-1,T,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*14)))
             
-            elif not result.clean_run or check_segfault(result.output_file):
+            #elif not result.clean_run or check_segfault(result.output_file):
+            elif check_segfault(result.output_file):
                 errorouts += 1
                 prp_csv.append("%s,%s,-1,-1,E,%s,%s" % (domain, prob, parse_prp_settings(result), ','.join(['-']*14)))
             
@@ -442,7 +456,7 @@ if __name__ == '__main__':
         os._exit(1)
     
     if 'ablation' in flags:
-        for ab in ['no-local', 'no-dead', 'no-scd', 'best']:
+        for ab in ['no-local', 'no-dead', 'no-scd', 'no-partial', 'best']:
             doit(myargs['-domain'], dofip=False, doprp=True, prp_params=PRP_PARAMS[ab], exp_name=ab)
     
     if 'full' in flags:
