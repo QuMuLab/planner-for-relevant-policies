@@ -457,3 +457,10 @@ if __name__ == '__main__':
                         ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
                         ('18000', '0', '0', '1', '1', '1', '1', '1', '0', '0', '1'),
                         'PRP', 'PRP$_{\\textrm{-deadend}}$', prp_data)
+        
+        prp_data = load_CSV("RESULTS/best-prp-%s-results.csv" % myargs['-domain']) + \
+                   load_CSV("RESULTS/no-partial-prp-%s-results.csv" % myargs['-domain'])
+        _prp_compare_two(myargs['-domain'],
+                        ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
+                        ('18000', '0', '1', '1', '0', '1', '1', '1', '0', '1', '1'),
+                        'PRP', 'PRP$_{\\textrm{-partial}}$', prp_data)
