@@ -17,6 +17,7 @@ Usage: python policy_analyze.py <TASK> -domain <domain> ...
           ffreplan-vs-prp: Run a comparison between ffreplan, and prp in online replanning
           anova-time: Run an anova analysis of the parameters for prp, with time as the dependent variable
           anova-size: Run an anova analysis of the parameters for prp, with size as the dependent variable
+          ablation: Run the ablation comparisons (optimal settings vs disabling some feature)
         """
 
 BASEDIR = os.path.abspath(os.path.curdir)
@@ -430,3 +431,19 @@ if __name__ == '__main__':
     
     if 'anova-size' in flags:
         do_anova(myargs['-domain'], 'size')
+    
+    if 'ablation' in flags:
+        prp_compare_two(myargs['-domain'],
+                        ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
+                        ('18000', '0', '0', '1', '0', '1', '0', '1', '1', '1', '1'),
+                        'PRP', 'PRP$_{\\textrm{-local}}$')
+        
+        prp_compare_two(myargs['-domain'],
+                        ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
+                        ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '0'),
+                        'PRP', 'PRP$_{\\textrm{-scd}}$')
+        
+        prp_compare_two(myargs['-domain'],
+                        ('18000', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1'),
+                        ('18000', '0', '0', '1', '1', '1', '1', '1', '0', '0', '1'),
+                        'PRP', 'PRP$_{\\textrm{-deadend}}$')
