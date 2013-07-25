@@ -1,3 +1,0 @@
-if [[ $SGE_TASK_ID == %(task_num)d ]]; then
-    run-task %(result_dir)s %(config_name)s %(preprocessed_input)s %(mutex_file)s %(planner_executable)s %(timeout)d %(memory_kb)d %(config)s
-fi

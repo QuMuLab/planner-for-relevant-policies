@@ -1,4 +1,0 @@
-These have been moved out of the main scripts directory for clarity.
-They probably don't work when in this directory (imports will fail, etc.),
-but let's not worry about this right now.
-
