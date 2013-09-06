@@ -9,10 +9,17 @@ bool is_deadend(State &state) {
 
 void generalize_deadend(State &state) {
     
+    // We disable the pruning of forbidden operators, as we want to be
+    //  sure that we have a weak deadend
+    bool old_forbidden_val = g_check_with_forbidden;
+    g_check_with_forbidden = true;
+    
     // If the whole state isn't recognized as a deadend, then don't bother
     //  looking for a subset of the state
-    if (!is_deadend(state))
+    if (!is_deadend(state)) {
+        g_check_with_forbidden = old_forbidden_val;
         return;
+    }
     
     // We go through each variable and unset it, checking if the relaxed reachability
     //  is violated.
@@ -24,6 +31,8 @@ void generalize_deadend(State &state) {
         if (!is_deadend(state))
             state[i] = old_val;
     }
+    
+    g_check_with_forbidden = old_forbidden_val;
     
     //cout << "Found relaxed deadend:" << endl;
     //state.dump();
