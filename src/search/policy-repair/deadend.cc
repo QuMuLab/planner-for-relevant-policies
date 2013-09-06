@@ -3,12 +3,6 @@
 
 bool is_deadend(State &state) {
     ((AdditiveHeuristic *)g_heuristic_for_reachability)->reset();
-    
-    // This may help in some scenarios, but it just seems to take uneccessary
-    //  time for the current domains.
-    //((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_forbidden(state);
-    ((AdditiveHeuristic *)g_heuristic_for_reachability)->forbidden_ops.clear(); // Only one of these two lines should be used
-    
     return (-1 == ((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_add_and_ff(state));
 }
 
@@ -32,6 +26,11 @@ void generalize_deadend(State &state) {
     for (int i = 0; i < g_variable_name.size(); i++) {
         int old_val = state[i];
         state[i] = -1;
+        
+        // This may help in some scenarios, but it just seems to take uneccessary
+        //  time for the current domains.
+        //((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_forbidden(state);
+        ((AdditiveHeuristic *)g_heuristic_for_reachability)->forbidden_ops.clear(); // Only one of these two lines should be used
         
         // If relaxing variable i causes us to reach the goal, keep it in
         if (!is_deadend(state))
