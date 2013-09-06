@@ -3,6 +3,12 @@
 
 bool is_deadend(State &state) {
     ((AdditiveHeuristic *)g_heuristic_for_reachability)->reset();
+    
+    // This may help in some scenarios, but it just seems to take uneccessary
+    //  time for the current domains.
+    //((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_forbidden(state);
+    ((AdditiveHeuristic *)g_heuristic_for_reachability)->forbidden_ops.clear(); // Only one of these two lines should be used
+    
     return (-1 == ((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_add_and_ff(state));
 }
 

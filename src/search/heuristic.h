@@ -63,6 +63,7 @@ public:
     // for policy handling
     virtual void reset() { preferred_operators.clear(); }
     std::set<std::string> forbidden_ops;
+    void compute_forbidden(const State &state);
 };
 
 #endif
