@@ -266,6 +266,12 @@ void read_operators(istream &in) {
 void read_axioms(istream &in) {
     int count;
     in >> count;
+    
+    // HAZ: Make sure axioms are /not/ considered
+    if (count > 0) {
+        cout << "\n\nError: Axioms are not permitted.\n" << endl;
+        exit(1);
+    }
     for (int i = 0; i < count; i++)
         g_axioms.push_back(Operator(in, true));
 
