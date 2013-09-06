@@ -401,6 +401,8 @@ vector<pair<int, int> > g_goal_orig;
 Heuristic *g_heuristic_for_reachability;
 int g_dump_policy = 0; // Whether or not we should dump the policy
 
+bool g_debug = false; // Flag for debugging parts of the code
+
 Timer g_timer_regression;
 Timer g_timer_simulator;
 Timer g_timer_engine_init;

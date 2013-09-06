@@ -95,6 +95,8 @@ extern std::vector<std::pair<int, int> > g_goal_orig;
 extern Heuristic *g_heuristic_for_reachability;
 extern int g_dump_policy; // Whether or not we should dump the policy
 
+extern bool g_debug; // Flag for debugging parts of the code
+
 /* Timers */
 extern Timer g_timer_regression;
 extern Timer g_timer_simulator;
