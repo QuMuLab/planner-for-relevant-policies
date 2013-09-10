@@ -64,8 +64,9 @@ extern SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can
 extern DeadendAwareSuccessorGenerator *g_successor_generator;
 
 
-extern std::map<std::string, std::vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
-extern std::map<std::string, std::vector<bool> > g_nondet_conditional_mask; // Maps a non-deterministic action name to the variables that must be defined when doing context-sensitive regression
+extern std::map<std::string, int> g_nondet_index_mapping; // Maps a non-deterministic action name to its id
+extern std::vector<std::vector<Operator *> *> g_nondet_mapping; // Maps a non-deterministic action id to a list of ground operators
+extern std::vector<std::vector<int> *> g_nondet_conditional_mask; // Maps a non-deterministic action id to the variables that must be defined when doing context-sensitive regression
 extern std::vector<std::pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
 extern int g_matched_distance; // Containts the distance to the goal for the matched policy
 extern Policy *g_policy; // The policy to check while searching

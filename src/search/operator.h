@@ -83,6 +83,8 @@ public:
     void dump() const;
     std::string get_name() const {return name; }
     std::string get_nondet_name() const {return nondet_name; }
+    
+    int nondet_index;
 
     bool is_axiom() const {return is_an_axiom; }
 

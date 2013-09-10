@@ -19,6 +19,7 @@ PrePost::PrePost(istream &in) {
 
 Operator::Operator(istream &in, bool axiom) {
     marked = false;
+    nondet_index = -1;
 
     is_an_axiom = axiom;
     if (!is_an_axiom) {

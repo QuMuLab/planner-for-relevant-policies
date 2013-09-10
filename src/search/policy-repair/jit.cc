@@ -141,11 +141,11 @@ bool perform_jit_repairs(Simulator *sim) {
                         }
                     }
                     
-                    for (int i = 0; i < g_nondet_mapping[regstep->op->get_nondet_name()].size(); i++) {
-                        State *new_state = new State(*current_state, *(g_nondet_mapping[regstep->op->get_nondet_name()][i]));
+                    for (int i = 0; i < g_nondet_mapping[regstep->op->nondet_index]->size(); i++) {
+                        State *new_state = new State(*current_state, *((*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
                         created_states.push_back(new_state);
                         if (0 == seen.count(*new_state))
-                            open_list.push(SCNode(new_state, expected_state, regstep, g_nondet_mapping[regstep->op->get_nondet_name()][i]));
+                            open_list.push(SCNode(new_state, expected_state, regstep, (*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
                     }
                     // We add this one extra time to ensure a DFS traversal of the
                     //  state space when looking for a strong cyclic solution. This
