@@ -465,11 +465,11 @@ RegressionStep *Policy::get_best_step(const State &curr) {
     
     // We should only return steps that aren't forbidden
     vector<PolicyItem *> forbidden_items;
-    set<string> forbidden;
+    set<int> forbidden;
     if (!complete)
         g_deadend_policy->generate_applicable_items(curr, forbidden_items);
     for (int i = 0; i < forbidden_items.size(); i++)
-        forbidden.insert(((NondetDeadend*)(forbidden_items[i]))->op_name);
+        forbidden.insert(g_nondet_index_mapping[((NondetDeadend*)(forbidden_items[i]))->op_name]);
     
     int best_index = -1;
     int best_val = 999999; // This will only be invalid if a plan length was > 10^6
@@ -479,7 +479,7 @@ RegressionStep *Policy::get_best_step(const State &curr) {
     
     for (int i = 0; i < current_steps.size(); i++) {
         if (((RegressionStep*)(current_steps[i]))->is_goal ||
-            (0 == forbidden.count(((RegressionStep*)(current_steps[i]))->op->get_nondet_name()))) {
+            (0 == forbidden.count(((RegressionStep*)(current_steps[i]))->op->nondet_index))) {
             int cur_val = ((RegressionStep*)(current_steps[i]))->distance;
             
             if (cur_val < best_val) {
@@ -584,7 +584,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
         
         if (rs->is_sc && !(rs->is_goal)) {
             
-            for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
+            for (int i = 0; i < g_nondet_mapping[rs->op->nondet_index]->size(); i++) {
 				
                 // We use the sc_state for computing the guaranteed items, rather than
                 //  the original state for the regression step. The sc_state will be a
@@ -593,7 +593,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 //  number of regression steps we are guaranteed to see in a state matching
                 //  succ_state, but as long as we remain in parts of the policy that return
                 //  regression steps based on their sc_state then this will be valid.
-                State *succ_state = new State(*(rs->sc_state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
+                State *succ_state = new State(*(rs->sc_state), *((*(g_nondet_mapping[rs->op->nondet_index]))[i]));
                 vector<PolicyItem *> guaranteed_steps;
                 root->generate_applicable_items(*succ_state, guaranteed_steps, false);
                 
@@ -675,7 +675,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
 					//cout << "Min sc cost = " << min_sc_cost << endl;
 					rs->is_sc = false;
 					made_change = true;
-					i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+					i = g_nondet_mapping[rs->op->nondet_index]->size();
 					
 				} else {
                 
@@ -696,7 +696,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
 						if (!(((RegressionStep *)possible_steps[j])->is_sc)) {
 							rs->is_sc = false;
 							made_change = true;
-							i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+							i = g_nondet_mapping[rs->op->nondet_index]->size();
 							j = possible_steps.size();
 						}
 					}

@@ -294,8 +294,38 @@ void read_everything(istream &in) {
     DomainTransitionGraph::read_all(in);
     g_causal_graph = new CausalGraph(in);
     
+    /* Build the data structures required for mapping between the
+     * deterministic actions and their non-deterministic equivalents. */
+    int cur_nondet = 0;
     for (int i = 0; i < g_operators.size(); i++) {
-        g_nondet_mapping[g_operators[i].get_nondet_name()].push_back(&g_operators[i]);
+        
+        int nondet_index = -1;
+        
+        if (g_nondet_index_mapping.find(g_operators[i].get_nondet_name()) == g_nondet_index_mapping.end()) {
+            
+            nondet_index = cur_nondet;
+            g_nondet_index_mapping[g_operators[i].get_nondet_name()] = cur_nondet;
+            
+            g_nondet_mapping.push_back(new vector<Operator *>());
+            g_nondet_conditional_mask.push_back(new vector<int>());
+                        
+            cur_nondet++;
+        
+        } else {
+            nondet_index = g_nondet_index_mapping[g_operators[i].get_nondet_name()];
+        }
+        
+        g_operators[i].nondet_index = nondet_index;
+        g_nondet_mapping[nondet_index]->push_back(&g_operators[i]);
+        
+        for (int j = 0; j < g_operators[i].get_pre_post().size(); j++) {
+            for (int k = 0; k < g_operators[i].get_pre_post()[j].cond.size(); k++) {
+                int var = g_operators[i].get_pre_post()[j].cond[k].var;
+                vector<int> *var_list = g_nondet_conditional_mask[nondet_index];
+                if (find(var_list->begin(), var_list->end(), var) == var_list->end())
+                    g_nondet_conditional_mask[nondet_index]->push_back(var);
+            }
+        }
     }
 }
 
@@ -376,8 +406,9 @@ CausalGraph *g_causal_graph;
 SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can be pruned based on deadends
 DeadendAwareSuccessorGenerator *g_successor_generator;
 
-map<string, vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
-map<string, vector<bool> > g_nondet_conditional_mask; // Maps a non-deterministic action name to the variables that must be defined when doing context-sensitive regression
+map<string, int> g_nondet_index_mapping; // Maps a non-deterministic action name to its id
+vector<vector<Operator *> *> g_nondet_mapping; // Maps a non-deterministic action id to a list of ground operators
+vector<vector<int> *> g_nondet_conditional_mask; // Maps a non-deterministic action id to the variables that must be defined when doing context-sensitive regression
 vector<pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
 int g_matched_distance; // Containts the distance to the goal for the matched policy
 Policy *g_policy; // The policy to check while searching

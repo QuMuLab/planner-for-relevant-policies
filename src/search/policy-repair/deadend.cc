@@ -84,12 +84,12 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &curr, 
         g_successor_generator_orig->generate_applicable_ops(curr, orig_ops);
         g_deadend_policy->generate_applicable_items(curr, reg_items);
         
-        set<string> forbidden;
+        set<int> forbidden;
         for (int i = 0; i < reg_items.size(); i++)
-            forbidden.insert(((NondetDeadend*)(reg_items[i]))->op_name);
+            forbidden.insert(g_nondet_index_mapping[((NondetDeadend*)(reg_items[i]))->op_name]);
         
         for (int i = 0; i < orig_ops.size(); i++) {
-            if (0 == forbidden.count(orig_ops[i]->get_nondet_name())) {
+            if (0 == forbidden.count(orig_ops[i]->nondet_index)) {
                 //cout << "Allowing operator " << orig_ops[i]->get_name() << endl;
                 ops.push_back(orig_ops[i]);
             }
