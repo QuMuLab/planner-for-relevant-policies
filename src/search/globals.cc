@@ -377,6 +377,7 @@ SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can be pru
 DeadendAwareSuccessorGenerator *g_successor_generator;
 
 map<string, vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
+map<string, vector<bool> > g_nondet_conditional_mask; // Maps a non-deterministic action name to the variables that must be defined when doing context-sensitive regression
 vector<pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
 int g_matched_distance; // Containts the distance to the goal for the matched policy
 Policy *g_policy; // The policy to check while searching
