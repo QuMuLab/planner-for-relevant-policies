@@ -93,7 +93,7 @@ bool perform_jit_repairs(Simulator *sim) {
                     regstep = g_policy->get_best_step(*current_state);
                     
                     // prev_state holds the info needed before the operator was taken
-                    State * prev_state = new State(*(regstep->state), *prev_op, false);
+                    State * prev_state = new State(*(regstep->state), *prev_op, false, prev_regstep->sc_state);
                     
                     // We augment the sc_state to include the stronger conditions
                     for (int i = 0; i < g_variable_name.size(); i++) {

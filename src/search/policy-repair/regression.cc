@@ -55,24 +55,20 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
     g_timer_regression.resume();
     list<PolicyItem *> reg_steps;
     State *s = new State(*g_initial_state);
+        
+    vector<State *> states;
+    states.push_back(s);
+    
+    for (int i = 0; i < plan.size(); i++) {
+        s = new State(*s, *plan[i]);
+        states.push_back(s);
+    }
     
     if (g_fullstate) {
-        
-        vector<State *> states;
-        states.push_back(s);
-        
-        for (int i = 0; i < plan.size(); i++) {
-            s = new State(*s, *plan[i]);
-            states.push_back(s);
-        }
-        
+            
         if (create_goal) {
             
-            State *g = new State(*g_initial_state);
-            
-            for (int i = 0; i < g_variable_name.size(); i++) {
-                (*g)[i] = state_var_t(-1);
-            }
+            State *g = new State();
             
             for (int i = 0; i < goal.size(); i++) {
                 (*g)[goal[i].first] = state_var_t(goal[i].second);
@@ -95,9 +91,8 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
         assert(states.empty());
         
     } else {
-        for (int i = 0; i < g_variable_name.size(); i++) {
-            (*s)[i] = state_var_t(-1);
-        }
+        
+        s = new State();
         
         for (int i = 0; i < goal.size(); i++) {
             (*s)[goal[i].first] = state_var_t(goal[i].second);
@@ -106,7 +101,9 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
         reg_steps.push_back(new RegressionStep(s, distance));
         
         for (int i = plan.size() - 1; i >= 0; i--) {
-            reg_steps.push_back(new RegressionStep(*plan[i], new State(*(reg_steps.back()->state), *plan[i], false), ++distance));
+            reg_steps.push_back(new RegressionStep(*plan[i],
+                new State(*(reg_steps.back()->state), *plan[i], false, states[i]),
+                ++distance));
         }
     }
     
@@ -130,6 +127,10 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
             i++;
         }
     }
+    
+    for (int i = 0; i < states.size(); i++)
+        delete states[i];
+    states.clear();
     
     g_timer_regression.stop();
     return reg_steps;
