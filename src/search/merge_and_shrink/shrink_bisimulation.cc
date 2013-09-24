@@ -60,6 +60,7 @@ struct Signature {
             return succ_signature < other.succ_signature;
         return state < other.state;
     }
+
     void dump() const {
         cout << "Signature(h_and_goal = " << h_and_goal
              << ", group = " << group
@@ -203,8 +204,8 @@ int ShrinkBisimulation::initialize_groups(const Abstraction &abs,
             if (result.second) {
                 // We inserted a new element => a new group was started.
                 ++num_groups;
+            }
         }
-    }
     }
     return num_groups;
 }
@@ -247,9 +248,9 @@ void ShrinkBisimulation::compute_signatures(
                 int target_group = state_to_group[trans.target];
                         signatures[trans.src + 1].succ_signature.push_back(
                             make_pair(op_no, target_group));
-                }
             }
         }
+    }
 
     /* Step 3: Canonicalize the representation. The resulting
        signatures must satisfy the following properties:
@@ -402,7 +403,6 @@ void ShrinkBisimulation::compute_abstraction(
             equivalence_relation[group].push_front(state);
         }
     }
-
 }
 
 ShrinkStrategy *ShrinkBisimulation::create_default() {
