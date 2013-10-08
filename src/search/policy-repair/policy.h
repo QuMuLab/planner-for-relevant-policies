@@ -57,7 +57,7 @@ public:
     bool is_strong_cyclic() { return (1.0 == score); }
     
     void init_scd();
-    bool step_scd(vector<State *> &failed_states);
+    bool step_scd(vector< DeadendTuple * > &failed_states);
     
     void dump_human_policy();
 };

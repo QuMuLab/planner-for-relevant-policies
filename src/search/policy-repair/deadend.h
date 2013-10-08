@@ -10,7 +10,7 @@
 #include "../successor_generator.h"
 #include "../additive_heuristic.h"
 
-void update_deadends(vector<State *> &failed_states);
+void update_deadends(vector< DeadendTuple * > &failed_states);
 
 bool is_deadend(State &state);
 

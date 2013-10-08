@@ -9,10 +9,11 @@ void UnhandledState::dump() const {
 struct SCNode {
     State * full_state;
     State * expected_state;
+    State * previous_state;
     RegressionStep * prev_regstep;
     const Operator * prev_op;
-    SCNode(State * fs, State * es, RegressionStep * pr, const Operator * op) :
-       full_state(fs), expected_state(es), prev_regstep(pr), prev_op(op) {}
+    SCNode(State * fs, State * es, State * ps, RegressionStep * pr, const Operator * op) :
+       full_state(fs), expected_state(es), previous_state(ps), prev_regstep(pr), prev_op(op) {}
 };
 
 bool perform_jit_repairs(Simulator *sim) {
@@ -25,6 +26,7 @@ bool perform_jit_repairs(Simulator *sim) {
     set<State> seen; // Keeps track of the full states we've seen
     vector<State *> created_states; // Used to clean up the created state objects
     State * current_state; // The current step in the loop
+    State * previous_state; // The previous step in the loop (leading to the current_state)
     State * current_goal; // The current goal in the loop
     const Operator * prev_op; // The last operator used to get us to current_state
     RegressionStep * prev_regstep; // The last RegressionStep that triggered prev_op
@@ -32,7 +34,7 @@ bool perform_jit_repairs(Simulator *sim) {
     g_failed_open_states = 0; // Number of open states we couldn't solve (i.e., deadends)
     int num_checked_states = 0; // Number of states we check
     int num_fixed_states = 0; // Number of states we were able to repair (by replanning)
-    vector<State *> failed_states; // The failed states (used for creating deadends)
+    vector< DeadendTuple * > failed_states; // The failed states (used for creating deadends)
     
     // In case we have an initial policy, we run the optimized scd.
     if (g_optimized_scd) {
@@ -53,7 +55,7 @@ bool perform_jit_repairs(Simulator *sim) {
     
     current_state = new State(*g_initial_state);
     current_goal = new State(*goal_orig);
-    open_list.push(SCNode(current_state, current_goal, NULL, NULL));
+    open_list.push(SCNode(current_state, current_goal, NULL, NULL, NULL));
     
     created_states.push_back(current_state);
     created_states.push_back(current_goal);
@@ -61,6 +63,7 @@ bool perform_jit_repairs(Simulator *sim) {
     while (!open_list.empty() && (g_timer_jit() < g_jic_limit)) {
         num_checked_states++;
         current_state = open_list.top().full_state;
+        previous_state = open_list.top().previous_state;
         current_goal = open_list.top().expected_state;
         prev_regstep = open_list.top().prev_regstep;
         prev_op = open_list.top().prev_op;
@@ -145,13 +148,13 @@ bool perform_jit_repairs(Simulator *sim) {
                         State *new_state = new State(*current_state, *((*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
                         created_states.push_back(new_state);
                         if (0 == seen.count(*new_state))
-                            open_list.push(SCNode(new_state, expected_state, regstep, (*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
+                            open_list.push(SCNode(new_state, expected_state, current_state, regstep, (*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
                     }
                     // We add this one extra time to ensure a DFS traversal of the
                     //  state space when looking for a strong cyclic solution. This
                     //  introduces a duplicate, but the outer if statement catches
                     //  this just fine, and the memory hit is negligible.
-                    open_list.push(SCNode(full_expected_state, expected_state, regstep, regstep->op));
+                    open_list.push(SCNode(full_expected_state, expected_state, current_state, regstep, regstep->op));
                 }
                 
             } else {
@@ -191,7 +194,7 @@ bool perform_jit_repairs(Simulator *sim) {
                     if (g_detect_deadends) {
                         if (g_generalize_deadends)
                             generalize_deadend(*current_state);
-                        failed_states.push_back(current_state);
+                        failed_states.push_back(new DeadendTuple(current_state, previous_state, prev_op));
                     }
                 }
             }

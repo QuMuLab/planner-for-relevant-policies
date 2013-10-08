@@ -43,15 +43,26 @@ void generalize_deadend(State &state) {
     //state.dump();
 }
 
-void update_deadends(vector<State *> &failed_states) {
+void update_deadends(vector< DeadendTuple* > &failed_states) {
     list<PolicyItem *> de_items;
     list<PolicyItem *> de_states;
     
+    State * dummy_state = new State();
+    
     for (int i = 0; i < failed_states.size(); i++) {
+        
         // Generalize the deadend if need be
-        State * failed_state = failed_states[i];
+        State * failed_state = failed_states[i]->de_state;
+        State * failed_state_prev = failed_states[i]->prev_state;
+        const Operator * prev_op = failed_states[i]->prev_op;
+        
         //cout << "Creating forbidden state-action pairs for deadend:" << endl;
         //failed_state->dump();
+        
+        // HAZ: Only do the forbidden state-action computation when
+        //  the non-deterministic action doesn't have any associated
+        //  conditional effects. This is ensured by the construction
+        //  of the g_regressable_ops data structure.
         
         // Get the regressable operators for the given state.
         vector<PolicyItem *> reg_items;
@@ -59,8 +70,10 @@ void update_deadends(vector<State *> &failed_states) {
         
         // For each operator, create a new deadend avoidance pair
         for (int j = 0; j < reg_items.size(); j++) {
+            
             RegressableOperator *ro = (RegressableOperator*)(reg_items[j]);
-            de_items.push_back(new NondetDeadend(new State(*failed_state, *(ro->op), false),
+            
+            de_items.push_back(new NondetDeadend(new State(*failed_state, *(ro->op), false, dummy_state),
                                                      ro->op->get_nondet_name()));
 
             //cout << "Creating new forbidden state-action pair:" << endl;
@@ -69,7 +82,22 @@ void update_deadends(vector<State *> &failed_states) {
             de_states.push_back(new NondetDeadend(new State(*failed_state),
                                                      ro->op->get_nondet_name()));
         }
+        
+        // If we have a specified previous state and action, use that to
+        //  build a forbidden state-action pair
+        if (NULL != failed_state_prev) {
+            de_items.push_back(new NondetDeadend(
+                    new State(*failed_state, *prev_op, false, failed_state_prev),
+                    prev_op->get_nondet_name()));
+            
+            de_states.push_back(new NondetDeadend(new State(*failed_state),
+                                                  prev_op->get_nondet_name()));
+            
+        }
     }
+    
+    delete dummy_state;
+    
     g_deadend_policy->update_policy(de_items);
     g_deadend_states->update_policy(de_states);
 }

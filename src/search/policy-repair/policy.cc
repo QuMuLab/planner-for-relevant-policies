@@ -575,7 +575,7 @@ void Policy::init_scd() {
          ((RegressionStep *)(*op_iter))->is_sc = true;
 }
 
-bool Policy::step_scd(vector<State *> &failed_states) {
+bool Policy::step_scd(vector< DeadendTuple * > &failed_states) {
     bool made_change = false;
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
@@ -610,8 +610,8 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                         //  that succ_state entails the failed state.
                         is_failed_state = true;
                         for (int k = 0; k < g_variable_name.size(); k++) {
-                            if (((*(failed_states[j]))[k] != state_var_t(-1)) &&
-                                ((*(failed_states[j]))[k] != (*succ_state)[k])) {
+                            if (((*(failed_states[j]->de_state))[k] != state_var_t(-1)) &&
+                                ((*(failed_states[j]->de_state))[k] != (*succ_state)[k])) {
                                 is_failed_state = false;
                                 break;
                             }
@@ -631,7 +631,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                                 generalize_deadend(*succ_state);
                                 
                             // Use a new state since succ_state is deleted below
-                            failed_states.push_back(new State(*succ_state));
+                            failed_states.push_back(new DeadendTuple(new State(*succ_state), NULL, rs->op));
                             is_failed_state = true;
                         }
                     }
