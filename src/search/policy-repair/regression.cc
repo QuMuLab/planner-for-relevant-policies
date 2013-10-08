@@ -140,17 +140,22 @@ void generate_regressable_ops() {
     list<PolicyItem *> reg_steps;
     State *s;
     for (int i = 0; i < g_operators.size(); i++) {
-        s = new State();
-        // Only applicable if the prevail and post conditions currently hold.
-        for (int j = 0; j < g_operators[i].get_pre_post().size(); j++) {
-            (*s)[g_operators[i].get_pre_post()[j].var] = state_var_t(g_operators[i].get_pre_post()[j].post);
-        }
         
-        for (int j = 0; j < g_operators[i].get_prevail().size(); j++) {
-            (*s)[g_operators[i].get_prevail()[j].var] = state_var_t(g_operators[i].get_prevail()[j].prev);
+        // Only consider operators that lack conditional effects
+        if (0 == g_nondet_conditional_mask[g_operators[i].nondet_index]->size()) {
+            s = new State();
+            
+            // Only applicable if the prevail and post conditions currently hold.
+            for (int j = 0; j < g_operators[i].get_pre_post().size(); j++) {
+                (*s)[g_operators[i].get_pre_post()[j].var] = state_var_t(g_operators[i].get_pre_post()[j].post);
+            }
+            
+            for (int j = 0; j < g_operators[i].get_prevail().size(); j++) {
+                (*s)[g_operators[i].get_prevail()[j].var] = state_var_t(g_operators[i].get_prevail()[j].prev);
+            }
+            
+            reg_steps.push_back(new RegressableOperator(g_operators[i], s));
         }
-        
-        reg_steps.push_back(new RegressableOperator(g_operators[i], s));
     }
     g_regressable_ops = new Policy(reg_steps);
 }

@@ -36,6 +36,14 @@ void check_magic(std::istream &in, std::string magic);
 
 bool are_mutex(const std::pair<int, int> &a, const std::pair<int, int> &b);
 
+struct DeadendTuple {
+    State *de_state;
+    State *prev_state;
+    const Operator *prev_op;
+
+    DeadendTuple(State *ds, State *ps, const Operator *op) : de_state(ds), prev_state(ps), prev_op(op) {}
+    ~DeadendTuple();
+};
 
 extern bool g_use_metric;
 extern int g_min_action_cost;
@@ -74,7 +82,7 @@ extern Policy *g_regressable_ops; // The policy to check what operators are appl
 extern Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 extern Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
 extern Policy *g_best_policy; // The best policy we've found so far
-extern std::vector<State *> g_found_deadends; // Vector of deadends found while planning
+extern std::vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts found while planning
 extern double g_best_policy_score; // Score for the best policy we've seen so far
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_silent_planning; // Silence the planning output

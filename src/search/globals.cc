@@ -38,6 +38,8 @@ static const int PRE_FILE_VERSION = 3;
 
 static vector<vector<set<pair<int, int> > > > g_inconsistent_facts;
 
+DeadendTuple::~DeadendTuple() { delete prev_state; }
+
 bool test_goal(const State &state) {
     if (g_policy && !(g_policy->empty()))
         return test_policy(state);
@@ -416,7 +418,7 @@ Policy *g_regressable_ops; // The policy to check what operators are applicable
 Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
 Policy *g_best_policy; // The best policy we've found so far
-vector<State *> g_found_deadends; // Vector of deadends found while planning
+vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts found while planning
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
 int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
 bool g_silent_planning = false;
