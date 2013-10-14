@@ -77,6 +77,7 @@ def parse_effect(alist):
         assert len(alist) == 3
         parameters = pddl_types.parse_typed_list(alist[1])
         effects = parse_effect(alist[2])
+        assert 1 == len(effects), "Error: Cannot embed non-determinism inside of a forall (for now)."
         return [UniversalEffect(parameters, effect) for effect in effects]
     elif tag == "when":
         assert len(alist) == 3
