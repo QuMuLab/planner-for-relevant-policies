@@ -90,6 +90,9 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
                     new State(*failed_state, *prev_op, false, failed_state_prev),
                     prev_op->get_nondet_name()));
             
+            //cout << "Creating new (default) forbidden state-action pair:" << endl;
+            //de_items.back()->dump();
+            
             de_states.push_back(new NondetDeadend(new State(*failed_state),
                                                   prev_op->get_nondet_name()));
             
