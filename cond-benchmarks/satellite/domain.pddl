@@ -1,5 +1,5 @@
 
-; IPC-2002/satellite-strips/adlSat.pddl
+;; IPC-2002/satellite-strips/adlSat.pddl
 
 (define (domain satellite)
   (:requirements :non-deterministic :equality :typing :conditional-effects :negative-preconditions)
@@ -9,6 +9,7 @@
             (on_board ?i - instrument ?s - satellite)
 	        (supports ?i - instrument ?m - mode)
 	        (pointing ?s - satellite ?d - direction)
+            (solar_power_avail ?s - satellite)
 	        (power_avail ?s - satellite)
 	        (power_on ?i - instrument)
 	        (calibrated ?i - instrument)
@@ -20,27 +21,25 @@
   (:action turn_to
    :parameters (?s - satellite ?d_new - direction ?d_prev - direction)
    :precondition (and (pointing ?s ?d_prev)
-                      (power_avail ?s)
+                      (solar_power_avail ?s)
                       (not (= ?d_new ?d_prev))
               )
    :effect (and  (pointing ?s ?d_new)
                  (not (pointing ?s ?d_prev))
+                 (oneof (and) (not (solar_power_avail ?s)))
            )
   )
 
  
   (:action switch_on
-   :parameters (?i - instrument ?s - satellite ?d_cur - direction ?d_new - direction)
+   :parameters (?i - instrument ?s - satellite)
  
    :precondition (and (on_board ?i ?s) 
                       (power_avail ?s)
-                      (pointing ?s ?d_cur)
-                      (not (= ?d_cur ?d_new))
                  )
    :effect (and (power_on ?i)
                 (when (calibrated ?i) (not (calibrated ?i)))
                 (not (power_avail ?s))
-                (oneof (and) (and (pointing ?s ?d_new) (not (pointing ?s ?d_cur))))
            )
           
   )
@@ -56,15 +55,22 @@
                 (power_avail ?s)
            )
   )
+  
+  (:action collect_solar
+   :parameters (?s - satellite)
+   :precondition (power_avail ?s)
+   :effect (solar_power_avail ?s)
+  )
 
   (:action calibrate
-   :parameters (?s - satellite ?i - instrument ?d - direction)
+   :parameters (?s - satellite ?i - instrument ?d_cur - direction ?d_drift - direction)
    :precondition (and (on_board ?i ?s)
-                      (calibration_target ?i ?d)
-                      (pointing ?s ?d)
+                      (calibration_target ?i ?d_cur)
+                      (pointing ?s ?d_cur)
                       (power_on ?i)
+                      (not (= ?d_cur ?d_drift))
                   )
-   :effect (calibrated ?i)
+   :effect (oneof (calibrated ?i) (and (pointing ?s ?d_drift) (not (solar_power_avail ?s)) (not (pointing ?s ?d_cur))))
   )
 
 
