@@ -631,7 +631,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states) {
                                 generalize_deadend(*succ_state);
                                 
                             // Use a new state since succ_state is deleted below
-                            failed_states.push_back(new DeadendTuple(new State(*succ_state), NULL, rs->op));
+                            failed_states.push_back(new DeadendTuple(new State(*succ_state), new State(*(rs->sc_state)), rs->op));
                             is_failed_state = true;
                         }
                     }

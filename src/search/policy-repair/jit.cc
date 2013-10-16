@@ -194,6 +194,11 @@ bool perform_jit_repairs(Simulator *sim) {
                     if (g_detect_deadends) {
                         if (g_generalize_deadends)
                             generalize_deadend(*current_state);
+                            
+                        assert (NULL != current_state);
+                        assert (NULL != previous_state);
+                        assert (NULL != prev_op);
+                        
                         failed_states.push_back(new DeadendTuple(current_state, previous_state, prev_op));
                     }
                 }
