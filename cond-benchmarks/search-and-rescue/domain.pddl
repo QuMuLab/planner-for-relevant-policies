@@ -96,7 +96,7 @@
   )
   
   (:action takeoff
-    :parameters (?loc -zone)
+    :parameters (?loc - zone)
     :precondition (and
       (on-ground)
       (at ?loc)
