@@ -28,21 +28,23 @@
   )
   
   (:action goto
-    :parameters (?loc - zone)
+    :parameters (?old_loc ?new_loc - zone)
     :precondition (and
                     (not (on-ground))
-                    (not (at ?loc))
-                    (imply (not (= ?loc base))
+                    (not (at ?new_loc))
+                    (at ?old_loc)
+                    (imply (not (= ?new_loc base))
                            (human-alive))
                   )
     :effect (and
     
-                (forall (?prev-loc - zone)
-                    (when (at ?prev-loc)
-                          (not (at ?prev-loc)))
-                )
-                
-                (at ?loc)
+                (at ?new_loc)
+                (not (at ?old_loc))
+    
+                ;(forall (?prev-loc - zone)
+                ;    (when (at ?prev-loc)
+                ;          (not (at ?prev-loc)))
+                ;)
                 
                 (when (and (human-onboard) (human-alive))
                       (oneof (and) (not (human-alive))))
