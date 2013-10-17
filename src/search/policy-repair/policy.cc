@@ -206,7 +206,7 @@ void GeneratorSwitch::generate_cpp_input(ofstream &outfile) const {
     outfile << "check " << immediate_items.size() << endl;
     for (list<PolicyItem *>::const_iterator op_iter = immediate_items.begin();
          op_iter != immediate_items.end(); ++op_iter)
-        outfile << *op_iter << endl;
+        outfile << (*op_iter)->get_name() << endl;
     for (int i = 0; i < g_variable_domain[switch_var]; i++) {
         //cout << "case "<<switch_var->get_name()<<" (Level " <<switch_var->get_level() <<
         //  ") has value " << i << ":" << endl;
