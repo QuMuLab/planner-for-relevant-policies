@@ -138,10 +138,12 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
 
 void generate_regressable_ops() {
     list<PolicyItem *> reg_steps;
+    list<PolicyItem *> cond_reg_steps;
+    
     State *s;
     for (int i = 0; i < g_operators.size(); i++) {
         
-        // Only consider operators that lack conditional effects
+        // First, consider operators that lack conditional effects
         if (0 == g_nondet_conditional_mask[g_operators[i].nondet_index]->size()) {
             s = new State();
             
@@ -156,8 +158,103 @@ void generate_regressable_ops() {
             
             reg_steps.push_back(new RegressableOperator(g_operators[i], s));
         }
+        
+        // Next, consider operators that have conditional effects that are consistent
+        else {
+            s = new State();
+            bool consistent = true;
+            int var,val;
+            
+            // Ensure that the conditional effect preconditions are all consistent to fire.
+            for (int j = 0; consistent && (j < g_operators[i].get_pre_post().size()); j++) {
+                
+                var = g_operators[i].get_pre_post()[j].var;
+                val = g_operators[i].get_pre_post()[j].pre;
+                
+                if ((state_var_t(-1) != (*s)[var]) && (state_var_t(val) != (*s)[var])) {
+                    consistent = false;
+                    break;
+                } else {
+                    (*s)[var] = state_var_t(val);
+                }
+                
+                for (int k = 0; k < g_operators[i].get_pre_post()[j].cond.size(); k++) {
+                    
+                    var = g_operators[i].get_pre_post()[j].cond[k].var;
+                    val = g_operators[i].get_pre_post()[j].cond[k].prev;
+                    
+                    if ((state_var_t(-1) != (*s)[var]) && (state_var_t(val) != (*s)[var])) {
+                        consistent = false;
+                        break;
+                    } else {
+                        (*s)[var] = state_var_t(val);
+                    }
+                }
+                
+            }
+            
+            for (int j = 0; consistent && (j < g_operators[i].get_prevail().size()); j++) {
+                
+                var = g_operators[i].get_prevail()[j].var;
+                val = g_operators[i].get_prevail()[j].prev;
+                
+                if ((state_var_t(-1) != (*s)[var]) && (state_var_t(val) != (*s)[var])) {
+                    consistent = false;
+                    break;
+                } else {
+                    (*s)[var] = state_var_t(val);
+                }
+                
+            }
+            
+            
+            // Reset the state for checking the post conditions
+            delete s;
+            s = new State();
+            
+            
+            // Only makes sense to continue if it is consistent so far
+            if (consistent) {
+                // Only applicable if the prevail and post conditions currently hold.
+                for (int j = 0; j < g_operators[i].get_pre_post().size(); j++) {
+                    
+                    var = g_operators[i].get_pre_post()[j].var;
+                    val = g_operators[i].get_pre_post()[j].post;
+                    
+                    if ((state_var_t(-1) != (*s)[var]) && (state_var_t(val) != (*s)[var])) {
+                        consistent = false;
+                        break;
+                    } else {
+                        (*s)[var] = state_var_t(val);
+                    }
+                    
+                }
+                
+                for (int j = 0; j < g_operators[i].get_prevail().size(); j++) {
+                    
+                    var = g_operators[i].get_prevail()[j].var;
+                    val = g_operators[i].get_prevail()[j].prev;
+                    
+                    if ((state_var_t(-1) != (*s)[var]) && (state_var_t(val) != (*s)[var])) {
+                        consistent = false;
+                        break;
+                    } else {
+                        (*s)[var] = state_var_t(val);
+                    }
+                    
+                }
+            }
+            
+            if (consistent)
+                cond_reg_steps.push_back(new RegressableOperator(g_operators[i], s));
+            else
+                delete s;
+        }
     }
+    
     g_regressable_ops = new Policy(reg_steps);
+    g_regressable_cond_ops = new Policy(cond_reg_steps);
+    
 }
 
 void RegressionStep::strengthen(State *s) {

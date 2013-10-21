@@ -83,6 +83,30 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
                                                      ro->op->get_nondet_name()));
         }
         
+        ////////////////////////////////////////////
+        
+        // Check to see if we have any consistent "all-fire" operators
+        reg_items.clear();
+        g_regressable_cond_ops->generate_applicable_items(*failed_state, reg_items, true);
+        
+        // For each operator, create a new deadend avoidance pair
+        for (int j = 0; j < reg_items.size(); j++) {
+            
+            RegressableOperator *ro = (RegressableOperator*)(reg_items[j]);
+            
+            de_items.push_back(new NondetDeadend(
+                                    new State(*failed_state, *(ro->op), false, ro->op->all_fire_context),
+                                    ro->op->get_nondet_name()));
+
+            //cout << "Creating new (all-fire) forbidden state-action pair:" << endl;
+            //de_items.back()->dump();
+
+            de_states.push_back(new NondetDeadend(new State(*failed_state),
+                                                     ro->op->get_nondet_name()));
+        }
+        
+        ////////////////////////////////////////////
+        
         // If we have a specified previous state and action, use that to
         //  build a forbidden state-action pair
         if (NULL != failed_state_prev) {

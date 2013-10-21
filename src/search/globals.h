@@ -79,6 +79,7 @@ extern std::vector<std::pair<int, int> > g_matched_policy; // Contains the condi
 extern int g_matched_distance; // Containts the distance to the goal for the matched policy
 extern Policy *g_policy; // The policy to check while searching
 extern Policy *g_regressable_ops; // The policy to check what operators are applicable
+extern Policy *g_regressable_cond_ops; // The policy to check what operators with conditional effects are applicable
 extern Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 extern Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
 extern Policy *g_best_policy; // The best policy we've found so far

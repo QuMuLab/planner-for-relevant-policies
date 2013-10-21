@@ -85,6 +85,7 @@ public:
     std::string get_nondet_name() const {return nondet_name; }
     
     int nondet_index;
+    State * all_fire_context;
 
     bool is_axiom() const {return is_an_axiom; }
 
