@@ -47,14 +47,14 @@ public:
     RegressionStep *get_best_step(const State &curr);
     bool empty() { return (0 == root); }
     
-    void mark_strong() { score = 1.0; }
+    void mark_strong() { score = 1.1; }
     void mark_complete() { complete = true; score = 0.0; }
     
     void evaluate();
     double get_score();
     int get_size() { return all_items.size(); }
     bool is_complete() { return complete; }
-    bool is_strong_cyclic() { return (1.0 == score); }
+    bool is_strong_cyclic() { return (1.1 == score); }
     
     void init_scd();
     bool step_scd(vector<State *> &failed_states);
