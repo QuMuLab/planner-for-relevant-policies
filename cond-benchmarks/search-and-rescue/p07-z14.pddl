@@ -15,6 +15,4 @@
   (:init (at base) (on-ground) (human-alive))
 
   (:goal (and (mission-ended)))
-  (:goal-reward 1000)
-  (:metric maximize (reward))
 )
