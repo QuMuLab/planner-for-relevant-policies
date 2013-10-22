@@ -395,6 +395,7 @@ bool g_generalize_deadends = true; // Try to find minimal sized deadends from th
 bool g_record_online_deadends = true; // Record the deadends as they occur online, and add them to the deadend policy after solving
 bool g_optimized_scd = true; // Do optimized strong cyclic detection
 bool g_seeded = false; // Only want to seed once
+int g_trial_depth = 1000; // Used to limit the number of simulation steps
 int g_num_trials = 1; // Number of trials that should be used for the simulation
 double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
 vector<pair<int, int> > g_goal_orig;

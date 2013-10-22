@@ -7,6 +7,7 @@ Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb
     successful_states = 0;
     failed_states = 0;
     record_succeeded = 0;
+    record_depth_limit = 0;
 }
 
 Simulator::Simulator(bool verb) : verbose(verb), found_solution(false), succeeded(false) {
@@ -14,6 +15,7 @@ Simulator::Simulator(bool verb) : verbose(verb), found_solution(false), succeede
     successful_states = 0;
     failed_states = 0;
     record_succeeded = 0;
+    record_depth_limit = 0;
 }
 
 void Simulator::run() {
@@ -43,9 +45,11 @@ void Simulator::record_stats() {
     record_total_states.push_back(successful_states + failed_states);
     if (succeeded)
         record_succeeded++;
+    if (failed_states + successful_states >= g_trial_depth)
+		record_depth_limit++;
 }
 
-void Simulator::run_once(bool stop_on_failure, Policy *pol, int action_limit) {
+void Simulator::run_once(bool stop_on_failure, Policy *pol) {
     found_solution = false;
     succeeded = false;
     RegressionStep * current_step;
@@ -58,7 +62,7 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol, int action_limit) {
     reset_goal();
     
     // To prevent infinite loops with 0-probability exit, we limit the loops
-    while(!found_solution && (failed_states + successful_states < action_limit)) {
+    while(!found_solution && (failed_states + successful_states < g_trial_depth)) {
         // Get the best action (if any)
         current_step = pol->get_best_step(*current_state);
         
@@ -75,7 +79,7 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol, int action_limit) {
                 // Execute the non-deterministic action
                 execute_action(current_step->op);
             }
-            
+        
         } else {
             failed_states++;
             if (stop_on_failure || !replan()) {
@@ -318,6 +322,7 @@ void Simulator::dump() {
     cout << "Strongly Cyclic: " << (g_policy->is_strong_cyclic() ? "True" : "False") << endl;
     cout << "Policy Score: " << g_policy->get_score() << endl;
     cout << "Succeeded: " << record_succeeded << " / " << g_num_trials << endl;
+    cout << "Depth limit reached: " << record_depth_limit << " / " << g_num_trials << endl;
     
     cout << "\n-{ Timing Statistics }-" << endl;
     cout << "Regression Computation: " << g_timer_regression << endl;

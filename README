@@ -33,7 +33,10 @@ Options:
 --plan-with-policy 1/0
     Stop searching when the policy matches the current state.
 
---trials NUM_TRIALS
+--depth NUM_ACTIONS (default=1000)
+    Stop simulations and consider it a failure after NUM_ACTIONS actions.
+
+--trials NUM_TRIALS (default=1)
     Number of trials to run for the simulator.
 
 --detect-deadends 1/0
