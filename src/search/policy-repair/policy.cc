@@ -283,9 +283,15 @@ GeneratorBase *GeneratorBase::create_generator(list<PolicyItem *> &reg_items, se
     if (reg_items.empty())
         return new GeneratorEmpty;
     
-    // By this point, we are assuming that either /every/ reg_item is
-    //  done, or /no/ reg_item is done. Thus we only check the first.
-    if (reg_item_done(reg_items.front(), vars_seen)) {
+    // If every item is done, then we create a leaf node
+    bool all_done = true;
+    for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); all_done && (op_iter != reg_items.end()); ++op_iter) {
+        if (!(reg_item_done(*op_iter, vars_seen))) {
+            all_done = false;
+        }
+    }
+    
+    if (all_done) {
         return new GeneratorLeaf(reg_items);
     } else {
         return new GeneratorSwitch(reg_items, vars_seen);
