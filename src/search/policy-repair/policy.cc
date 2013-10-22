@@ -542,11 +542,11 @@ void Policy::generate_cpp_input(ofstream &outfile) const {
 double Policy::get_score() {
     if (0.0 == score)
         evaluate();
-    return score;
+    return min(score, 1.0);
 }
 
 void Policy::evaluate() {
-    if (1.0 == score)
+    if (1.0 <= score)
         return;
     
     g_timer_policy_eval.resume();
