@@ -1,0 +1,6 @@
+
+IPC-2002/satellite-strips/adlSat.pddl:  (:requirements :equality :typing :conditional-effects :negative-preconditions)
+IPC-2008/FOP/search-and-rescue/domain.pddl:    :conditional-effects :mdp)
+IPC-2006/probabilistic/elevators/domain.pddl:  (:requirements :probabilistic-effects :conditional-effects :negative-preconditions :equality :typing)
+IPC-2006/probabilistic/tree/tree_10_3_4.pddl:  (:requirements :typing :probabilistic-effects :conditional-effects)
+FOND/triangle-tire

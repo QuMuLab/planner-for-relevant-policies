@@ -1,6 +1,7 @@
 #ifndef OPERATOR_H
 #define OPERATOR_H
 
+#include <cstdlib>
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -19,6 +20,12 @@ struct Prevail {
     bool is_applicable(const State &state) const {
         assert(var >= 0 && var < g_variable_name.size());
         assert(prev >= 0 && prev < g_variable_domain[var]);
+        
+        if (-1 == prev) {
+            cout << "\n\nError: You probably tried progressing a partial state that has underspecified variables for the conditional effects.\n" << endl;
+            exit(1);
+        }
+        
         return state[var] == prev;
     }
 
@@ -76,6 +83,9 @@ public:
     void dump() const;
     std::string get_name() const {return name; }
     std::string get_nondet_name() const {return nondet_name; }
+    
+    int nondet_index;
+    State * all_fire_context;
 
     bool is_axiom() const {return is_an_axiom; }
 

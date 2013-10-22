@@ -36,6 +36,14 @@ void check_magic(std::istream &in, std::string magic);
 
 bool are_mutex(const std::pair<int, int> &a, const std::pair<int, int> &b);
 
+struct DeadendTuple {
+    State *de_state;
+    State *prev_state;
+    const Operator *prev_op;
+
+    DeadendTuple(State *ds, State *ps, const Operator *op) : de_state(ds), prev_state(ps), prev_op(op) {}
+    ~DeadendTuple();
+};
 
 extern bool g_use_metric;
 extern int g_min_action_cost;
@@ -64,15 +72,18 @@ extern SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can
 extern DeadendAwareSuccessorGenerator *g_successor_generator;
 
 
-extern std::map<std::string, std::vector<Operator *> > g_nondet_mapping; // Maps a non-deterministic action name to a list of ground operators
+extern std::map<std::string, int> g_nondet_index_mapping; // Maps a non-deterministic action name to its id
+extern std::vector<std::vector<Operator *> *> g_nondet_mapping; // Maps a non-deterministic action id to a list of ground operators
+extern std::vector<std::vector<int> *> g_nondet_conditional_mask; // Maps a non-deterministic action id to the variables that must be defined when doing context-sensitive regression
 extern std::vector<std::pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
 extern int g_matched_distance; // Containts the distance to the goal for the matched policy
 extern Policy *g_policy; // The policy to check while searching
 extern Policy *g_regressable_ops; // The policy to check what operators are applicable
+extern Policy *g_regressable_cond_ops; // The policy to check what operators with conditional effects are applicable
 extern Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 extern Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
 extern Policy *g_best_policy; // The best policy we've found so far
-extern std::vector<State *> g_found_deadends; // Vector of deadends found while planning
+extern std::vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts found while planning
 extern double g_best_policy_score; // Score for the best policy we've seen so far
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_silent_planning; // Silence the planning output

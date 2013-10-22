@@ -105,7 +105,7 @@ bool AdditiveHeuristic::relaxed_exploration(bool include_forbidden) {
             
             if (unary_op->unsatisfied_preconditions == 0) {
                 
-                bool is_forbidden = (0 != forbidden_ops.count(g_operators[unary_op->operator_no].get_nondet_name()));
+                bool is_forbidden = (0 != forbidden_ops.count(g_operators[unary_op->operator_no].nondet_index));
                 
                 if (!g_detect_deadends || !is_forbidden ||
                     (include_forbidden && (unary_op->cost != unary_op->base_cost)))
@@ -126,7 +126,7 @@ bool AdditiveHeuristic::relaxed_exploration(bool include_forbidden) {
                 const vector<UnaryOperator *> &new_triggered_operators = unary_op->effect->precondition_of;
         
                 for (int j = 0; j < new_triggered_operators.size(); j++) {
-                    if (0 != forbidden_ops.count(g_operators[new_triggered_operators[j]->operator_no].get_nondet_name())) {
+                    if (0 != forbidden_ops.count(g_operators[new_triggered_operators[j]->operator_no].nondet_index)) {
                         
                         if (new_triggered_operators[j]->unsatisfied_preconditions <= 0) {
                             increase_cost(new_triggered_operators[j]->cost, unary_op->cost);
