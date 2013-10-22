@@ -208,6 +208,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--trials") == 0) {
             ++i;
             g_num_trials = atoi(argv[i]);
+        } else if (arg.compare("--depth") == 0) {
+            ++i;
+            g_trial_depth = atoi(argv[i]);
         } else if (arg.compare("--forgetpolicy") == 0) {
             ++i;
             g_forgetpolicy = (1 == atoi(argv[i]));
@@ -285,7 +288,9 @@ string OptionParser::usage(string progname) {
         "    Limit the planlocal searching to a fixed number of search steps.\n\n"
         "--plan-with-policy 1/0\n"
         "    Stop searching when the policy matches the current state.\n\n"
-        "--trials NUM_TRIALS\n"
+        "--depth NUM_ACTIONS (default=1000)\n"
+		"    Stop simulations and consider it a failure after NUM_ACTIONS actions.\n\n"
+        "--trials NUM_TRIALS (default=1)\n"
         "    Number of trials to run for the simulator.\n\n"
         "--detect-deadends 1/0\n"
         "    Use primitive deadend detection to ensure a strongly cyclic solution.\n\n"
