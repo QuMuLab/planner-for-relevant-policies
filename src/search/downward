@@ -22,14 +22,14 @@ STATE_SIZE=$($TIME --append "$BASEDIR/dispatch" $TEMPFILE)
 echo Dispatcher selected state size $STATE_SIZE.
 UNIT_COST=$($TIME --append "$BASEDIR/unitcost" $TEMPFILE)
 echo This is a $UNIT_COST task.
-#PLANNER="$BASEDIR/downward-$STATE_SIZE"
-PLANNER="$BASEDIR/downward-$STATE_SIZE-debug"
+PLANNER="$BASEDIR/downward-$STATE_SIZE"
+#PLANNER="$BASEDIR/downward-$STATE_SIZE-debug"
 
-echo
-echo
-echo "WARNING: Running in debug mode."
-echo
-echo
+#echo
+#echo
+#echo "WARNING: Running in debug mode."
+#echo
+#echo
 
 if [[ "$1" == "ipc" ]]; then
     CONFIG="$2"
