@@ -38,7 +38,7 @@
                       (power_avail ?s)
                  )
    :effect (and (power_on ?i)
-                (when (calibrated ?i) (not (calibrated ?i)))
+                (not (calibrated ?i))
                 (not (power_avail ?s))
            )
           
@@ -82,7 +82,7 @@
                       (power_on ?i)
                       (pointing ?s ?d)
                )
-   :effect (when (not (have_image ?d ?m)) (oneof (not (calibrated ?i)) (have_image ?d ?m)))
+   :effect (oneof (not (calibrated ?i))  (when (not (have_image ?d ?m)) (have_image ?d ?m)) )
   )
 )
 
