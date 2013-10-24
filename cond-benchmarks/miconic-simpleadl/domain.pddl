@@ -46,17 +46,17 @@
 ;;drive up
 
 (:action up
-  :parameters (?f1 - floor ?f2 - floor)
-  :precondition (and (lift-at ?f1) (above ?f1 ?f2))
-  :effect (and (lift-at ?f2) (not (lift-at ?f1))))
+  :parameters (?f1 - floor ?f2 - floor ?f3 - floor)
+  :precondition (and (lift-at ?f1) (above ?f1 ?f2) (above ?f1 ?f3) (not (= ?f2 ?f3)))
+  :effect (and (oneof (lift-at ?f2) (lift-at ?f3)) (not (lift-at ?f1))))
 
 
 ;;drive down
 
 (:action down
-  :parameters (?f1 - floor ?f2 - floor)
-  :precondition (and (lift-at ?f1) (above ?f2 ?f1))
-  :effect (and (lift-at ?f2) (not (lift-at ?f1))))
+  :parameters (?f1 - floor ?f2 - floor ?f3 - floor)
+  :precondition (and (lift-at ?f1) (above ?f2 ?f1) (above ?f3 ?f1) (not (= ?f2 ?f3)))
+  :effect (and (oneof (lift-at ?f2) (lift-at ?f3)) (not (lift-at ?f1))))
 )
 
 
