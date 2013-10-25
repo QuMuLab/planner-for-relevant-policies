@@ -202,12 +202,36 @@
            :parameters ()
            :precondition (objscheduled)
            :effect (and
+                    
                     (forall (?x - part)
                             (when (scheduled ?x)
                               (not (scheduled ?x))))
-                    (forall (?m - machine)
-                            (when (busy ?m)
-                              (not (busy ?m)))))))
+                              
+                              
+                    ;(forall (?m - machine)
+                    ;        (when (busy ?m)
+                    ;          (not (busy ?m))))
+                    
+                    
+                    (when (busy polisher) (not (busy polisher)))
+                    (when (busy roller) (not (busy roller)))
+                    (when (busy lathe) (not (busy lathe)))
+                    
+                    (oneof (and
+                                (when (busy grinder) (not (busy grinder)))
+                                (when (busy punch) (not (busy punch)))
+                                (when (busy drill-press) (not (busy drill-press))))
+                           (and (busy grinder) (busy punch) (busy drill-press)))
+                    
+                    (oneof (and
+                                (when (busy spray-painter) (not (busy spray-painter)))
+                                (when (busy immersion-painter) (not (busy immersion-painter))))
+                           (and (busy spray-painter) (busy-immersion-painter)))
+                    
+                    
+                   ))
+
+)
 
 
 
