@@ -20,3 +20,4 @@
 ^new-scripts/preprocessed-tasks/
 ^new-scripts/exp-.*/
 ^fond-benchmarks/RESULTS/backup/
+^cond-benchmarks/*/results*
