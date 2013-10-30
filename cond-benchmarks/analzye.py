@@ -10,7 +10,7 @@ def get_figsize(fig_width_pt):
     golden_mean = (math.sqrt(5)-1.0)/2.0    # Aesthetic ratio
     fig_width = fig_width_pt*inches_per_pt  # width in inches
     fig_height = fig_width*golden_mean     # height in inches
-    fig_size =  [fig_width,fig_height*2]      # exact figsize
+    fig_size =  [fig_width,fig_height*1.7]      # exact figsize
     return fig_size
 
 if '-csv' in get_opts()[0]:
@@ -56,14 +56,18 @@ else:
     f, (ax1, ax2) = pylab.subplots(2, sharex=True, sharey=False)
     
     SYMBOLS = ['s', 'x', 'o', '^', '>', 'v', '<', 'd', 'p', 'h', '8']
-    COLOURS = ['b','g','r','c','m','y','k']
+    COLOURS = ['b','g','k','m']
+    LINES = ['-', '--', '-.', ':']
+    LINES = ['-', '--', '-.', ':']
     
     handles1 = []
     handles2 = []
     
     for i in range(len(dom_names)):
-        handles1.append(ax1.plot(xs[i], sizes[i], c=COLOURS[i], marker=SYMBOLS[i]))
-        handles2.append(ax2.plot(xs[i], times[i], c=COLOURS[i], marker=SYMBOLS[i]))
+        handles1.append(ax1.plot(xs[i], sizes[i], c=COLOURS[i], ls=LINES[i]))
+        handles2.append(ax2.plot(xs[i], times[i], c=COLOURS[i], ls=LINES[i]))
+        #handles1.append(ax1.scatter(xs[i], sizes[i], c=COLOURS[i], marker=SYMBOLS[i]))
+        #handles2.append(ax2.scatter(xs[i], times[i], c=COLOURS[i], marker=SYMBOLS[i]))
     
     ax1.legend(dom_names, loc="upper left")
     
@@ -74,6 +78,9 @@ else:
     
     ax1.set_ylabel('Policy Size')
     ax2.set_ylabel('Runtime (s)')
+    
+    ax1.xaxis.set_major_formatter( pylab.NullFormatter() )
+    ax2.xaxis.set_major_formatter( pylab.NullFormatter() )
     
     #ax1.plot(x, y)
     #ax1.set_title('Sharing both axes')
