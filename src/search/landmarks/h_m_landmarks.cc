@@ -309,7 +309,7 @@ void HMLandmarks::get_m_sets(int m,
 void HMLandmarks::print_proposition(const pair<int, int> &fluent) const {
     cout << g_fact_names[fluent.first][fluent.second]
          << " (" << g_variable_name[fluent.first] << "(" << fluent.first << ")"
-    << "->" << fluent.second << ")";
+         << "->" << fluent.second << ")";
 }
 
 void get_operator_precondition(int op_index, FluentSet &pc) {
@@ -581,6 +581,10 @@ HMLandmarks::HMLandmarks(const Options &opts)
     : LandmarkFactory(opts),
       m_(opts.get<int>("m")) {
     std::cout << "H_m_Landmarks(" << m_ << ")" << std::endl;
+    if (!g_axioms.empty()) {
+        cerr << "H_m_Landmarks do not support axioms" << endl;
+        exit_with(EXIT_UNSUPPORTED);
+    }
     // need this to be able to print propositions for debugging
     // already called in global.cc
     //  read_external_inconsistencies();
@@ -961,7 +965,6 @@ void HMLandmarks::generate_landmarks() {
             std::cout << "Subset is: ";
             print_fluentset(h_m_table_[set_index].fluents);
             std::cout << std::endl;
-            //      exit(1);
         }
 
         // set up goals landmarks for processing

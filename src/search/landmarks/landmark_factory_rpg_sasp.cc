@@ -234,13 +234,19 @@ static string get_predicate_for_fact(int var_no, int value) {
     const string &fact_name = g_fact_names[var_no][value];
     if (fact_name == "<none of those>")
         return "";
-    int paren_pos = fact_name.find('(', 5);
-    if (fact_name.substr(0, 5) != "Atom " || paren_pos == string::npos) {
+    int predicate_pos = 0;
+    if (fact_name.substr(0, 5) == "Atom ") {
+        predicate_pos = 5;
+    } else if (fact_name.substr(0, 12) == "NegatedAtom ") {
+        predicate_pos = 12;
+    }
+    int paren_pos = fact_name.find('(', predicate_pos);
+    if (predicate_pos == 0 || paren_pos == string::npos) {
         cerr << "error: cannot extract predicate from fact: "
              << fact_name << endl;
-        exit(1);
+        exit_with(EXIT_INPUT_ERROR);
     }
-    return string(fact_name.begin() + 5, fact_name.begin() + paren_pos);
+    return string(fact_name.begin() + predicate_pos, fact_name.begin() + paren_pos);
 }
 
 void LandmarkFactoryRpgSasp::build_disjunction_classes() {
@@ -309,6 +315,8 @@ void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<i
     int no_ops = 0;
     hash_map<int, vector<pair<int, int> > > preconditions; // maps from
     // pddl_proposition_indeces to props
+    hash_map<int, set<int> > used_operators; // tells for each
+    // proposition which operators use it
     for (unsigned i = 0; i < ops.size(); i++) {
         const Operator &op = lm_graph->get_operator_for_lookup_index(ops[i]);
         if (_possibly_reaches_lm(op, lvl_var, bp)) {
@@ -317,7 +325,6 @@ void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<i
             get_greedy_preconditions_for_lm(bp, op, next_pre);
             for (hash_map<int, int>::iterator it = next_pre.begin(); it
                  != next_pre.end(); it++) {
-
                 int disj_class = disjunction_classes[it->first][it->second];
                 if (disj_class == -1) {
                     // This fact may not participate in any disjunctive LMs
@@ -327,18 +334,21 @@ void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<i
 
                 // Only deal with propositions that are not shared preconditions
                 // (those have been found already and are simple landmarks).
-                if (!lm_graph->simple_landmark_exists(*it))
+                if (!lm_graph->simple_landmark_exists(*it)) {
                     preconditions[disj_class].push_back(*it);
+                    used_operators[disj_class].insert(i);
+                }
             }
         }
     }
     for (hash_map<int, vector<pair<int, int> > >::iterator it =
              preconditions.begin(); it != preconditions.end(); ++it) {
-        if (it->second.size() == no_ops) {
+        if (used_operators[it->first].size() == no_ops) {
             set<pair<int, int> > pre_set; // the set gets rid of duplicate predicates
             pre_set.insert(it->second.begin(), it->second.end());
-            if (pre_set.size() > 1) // otherwise this LM is not actually a disjunctive LM
+            if (pre_set.size() > 1) { // otherwise this LM is not actually a disjunctive LM
                 disjunctive_pre.push_back(pre_set);
+            }
         }
     }
 }

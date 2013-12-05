@@ -8,11 +8,13 @@
 #include <vector>
 #include <map>
 
+class Axiom;
 class AxiomEvaluator;
 class CausalGraph;
 class DomainTransitionGraph;
+class LegacyCausalGraph;
 class Operator;
-class Axiom;
+class RandomNumberGenerator;
 class State;
 class Heuristic;
 class SuccessorGenerator;
@@ -36,7 +38,6 @@ void check_magic(std::istream &in, std::string magic);
 
 bool are_mutex(const std::pair<int, int> &a, const std::pair<int, int> &b);
 
-
 extern bool g_use_metric;
 extern int g_min_action_cost;
 extern int g_max_action_cost;
@@ -56,6 +57,7 @@ extern std::vector<Operator> g_axioms;
 extern AxiomEvaluator *g_axiom_evaluator;
 extern std::vector<DomainTransitionGraph *> g_transition_graphs;
 extern CausalGraph *g_causal_graph;
+extern LegacyCausalGraph *g_legacy_causal_graph;
 extern Timer g_timer;
 extern std::string g_plan_filename;
 extern RandomNumberGenerator g_rng;

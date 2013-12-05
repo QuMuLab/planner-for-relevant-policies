@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <list>
+#include <new>
 using namespace std;
 
 
@@ -22,7 +23,7 @@ int main(int argc, const char **argv) {
 
     if (argc < 2) {
         cout << OptionParser::usage(argv[0]) << endl;
-        exit(1);
+        exit_with(EXIT_INPUT_ERROR);
     }
 
     if (string(argv[1]).compare("--help") != 0)
@@ -57,8 +58,8 @@ int main(int argc, const char **argv) {
         OptionParser::parse_cmd_line(argc, argv, true);
         engine = OptionParser::parse_cmd_line(argc, argv, false);
     } catch (ParseError &pe) {
-        cout << pe << endl;
-        exit(1);
+        cerr << pe << endl;
+        exit_with(EXIT_INPUT_ERROR);
     }
     g_timer_engine_init.stop();
     
@@ -188,6 +189,10 @@ int main(int argc, const char **argv) {
         cout << "Dumping the policy..." << endl;
         g_policy->dump_human_policy();
     }
-
-    return sim->succeeded ? 0 : 1;
+    
+    if (sim->succeeded) {
+        exit_with(EXIT_PLAN_FOUND);
+    } else {
+        exit_with(EXIT_UNSOLVED_INCOMPLETE);
+    }
 }

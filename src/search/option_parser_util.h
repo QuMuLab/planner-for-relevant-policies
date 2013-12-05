@@ -2,6 +2,7 @@
 #define OPTION_PARSER_UTIL_H
 
 #include "merge_and_shrink/shrink_strategy.h"
+#include "utilities.h"
 
 #include <algorithm>
 #include <string>
@@ -48,15 +49,19 @@ typedef tree<ParseNode> ParseTree;
 
 struct ParseError {
     ParseError(std::string m, ParseTree pt);
+    ParseError(std::string m, ParseTree pt, std::string correct_substring);
 
     std::string msg;
     ParseTree parse_tree;
+    std::string substr;
 
     friend std::ostream &operator<<(std::ostream &out, const ParseError &pe) {
         out << "Parse Error: " << std::endl
         << pe.msg << " at: " << std::endl;
         kptree::print_tree_bracketed<ParseNode>(pe.parse_tree, out);
-        out << std::endl;
+        if(pe.substr.size() > 0) {
+            out << " (cannot continue parsing after \"" << pe.substr << "\")" << std::endl;
+        }
         return out;
     }
 };
@@ -354,7 +359,7 @@ public:
             std::cout << "attempt to retrieve nonexisting object of name "
                       << key << " (type: " << TypeNamer<T>::name() << ")"
                       << " from Options. Aborting." << std::endl;
-            exit(1);
+            exit_with(EXIT_CRITICAL_ERROR);
         }
         try {
             T result = boost::any_cast<T>(it->second);
@@ -364,7 +369,7 @@ public:
                       << std::endl
                       << key << " is not of type " << TypeNamer<T>::name()
                       << std::endl << "exiting" << std::endl;
-            exit(1);
+            exit_with(EXIT_CRITICAL_ERROR);
         }
     }
 
@@ -377,7 +382,7 @@ public:
                           << std::endl
                           << "List " << key << " is empty"
                           << std::endl;
-                exit(1);
+                exit_with(EXIT_INPUT_ERROR);
             }
         }
     }

@@ -296,8 +296,8 @@ public:
 			Literal* lptr = instantiatedOp::getLiteral(& e);
 			PropEntry* eid = spes.findInAll(lptr);
 			if(eid){
-				if(context && s->getPolarity() == E_NEG ||
-					!context && s->getPolarity()==E_POS){
+			  if((context && s->getPolarity() == E_NEG) ||
+			     (!context && s->getPolarity()==E_POS)){
 					ae->addSupportedByNeg(eid);
 					cout << "Support by neg: " << *ae << " with " << *eid << "\n";
 				}
