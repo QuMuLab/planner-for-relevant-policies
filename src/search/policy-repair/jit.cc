@@ -2,7 +2,7 @@
 
 void UnhandledState::dump() const {
     cout << "Unhandled State of distance " << cost << ":" << endl;
-    state->dump();
+    state->dump_fdr();
 }
 
 
