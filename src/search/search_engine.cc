@@ -63,7 +63,7 @@ void SearchEngine::search() {
     if (g_record_online_deadends && !g_limit_states) {
         if (g_generalize_deadends) {
             for (int i = 0; i < g_found_deadends.size(); i++)
-                generalize_deadend(*(g_found_deadends[i]));
+                generalize_deadend(*(g_found_deadends[i]->de_state));
         }
 //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
         update_deadends(g_found_deadends);
