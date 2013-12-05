@@ -72,8 +72,12 @@ int FFHeuristic::compute_heuristic(const State &state) {
     
     int h_add = compute_add_and_ff(state);
     if (h_add == DEAD_END) {
-        if (g_record_online_deadends && !g_limit_states)
-            g_found_deadends.push_back(new State(state));
+        if (g_record_online_deadends && !g_limit_states) {
+            // HAZ: For now, we forget about trying to record the context
+            //      for the deadend. This means that we may not have any
+            //      forbidden state-action pairs created.
+            g_found_deadends.push_back(new DeadendTuple(new State(state), NULL, NULL));
+        }
         return h_add;
     }
 

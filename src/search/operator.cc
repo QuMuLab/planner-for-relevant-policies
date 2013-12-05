@@ -19,6 +19,7 @@ PrePost::PrePost(istream &in) {
 
 Operator::Operator(istream &in, bool axiom) {
     marked = false;
+    nondet_index = -1;
 
     is_an_axiom = axiom;
     if (!is_an_axiom) {
@@ -58,6 +59,36 @@ Operator::Operator(istream &in, bool axiom) {
     }
 
     marker1 = marker2 = false;
+    
+    
+    
+    /* ********************
+     * 
+     *  !!WARNING!!
+     * 
+     *   This operation doesn't check for inconsistencies
+     *    because we assume that was done to construct the
+     *    g_regressable_cond_ops data structure (see the
+     *    generate_regressable_ops function).
+     * 
+     * ************* */
+     
+    // Deal with the all-fire context (essentially every conditional head
+    //  and precondition rolled into one state)
+    all_fire_context = new State();
+    
+    for (int i = 0; i < pre_post.size(); i++) {
+        (*all_fire_context)[pre_post[i].var] = state_var_t(pre_post[i].pre);
+        
+        for (int j = 0; j < pre_post[i].cond.size(); j++) {
+            (*all_fire_context)[pre_post[i].cond[j].var] = state_var_t(pre_post[i].cond[j].prev);
+        }
+    }
+    
+    for (int i = 0; i < prevail.size(); i++)
+        (*all_fire_context)[prevail[i].var] = state_var_t(prevail[i].prev);
+    
+    
 }
 
 void Prevail::dump() const {

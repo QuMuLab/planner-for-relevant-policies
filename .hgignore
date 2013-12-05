@@ -20,3 +20,9 @@
 ^new-scripts/preprocessed-tasks/
 ^new-scripts/exp-.*/
 ^fond-benchmarks/RESULTS/backup/
+^cond-benchmarks/triangle-tireworld/results*
+^cond-benchmarks/test-conditional/results*
+^cond-benchmarks/search-and-rescue/results*
+^cond-benchmarks/schedule/results*
+^cond-benchmarks/miconic-simpleadl/results*
+^cond-benchmarks/elevators/results*

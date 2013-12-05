@@ -28,7 +28,7 @@ Heuristic::~Heuristic() {
 void Heuristic::set_preferred(const Operator *op) {
     if (!op->is_marked()) {
         op->mark();
-        if (0 == forbidden_ops.count(op->get_nondet_name()))
+        if (0 == forbidden_ops.count(op->nondet_index))
             preferred_operators.push_back(op);
     }
 }
@@ -41,7 +41,7 @@ void Heuristic::compute_forbidden(const State &state) {
         for (int i = 0; i < reg_items.size(); i++) {
             //cout << "Forbidding:" << endl;
             //cout << ((NondetDeadend*)(reg_items[i]))->op_name << endl;
-            forbidden_ops.insert(((NondetDeadend*)(reg_items[i]))->op_name);
+            forbidden_ops.insert(g_nondet_index_mapping[((NondetDeadend*)(reg_items[i]))->op_name]);
         }
     }
 }

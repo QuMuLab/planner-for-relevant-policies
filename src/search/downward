@@ -34,6 +34,12 @@ echo This is a $UNIT_COST task.
 PLANNER="$BASEDIR/downward-$STATE_SIZE"
 #PLANNER="$BASEDIR/downward-$STATE_SIZE-debug"
 
+#echo
+#echo
+#echo "WARNING: Running in debug mode."
+#echo
+#echo
+
 function run_portfolio {
     PORTFOLIO="$1"
     shift
