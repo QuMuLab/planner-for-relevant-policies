@@ -11,7 +11,7 @@ void RegressionStep::dump() const {
         cout << " -{ Goal }-" << endl;
     }
     cout << "\n -{ State }-" << endl;
-    state->dump();
+    state->dump_fdr();
     cout << "" << endl;
 }
 
@@ -27,7 +27,7 @@ void NondetDeadend::dump() const {
     cout << "Non-deterministic deadend:" << endl;
     cout << "Operator: " << op_name << endl;
     cout << " -{ State }-" << endl;
-    state->dump();
+    state->dump_fdr();
     cout << "" << endl;
 }
 
@@ -41,7 +41,7 @@ void RegressableOperator::dump() const {
     cout << " -{ Operator }-" << endl;
     op->dump();
     cout << " -{ State }-" << endl;
-    state->dump();
+    state->dump_fdr();
     cout << "" << endl;
 }
 
