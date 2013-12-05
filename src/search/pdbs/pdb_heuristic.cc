@@ -9,6 +9,7 @@
 #include "../priority_queue.h"
 #include "../state.h"
 #include "../timer.h"
+#include "../utilities.h"
 
 #include "../merge_and_shrink/variable_order_finder.h"
 
@@ -86,7 +87,7 @@ PDBHeuristic::~PDBHeuristic() {
 void PDBHeuristic::verify_no_axioms_no_cond_effects() const {
     if (!g_axioms.empty()) {
         cerr << "Heuristic does not support axioms!" << endl << "Terminating." << endl;
-        exit(1);
+        exit_with(EXIT_UNSUPPORTED);
     }
     for (int i = 0; i < g_operators.size(); ++i) {
         const vector<PrePost> &pre_post = g_operators[i].get_pre_post();
@@ -108,7 +109,7 @@ void PDBHeuristic::verify_no_axioms_no_cond_effects() const {
             cerr << "Heuristic does not support conditional effects "
                  << "(operator " << g_operators[i].get_name() << ")"
                  << endl << "Terminating." << endl;
-            exit(1);
+            exit_with(EXIT_UNSUPPORTED);
         }
     }
 }
@@ -231,6 +232,7 @@ void PDBHeuristic::create_pdb() {
 }
 
 void PDBHeuristic::set_pattern(const vector<int> &pat) {
+    assert_sorted_unique(pat);
     pattern = pat;
     hash_multipliers.reserve(pattern.size());
     variable_to_index.resize(g_variable_name.size(), -1);

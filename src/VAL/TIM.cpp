@@ -30,7 +30,7 @@
 #include <iostream>
 #include <fstream>
 #include "ptree.h"
-#include <FlexLexer.h>
+#include "FlexLexer.h"
 #include "TypedAnalyser.h"
 #include "TIM.h"
 

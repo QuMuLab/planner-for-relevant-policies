@@ -1,4 +1,20 @@
 #include "globals.h"
+
+#include "axioms.h"
+#include "causal_graph.h"
+#include "domain_transition_graph.h"
+#include "heuristic.h"
+#include "legacy_causal_graph.h"
+#include "operator.h"
+#include "rng.h"
+#include "state.h"
+#include "successor_generator.h"
+#include "timer.h"
+#include "utilities.h"
+#include "policy-repair/policy.h"
+#include "policy-repair/regression.h"
+#include "policy-repair/deadend.h"
+
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -12,19 +28,6 @@ using namespace std;
 
 #include <ext/hash_map>
 using namespace __gnu_cxx;
-
-#include "axioms.h"
-#include "causal_graph.h"
-#include "domain_transition_graph.h"
-#include "heuristic.h"
-#include "operator.h"
-#include "rng.h"
-#include "state.h"
-#include "successor_generator.h"
-#include "timer.h"
-#include "policy-repair/policy.h"
-#include "policy-repair/regression.h"
-#include "policy-repair/deadend.h"
 
 
 static const int PRE_FILE_VERSION = 3;
@@ -133,7 +136,7 @@ void check_magic(istream &in, string magic) {
                  << "on a preprocessor file from " << endl
                  << "an older version." << endl;
         }
-        exit(1);
+        exit_with(EXIT_INPUT_ERROR);
     }
 }
 
@@ -146,7 +149,7 @@ void read_and_verify_version(istream &in) {
         cerr << "Expected preprocessor file version " << PRE_FILE_VERSION
              << ", got " << version << "." << endl;
         cerr << "Exiting." << endl;
-        exit(1);
+        exit_with(EXIT_INPUT_ERROR);
     }
 }
 
@@ -174,7 +177,7 @@ void read_variables(istream &in) {
             cerr << "This should not have happened!" << endl;
             cerr << "Are you using the downward script, or are you using "
                  << "downward-1 directly?" << endl;
-            exit(1);
+            exit_with(EXIT_INPUT_ERROR);
         }
 
         in >> ws;
@@ -286,7 +289,11 @@ void read_everything(istream &in) {
     g_successor_generator_orig = read_successor_generator(in);
     check_magic(in, "end_SG");
     DomainTransitionGraph::read_all(in);
-    g_causal_graph = new CausalGraph(in);
+    g_legacy_causal_graph = new LegacyCausalGraph(in);
+
+    // NOTE: causal graph is computed from the problem specification,
+    // so must be built after the problem has been read in.
+    g_causal_graph = new CausalGraph;
     
     for (int i = 0; i < g_operators.size(); i++) {
         g_nondet_mapping[g_operators[i].get_nondet_name()].push_back(&g_operators[i]);
@@ -302,8 +309,10 @@ void dump_everything() {
     for (int i = 0; i < g_variable_name.size(); i++)
         cout << "  " << g_variable_name[i]
              << " (range " << g_variable_domain[i] << ")" << endl;
-    cout << "Initial State:" << endl;
-    g_initial_state->dump();
+    cout << "Initial State (PDDL):" << endl;
+    g_initial_state->dump_pddl();
+    cout << "Initial State (FDR):" << endl;
+    g_initial_state->dump_fdr();
     dump_goal();
     /*
     cout << "Successor Generator:" << endl;
@@ -317,7 +326,7 @@ void verify_no_axioms_no_cond_effects() {
     if (!g_axioms.empty()) {
         cerr << "Heuristic does not support axioms!" << endl << "Terminating."
              << endl;
-        exit(1);
+        exit_with(EXIT_UNSUPPORTED);
     }
 
     for (int i = 0; i < g_operators.size(); i++) {
@@ -339,7 +348,7 @@ void verify_no_axioms_no_cond_effects() {
             cerr << "Heuristic does not support conditional effects "
                  << "(operator " << g_operators[i].get_name() << ")" << endl
                  << "Terminating." << endl;
-            exit(1);
+            exit_with(EXIT_UNSUPPORTED);
         }
     }
 }
@@ -349,7 +358,6 @@ bool are_mutex(const pair<int, int> &a, const pair<int, int> &b) {
         return a.second != b.second;
     return bool(g_inconsistent_facts[a.first][a.second].count(b));
 }
-
 
 bool g_use_metric;
 int g_min_action_cost = numeric_limits<int>::max();
@@ -366,6 +374,7 @@ vector<Operator> g_axioms;
 AxiomEvaluator *g_axiom_evaluator;
 vector<DomainTransitionGraph *> g_transition_graphs;
 CausalGraph *g_causal_graph;
+LegacyCausalGraph *g_legacy_causal_graph;
 
 SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can be pruned based on deadends
 DeadendAwareSuccessorGenerator *g_successor_generator;

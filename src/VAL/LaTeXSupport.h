@@ -63,26 +63,38 @@ using std::vector;
 namespace VAL {
   
 struct showList {
-	void operator()(const pair<double,vector<string> > & ps) const
+	void operator()(const pair<double,vector<pair<string,vector<double> > > > & ps) const
 	{
 		if(LaTeX)
 		{		
 			string s;
 			*report << ps.first<<" \\>";
-			for(vector<string>::const_iterator i = ps.second.begin(); i != ps.second.end() ; ++i)
+			for(vector<pair<string,vector<double> > >::const_iterator i = ps.second.begin(); i != ps.second.end() ; ++i)
 			{
-				s = *i; 
+				s = i->first; 
 				replaceSubStrings(s,"/","/\\-");
             	latexString(s);
-				*report << "\\begin{minipage}[t]{12cm} " << s << " \\end{minipage}\\\\\n \\>";
+				*report << "\\begin{minipage}[t]{12cm} " << s << " ";
+				for(vector<double>::const_iterator j = i->second.begin();
+					j != i->second.end();++j)
+				{
+					*report << *j << " ";
+				};
+				
+				*report << " \\end{minipage}\\\\\n \\>";
 			};
 			*report << "\\\\\n";
 		}
 		else
 		{
 			cout << "\nValue: " << ps.first << "\n ";
-			copy(ps.second.begin(),ps.second.end(),ostream_iterator<string>(cout," "));
-			cout << "\n";
+			for(vector<pair<string,vector<double> > >::const_iterator i = ps.second.begin();
+					i != ps.second.end();++i)
+			{
+				cout << i->first << " ";
+				copy(i->second.begin(),i->second.end(),ostream_iterator<double>(cout," "));
+				cout << "\n";
+			};
 		};
 	};
 };
