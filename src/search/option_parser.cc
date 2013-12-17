@@ -188,9 +188,13 @@ SearchEngine *OptionParser::parse_cmd_line(
             engine = p.start_parsing<SearchEngine *>();
         } else if (arg.compare("--random-seed") == 0) {
             ++i;
-            srand(atoi(argv[i]));
-            g_rng.seed(atoi(argv[i]));
-            cout << "random seed " << argv[i] << endl;
+            if (!g_seeded) {
+                g_seeded = true;
+                srand(atoi(argv[i]));
+                g_rng.seed(atoi(argv[i]));
+                if (!g_silent_planning)
+                    cout << "random seed " << argv[i] << endl;
+            }
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;
             if (i + 1 < argc) {
@@ -204,12 +208,55 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--plan-file") == 0) {
             ++i;
             g_plan_filename = argv[i];
+        } else if (arg.compare("--jic-limit") == 0) {
+            ++i;
+            g_jic_limit = atof(argv[i]);
+        } else if (arg.compare("--trials") == 0) {
+            ++i;
+            g_num_trials = atoi(argv[i]);
+        } else if (arg.compare("--depth") == 0) {
+            ++i;
+            g_trial_depth = atoi(argv[i]);
+        } else if (arg.compare("--forgetpolicy") == 0) {
+            ++i;
+            g_forgetpolicy = (1 == atoi(argv[i]));
+        } else if (arg.compare("--fullstate") == 0) {
+            ++i;
+            g_fullstate = (1 == atoi(argv[i]));
+        } else if (arg.compare("--planlocal") == 0) {
+            ++i;
+            g_plan_locally = (1 == atoi(argv[i]));
+        } else if (arg.compare("--partial-planlocal") == 0) {
+            ++i;
+            g_partial_planlocal = (1 == atoi(argv[i]));
+        } else if (arg.compare("--plan-with-policy") == 0) {
+            ++i;
+            g_plan_with_policy = (1 == atoi(argv[i]));
+        } else if (arg.compare("--limit-planlocal") == 0) {
+            ++i;
+            g_plan_locally_limited = (1 == atoi(argv[i]));
+        } else if (arg.compare("--detect-deadends") == 0) {
+            ++i;
+            g_detect_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--generalize-deadends") == 0) {
+            ++i;
+            g_generalize_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--online-deadends") == 0) {
+            ++i;
+            g_record_online_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--optimized-scd") == 0) {
+            ++i;
+            g_optimized_scd = (1 == atoi(argv[i]));
+        } else if (arg.compare("--dump-policy") == 0) {
+            ++i;
+            g_dump_policy = atoi(argv[i]);
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;
             exit_with(EXIT_INPUT_ERROR);
         }
     }
+    
     return engine;
 }
 
@@ -233,6 +280,34 @@ string OptionParser::usage(string progname) {
         "    Use random seed SEED\n\n"
         "--plan-file FILENAME\n"
         "    Plan will be output to a file called FILENAME\n\n"
+        "--jic-limit TIME_LIMIT\n"
+        "    Only perform JIC for the given time.\n\n"
+        "--forgetpolicy 1/0\n"
+        "    Throw out the policy after every simulation.\n\n"
+        "--fullstate 1/0\n"
+        "    Use full states in the regression.\n\n"
+        "--planlocal 1/0\n"
+        "    Plan locally to recover before planning for the goal.\n\n"
+        "--partial-planlocal 1/0\n"
+        "    Use the partial state that matches the expect state when planning locally.\n\n"
+        "--limit-planlocal 1/0\n"
+        "    Limit the planlocal searching to a fixed number of search steps.\n\n"
+        "--plan-with-policy 1/0\n"
+        "    Stop searching when the policy matches the current state.\n\n"
+        "--depth NUM_ACTIONS (default=1000)\n"
+		"    Stop simulations and consider it a failure after NUM_ACTIONS actions.\n\n"
+        "--trials NUM_TRIALS (default=1)\n"
+        "    Number of trials to run for the simulator.\n\n"
+        "--detect-deadends 1/0\n"
+        "    Use primitive deadend detection to ensure a strongly cyclic solution.\n\n"
+        "--generalize-deadends 1/0\n"
+        "    Generalize the deadends found based on relaxed reachability.\n\n"
+        "--online-deadends 1/0\n"
+        "    Generate and store deadend states that are found online.\n\n"
+        "--optimized-scd 1/0\n"
+        "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
+        "--dump-policy 1/2\n"
+        "    Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }

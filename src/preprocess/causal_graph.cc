@@ -33,7 +33,7 @@
 #include <cassert>
 using namespace std;
 
-bool g_do_not_prune_variables = false;
+bool g_do_not_prune_variables = true;
 
 void CausalGraph::weigh_graph_from_ops(const vector<Variable *> &,
                                        const vector<Operator> &operators,

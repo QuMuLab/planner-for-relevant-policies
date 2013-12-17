@@ -5,9 +5,14 @@
 #include "timer.h"
 #include "utilities.h"
 #include "search_engine.h"
+#include "policy-repair/regression.h"
+#include "policy-repair/simulator.h"
+#include "policy-repair/policy.h"
+#include "policy-repair/jit.h"
 
 
 #include <iostream>
+#include <list>
 #include <new>
 using namespace std;
 
@@ -25,10 +30,30 @@ int main(int argc, const char **argv) {
         read_everything(cin);
 
     SearchEngine *engine = 0;
+    g_policy = 0;
+    
+    g_timer_regression.stop();
+    g_timer_simulator.stop();
+    g_timer_engine_init.stop();
+    g_timer_search.stop();
+    g_timer_policy_build.stop();
+    g_timer_policy_eval.stop();
+    g_timer_policy_use.stop();
+    g_timer_jit.stop();
+    
+    g_timer_regression.reset();
+    g_timer_simulator.reset();
+    g_timer_engine_init.reset();
+    g_timer_search.reset();
+    g_timer_policy_build.reset();
+    g_timer_policy_eval.reset();
+    g_timer_policy_use.reset();
+    g_timer_jit.reset();
 
     //the input will be parsed twice:
     //once in dry-run mode, to check for simple input errors,
     //then in normal mode
+    g_timer_engine_init.resume();
     try {
         OptionParser::parse_cmd_line(argc, argv, true);
         engine = OptionParser::parse_cmd_line(argc, argv, false);
@@ -36,19 +61,136 @@ int main(int argc, const char **argv) {
         cerr << pe << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
-
-    Timer search_timer;
+    g_timer_engine_init.stop();
+    
+    /* HAZ: Unfortunately, this must go here (as supposed to globals.cc)
+     *      since we need to know if g_detect_deadends is true or not. */
+    if (g_detect_deadends) {
+        generate_regressable_ops();
+    }
+    /* HAZ: We create the policies even if we aren't using deadends, as
+     *      they may be consulted by certain parts of the code. */
+    g_deadend_policy = new Policy();
+    g_deadend_states = new Policy();
+    
+    
+    /***************************************
+     * Assert the settings are consistent. *
+     ***************************************/
+    if (((g_record_online_deadends || g_generalize_deadends) && !g_detect_deadends) ||
+        ((g_partial_planlocal || g_plan_locally_limited) && !g_plan_locally) ||
+        (g_optimized_scd && (g_jic_limit == 0)) ||
+        (g_forgetpolicy && (g_jic_limit > 0))) {
+            
+        cout << "\n  Parameter Error: Make sure that the set of parameters is consistent.\n" << endl;
+        exit(0);
+    }
+    
+    
+    
+    // We start the jit timer here since we should include the initial search / policy construction
+    g_timer_jit.resume();
+    g_timer_search.resume();
     engine->search();
-    search_timer.stop();
-    g_timer.stop();
+    g_timer_search.stop();
 
     engine->save_plan_if_necessary();
     engine->statistics();
     engine->heuristic_statistics();
-    cout << "Search time: " << search_timer << endl;
-    cout << "Total time: " << g_timer << endl;
+    
+    cout << "Initial search time: " << g_timer_search << endl;
+    cout << "Initial total time: " << g_timer << endl;
+    
+    if (!engine->found_solution()) {
+        cout << "No solution -- aborting repairs." << endl;
+        exit(1);
+    }
+    
+    g_silent_planning = true;
+    
+    cout << "\n\nCreating the simulator..." << endl;
+    Simulator *sim = new Simulator(engine, argc, argv, !g_silent_planning);
+    
+    cout << "\n\nRegressing the plan..." << endl;
+    list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
+    
+    cout << "\n\nGenerating an initial policy..." << endl;
+    g_policy = new Policy(regression_steps);
+    g_best_policy = g_policy;
+    g_best_policy_score = g_policy->get_score();
+    
+    cout << "\n\nComputing just-in-time repairs..." << endl;
+    //g_timer_jit.resume(); // Placed above to include the initial search time
+    bool changes_made = true;
+    while (changes_made) {
+        changes_made = perform_jit_repairs(sim);
+        if (!g_silent_planning)
+            cout << "Finished repair round." << endl;
+        
+        // Check if we should re-run the repairs with forbidden ops used
+        //  in the heurstic computation.
+        if (!changes_made && !g_check_with_forbidden &&
+            g_detect_deadends && !(g_policy->is_strong_cyclic()) &&
+            (g_timer_jit() < g_jic_limit)) {
+            
+            g_check_with_forbidden = true;
+            changes_made = true;
+            if (g_best_policy != g_policy)
+                delete g_policy;
+            g_policy = new Policy();
+            
+            // We need to reset the deadends since they may have been
+            //  generated based on faulty heuristic computations that
+            //  ignored the forbidden state-action pairs.
+            if (g_deadend_policy)
+                delete g_deadend_policy;
+            if (g_deadend_states)
+                delete g_deadend_states;
+            g_deadend_policy = new Policy();
+            g_deadend_states = new Policy();
+            
+        }
+    }
+    if (!g_silent_planning)
+        cout << "Done repairing..." << endl;
+    g_timer_jit.stop();
 
-    if (engine->found_solution()) {
+    // Use the best policy found so far
+    if (g_policy && g_best_policy && (g_best_policy != g_policy)) {
+        if (g_best_policy->get_score() > g_policy->get_score())
+            g_policy = g_best_policy;
+    }
+
+    // Reset the deadend and scd settings for the online simulation(s)
+    g_detect_deadends = false;
+    g_generalize_deadends = false;
+    g_record_online_deadends = false;
+    g_optimized_scd = false;
+
+    cout << "\n\nRunning the simulation..." << endl;
+    g_timer_simulator.resume();
+    sim->run();
+    g_timer_simulator.stop();
+    
+    cout << "\n\n" << endl;
+    
+    g_timer.stop();
+    sim->dump();
+    
+    cout << "\n\n" << endl;
+    
+    if (1 == g_dump_policy) {
+        cout << "Dumping the policy..." << endl;
+        ofstream outfile;
+        outfile.open("policy.out", ios::out);
+        g_policy->generate_cpp_input(outfile);
+        outfile.close();
+    } else if (2 == g_dump_policy) {
+        cout << "Dumping the policy..." << endl;
+        g_policy->dump_human_policy();
+    }
+    
+    if (sim->succeeded) {
         exit_with(EXIT_PLAN_FOUND);
     } else {
         exit_with(EXIT_UNSOLVED_INCOMPLETE);

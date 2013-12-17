@@ -33,7 +33,10 @@ protected:
     const Operator *current_operator;
     int current_g;
     int current_real_g;
-
+    
+    int state_count; // Used to limit the search when replanning for a local goal
+    
+    bool was_initialized;
     virtual void initialize();
     virtual int step();
 
@@ -50,6 +53,8 @@ public:
     void set_pref_operator_heuristics(vector<Heuristic *> &heur);
 
     virtual void statistics() const;
+    
+    virtual void reset();
 };
 
 #endif

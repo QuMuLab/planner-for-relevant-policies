@@ -81,7 +81,10 @@ void Operator::strip_unimportant_effects() {
 }
 
 bool Operator::is_redundant() const {
-    return pre_post.empty();
+    return false;
+    /* HAZ: Allow operators with empty post conditions since it may be
+     *      a failed effect of a non-deterministic action.
+    return pre_post.empty();*/
 }
 
 void strip_operators(vector<Operator> &operators) {
