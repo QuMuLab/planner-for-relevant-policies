@@ -92,7 +92,7 @@ class Requirements(object):
               ":negative-preconditions", ":disjunctive-preconditions",
               ":existential-preconditions", ":universal-preconditions",
               ":quantified-preconditions", ":conditional-effects",
-              ":derived-predicates", ":action-costs"), req
+              ":derived-predicates", ":action-costs", ":non-deterministic"), req
     def __str__(self):
         return ", ".join(self.requirements)
 
@@ -162,8 +162,8 @@ def parse_domain(domain_pddl):
             axiom = axioms.Axiom.parse(entry)
             the_axioms.append(axiom)
         else:
-            action = actions.Action.parse(entry)
-            the_actions.append(action)
+            action_copies = actions.Action.parse(entry)
+            the_actions.extend(action_copies)
     yield the_actions
     yield the_axioms
 

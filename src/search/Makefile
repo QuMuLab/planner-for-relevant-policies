@@ -119,8 +119,13 @@ HEADERS += pdbs/canonical_pdbs_heuristic.h \
            pdbs/util.h \
            pdbs/zero_one_pdbs_heuristic.h \
 
-SHELL = /bin/bash
+HEADERS += policy-repair/regression.h \
+           policy-repair/policy.h \
+           policy-repair/simulator.h \
+           policy-repair/jit.h \
+           policy-repair/deadend.h \
 
+SHELL = /bin/bash
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET  = downward
 
@@ -169,6 +174,7 @@ TARGET_DEBUG    = $(TARGET)$(TARGET_SUFFIX_DEBUG)
 OBJECTS_PROFILE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_PROFILE).o)
 TARGET_PROFILE  = $(TARGET)$(TARGET_SUFFIX_PROFILE)
 
+
 CC     = g++
 DEPEND = g++ -MM
 
@@ -178,7 +184,7 @@ DEPEND = g++ -MM
 
 CCOPT = -Iext
 CCOPT += -g
-CCOPT += -m32
+#CCOPT += -m32
 CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror -DSTATE_VAR_BYTES=$(STATE_VAR_BYTES)
 
 ## The following lines contain workarounds for bugs when
@@ -189,6 +195,7 @@ CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror -DST
 
 HAVE_GCC_4_4 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.4\.\\\))
 HAVE_GCC_4_5 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.5\.\\\))
+HAVE_GCC_4_6 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.6\.\\\))
 
 ifdef HAVE_GCC_4_4
     CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu
@@ -197,9 +204,13 @@ endif
 ifdef HAVE_GCC_4_5
     CCOPT += -I/usr/include/c++/4.5/i686-linux-gnu
 endif
+#CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu -Iext
+ifdef HAVE_GCC_4_6
+    CCOPT += -I/usr/include/c++/4.6/i686-linux-gnu
+endif
 
 LINKOPT  = -g
-LINKOPT += -m32
+#LINKOPT += -m32
 LINKOPT +=
 
 POSTLINKOPT =
@@ -316,7 +327,7 @@ $(OBJECTS_RELEASE): .obj/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
 debug: $(TARGET_DEBUG)
 
 $(TARGET_DEBUG): $(OBJECTS_DEBUG)
-	$(CC) $(LINKOPT) $(LINKOPT_DEBUG) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG)
+	$(CC) $(LINKOPT) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG) $(LINKOPT_DEBUG)
 
 $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 	@mkdir -p $$(dirname $@)
@@ -327,7 +338,7 @@ $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 profile: $(TARGET_PROFILE)
 
 $(TARGET_PROFILE): $(OBJECTS_PROFILE)
-	$(CC) $(LINKOPT) $(LINKOPT_PROFILE) $(OBJECTS_PROFILE) $(POSTLINKOPT) $(POSTLINKOPT_PROFILE) -o $(TARGET_PROFILE)
+	$(CC) $(LINKOPT) $(OBJECTS_PROFILE) $(POSTLINKOPT) $(POSTLINKOPT_PROFILE) -o $(TARGET_PROFILE) $(LINKOPT_PROFILE)
 
 $(OBJECTS_PROFILE): .obj/%$(OBJECT_SUFFIX_PROFILE).o: %.cc
 	@mkdir -p $$(dirname $@)

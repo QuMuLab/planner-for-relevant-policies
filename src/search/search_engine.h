@@ -31,6 +31,8 @@ protected:
     void set_plan(const Plan &plan);
     bool check_goal_and_set_plan(const State &state);
     int get_adjusted_cost(const Operator &op) const;
+    
+    const Options *options;
 public:
     SearchEngine(const Options &opts);
     virtual ~SearchEngine();
@@ -44,6 +46,17 @@ public:
     void set_bound(int b) {bound = b; }
     int get_bound() {return bound; }
     static void add_options_to_parser(OptionParser &parser);
+    
+    virtual void reset();
+};
+
+struct SolvableError {
+    SolvableError() {}
+
+    friend std::ostream &operator<<(std::ostream &out, const SolvableError) {
+        out << "Error: Problem is unsolvable" << std::endl;
+        return out;
+    }
 };
 
 #endif

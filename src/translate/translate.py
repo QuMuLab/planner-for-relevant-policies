@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, with_statement
 
 from collections import defaultdict
 from copy import deepcopy

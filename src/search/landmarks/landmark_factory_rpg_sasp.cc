@@ -99,7 +99,10 @@ int LandmarkFactoryRpgSasp::min_cost_for_landmark(LandmarkNode *bp, vector<vecto
                 min_cost = min(min_cost, get_adjusted_action_cost(op, lm_graph->get_lm_cost_type()));
         }
     }
-    assert(min_cost < numeric_limits<int>::max());
+    // Commenting out to allow the planner to fail in finding a solution
+    //assert(min_cost < numeric_limits<int>::max());
+    if (min_cost == numeric_limits<int>::max())
+        throw SolvableError();
     return min_cost;
 }
 
@@ -351,7 +354,8 @@ void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<i
 }
 
 void LandmarkFactoryRpgSasp::generate_landmarks() {
-    cout << "Generating landmarks using the RPG/SAS+ approach\n";
+    if (!g_silent_planning)
+        cout << "Generating landmarks using the RPG/SAS+ approach\n";
     build_disjunction_classes();
 
     for (unsigned i = 0; i < g_goal.size(); i++) {

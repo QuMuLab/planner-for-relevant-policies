@@ -3,6 +3,7 @@
 #include "g_evaluator.h"
 #include "heuristic.h"
 #include "successor_generator.h"
+#include "policy-repair/deadend.h"
 #include "sum_evaluator.h"
 #include "weighted_evaluator.h"
 #include "plugin.h"
@@ -21,10 +22,29 @@ LazySearch::LazySearch(const Options &opts)
       current_predecessor_buffer(NULL),
       current_operator(NULL),
       current_g(0),
-      current_real_g(0) {
+      current_real_g(0),
+      was_initialized(false) {
 }
 
 LazySearch::~LazySearch() {
+}
+
+void LazySearch::reset() {
+    SearchEngine::reset();
+
+    current_state = *g_initial_state;
+    current_predecessor_buffer = NULL;
+    current_operator = NULL;
+    current_g = 0;
+    current_real_g = 0;
+    state_count = 0;
+
+    open_list->clear();
+
+    for (int i = 0; i < heuristics.size(); i++) {
+        heuristics[i]->reset();
+    }
+
 }
 
 void LazySearch::set_pref_operator_heuristics(
@@ -34,8 +54,15 @@ void LazySearch::set_pref_operator_heuristics(
 
 void LazySearch::initialize() {
     //TODO children classes should output which kind of search
-    cout << "Conducting lazy best first search, (real) bound = " << bound << endl;
+    if (!g_silent_planning)
+        cout << "Conducting lazy best first search, (real) bound = " << bound << endl;
 
+    // Only set up the heuristics on the first go
+    if (was_initialized)
+        return;
+    else
+        was_initialized = true;
+    
     assert(open_list != NULL);
     set<Heuristic *> hset;
     open_list->get_involved_heuristics(hset);
@@ -78,8 +105,9 @@ void LazySearch::get_successor_operators(vector<const Operator *> &ops) {
         }
 
         for (int i = 0; i < all_operators.size(); i++)
-            if (!all_operators[i]->is_marked())
+            if (!all_operators[i]->is_marked()) {
                 ops.push_back(all_operators[i]);
+            }
     } else {
         for (int i = 0; i < preferred_operators.size(); i++)
             if (!preferred_operators[i]->is_marked())
@@ -114,7 +142,8 @@ void LazySearch::generate_successors() {
 
 int LazySearch::fetch_next_state() {
     if (open_list->empty()) {
-        cout << "Completely explored state space -- no solution!" << endl;
+        if (!g_silent_planning)
+            cout << "Completely explored state space -- no solution!" << endl;
         return FAILED;
     }
 
@@ -139,13 +168,21 @@ int LazySearch::step() {
     // - current_predecessor is a permanent pointer to the predecessor of that state.
     // - current_operator is the operator which leads to current_state from predecessor.
     // - current_g is the g value of the current state according to the cost_type
-    // - current_g is the g value of the current state (using real costs)
-
+    // - current_real_g is the g value of the current state (using real costs)
 
     SearchNode node = search_space.get_node(current_state);
     bool reopen = reopen_closed_nodes && (current_g < node.get_g()) && !node.is_dead_end() && !node.is_new();
 
     if (node.is_new() || reopen) {
+        
+        if (g_plan_locally_limited && g_limit_states) {
+            if (state_count > 100) // Gotta love magic numbers...
+                return FAILED;
+            else
+                state_count++;
+        }
+        
+        
         state_var_t *dummy_address = current_predecessor_buffer;
         // HACK! HACK! we do this because SearchNode has no default/copy constructor
         if (dummy_address == NULL) {

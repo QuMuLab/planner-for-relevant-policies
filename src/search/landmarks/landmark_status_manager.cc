@@ -63,8 +63,9 @@ void LandmarkStatusManager::set_landmarks_for_initial_state() {
             }
         }
     }
-    cout << inserted << " initial landmarks, "
-         << num_goal_lms << " goal landmarks" << endl;
+    if (!g_silent_planning)
+        cout << inserted << " initial landmarks, "
+            << num_goal_lms << " goal landmarks" << endl;
 }
 
 
