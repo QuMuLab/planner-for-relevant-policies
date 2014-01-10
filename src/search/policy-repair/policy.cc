@@ -677,7 +677,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 // The guaranteed step can't be further from the goal than
                 //  the current candidate strong cyclic pair. Otherwise,
                 //  we could get an unsound loop of presumed strong cyclicity.
-                if ((999999 != min_sc_cost) && (min_sc_cost > rs->distance)) {
+                if ((999999 != min_sc_cost) && (min_sc_cost >= rs->distance)) {
 					//cout << "Min sc cost = " << min_sc_cost << endl;
 					rs->is_sc = false;
 					made_change = true;
