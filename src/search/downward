@@ -31,8 +31,8 @@ SEED=814102613
 STATE_SIZE=$($TIME --append "$BASEDIR/dispatch" $TEMPFILE)
 echo Dispatcher selected state size $STATE_SIZE.
 echo This is a $UNIT_COST task.
-PLANNER="$BASEDIR/downward-$STATE_SIZE"
-#PLANNER="$BASEDIR/downward-$STATE_SIZE-debug"
+#PLANNER="$BASEDIR/downward-$STATE_SIZE"
+PLANNER="$BASEDIR/downward-$STATE_SIZE-debug"
 
 function run_portfolio {
     PORTFOLIO="$1"

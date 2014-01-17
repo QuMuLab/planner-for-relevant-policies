@@ -58,6 +58,7 @@ public:
     
     void init_scd();
     bool step_scd(vector<State *> &failed_states);
+    bool goal_sc_reachable(const State &curr);
     
     void dump_human_policy();
 };
