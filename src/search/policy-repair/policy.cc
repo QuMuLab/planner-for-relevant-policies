@@ -575,6 +575,48 @@ void Policy::evaluate_random() {
 
 
 
+
+
+
+/***************************
+ * Strong cyclic detection *
+ ***************************/
+
+
+
+
+bool Policy::goal_sc_reachable(const State &_curr) {
+	
+	State *curr = new State(_curr);
+	State *old;
+	RegressionStep *rstep;
+	
+	// Instead of keeping a closed list, we just try to get to the
+	//  goal within an upper bound.
+	for (int i=0; i < all_items.size(); i++) {
+		
+		rstep = get_best_step(*curr);
+		
+		if (!rstep || !(rstep->is_sc)) {
+			delete curr;
+			return false;
+		}
+		
+		if (rstep->is_goal) {
+			delete curr;
+			return true;
+		}
+		
+		old = curr;
+		curr = new State(*old, *(rstep->op));
+		
+		delete old;
+	}
+	
+	return false;
+}
+
+
 void Policy::init_scd() {
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
@@ -677,7 +719,10 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 // The guaranteed step can't be further from the goal than
                 //  the current candidate strong cyclic pair. Otherwise,
                 //  we could get an unsound loop of presumed strong cyclicity.
-                if ((999999 != min_sc_cost) && (min_sc_cost >= rs->distance)) {
+                if ((999999 != min_sc_cost) &&
+                    (min_sc_cost >= rs->distance) &&
+                    !(goal_sc_reachable(*succ_state))) {
+					
 					//cout << "Min sc cost = " << min_sc_cost << endl;
 					rs->is_sc = false;
 					made_change = true;
