@@ -95,15 +95,22 @@ bool perform_jit_repairs(Simulator *sim) {
                     // prev_state holds the info needed before the operator was taken
                     State * prev_state = new State(*(regstep->state), *prev_op, false);
                     
-                    // We augment the sc_state to include the stronger conditions
+                    bool updated = false;
+                    // We augment the state to include the stronger conditions
                     for (int i = 0; i < g_variable_name.size(); i++) {
-                        /*assert ((state_var_t(-1) == (*prev_state)[i]) ||
-                                (state_var_t(-1) == (*(prev_regstep->sc_state))[i]) ||
-                               ((*prev_state)[i] == (*(prev_regstep->sc_state))[i]));*/
+                        assert ((state_var_t(-1) == (*prev_state)[i]) ||
+                                (state_var_t(-1) == (*(prev_regstep->state))[i]) ||
+                                ((*prev_state)[i] == (*(prev_regstep->state))[i]));
                         
-                        if (state_var_t(-1) != (*prev_state)[i])
-                            (*(prev_regstep->sc_state))[i] = (*prev_state)[i];
+                        if (state_var_t(-1) != (*prev_state)[i]) {
+							if (state_var_t(-1) == (*(prev_regstep->state))[i])
+								updated = true;
+                            (*(prev_regstep->state))[i] = (*prev_state)[i];
+						}
                     }
+                    
+                    if (updated)
+						prev_regstep->reposition();
                 }
                 
                 // Since new policy has been added, we re-compute the sc detection
@@ -212,8 +219,10 @@ bool perform_jit_repairs(Simulator *sim) {
     cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
     
     // If we closed every open state, then the policy must be strongly cyclic.
-    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit))
+    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit)) {
         g_policy->mark_strong();
+        cout << "Marking policy strong cyclic." << endl;
+	}
         
     if (g_detect_deadends && (g_failed_open_states > 0)) {
         
