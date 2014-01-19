@@ -22,6 +22,11 @@ string RegressionStep::get_name() {
         return op->get_nondet_name() + " / " + (is_sc ? "SC" : "NSC") + " / d=" + static_cast<ostringstream*>( &(ostringstream() << distance) )->str();
 }
 
+void PolicyItem::reposition() {
+	pol_loc->reposition(*this);
+	pol->add_item(*this);
+}
+
 
 void NondetDeadend::dump() const {
     cout << "Non-deterministic deadend:" << endl;
@@ -159,6 +164,7 @@ void RegressionStep::strengthen(State *s) {
     if (is_goal)
         return;
     
+    bool updated = false;
     vector<PolicyItem *> reg_items;
     g_deadend_policy->generate_applicable_items(*state, reg_items, true);
     
@@ -169,23 +175,30 @@ void RegressionStep::strengthen(State *s) {
         if (((NondetDeadend*)(reg_items[i]))->op_name == op->get_nondet_name()) {
             
             for (int j = 0; j < g_variable_name.size(); j++) {
+				
+				state_var_t val = (*(((NondetDeadend*)(reg_items[i]))->state))[j];
+				
                 // We may have broken it in a previous iteration
-                if (((*(((NondetDeadend*)(reg_items[i]))->state))[j] != state_var_t(-1)) &&
-                    ((*(((NondetDeadend*)(reg_items[i]))->state))[j] != (*state)[j]) &&
+                if ((val != state_var_t(-1)) &&
+                    (val != (*state)[j]) &&
                     ((*state)[j] != state_var_t(-1)))
-                    break;
+						break;
                 
                 // Just need to break one of the decisions
-                if (((*(((NondetDeadend*)(reg_items[i]))->state))[j] != state_var_t(-1)) &&
-                    ((*(((NondetDeadend*)(reg_items[i]))->state))[j] != (*s)[j])) {
+                if ((val != state_var_t(-1)) &&
+                    (val != (*s)[j])) {
+					
                     assert((*state)[j] == state_var_t(-1));
                     (*state)[j] = (*s)[j];
-                    (*sc_state)[j] = (*s)[j];
+                    updated = true;
                     break;
                     
                 }
             }
         }
     }
+    
+    if (updated)
+		reposition();
 }
 
