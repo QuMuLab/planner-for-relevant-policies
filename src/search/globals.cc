@@ -412,6 +412,7 @@ Heuristic *g_heuristic_for_reachability;
 int g_dump_policy = 0; // Whether or not we should dump the policy
 
 bool g_debug = false; // Flag for debugging parts of the code
+int g_debug_count = 1; // Index that allows to locate spots in the output
 
 Timer g_timer_regression;
 Timer g_timer_simulator;

@@ -612,16 +612,23 @@ void Policy::init_scd() {
 }
 
 bool Policy::step_scd(vector<State *> &failed_states) {
+	
     bool made_change = false;
+    bool debug_scd = true;
+    
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
     {
         RegressionStep *rs = (RegressionStep *)(*op_iter);
         
         if (rs->is_sc && !(rs->is_goal)) {
-            
+			
+			if (debug_scd) {
+				cout << "\n\n (#" << g_debug_count++ << ") Testing RegStep:" << endl;
+				rs->dump();
+			}
+			
             for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
-				
                 // We use the sc_state for computing the guaranteed items, rather than
                 //  the original state for the regression step. The sc_state will be a
                 //  superset of the original state that includes the regression of newly
@@ -633,6 +640,11 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
                 vector<PolicyItem *> guaranteed_steps;
                 root->generate_applicable_items(*succ_state, guaranteed_steps, false);
+                
+                if (debug_scd) {
+					cout << "\nTesting successor (" << (i+1) << "/" << g_nondet_mapping[rs->op->get_nondet_name()].size() << "):" << endl;
+					succ_state->dump_pddl();
+				}
                 
                 
                 // We need at least one guaranteed step to be sure that we can continue
@@ -681,6 +693,9 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                     //  step to check (i.e., no need to check the rest of the action
                     //  outcomes for the current regression step).
                     if (!is_failed_state) {
+						if (debug_scd) {
+							cout << "--- Umarking: No guaranteed steps." << endl;
+						}
                         rs->is_sc = false;
                         made_change = true;
                         delete succ_state;
@@ -708,16 +723,27 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 // The guaranteed step can't be further from the goal than
                 //  the current candidate strong cyclic pair. Otherwise,
                 //  we could get an unsound loop of presumed strong cyclicity.
+                if (debug_scd && (999999 == min_sc_cost)) {
+					cout << "--- Umarking: No strong cyclic guaranteed step." << endl;
+				}
+                
                 if ((999999 == min_sc_cost) ||
                     ((min_sc_cost >= rs->distance) &&
                     !(goal_sc_reachable(*succ_state)))) {
 					
+					if (debug_scd && (999999 != min_sc_cost)) {
+						cout << "--- Unmarking: Strong cyclic guaranteed step failed to reach the goal." << endl;
+					}
 					//cout << "Min sc cost = " << min_sc_cost << endl;
 					rs->is_sc = false;
 					made_change = true;
 					i = g_nondet_mapping[rs->op->get_nondet_name()].size();
 					
 				} else {
+					
+					if (debug_scd) {
+						cout << "+++ Left marked." << endl;
+					}
                 
 					/*vector<PolicyItem *> possible_steps;
 					root->generate_applicable_items(*succ_state, possible_steps, min_cost);

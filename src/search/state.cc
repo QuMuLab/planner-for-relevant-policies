@@ -105,9 +105,13 @@ State::~State() {
 
 void State::dump_pddl() const {
     for (int i = 0; i < g_variable_domain.size(); i++) {
-        const string &fact_name = g_fact_names[i][vars[i]];
-        if (fact_name != "<none of those>")
-            cout << fact_name << endl;
+		if (state_var_t(-1) != vars[i]) {
+			const string &fact_name = g_fact_names[i][vars[i]];
+			if (fact_name != "<none of those>")
+				cout << fact_name << endl;
+			else
+				cout << "[" << g_variable_name[i] << "] None of those." << endl;
+		}
     }
 }
 
