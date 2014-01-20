@@ -11,7 +11,7 @@ void RegressionStep::dump() const {
         cout << " -{ Goal }-" << endl;
     }
     cout << "\n -{ State }-" << endl;
-    state->dump_fdr();
+    state->dump_pddl();
     cout << "" << endl;
 }
 
@@ -46,7 +46,7 @@ void RegressableOperator::dump() const {
     cout << " -{ Operator }-" << endl;
     op->dump();
     cout << " -{ State }-" << endl;
-    state->dump_fdr();
+    state->dump_pddl();
     cout << "" << endl;
 }
 
