@@ -665,10 +665,6 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                                 break;
                             }
                         }
-                        
-                        if (is_failed_state)
-                            break;
-
                     }
                     
                     // We may have stumbled across a new failed state, in which
@@ -685,6 +681,19 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                         }
                     }
                     
+                    // If succ_state is a failed state, then we will avoid using
+                    //  this pair in the future as it will be a FSAP. Thus, we
+                    //  can leave it marked so that the search doesn't continue
+                    //  down this path -- leaving it marked here doesn't mean
+                    //  that the policy is strong cyclic, but rather that no
+                    //  strong cyclic plan exists and further search should be
+                    //  avoided.
+                    if (is_failed_state) {
+						if (debug_scd) {
+							cout << "-+- Left marked due to new failed state." << endl;
+						}
+						break;
+					}
                     
                     // If succ_state isn't a failed state (as far as we're aware
                     //  of), then it may be reached during rollout. The possibility
@@ -692,7 +701,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                     //  strongly cyclic. The break take us to the next regression
                     //  step to check (i.e., no need to check the rest of the action
                     //  outcomes for the current regression step).
-                    if (!is_failed_state) {
+                    else {
 						if (debug_scd) {
 							cout << "--- Umarking: No guaranteed steps." << endl;
 						}
