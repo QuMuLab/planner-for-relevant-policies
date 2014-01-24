@@ -106,7 +106,7 @@ int main(int argc, const char **argv) {
         exit(1);
     }
     
-    g_silent_planning = false;
+    g_silent_planning = true;
     
     cout << "\n\nCreating the simulator..." << endl;
     Simulator *sim = new Simulator(engine, argc, argv, !g_silent_planning);

@@ -614,7 +614,7 @@ void Policy::init_scd() {
 bool Policy::step_scd(vector<State *> &failed_states) {
 	
     bool made_change = false;
-    bool debug_scd = true;
+    bool debug_scd = false;
     
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
