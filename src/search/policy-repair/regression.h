@@ -20,7 +20,7 @@ struct PolicyItem {
     Policy *pol;
     GeneratorBase *pol_loc;
     
-    PolicyItem(State *s) : state(s) {}
+    PolicyItem(State *s) : state(s), pol(0) {}
     virtual ~PolicyItem() {}
     virtual string get_name() = 0;
     virtual void dump() const = 0;

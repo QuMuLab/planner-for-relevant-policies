@@ -340,10 +340,10 @@ GeneratorBase *GeneratorLeaf::update_policy(list<PolicyItem *> &reg_items, set<i
     }
     
     if (all_done) {
-        applicable_items.splice(applicable_items.end(), reg_items);
         for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
 			(*op_iter)->pol_loc = this;
 		}
+		applicable_items.splice(applicable_items.end(), reg_items);
         return NULL;
     } else {
         reg_items.splice(reg_items.end(), applicable_items);
@@ -397,17 +397,9 @@ void Policy::add_item(PolicyItem &item) {
 }
 
 Policy::Policy(list<PolicyItem *> &reg_items) {
-    g_timer_policy_build.resume();
-    
-    set<int> vars_seen;
-    root = new GeneratorSwitch(reg_items, vars_seen);
-    all_items = reg_items;
-    
-    g_timer_policy_build.stop();
-    
-    score = 0.0;
+	root = 0;
+    update_policy(reg_items);
     complete = false;
-    
 }
 
 void Policy::update_policy(list<PolicyItem *> &reg_items, bool new_items) {
