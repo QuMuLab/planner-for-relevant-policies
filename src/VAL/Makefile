@@ -84,7 +84,7 @@ CFLAGS  = ${DEPENDFLAGS}
 # C++ compiler
 
 CXX      := g++
-CXXFLAGS  = ${DEPENDFLAGS} -ansi -Wall
+CXXFLAGS  = ${DEPENDFLAGS} -ansi -Wall -Wno-unused-but-set-variable
 
 %.o : %.cc
 	${CXX} ${CPPFLAGS} ${CXXFLAGS} -c $< -o $@
