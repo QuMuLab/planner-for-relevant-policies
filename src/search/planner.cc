@@ -1,5 +1,3 @@
-breaking planner to test build bot
-
 #include "globals.h"
 #include "operator.h"
 #include "option_parser.h"
