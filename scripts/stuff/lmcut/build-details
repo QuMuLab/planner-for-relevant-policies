@@ -1,2 +1,0 @@
-#! /bin/bash
-./results.py details LMCUT_DOMAINS > details.tex && pdflatex details.tex
