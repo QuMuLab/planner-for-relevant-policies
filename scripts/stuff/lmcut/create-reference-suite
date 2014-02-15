@@ -1,7 +1,0 @@
-#! /bin/bash
-
-# Create a suite that consists of all solved tasks, ordered by
-# runtime. This is useful for regression tests and similar.
-
-./results.py status ALL | grep OK | sort -n -k 2 | \
-    sed -e 's/OK *\([0-9][0-9]*\)s.*] \(.*\)/        "\2",  # \1 sec/'
