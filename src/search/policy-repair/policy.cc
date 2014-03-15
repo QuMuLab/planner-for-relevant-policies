@@ -747,7 +747,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
 					}
                 
 					/*vector<PolicyItem *> possible_steps;
-					root->generate_applicable_items(*succ_state, possible_steps, min_cost);
+					root->generate_applicable_items(*succ_state, possible_steps, min_sc_cost);
 					//root->generate_applicable_items(*succ_state, possible_steps, true);
 					
 					//cout << "Guaranteed steps / Possible steps: " << guaranteed_steps.size() << " / " << possible_steps.size() << endl;
@@ -760,7 +760,9 @@ bool Policy::step_scd(vector<State *> &failed_states) {
 					//  to the get_best_step function won't return a regression step,
 					//  then we need not confirm it is strongly cyclic.
 					for (int j = 0; j < possible_steps.size(); j++) {
-						if (!(((RegressionStep *)possible_steps[j])->is_sc)) {
+						//if (!(((RegressionStep *)possible_steps[j])->is_sc)) {
+						RegressionStep * rstep = (RegressionStep *)possible_steps[j];
+						if (rstep->is_sc && !(goal_sc_reachable(*(rstep->state)))) {
 							rs->is_sc = false;
 							made_change = true;
 							i = g_nondet_mapping[rs->op->get_nondet_name()].size();
