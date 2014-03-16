@@ -38,14 +38,13 @@ class Policy {
     
 public:
     Policy();
-    Policy(list<PolicyItem *> &reg_items);
     ~Policy();
     
     void dump() const;
     void generate_cpp_input(ofstream &outfile) const;
     
-    void update_policy(list<PolicyItem *> &reg_items, bool new_items = true);
-    void add_item(PolicyItem &item);
+    void update_policy(list<PolicyItem *> &reg_items, bool detect_deadends = false);
+    void add_item(PolicyItem *item);
     void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all = false);
     bool check_match(const State &curr, bool keep_all = false);
     RegressionStep *get_best_step(const State &curr);
@@ -77,7 +76,6 @@ public:
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all) = 0;
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound) = 0;
     virtual bool check_match(const State &curr, bool keep_all) = 0;
-    virtual void reposition(PolicyItem &item) = 0;
     
     GeneratorBase *create_generator(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     int get_best_var(list<PolicyItem *> &reg_items, set<int> &vars_seen);
@@ -101,7 +99,6 @@ public:
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all);
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound);
     virtual bool check_match(const State &curr, bool keep_all);
-    virtual void reposition(PolicyItem &item);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -114,7 +111,6 @@ public:
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all);
     virtual void generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound);
     virtual bool check_match(const State &curr, bool keep_all);
-    virtual void reposition(PolicyItem &item);
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;
 };
@@ -124,7 +120,6 @@ public:
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     virtual void generate_applicable_items(const State &, vector<PolicyItem *> &, bool) {}
     virtual void generate_applicable_items(const State &, vector<PolicyItem *> &, int) {}
-    virtual void reposition(PolicyItem &) {}
     virtual bool check_match(const State &, bool) {return false;}
     virtual void dump(string indent) const;
     virtual void generate_cpp_input(ofstream &outfile) const;

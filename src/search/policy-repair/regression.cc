@@ -22,12 +22,6 @@ string RegressionStep::get_name() {
         return op->get_nondet_name() + " / " + (is_sc ? "SC" : "NSC") + " / d=" + static_cast<ostringstream*>( &(ostringstream() << distance) )->str();
 }
 
-void PolicyItem::reposition() {
-	pol_loc->reposition(*this);
-	pol->add_item(*this);
-}
-
-
 void NondetDeadend::dump() const {
     cout << "Non-deterministic deadend:" << endl;
     cout << "Operator: " << op_name << endl;
@@ -156,7 +150,8 @@ void generate_regressable_ops() {
         
         reg_steps.push_back(new RegressableOperator(g_operators[i], s));
     }
-    g_regressable_ops = new Policy(reg_steps);
+    g_regressable_ops = new Policy();
+    g_regressable_ops->update_policy(reg_steps);
 }
 
 void RegressionStep::strengthen(State *s) {
@@ -164,7 +159,6 @@ void RegressionStep::strengthen(State *s) {
     if (is_goal)
         return;
     
-    bool updated = false;
     vector<PolicyItem *> reg_items;
     g_deadend_policy->generate_applicable_items(*state, reg_items, true);
     
@@ -190,15 +184,11 @@ void RegressionStep::strengthen(State *s) {
 					
                     assert((*state)[j] == state_var_t(-1));
                     (*state)[j] = (*s)[j];
-                    updated = true;
                     break;
                     
                 }
             }
         }
     }
-    
-    if (updated)
-		reposition();
 }
 

@@ -369,40 +369,14 @@ GeneratorBase *GeneratorEmpty::update_policy(list<PolicyItem *> &reg_items, set<
         return new GeneratorSwitch(reg_items, vars_seen);
 }
 
-
-void GeneratorLeaf::reposition(PolicyItem &item) {
-	for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter) {
-		if (&item == *op_iter) {
-			applicable_items.erase(op_iter);
-			return;
-		}
-	}
-	cout << "ERROR: Attempted to remove an item that doesn't exist." << endl;
-}
-
-void GeneratorSwitch::reposition(PolicyItem &item) {
-	for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter) {
-		if (&item == *op_iter) {
-			immediate_items.erase(op_iter);
-			return;
-		}
-	}
-	cout << "ERROR: Attempted to remove an item that doesn't exist." << endl;
-}
-
-void Policy::add_item(PolicyItem &item) {
+void Policy::add_item(PolicyItem *item) {
 	list<PolicyItem *> reg_items;
-	reg_items.push_back(&item);
-	update_policy(reg_items, false);
+	reg_items.push_back(item);
+	update_policy(reg_items, (g_detect_deadends && g_generalize_deadends));
 }
 
-Policy::Policy(list<PolicyItem *> &reg_items) {
-	root = 0;
-    update_policy(reg_items);
-    complete = false;
-}
 
-void Policy::update_policy(list<PolicyItem *> &reg_items, bool new_items) {
+void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) {
     g_timer_policy_build.resume();
 
     // Reset the score since a change is being made to the policy
@@ -413,11 +387,27 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool new_items) {
         root->update_policy(reg_items, vars_seen);
     else
         root = new GeneratorSwitch(reg_items, vars_seen);
-    if (new_items) {
-		all_items.insert(all_items.end(), reg_items.begin(), reg_items.end());
+    all_items.insert(all_items.end(), reg_items.begin(), reg_items.end());
     
-		for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter)
-			(*op_iter)->pol = this;
+    // As an optimization, we check the partial state successors of every
+    //  new action for deadends. This allows us to stop expanding earlier
+    //  with the scd algorithm below.
+    if (detect_deadends) {
+		vector<State *> new_deadends;
+		for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
+			RegressionStep * rs = (RegressionStep *)(*op_iter);
+			if (!(rs->is_goal)) {
+				for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
+					State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
+					if (is_deadend(*succ_state)) {
+						generalize_deadend(*succ_state);
+						new_deadends.push_back(succ_state);
+					}
+				}
+			}
+		}
+		if (new_deadends.size() > 0)
+			update_deadends(new_deadends);
 	}
     
     g_timer_policy_build.stop();
@@ -607,6 +597,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
 	
     bool made_change = false;
     bool debug_scd = false;
+    //bool debug_scd = !g_silent_planning;
     
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
@@ -628,7 +619,6 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 //  number of regression steps we are guaranteed to see in a state matching
                 //  succ_state, but as long as we remain in parts of the policy that return
                 //  regression steps based on their sc_state then this will be valid.
-                //State *succ_state = new State(*(rs->sc_state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
                 State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
                 vector<PolicyItem *> guaranteed_steps;
                 root->generate_applicable_items(*succ_state, guaranteed_steps, false);
@@ -644,7 +634,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                 //  a deadend, in which case we can assume that it will be handled by
                 //  the jic compiler.
                 if (0 == guaranteed_steps.size()) {
-                    bool is_failed_state = false;
+					bool is_failed_state = false;
                     for (int j = 0; j < failed_states.size(); j++) {
                         // Unfortunately, we can't just check the states equivalence,
                         //  since the succ_state is a partial state. So we instead check
@@ -657,21 +647,27 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                                 break;
                             }
                         }
+                        
+                        if (debug_scd) {
+							cout << "-+- Left marked due to existing failed state." << endl;
+						}
+                        
+                        if (is_failed_state)
+                            break;
                     }
                     
-                    // We may have stumbled across a new failed state, in which
-                    //  case, we can add it to the list and assume it will be
-                    //  handled later.
+                    
+                    
                     if (!is_failed_state) {
-                        if (is_deadend(*succ_state)) {
-                            if (g_generalize_deadends)
-                                generalize_deadend(*succ_state);
-                                
-                            // Use a new state since succ_state is deleted below
-                            failed_states.push_back(new State(*succ_state));
-                            is_failed_state = true;
-                        }
-                    }
+						if (g_deadend_states->check_match(*succ_state, true)) {
+							is_failed_state = true;
+							if (debug_scd) {
+								cout << "-+- Left marked due to existing deadend state." << endl;
+							}
+						}
+					}
+                    
+                    
                     
                     // If succ_state is a failed state, then we will avoid using
                     //  this pair in the future as it will be a FSAP. Thus, we
@@ -681,9 +677,6 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                     //  strong cyclic plan exists and further search should be
                     //  avoided.
                     if (is_failed_state) {
-						if (debug_scd) {
-							cout << "-+- Left marked due to new failed state." << endl;
-						}
 						break;
 					}
                     
