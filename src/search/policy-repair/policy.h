@@ -60,7 +60,7 @@ public:
     bool is_strong_cyclic() { return (1.1 == score); }
     
     void init_scd();
-    bool step_scd(vector<State *> &failed_states);
+    bool step_scd(vector<State *> &failed_states, bool skip_deadends = true);
     bool goal_sc_reachable(const State &curr);
     
     void dump_human_policy();

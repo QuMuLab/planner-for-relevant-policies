@@ -159,6 +159,15 @@ int main(int argc, const char **argv) {
         if (g_best_policy->get_score() > g_policy->get_score())
             g_policy = g_best_policy;
     }
+    
+    if (g_optimized_scd) {
+        cout << "\n\nRunning a final SCD check..." << endl;
+        vector< State * > failed_states; // The failed states (used for creating deadends)
+        g_policy->init_scd();
+        bool made_change = true; // This becomes false again eventually
+        while (made_change)
+            made_change = g_policy->step_scd(failed_states, false);
+    }
 
     // Reset the deadend and scd settings for the online simulation(s)
     g_detect_deadends = false;
