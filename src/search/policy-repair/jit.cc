@@ -102,22 +102,23 @@ bool perform_jit_repairs(Simulator *sim) {
                     // prev_state holds the info needed before the operator was taken
                     State * prev_state = new State(*(regstep->state), *prev_op, false);
                     
-                    bool updated = false;
+                    State * updated = NULL;
                     // We augment the state to include the stronger conditions
                     for (int i = 0; i < g_variable_name.size(); i++) {
                         assert ((state_var_t(-1) == (*prev_state)[i]) ||
                                 (state_var_t(-1) == (*(prev_regstep->state))[i]) ||
                                 ((*prev_state)[i] == (*(prev_regstep->state))[i]));
                         
-                        if (state_var_t(-1) != (*prev_state)[i]) {
-							if (state_var_t(-1) == (*(prev_regstep->state))[i])
-								updated = true;
-                            (*(prev_regstep->state))[i] = (*prev_state)[i];
+                        if ((state_var_t(-1) != (*prev_state)[i]) &&
+							(state_var_t(-1) == (*(prev_regstep->state))[i])) {
+							if (!updated)
+								updated = new State(*(prev_regstep->state));
+                            (*updated)[i] = (*prev_state)[i];
 						}
                     }
                     
                     if (updated)
-						prev_regstep->reposition();
+						g_policy->add_item(new RegressionStep(*(prev_regstep->op), updated, prev_regstep->distance));
                 }
                 
                 // Since new policy has been added, we re-compute the sc detection

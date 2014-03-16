@@ -24,7 +24,6 @@ struct PolicyItem {
     virtual ~PolicyItem() {}
     virtual string get_name() = 0;
     virtual void dump() const = 0;
-    virtual void reposition();
 };
 
 struct NondetDeadend : PolicyItem {

@@ -113,7 +113,8 @@ int main(int argc, const char **argv) {
     list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
     
     cout << "\n\nGenerating an initial policy..." << endl;
-    g_policy = new Policy(regression_steps);
+    g_policy = new Policy();
+    g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
     g_best_policy = g_policy;
     g_best_policy_score = g_policy->get_score();
     

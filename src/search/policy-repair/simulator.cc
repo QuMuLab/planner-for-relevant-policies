@@ -232,7 +232,7 @@ bool Simulator::replan() {
             
             if (verbose)
                 cout << "Updating the policy." << endl;
-            g_policy->update_policy(regression_steps);
+            g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
             
             reset_goal();
             return true;
@@ -281,7 +281,7 @@ bool Simulator::replan() {
                     
                     if (verbose)
                         cout << "Updating the policy." << endl;
-                    g_policy->update_policy(regression_steps);
+                    g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
                     
                     return true;
                 }
