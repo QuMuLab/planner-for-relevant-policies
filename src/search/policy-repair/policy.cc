@@ -593,7 +593,7 @@ void Policy::init_scd() {
          ((RegressionStep *)(*op_iter))->is_sc = true;
 }
 
-bool Policy::step_scd(vector<State *> &failed_states) {
+bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
 	
     bool made_change = false;
     bool debug_scd = false;
@@ -651,9 +651,6 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                         if (debug_scd) {
 							cout << "-+- Left marked due to existing failed state." << endl;
 						}
-                        
-                        if (is_failed_state)
-                            break;
                     }
                     
                     
@@ -676,7 +673,7 @@ bool Policy::step_scd(vector<State *> &failed_states) {
                     //  that the policy is strong cyclic, but rather that no
                     //  strong cyclic plan exists and further search should be
                     //  avoided.
-                    if (is_failed_state) {
+                    if (is_failed_state && skip_deadends) {
 						break;
 					}
                     
