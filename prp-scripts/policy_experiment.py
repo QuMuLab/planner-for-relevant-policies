@@ -23,11 +23,8 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           test-optscd: Test the impact of optimized-scd
         """
 
-TRIALS = 1
-CORES = 4
-MEM_LIMIT = 2000
-TIME_LIMIT = 1800
-SHOW_DATA = True
+from settings import *
+
 BASEDIR = os.path.abspath(os.path.curdir)
 
 PARAMETERS = ['jic-limit',
