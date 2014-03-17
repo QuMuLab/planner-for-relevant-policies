@@ -23,6 +23,15 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           test-optscd: Test the impact of optimized-scd
         """
 
+if not os.path.exists('settings.py'):
+    print "\nNo settings detected. Creating settings.py...\n"
+    s =  "TRIALS = 10\n"
+    s += "CORES = 1\n"
+    s += "MEM_LIMIT = 2000\n"
+    s += "TIME_LIMIT = 1800\n"
+    s += "SHOW_DATA = True\n"
+    write_file('settings.py', s)
+
 from settings import *
 
 BASEDIR = os.path.abspath(os.path.curdir)
