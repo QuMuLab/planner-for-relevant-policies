@@ -20,3 +20,5 @@
 ^new-scripts/preprocessed-tasks/
 ^new-scripts/exp-.*/
 ^fond-benchmarks/RESULTS/backup/
+^prp-scripts/settings.py
+^prp-scripts/RESULTS
