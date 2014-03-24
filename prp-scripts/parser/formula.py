@@ -10,16 +10,16 @@ class Formula(object):
 
         Methods:
             normalize: restructure the Formula object to be in canonical form:
-                1)  At most one Oneof object should exist, 
+                1)  At most one Oneof object should exist,
                     and be on the outside if it does
 
-                2)  The argument of any Not object should be a 
+                2)  The argument of any Not object should be a
                     Primitive object
 
                 3)  An And object should not have any arguments
                     (directly or indirectly) that are And object
 
-                    3b)     There can be more than one And 
+                    3b)     There can be more than one And
                             object if there is a Oneof object
     """
 
@@ -38,9 +38,9 @@ class Formula(object):
 
     def to_ground (self, fluent_dict):
         """Assert that this formula is actually ground.
-        Doesn't actually ground the formula, just recursively 
+        Doesn't actually ground the formula, just recursively
         change all args to ground_args.
-        
+
         fluent_dict allows referencing existing fluents to save space"""
 
         [arg.to_ground (fluent_dict) for arg in self.args]
@@ -53,25 +53,25 @@ class Formula(object):
 
     def __repr__ (self):
         return str(self)
-        
+
     def is_equal (self, f):
         assert isinstance(f, Formula), \
             "comparison must be between formulas, found %s" % str (type(f))
 
-        if self.name != f.name:
-            print "names different"
-            print self.name
-            print f.name
-        if not all ([sa == fa for sa, fa in zip (self.args, f.args)]):
-            diff_args = filter (lambda i: i[0] != i[1], \
-                    zip (self.args, f.args))
-            print "args different"
-            print "*self*"
-            print self.args
-            print "*f*"
-            print f.args
-            print "**diff **"
-            print [str(sa) + "\n" + str (fa) for sa, fa in diff_args]
+        #if self.name != f.name:
+        #    print "names different"
+        #    print self.name
+        #    print f.name
+        #if not all ([sa == fa for sa, fa in zip (self.args, f.args)]):
+        #    diff_args = filter (lambda i: i[0] != i[1], \
+        #            zip (self.args, f.args))
+        #    print "args different"
+        #    print "*self*"
+        #    print self.args
+        #    print "*f*"
+        #    print f.args
+        #    print "**diff **"
+        #    print [str(sa) + "\n" + str (fa) for sa, fa in diff_args]
         return (self.name == f.name) and \
            all ([sa == fa for sa, fa in zip (self.args, f.args)])
 
@@ -118,7 +118,7 @@ class Formula(object):
             not all([isinstance(child, Primitive) for child in self.args]):
             assert False, "Not object must have all children be primitives"
 
-        # 3) Verify And object not nested under And object 
+        # 3) Verify And object not nested under And object
         if isinstance(self, And):
             i = 0
             queue = self.args[:]
@@ -149,7 +149,7 @@ class Forall(Formula):
         """
         Inputs:
             params:     list of tuples.
-                        The first item is the variable name 
+                        The first item is the variable name
                         The second item is the variable type
 
             args:       list of formula objects(input is of length 1)
@@ -160,7 +160,7 @@ class Forall(Formula):
         self.params = params
 
     def export (self, lvl, sp, untyped=False):
-        """Special export for forall must include 
+        """Special export for forall must include
         variable that is quanitified."""
 
         if all ([p[1] == Predicate.OBJECT for p in self.params]):
@@ -250,7 +250,7 @@ class And(Formula):
 
         # each predicate will have its own assignments
         # so the idea is to get at each predicate
-        pass 
+        pass
 
     def dump(self):
         """Informative string representation."""
@@ -260,7 +260,7 @@ class And(Formula):
 
 class Xor(Formula):
     """These come from the initial state
-    (unknown(foo ?a ?b)) --> 
+    (unknown(foo ?a ?b)) -->
     Xor(Primitive(foo_a_b), Not(Primitive(foo_a_b )))
     """
 
@@ -420,7 +420,7 @@ class Primitive(Formula):
     def to_ground (self, fluent_dict):
         """Doesn't actually ground, just forces the Primitive
         to accept that it is *already* ground.
-        
+
         fluent_dict allows referencing to existing fluents to save space
         """
 
