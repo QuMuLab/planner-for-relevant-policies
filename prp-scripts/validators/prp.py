@@ -1,5 +1,21 @@
 
 
+################################################################
+##
+##  Note: It is assumed that the policy file
+##        is already translated using the
+##        translate_policy.py script. For
+##        example, in the directory used to
+##        run prp with --dump-policy 2 used,
+##        this would generate the right file:
+##
+##          python translate_policy.py > policy-final.out
+##
+###########################################################
+
+
+
+
 POLICY = None
 
 def load(pol, fmap):
@@ -11,7 +27,6 @@ def load(pol, fmap):
         file_lines = filter(lambda x: x != '', [line.rstrip("\n") for line in f.readlines()])
 
     POLICY = []
-    print fmap
 
     while file_lines:
         fluents = set([fmap[f] for f in file_lines.pop(0).split(':')[-1][1:].split(' ')])
@@ -20,6 +35,9 @@ def load(pol, fmap):
 
 def next_action(s):
     global POLICY
-    print "\nFetching next action..."
-    #return 'move-car_l-3-1_l-1-1'
-    return 'move-car_l-1-1_l-2-1'
+
+    for (p,a) in POLICY:
+        if p <= s.fluents:
+            return a
+
+    return None
