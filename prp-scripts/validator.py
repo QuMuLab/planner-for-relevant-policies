@@ -39,6 +39,7 @@ class VALAction:
         self.pres = set(prec)
         self.adds = set(filter(lambda x: x > 0, eff))
         self.dels = set([-1 * i for i in filter(lambda x: x < 0, eff)])
+        self.eff = eff
 
 
 def validate(dfile, pfile, sol, val):
@@ -46,12 +47,13 @@ def validate(dfile, pfile, sol, val):
     problem = grounder.GroundProblem(dfile, pfile)
 
     fluents = {}
-    unfluents = ['NULL']
+    unfluents = {}
     index = 1
     for f in problem.fluents:
         fluents[str(f)] = index
         fluents["not(%s)" % str(f)] = -1 * index
-        unfluents.append(str(f))
+        unfluents[index] = str(f)
+        unfluents[-1 * index] = "not(%s)" % str(f)
         index += 1
 
     actions = {}
@@ -68,8 +70,8 @@ def validate(dfile, pfile, sol, val):
     open_list = [init_state]
 
     G = nx.DiGraph()
-    G.add_node(init_state)
-    G.add_node(goal_state)
+    G.add_node(init_state, label="I")
+    G.add_node(goal_state, label="G")
 
     val.load(sol, fluents)
 
@@ -84,22 +86,41 @@ def validate(dfile, pfile, sol, val):
         #print _state_string(unfluents, u)
 
         a = val.next_action(u)
+        i = 0
         for outcome in actions[a]:
+
             v = progress(u, outcome)
+            i += 1
+
             if v.is_goal(goal_fluents):
-                G.add_edge(u, goal_state, action=a)
-            else:
-                if v not in G:
-                    G.add_node(v)
-                    open_list.append(v)
-                G.add_edge(u, v, action=a)
+                v = goal_state
+            elif v not in G:
+                G.add_node(v, label="")
+                open_list.append(v)
+
+            G.add_edge(u, v, label="%s (%d)" % (a, i))
 
 
     # Analyze the final controller
-    print "\nSimulation finished!"
-    print "\n-{ Controller Statistics }-"
-    print "Nodes: %d" % G.number_of_nodes()
-    print "Edges: %d" % G.number_of_edges()
+    print "\nSimulation finished!\n"
+    print "\n-{ Controller Statistics }-\n"
+    print "\t Nodes: %d" % G.number_of_nodes()
+    print "\t Edges: %d" % G.number_of_edges()
+    print "\tStrong: %s" % str(0 == len(list(nx.simple_cycles(G))))
+    print " Strong Cyclic: %s" % str(G.number_of_nodes() == len(nx.single_source_shortest_path(G.reverse(), goal_state)))
+
+    nx.write_dot(G, 'graph.dot')
+
+    with open('action.map', 'w') as f:
+        for a in actions:
+            f.write("\n%s:\n" % a)
+            i = 0
+            for outcome in actions[a]:
+                i += 1
+                f.write("%d: %s\n" % (i, str([unfluents[fl] for fl in outcome.eff])))
+
+    print "\n   Plan output: graph.dot"
+    print "Action mapping: action.map\n"
 
 
 

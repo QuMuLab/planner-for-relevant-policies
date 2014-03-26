@@ -16,11 +16,11 @@ class Predicate (object):
             is_ground:    Returns True when args is empty, and False otherwise.
 
             ground:    Takes in an iterable of tuples that contain a pair of strings.
-                       The first is a variable name and the second is an object name. 
+                       The first is a variable name and the second is an object name.
                        It should throw an error if the variable type and the object type do not match.
                        It should also throw an error if the set of variables passed in isn't a subset of the variables in args.
-                       The effect should be to remove the appropriate elements from the args list, 
-                       and add the appropriate elements to the ground_args list. 
+                       The effect should be to remove the appropriate elements from the args list,
+                       and add the appropriate elements to the ground_args list.
     """
 
     OBJECT = "default_object"
@@ -118,8 +118,8 @@ class Predicate (object):
         return (sp * lvl) + "(%s%s%s)" % (self.name, sep, arg_s)
 
     def ground (self, it):
-        """Takes in an iterable of tuples that contain a pair of strings. 
-        The first is a variable name and the second is an object name. 
+        """Takes in an iterable of tuples that contain a pair of strings.
+        The first is a variable name and the second is an object name.
         It should throw an error if the variable type and the object type do not match.
         It should also throw an error if the set of variables passed in isn't a subset of the variables in args.
         The effect should be to remove the appropriate elements from the args list, and add the appropriate elements to the ground_args list.
@@ -128,7 +128,7 @@ class Predicate (object):
         assert hasattr (it, '__iter__') and all ([ isinstance(item, tuple) and \
         len(item) == 2 and isinstance (item[0], str) and isinstance (item[1], str) for item in it ]),\
         "first argument must be iterable, and be a sequence of tuples, which are pairs of strings"
-        
+
         it_var_names = set ([ item[0] for item in it ])
         it_obj_names = set ([ item[1] for item in it ])
 
@@ -145,7 +145,7 @@ class Predicate (object):
         """Informative representation."""
 
         return str (self)
-    
+
     def __str__ (self):
         """String representation of this object for easy debugging."""
 
@@ -153,8 +153,9 @@ class Predicate (object):
             return "%s (%s)" % (self.name, \
             ", ".join(["%s %s" % (arg[1], arg[0]) for arg in self.args]))
         else:
-            return "%s (%s)" % (self.name, \
-            ", ".join(["%s %s" % (arg[1], arg[0]) for arg in self.ground_args]))
+            #return "%s (%s)" % (self.name, \
+            #", ".join(["%s %s" % (arg[1], arg[0]) for arg in self.ground_args]))
+            return "%s(%s)" % (self.name, " ".join([str(arg[0]) for arg in self.ground_args]))
 
     def __repr__ (self):
         return "Predicate " + str(self)
