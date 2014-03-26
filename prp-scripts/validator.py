@@ -45,8 +45,6 @@ def validate(dfile, pfile, sol, val):
 
     problem = grounder.GroundProblem(dfile, pfile)
 
-    val.load(sol)
-
     fluents = {}
     unfluents = ['NULL']
     index = 1
@@ -65,13 +63,15 @@ def validate(dfile, pfile, sol, val):
 
     init_state = State(_convert_conjunction(fluents, problem.init))
     goal_state = State([-1])
-    goal_fluents = _convert_conjunction(fluents, problem.goal)
+    goal_fluents = set(_convert_conjunction(fluents, problem.goal))
 
     open_list = [init_state]
 
     G = nx.DiGraph()
     G.add_node(init_state)
     G.add_node(goal_state)
+
+    val.load(sol, fluents)
 
     print "\nStarting the FOND simulation..."
 
