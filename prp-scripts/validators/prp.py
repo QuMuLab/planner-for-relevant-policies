@@ -29,7 +29,7 @@ def load(pol, fmap):
     POLICY = []
 
     while file_lines:
-        fluents = set([fmap[f] for f in file_lines.pop(0).split(':')[-1][1:].split(' ')])
+        fluents = set([fmap[f.strip().replace(',', '') + ')'] for f in file_lines.pop(0).split(':')[-1][1:].split(')')[:-1]])
         action = file_lines.pop(0).split(':')[-1].split('/')[0][1:-1].replace(' ', '_')
         POLICY.append((fluents, action))
 

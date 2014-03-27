@@ -1,3 +1,4 @@
+
 from predicate import Predicate
 
 
@@ -73,7 +74,8 @@ class Formula(object):
         #    print "**diff **"
         #    print [str(sa) + "\n" + str (fa) for sa, fa in diff_args]
         return (self.name == f.name) and \
-           all ([sa == fa for sa, fa in zip (self.args, f.args)])
+               len(self.args) == len(f.args) and \
+               all ([sa == fa for sa, fa in zip (self.args, f.args)])
 
     def export (self, lvl=0, sp="  ", untyped=False):
         """Export this formula as a PDDL.
@@ -229,6 +231,8 @@ class And(Formula):
             Inputs:
                 args:    list of formula objects
         """
+        args = filter(lambda x: not isinstance(x, And), args) + \
+               [item for andarg in filter(lambda x: isinstance(x, And), args) for item in andarg.args]
 
         super(And, self).__init__("and", args)
 
