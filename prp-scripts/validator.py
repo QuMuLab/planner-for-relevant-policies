@@ -69,9 +69,12 @@ def validate(dfile, pfile, sol, val):
 
     open_list = [init_state]
 
+    nodes = {init_state: 1, goal_state: 2}
+    node_index = 3
+
     G = nx.DiGraph()
-    G.add_node(init_state, label="I")
-    G.add_node(goal_state, label="G")
+    G.add_node(1, label="I")
+    G.add_node(2, label="G")
 
     val.load(sol, fluents)
 
@@ -80,7 +83,7 @@ def validate(dfile, pfile, sol, val):
     while open_list:
 
         u = open_list.pop(0)
-        assert u in G
+        assert nodes[u] in G
 
         #print "\nHandling state:"
         #print _state_string(unfluents, u)
@@ -94,11 +97,13 @@ def validate(dfile, pfile, sol, val):
 
             if v.is_goal(goal_fluents):
                 v = goal_state
-            elif v not in G:
-                G.add_node(v, label="")
+            elif v not in nodes:
+                nodes[v] = node_index
+                node_index += 1
+                G.add_node(nodes[v], label="")
                 open_list.append(v)
 
-            G.add_edge(u, v, label="%s (%d)" % (a, i))
+            G.add_edge(nodes[u], nodes[v], label="%s (%d)" % (a, i))
 
 
     # Analyze the final controller
@@ -107,7 +112,7 @@ def validate(dfile, pfile, sol, val):
     print "\t Nodes: %d" % G.number_of_nodes()
     print "\t Edges: %d" % G.number_of_edges()
     print "\tStrong: %s" % str(0 == len(list(nx.simple_cycles(G))))
-    print " Strong Cyclic: %s" % str(G.number_of_nodes() == len(nx.single_source_shortest_path(G.reverse(), goal_state)))
+    print " Strong Cyclic: %s" % str(G.number_of_nodes() == len(nx.single_source_shortest_path(G.reverse(), nodes[goal_state])))
 
     nx.write_dot(G, 'graph.dot')
 
@@ -125,8 +130,12 @@ def validate(dfile, pfile, sol, val):
 
 
 def _convert_conjunction(mapping, conj):
-    assert isinstance(conj, And)
-    return [mapping[str(f)] for f in conj.args]
+    if isinstance(conj, And):
+        return [mapping[str(f)] for f in conj.args]
+    elif isinstance(conj, Primitive):
+        return [mapping[str(conj)]]
+    else:
+        assert False, "Error: Tried converting a non-standard conjunction: %s" % str(conj)
 
 def _state_string(mapping, state):
     return '\n'.join([mapping[i] for i in state.fluents])
