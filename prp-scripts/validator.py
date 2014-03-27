@@ -35,8 +35,10 @@ class State:
 
 
 class VALAction:
-    def __init__(self, prec, eff):
-        self.pres = set(prec)
+    def __init__(self, prec, eff, name):
+        self.name = name
+        self.ppres = set(filter(lambda x: x > 0, prec))
+        self.npres = set([-1 * i for i in filter(lambda x: x < 0, prec)])
         self.adds = set(filter(lambda x: x > 0, eff))
         self.dels = set([-1 * i for i in filter(lambda x: x < 0, eff)])
         self.eff = eff
@@ -59,7 +61,7 @@ def validate(dfile, pfile, sol, val):
     actions = {}
     for op in problem.operators:
         actions[op.name] = [VALAction(_convert_conjunction(fluents, op.precondition),
-                                      _convert_conjunction(fluents, eff))
+                                      _convert_conjunction(fluents, eff), op.name)
                             for eff in flatten(op)]
         #print "\n%s\n%s" % (op.name, '\n'.join(map(str, actions[op.name])))
 
@@ -92,7 +94,7 @@ def validate(dfile, pfile, sol, val):
         i = 0
         for outcome in actions[a]:
 
-            v = progress(u, outcome)
+            v = progress(u, outcome, unfluents)
             i += 1
 
             if v.is_goal(goal_fluents):
@@ -140,8 +142,10 @@ def _convert_conjunction(mapping, conj):
 def _state_string(mapping, state):
     return '\n'.join([mapping[i] for i in state.fluents])
 
-def progress(s, o):
-    assert o.pres <= s.fluents
+def progress(s, o, m):
+    assert o.ppres <= s.fluents and 0 == len(o.npres & s.fluents), \
+        "Failed to progress %s:\nPrecondition: %s\nState:\n%s" % \
+        (o.name, str(o.pres), _state_string(m, s))
     return State(((s.fluents - o.dels) | o.adds))
 
 
