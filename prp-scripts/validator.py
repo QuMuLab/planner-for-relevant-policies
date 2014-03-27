@@ -46,6 +46,8 @@ class VALAction:
 
 def validate(dfile, pfile, sol, val):
 
+    print "\nParsing the problem..."
+
     problem = grounder.GroundProblem(dfile, pfile)
 
     fluents = {}
@@ -82,6 +84,8 @@ def validate(dfile, pfile, sol, val):
 
     print "\nStarting the FOND simulation..."
 
+    unhandled = []
+
     while open_list:
 
         u = open_list.pop(0)
@@ -91,21 +95,26 @@ def validate(dfile, pfile, sol, val):
         #print _state_string(unfluents, u)
 
         a = val.next_action(u)
-        i = 0
-        for outcome in actions[a]:
 
-            v = progress(u, outcome, unfluents)
-            i += 1
+        if not a:
+            G.node[nodes[u]]['label'] = 'X'
+            unhandled.append(u)
+        else:
+            i = 0
+            for outcome in actions[a]:
 
-            if v.is_goal(goal_fluents):
-                v = goal_state
-            elif v not in nodes:
-                nodes[v] = node_index
-                node_index += 1
-                G.add_node(nodes[v], label="")
-                open_list.append(v)
+                v = progress(u, outcome, unfluents)
+                i += 1
 
-            G.add_edge(nodes[u], nodes[v], label="%s (%d)" % (a, i))
+                if v.is_goal(goal_fluents):
+                    v = goal_state
+                elif v not in nodes:
+                    nodes[v] = node_index
+                    node_index += 1
+                    G.add_node(nodes[v], label="")
+                    open_list.append(v)
+
+                G.add_edge(nodes[u], nodes[v], label="%s (%d)" % (a, i))
 
 
     # Analyze the final controller
@@ -113,6 +122,7 @@ def validate(dfile, pfile, sol, val):
     print "\n-{ Controller Statistics }-\n"
     print "\t Nodes: %d" % G.number_of_nodes()
     print "\t Edges: %d" % G.number_of_edges()
+    print "     Unhandled: %d" % len(unhandled)
     print "\tStrong: %s" % str(0 == len(list(nx.simple_cycles(G))))
     print " Strong Cyclic: %s" % str(G.number_of_nodes() == len(nx.single_source_shortest_path(G.reverse(), nodes[goal_state])))
 
@@ -126,8 +136,17 @@ def validate(dfile, pfile, sol, val):
                 i += 1
                 f.write("%d: %s\n" % (i, str([unfluents[fl] for fl in outcome.eff])))
 
-    print "\n   Plan output: graph.dot"
-    print "Action mapping: action.map\n"
+    if len(unhandled) > 0:
+        with open('unhandled.states', 'w') as f:
+            for s in unhandled:
+                f.write("\n%s\n" % _state_string(unfluents, s))
+
+    print "\n     Plan output: graph.dot"
+    print "  Action mapping: action.map"
+    if len(unhandled) > 0:
+        print "Unhandled states: unhandled.states"
+
+    print
 
 
 
@@ -140,7 +159,7 @@ def _convert_conjunction(mapping, conj):
         assert False, "Error: Tried converting a non-standard conjunction: %s" % str(conj)
 
 def _state_string(mapping, state):
-    return '\n'.join([mapping[i] for i in state.fluents])
+    return '\n'.join(sorted([mapping[i] for i in state.fluents]))
 
 def progress(s, o, m):
     assert o.ppres <= s.fluents and 0 == len(o.npres & s.fluents), \
