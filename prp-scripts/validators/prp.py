@@ -29,15 +29,21 @@ def load(pol, fmap):
     POLICY = []
 
     while file_lines:
-        fluents = set([fmap[f.strip().replace(',', '') + ')'] for f in file_lines.pop(0).split(':')[-1][1:].split(')')[:-1]])
+        fluent_line = file_lines.pop(0)
+        nfluents = set([fmap[f.strip().replace(',', '')[4:-1]] for f in \
+                        filter(lambda x: 'not(' == x[:4], \
+                               fluent_line.split(':')[-1][1:].split('/'))])
+        pfluents = set([fmap[f.strip().replace(',', '')] for f in \
+                        filter(lambda x: 'not(' != x[:4], \
+                               fluent_line.split(':')[-1][1:].split('/'))])
         action = file_lines.pop(0).split(':')[-1].split('/')[0][1:-1].replace(' ', '_')
-        POLICY.append((fluents, action))
+        POLICY.append((nfluents, pfluents, action))
 
 def next_action(s):
     global POLICY
 
-    for (p,a) in POLICY:
-        if p <= s.fluents:
+    for (n,p,a) in POLICY:
+        if 0 == len(n & s.fluents) and p <= s.fluents:
             return a
 
     return None

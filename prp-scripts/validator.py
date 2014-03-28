@@ -17,6 +17,10 @@ Usage: python validator.py <domain> <problem> <solution> <interpreter>
         (at least) two functions: load and next_action
 
     Example usage: python validator.py domain.pddl p3.pddl policy.out prp
+
+    Caveats:
+      * Equality predicates are ignored in the grounding / simulation.
+
         """
 
 class State:
@@ -152,7 +156,7 @@ def validate(dfile, pfile, sol, val):
 
 def _convert_conjunction(mapping, conj):
     if isinstance(conj, And):
-        return [mapping[str(f)] for f in conj.args]
+        return [mapping[str(f)] for f in filter(lambda x: '=' not in str(x), conj.args)]
     elif isinstance(conj, Primitive):
         return [mapping[str(conj)]]
     else:
