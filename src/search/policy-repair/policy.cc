@@ -738,11 +738,15 @@ void Policy::dump_human_policy() {
          op_iter != all_items.end(); ++op_iter) {
         
         outfile << "\nIf holds:";
+        State *s;
+        if (((RegressionStep*)(*op_iter))->is_sc)
+			s = ((RegressionStep*)(*op_iter))->sc_state;
+		else
+			s = ((RegressionStep*)(*op_iter))->state;
         for (int i = 0; i < g_variable_domain.size(); i++) {
-			if (state_var_t(-1) != (*(((RegressionStep*)(*op_iter))->sc_state))[i]) {
+			if (state_var_t(-1) != (*s)[i]) {
 				outfile << " ";
-				outfile << g_variable_name[i] << ":"
-				     << static_cast<int>((*(((RegressionStep*)(*op_iter))->sc_state))[i]);
+				outfile << g_variable_name[i] << ":" << static_cast<int>((*s)[i]);
 			}
 		}
 		outfile << endl;
