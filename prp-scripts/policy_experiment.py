@@ -23,11 +23,17 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
           test-optscd: Test the impact of optimized-scd
         """
 
-TRIALS = 5
-CORES = 13
-MEM_LIMIT = 2000
-TIME_LIMIT = 1800
-SHOW_DATA = True
+if not os.path.exists('settings.py'):
+    print "\nNo settings detected. Creating settings.py...\n"
+    s =  "TRIALS = 10\n"
+    s += "CORES = 1\n"
+    s += "MEM_LIMIT = 2000\n"
+    s += "TIME_LIMIT = 1800\n"
+    s += "SHOW_DATA = True\n"
+    write_file('settings.py', s)
+
+from settings import *
+
 BASEDIR = os.path.abspath(os.path.curdir)
 
 PARAMETERS = ['jic-limit',
@@ -446,6 +452,9 @@ def dojic(dom, prob, max_jic):
 
 if __name__ == '__main__':
     myargs, flags = get_opts()
+    
+    if not os.path.exists('RESULTS'):
+        os.makedirs('RESULTS')
     
     if '-trials' in myargs:
         TRIALS = int(myargs['-trials'])
