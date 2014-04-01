@@ -66,9 +66,15 @@ def validate(dfile, pfile, sol, val):
 
     actions = {}
     for op in problem.operators:
-        actions[op.name] = [VALAction(_convert_conjunction(fluents, op.precondition),
-                                      _convert_conjunction(fluents, eff), op.name)
+        if '_' == op.name[-1]:
+            op_name = op.name[:-1]
+        else:
+            op_name = op.name
+
+        actions[op_name] = [VALAction(_convert_conjunction(fluents, op.precondition),
+                                      _convert_conjunction(fluents, eff), op_name)
                             for eff in flatten(op)]
+
         #print "\n%s\n%s" % (op.name, '\n'.join(map(str, actions[op.name])))
 
     init_state = State(_convert_conjunction(fluents, problem.init))

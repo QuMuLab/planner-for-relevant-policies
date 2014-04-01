@@ -36,7 +36,7 @@ def load(pol, fmap):
         pfluents = set([fmap[f.strip().replace(',', '')] for f in \
                         filter(lambda x: 'not(' != x[:4], \
                                fluent_line.split(':')[-1][1:].split('/'))])
-        action = file_lines.pop(0).split(':')[-1].split('/')[0][1:-1].replace(' ', '_')
+        action = file_lines.pop(0).split(':')[-1].split('/')[0][1:-1].strip().replace(' ', '_')
         POLICY.append((nfluents, pfluents, action))
 
 def next_action(s):
