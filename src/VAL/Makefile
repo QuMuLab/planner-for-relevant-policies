@@ -67,7 +67,7 @@ SEARCHDIRS := -iquote -I${MYCODEDIR}
 
 # makemake variables
 
-DEPENDFLAGS := -g -Wall ${SEARCHDIRS}
+DEPENDFLAGS := -Wall ${SEARCHDIRS}
 
 # C preprocessor (C, C++, FORTRAN)
 
@@ -116,7 +116,7 @@ FFLAGS  =
 
 # C/C++/Eiffel/FORTRAN linker
 
-LINKER    := g++ -g
+LINKER    := g++
 ifeq ($(LINK_STATICALLY), 1)
 LINKER += -static -static-libgcc
 endif
