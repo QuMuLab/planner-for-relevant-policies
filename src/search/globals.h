@@ -99,6 +99,7 @@ extern Heuristic *g_heuristic_for_reachability;
 extern int g_dump_policy; // Whether or not we should dump the policy
 
 extern bool g_debug; // Flag for debugging parts of the code
+extern int g_debug_count; // Index that allows to locate spots in the output
 
 /* Timers */
 extern Timer g_timer_regression;
