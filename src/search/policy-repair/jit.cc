@@ -41,7 +41,7 @@ bool perform_jit_repairs(Simulator *sim) {
         g_policy->init_scd();
         made_change = true; // This becomes false again eventually
         while (made_change)
-            made_change = g_policy->step_scd(failed_states);
+            made_change = g_policy->step_scd(failed_states, false);
     }
     
     // Back up the originial initial state
