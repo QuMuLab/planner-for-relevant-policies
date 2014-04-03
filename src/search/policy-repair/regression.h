@@ -18,7 +18,6 @@ class GeneratorBase;
 struct PolicyItem {
     State *state;
     Policy *pol;
-    GeneratorBase *pol_loc;
     
     PolicyItem(State *s) : state(s), pol(0) {}
     virtual ~PolicyItem() {}

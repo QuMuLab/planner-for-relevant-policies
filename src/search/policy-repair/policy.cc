@@ -124,9 +124,6 @@ GeneratorSwitch::GeneratorSwitch(int switch_variable,
       default_generator(default_gen) {
 	
 	immediate_items.swap(reg_items);
-	for (list<PolicyItem *>::const_iterator op_iter = immediate_items.begin();
-         op_iter != immediate_items.end(); ++op_iter)
-         (*op_iter)->pol_loc = this;
 }
 
 GeneratorSwitch::~GeneratorSwitch() {
@@ -166,9 +163,6 @@ void GeneratorSwitch::generate_cpp_input(ofstream &outfile) const {
 
 GeneratorLeaf::GeneratorLeaf(list<PolicyItem *> &items) {
     applicable_items.swap(items);
-    for (list<PolicyItem *>::const_iterator op_iter = applicable_items.begin();
-         op_iter != applicable_items.end(); ++op_iter)
-         (*op_iter)->pol_loc = this;
 }
 
 void GeneratorLeaf::dump(string indent) const {
@@ -263,7 +257,6 @@ GeneratorSwitch::GeneratorSwitch(list<PolicyItem *> &reg_items, set<int> &vars_s
     for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
         if (reg_item_done(*op_iter, vars_seen)) {
             immediate_items.push_back(*op_iter);
-            (*op_iter)->pol_loc = this;
         } else if (state_var_t(-1) != (*((*op_iter)->state))[switch_var]) {
             value_items[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
         } else { // == -1
@@ -296,7 +289,6 @@ GeneratorBase *GeneratorSwitch::update_policy(list<PolicyItem *> &reg_items, set
     for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
         if (reg_item_done(*op_iter, vars_seen)) {
             immediate_items.push_back(*op_iter);
-            (*op_iter)->pol_loc = this;
         } else if (state_var_t(-1) != (*((*op_iter)->state))[switch_var]) {
             value_items[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
         } else { // == -1
@@ -340,9 +332,6 @@ GeneratorBase *GeneratorLeaf::update_policy(list<PolicyItem *> &reg_items, set<i
     }
     
     if (all_done) {
-        for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
-			(*op_iter)->pol_loc = this;
-		}
 		applicable_items.splice(applicable_items.end(), reg_items);
         return NULL;
     } else {
@@ -664,8 +653,6 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
 						}
 					}
                     
-                    
-                    
                     // If succ_state is a failed state, then we will avoid using
                     //  this pair in the future as it will be a FSAP. Thus, we
                     //  can leave it marked so that the search doesn't continue
@@ -735,36 +722,6 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
 					if (debug_scd) {
 						cout << "+++ Left marked." << endl;
 					}
-                
-					/*vector<PolicyItem *> possible_steps;
-					root->generate_applicable_items(*succ_state, possible_steps, min_sc_cost);
-					//root->generate_applicable_items(*succ_state, possible_steps, true);
-					
-					//cout << "Guaranteed steps / Possible steps: " << guaranteed_steps.size() << " / " << possible_steps.size() << endl;
-					//cout << "Min cost = " << min_cost << endl;
-					
-					// If any possible successor state that we reach has a matching
-					//  regression step that isn't strongly cyclic, then neither are
-					//  we. A place for optimization is to prune the set of possible
-					//  regression steps returned -- if we can guarantee that the call
-					//  to the get_best_step function won't return a regression step,
-					//  then we need not confirm it is strongly cyclic.
-					for (int j = 0; j < possible_steps.size(); j++) {
-						//if (!(((RegressionStep *)possible_steps[j])->is_sc)) {
-						RegressionStep * rstep = (RegressionStep *)possible_steps[j];
-						if (rstep->is_sc && !(goal_sc_reachable(*(rstep->state)))) {
-							rs->is_sc = false;
-							made_change = true;
-							i = g_nondet_mapping[rs->op->get_nondet_name()].size();
-							j = possible_steps.size();
-						}
-					}*/
-					
-					/*if (rs->is_sc && (999999 != min_sc_cost) && (min_sc_cost > rs->distance)) {
-						cout << "New prune at distance (" << min_sc_cost << " vs " << rs->distance << ")..." << endl;
-						rs->dump();
-					}*/
-					
 				}
                 
                 delete succ_state;

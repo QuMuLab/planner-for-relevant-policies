@@ -61,7 +61,8 @@ void RelaxationHeuristic::initialize() {
         build_unary_operators(g_axioms[i], -1);
 
     // Simplify unary operators.
-    cout << " !! Warning: Disabling the simplification of unary operators to keep the non-deterministic planning sound." << endl;
+    cout << " !! Warning: Disabling the simplification of unary operators !!" << endl;
+    cout << " !!           to keep the non-deterministic planning sound.  !!" << endl;
     //simplify();
 
     // Cross-reference unary operators.
