@@ -11,7 +11,7 @@ void RegressionStep::dump() const {
         cout << " -{ Goal }-" << endl;
     }
     cout << "\n -{ State }-" << endl;
-    state->dump_fdr();
+    state->dump_pddl();
     cout << "" << endl;
 }
 
@@ -21,7 +21,6 @@ string RegressionStep::get_name() {
     else
         return op->get_nondet_name() + " / " + (is_sc ? "SC" : "NSC") + " / d=" + static_cast<ostringstream*>( &(ostringstream() << distance) )->str();
 }
-
 
 void NondetDeadend::dump() const {
     cout << "Non-deterministic deadend:" << endl;
@@ -41,7 +40,7 @@ void RegressableOperator::dump() const {
     cout << " -{ Operator }-" << endl;
     op->dump();
     cout << " -{ State }-" << endl;
-    state->dump_fdr();
+    state->dump_pddl();
     cout << "" << endl;
 }
 
@@ -151,7 +150,8 @@ void generate_regressable_ops() {
         
         reg_steps.push_back(new RegressableOperator(g_operators[i], s));
     }
-    g_regressable_ops = new Policy(reg_steps);
+    g_regressable_ops = new Policy();
+    g_regressable_ops->update_policy(reg_steps);
 }
 
 void RegressionStep::strengthen(State *s) {
@@ -169,18 +169,21 @@ void RegressionStep::strengthen(State *s) {
         if (((NondetDeadend*)(reg_items[i]))->op_name == op->get_nondet_name()) {
             
             for (int j = 0; j < g_variable_name.size(); j++) {
+				
+				state_var_t val = (*(((NondetDeadend*)(reg_items[i]))->state))[j];
+				
                 // We may have broken it in a previous iteration
-                if (((*(((NondetDeadend*)(reg_items[i]))->state))[j] != state_var_t(-1)) &&
-                    ((*(((NondetDeadend*)(reg_items[i]))->state))[j] != (*state)[j]) &&
+                if ((val != state_var_t(-1)) &&
+                    (val != (*state)[j]) &&
                     ((*state)[j] != state_var_t(-1)))
-                    break;
+						break;
                 
                 // Just need to break one of the decisions
-                if (((*(((NondetDeadend*)(reg_items[i]))->state))[j] != state_var_t(-1)) &&
-                    ((*(((NondetDeadend*)(reg_items[i]))->state))[j] != (*s)[j])) {
+                if ((val != state_var_t(-1)) &&
+                    (val != (*s)[j])) {
+					
                     assert((*state)[j] == state_var_t(-1));
                     (*state)[j] = (*s)[j];
-                    (*sc_state)[j] = (*s)[j];
                     break;
                     
                 }
