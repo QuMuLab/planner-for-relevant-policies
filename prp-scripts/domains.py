@@ -107,7 +107,7 @@ REDUNDANT_DOMAINS = {
     'blocksworld': redundant_blocks
 }
 
-GOOD_DOMAINS = ['blocksworld', 'blocksworld-new', 'blocksworld-orig', 'first', 'forest', 'faults']
+GOOD_DOMAINS = ['blocksworld', 'blocksworld-new', 'blocksworld-orig', 'first', 'forest', 'faults', 'triangle-tire']
 FOND_DOMAINS = ['blocksworld-orig', 'first', 'forest', 'faults']
 #NEW_DOMAINS = ['blocksworld-new', 'first-new', 'forest-new']
 NEW_DOMAINS = ['blocksworld-new', 'forest-new']

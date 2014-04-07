@@ -390,7 +390,7 @@ Policy *g_best_policy; // The best policy we've found so far
 vector<State *> g_found_deadends; // Vector of deadends found while planning
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
 int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
-bool g_silent_planning = false;
+bool g_silent_planning = true;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run
 bool g_fullstate = false; // Use the full state for regression
 bool g_plan_locally = true; // Plan for the expected state rather than replanning to the goal
@@ -412,6 +412,7 @@ Heuristic *g_heuristic_for_reachability;
 int g_dump_policy = 0; // Whether or not we should dump the policy
 
 bool g_debug = false; // Flag for debugging parts of the code
+int g_debug_count = 1; // Index that allows to locate spots in the output
 
 Timer g_timer_regression;
 Timer g_timer_simulator;

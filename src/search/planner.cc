@@ -106,8 +106,6 @@ int main(int argc, const char **argv) {
         exit(1);
     }
     
-    g_silent_planning = true;
-    
     cout << "\n\nCreating the simulator..." << endl;
     Simulator *sim = new Simulator(engine, argc, argv, !g_silent_planning);
     
@@ -115,7 +113,8 @@ int main(int argc, const char **argv) {
     list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
     
     cout << "\n\nGenerating an initial policy..." << endl;
-    g_policy = new Policy(regression_steps);
+    g_policy = new Policy();
+    g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
     g_best_policy = g_policy;
     g_best_policy_score = g_policy->get_score();
     
@@ -159,6 +158,15 @@ int main(int argc, const char **argv) {
     if (g_policy && g_best_policy && (g_best_policy != g_policy)) {
         if (g_best_policy->get_score() > g_policy->get_score())
             g_policy = g_best_policy;
+    }
+    
+    if (g_optimized_scd) {
+        cout << "\n\nRunning a final SCD check..." << endl;
+        vector< State * > failed_states; // The failed states (used for creating deadends)
+        g_policy->init_scd();
+        bool made_change = true; // This becomes false again eventually
+        while (made_change)
+            made_change = g_policy->step_scd(failed_states, false);
     }
 
     // Reset the deadend and scd settings for the online simulation(s)
