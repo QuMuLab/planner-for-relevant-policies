@@ -250,9 +250,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--dump-policy") == 0) {
             ++i;
             g_dump_policy = atoi(argv[i]);
-		} else if (arg.compare("--debug-output") == 0) {
-			++i;
-			g_silent_planning = (1 != atoi(argv[i]));
+        } else if (arg.compare("--debug-output") == 0) {
+            ++i;
+            g_silent_planning = (1 != atoi(argv[i]));
         } else {
             cerr << "unknown option " << arg << endl << endl;
             cout << OptionParser::usage(argv[0]) << endl;
@@ -298,7 +298,7 @@ string OptionParser::usage(string progname) {
         "--plan-with-policy 1/0\n"
         "    Stop searching when the policy matches the current state.\n\n"
         "--depth NUM_ACTIONS (default=1000)\n"
-		"    Stop simulations and consider it a failure after NUM_ACTIONS actions.\n\n"
+        "    Stop simulations and consider it a failure after NUM_ACTIONS actions.\n\n"
         "--trials NUM_TRIALS (default=1)\n"
         "    Number of trials to run for the simulator.\n\n"
         "--detect-deadends 1/0\n"

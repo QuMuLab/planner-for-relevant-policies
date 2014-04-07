@@ -169,19 +169,19 @@ void RegressionStep::strengthen(State *s) {
         if (((NondetDeadend*)(reg_items[i]))->op_name == op->get_nondet_name()) {
             
             for (int j = 0; j < g_variable_name.size(); j++) {
-				
-				state_var_t val = (*(((NondetDeadend*)(reg_items[i]))->state))[j];
-				
+                
+                state_var_t val = (*(((NondetDeadend*)(reg_items[i]))->state))[j];
+                
                 // We may have broken it in a previous iteration
                 if ((val != state_var_t(-1)) &&
                     (val != (*state)[j]) &&
                     ((*state)[j] != state_var_t(-1)))
-						break;
+                        break;
                 
                 // Just need to break one of the decisions
                 if ((val != state_var_t(-1)) &&
                     (val != (*s)[j])) {
-					
+                    
                     assert((*state)[j] == state_var_t(-1));
                     (*state)[j] = (*s)[j];
                     break;

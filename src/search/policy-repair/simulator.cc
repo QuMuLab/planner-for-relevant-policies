@@ -46,7 +46,7 @@ void Simulator::record_stats() {
     if (succeeded)
         record_succeeded++;
     if (failed_states + successful_states >= g_trial_depth)
-		record_depth_limit++;
+        record_depth_limit++;
 }
 
 void Simulator::run_once(bool stop_on_failure, Policy *pol) {
