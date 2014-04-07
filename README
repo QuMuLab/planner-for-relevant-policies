@@ -54,3 +54,5 @@ Options:
 --dump-policy 1/2
     Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.
 
+--debug-output 1/0
+    Output plans and other information during the planning process.
