@@ -122,8 +122,8 @@ GeneratorSwitch::GeneratorSwitch(int switch_variable,
     : switch_var(switch_variable),
       generator_for_value(gen_for_val),
       default_generator(default_gen) {
-	
-	immediate_items.swap(reg_items);
+    
+    immediate_items.swap(reg_items);
 }
 
 GeneratorSwitch::~GeneratorSwitch() {
@@ -332,7 +332,7 @@ GeneratorBase *GeneratorLeaf::update_policy(list<PolicyItem *> &reg_items, set<i
     }
     
     if (all_done) {
-		applicable_items.splice(applicable_items.end(), reg_items);
+        applicable_items.splice(applicable_items.end(), reg_items);
         return NULL;
     } else {
         reg_items.splice(reg_items.end(), applicable_items);
@@ -359,9 +359,9 @@ GeneratorBase *GeneratorEmpty::update_policy(list<PolicyItem *> &reg_items, set<
 }
 
 void Policy::add_item(PolicyItem *item) {
-	list<PolicyItem *> reg_items;
-	reg_items.push_back(item);
-	update_policy(reg_items, (g_detect_deadends && g_generalize_deadends));
+    list<PolicyItem *> reg_items;
+    reg_items.push_back(item);
+    update_policy(reg_items, (g_detect_deadends && g_generalize_deadends));
 }
 
 
@@ -382,22 +382,22 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
     //  new action for deadends. This allows us to stop expanding earlier
     //  with the scd algorithm below.
     if (detect_deadends) {
-		vector<State *> new_deadends;
-		for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
-			RegressionStep * rs = (RegressionStep *)(*op_iter);
-			if (!(rs->is_goal)) {
-				for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
-					State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
-					if (is_deadend(*succ_state)) {
-						generalize_deadend(*succ_state);
-						new_deadends.push_back(succ_state);
-					}
-				}
-			}
-		}
-		if (new_deadends.size() > 0)
-			update_deadends(new_deadends);
-	}
+        vector<State *> new_deadends;
+        for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
+            RegressionStep * rs = (RegressionStep *)(*op_iter);
+            if (!(rs->is_goal)) {
+                for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
+                    State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
+                    if (is_deadend(*succ_state)) {
+                        generalize_deadend(*succ_state);
+                        new_deadends.push_back(succ_state);
+                    }
+                }
+            }
+        }
+        if (new_deadends.size() > 0)
+            update_deadends(new_deadends);
+    }
     
     g_timer_policy_build.stop();
 }
@@ -545,34 +545,34 @@ void Policy::evaluate_random() {
 
 
 bool Policy::goal_sc_reachable(const State &_curr) {
-	
-	State *curr = new State(_curr);
-	State *old;
-	RegressionStep *rstep;
-	
-	// Instead of keeping a closed list, we just try to get to the
-	//  goal within an upper bound.
-	for (int i=0; i < all_items.size(); i++) {
-		
-		rstep = get_best_step(*curr);
-		
-		if (!rstep || !(rstep->is_sc)) {
-			delete curr;
-			return false;
-		}
-		
-		if (rstep->is_goal) {
-			delete curr;
-			return true;
-		}
-		
-		old = curr;
-		curr = new State(*old, *(rstep->op));
-		
-		delete old;
-	}
-	
-	return false;
+    
+    State *curr = new State(_curr);
+    State *old;
+    RegressionStep *rstep;
+    
+    // Instead of keeping a closed list, we just try to get to the
+    //  goal within an upper bound.
+    for (int i=0; i < all_items.size(); i++) {
+        
+        rstep = get_best_step(*curr);
+        
+        if (!rstep || !(rstep->is_sc)) {
+            delete curr;
+            return false;
+        }
+        
+        if (rstep->is_goal) {
+            delete curr;
+            return true;
+        }
+        
+        old = curr;
+        curr = new State(*old, *(rstep->op));
+        
+        delete old;
+    }
+    
+    return false;
 }
 
 
@@ -583,7 +583,7 @@ void Policy::init_scd() {
 }
 
 bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
-	
+    
     bool made_change = false;
     bool debug_scd = false;
     //bool debug_scd = !g_silent_planning;
@@ -594,12 +594,12 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
         RegressionStep *rs = (RegressionStep *)(*op_iter);
         
         if (rs->is_sc && !(rs->is_goal)) {
-			
-			if (debug_scd) {
-				cout << "\n\n (#" << g_debug_count++ << ") Testing RegStep:" << endl;
-				rs->dump();
-			}
-			
+            
+            if (debug_scd) {
+                cout << "\n\n (#" << g_debug_count++ << ") Testing RegStep:" << endl;
+                rs->dump();
+            }
+            
             for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
                 // We use the sc_state for computing the guaranteed items, rather than
                 //  the original state for the regression step. The sc_state will be a
@@ -613,9 +613,9 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                 root->generate_applicable_items(*succ_state, guaranteed_steps, false);
                 
                 if (debug_scd) {
-					cout << "\nTesting successor (" << (i+1) << "/" << g_nondet_mapping[rs->op->get_nondet_name()].size() << "):" << endl;
-					succ_state->dump_pddl();
-				}
+                    cout << "\nTesting successor (" << (i+1) << "/" << g_nondet_mapping[rs->op->get_nondet_name()].size() << "):" << endl;
+                    succ_state->dump_pddl();
+                }
                 
                 
                 // We need at least one guaranteed step to be sure that we can continue
@@ -623,7 +623,7 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                 //  a deadend, in which case we can assume that it will be handled by
                 //  the jic compiler.
                 if (0 == guaranteed_steps.size()) {
-					bool is_failed_state = false;
+                    bool is_failed_state = false;
                     for (int j = 0; j < failed_states.size(); j++) {
                         // Unfortunately, we can't just check the states equivalence,
                         //  since the succ_state is a partial state. So we instead check
@@ -638,20 +638,20 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                         }
                         
                         if (debug_scd) {
-							cout << "-+- Left marked due to existing failed state." << endl;
-						}
+                            cout << "-+- Left marked due to existing failed state." << endl;
+                        }
                     }
                     
                     
                     
                     if (!is_failed_state) {
-						if (g_deadend_states->check_match(*succ_state, true)) {
-							is_failed_state = true;
-							if (debug_scd) {
-								cout << "-+- Left marked due to existing deadend state." << endl;
-							}
-						}
-					}
+                        if (g_deadend_states->check_match(*succ_state, true)) {
+                            is_failed_state = true;
+                            if (debug_scd) {
+                                cout << "-+- Left marked due to existing deadend state." << endl;
+                            }
+                        }
+                    }
                     
                     // If succ_state is a failed state, then we will avoid using
                     //  this pair in the future as it will be a FSAP. Thus, we
@@ -661,8 +661,8 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                     //  strong cyclic plan exists and further search should be
                     //  avoided.
                     if (is_failed_state && skip_deadends) {
-						break;
-					}
+                        break;
+                    }
                     
                     // If succ_state isn't a failed state (as far as we're aware
                     //  of), then it may be reached during rollout. The possibility
@@ -671,9 +671,9 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                     //  step to check (i.e., no need to check the rest of the action
                     //  outcomes for the current regression step).
                     else {
-						if (debug_scd) {
-							cout << "--- Umarking: No guaranteed steps." << endl;
-						}
+                        if (debug_scd) {
+                            cout << "--- Umarking: No guaranteed steps." << endl;
+                        }
                         rs->is_sc = false;
                         made_change = true;
                         delete succ_state;
@@ -692,8 +692,8 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                     if (((RegressionStep *)guaranteed_steps[j])->distance < min_cost)
                         min_cost = ((RegressionStep *)guaranteed_steps[j])->distance;
                         
-					if ((((RegressionStep *)guaranteed_steps[j])->distance < min_sc_cost) &&
-						((RegressionStep *)guaranteed_steps[j])->is_sc)
+                    if ((((RegressionStep *)guaranteed_steps[j])->distance < min_sc_cost) &&
+                        ((RegressionStep *)guaranteed_steps[j])->is_sc)
                         min_sc_cost = ((RegressionStep *)guaranteed_steps[j])->distance;
                 
                 }
@@ -702,27 +702,27 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                 //  the current candidate strong cyclic pair. Otherwise,
                 //  we could get an unsound loop of presumed strong cyclicity.
                 if (debug_scd && (999999 == min_sc_cost)) {
-					cout << "--- Umarking: No strong cyclic guaranteed step." << endl;
-				}
+                    cout << "--- Umarking: No strong cyclic guaranteed step." << endl;
+                }
                 
                 if ((999999 == min_sc_cost) ||
                     ((min_sc_cost >= rs->distance) &&
                     !(goal_sc_reachable(*succ_state)))) {
-					
-					if (debug_scd && (999999 != min_sc_cost)) {
-						cout << "--- Unmarking: Strong cyclic guaranteed step failed to reach the goal." << endl;
-					}
-					//cout << "Min sc cost = " << min_sc_cost << endl;
-					rs->is_sc = false;
-					made_change = true;
-					i = g_nondet_mapping[rs->op->get_nondet_name()].size();
-					
-				} else {
-					
-					if (debug_scd) {
-						cout << "+++ Left marked." << endl;
-					}
-				}
+                    
+                    if (debug_scd && (999999 != min_sc_cost)) {
+                        cout << "--- Unmarking: Strong cyclic guaranteed step failed to reach the goal." << endl;
+                    }
+                    //cout << "Min sc cost = " << min_sc_cost << endl;
+                    rs->is_sc = false;
+                    made_change = true;
+                    i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+                    
+                } else {
+                    
+                    if (debug_scd) {
+                        cout << "+++ Left marked." << endl;
+                    }
+                }
                 
                 delete succ_state;
             }
@@ -733,14 +733,14 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
 
 bool regstep_compare(PolicyItem* first, PolicyItem* second) {
     if (((RegressionStep*)first)->is_sc != ((RegressionStep*)second)->is_sc)
-		return ((RegressionStep*)first)->is_sc;
-	else
-		return ((RegressionStep*)first)->distance < ((RegressionStep*)second)->distance;
+        return ((RegressionStep*)first)->is_sc;
+    else
+        return ((RegressionStep*)first)->distance < ((RegressionStep*)second)->distance;
 }
 void Policy::dump_human_policy() {
-	
-	all_items.sort(regstep_compare);
-	
+    
+    all_items.sort(regstep_compare);
+    
     fstream outfile;
     outfile.open("policy.out", ios::out);
         
@@ -750,12 +750,12 @@ void Policy::dump_human_policy() {
         outfile << "\nIf holds:";
         State *s = ((RegressionStep*)(*op_iter))->state;
         for (int i = 0; i < g_variable_domain.size(); i++) {
-			if (state_var_t(-1) != (*s)[i]) {
-				outfile << " ";
-				outfile << g_variable_name[i] << ":" << static_cast<int>((*s)[i]);
-			}
-		}
-		outfile << endl;
+            if (state_var_t(-1) != (*s)[i]) {
+                outfile << " ";
+                outfile << g_variable_name[i] << ":" << static_cast<int>((*s)[i]);
+            }
+        }
+        outfile << endl;
         outfile << "Execute: " << ((RegressionStep*)(*op_iter))->get_name() << endl;
     }
     

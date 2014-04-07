@@ -69,9 +69,9 @@ bool perform_jit_repairs(Simulator *sim) {
         open_list.pop();
         
         if (debug_jic) {
-			cout << "\n\nChecking state:" << endl;
-			current_state->dump_pddl();
-		}
+            cout << "\n\nChecking state:" << endl;
+            current_state->dump_pddl();
+        }
         
         if (0 == seen.count(*current_state)) {
             
@@ -110,15 +110,15 @@ bool perform_jit_repairs(Simulator *sim) {
                                 ((*prev_state)[i] == (*(prev_regstep->state))[i]));
                         
                         if ((state_var_t(-1) != (*prev_state)[i]) &&
-							(state_var_t(-1) == (*(prev_regstep->state))[i])) {
-							if (!updated)
-								updated = new State(*(prev_regstep->state));
+                            (state_var_t(-1) == (*(prev_regstep->state))[i])) {
+                            if (!updated)
+                                updated = new State(*(prev_regstep->state));
                             (*updated)[i] = (*prev_state)[i];
-						}
+                        }
                     }
                     
                     if (updated)
-						g_policy->add_item(new RegressionStep(*(prev_regstep->op), updated, prev_regstep->distance));
+                        g_policy->add_item(new RegressionStep(*(prev_regstep->op), updated, prev_regstep->distance));
                 }
                 
                 // Since new policy has been added, we re-compute the sc detection
@@ -143,8 +143,8 @@ bool perform_jit_repairs(Simulator *sim) {
                 assert(regstep);
                 
                 if ( ! (regstep->is_goal || (g_optimized_scd && regstep->is_sc))) {
-					if (debug_jic)
-						cout << "\nNot marked..." << endl;
+                    if (debug_jic)
+                        cout << "\nNot marked..." << endl;
                     // Record the expected state
                     State *full_expected_state = new State(*current_state, *(regstep->op));
                     State *expected_state = full_expected_state;
@@ -164,10 +164,10 @@ bool perform_jit_repairs(Simulator *sim) {
                         if (0 == seen.count(*new_state)) {
                             open_list.push(SCNode(new_state, expected_state, regstep, g_nondet_mapping[regstep->op->get_nondet_name()][i]));
                             if (debug_jic) {
-								cout << "\nAdding new state:" << endl;
-								new_state->dump_pddl();
-							}
-						}
+                                cout << "\nAdding new state:" << endl;
+                                new_state->dump_pddl();
+                            }
+                        }
                     }
                     // We add this one extra time to ensure a DFS traversal of the
                     //  state space when looking for a strong cyclic solution. This
@@ -175,18 +175,18 @@ bool perform_jit_repairs(Simulator *sim) {
                     //  this just fine, and the memory hit is negligible.
                     open_list.push(SCNode(full_expected_state, expected_state, regstep, regstep->op));
                 } else {
-					if (debug_jic) {
-						cout << "\nMarked..." << endl;
-					}
-				}
+                    if (debug_jic) {
+                        cout << "\nMarked..." << endl;
+                    }
+                }
                 
                 if (debug_jic)
-					cout << "\nState handled..." << endl;
+                    cout << "\nState handled..." << endl;
                 
             } else {
-				
-				if (debug_jic)
-					cout << "\nState failed..." << endl;
+                
+                if (debug_jic)
+                    cout << "\nState failed..." << endl;
 
                 g_failed_open_states++;
                 
@@ -228,10 +228,10 @@ bool perform_jit_repairs(Simulator *sim) {
                 }
             }
         } else {
-			if (debug_jic) {
-				cout << "\nState seen..." << endl;
-			}
-		}
+            if (debug_jic) {
+                cout << "\nState seen..." << endl;
+            }
+        }
     }
     
     // We need to update the value since some may have been added to the
@@ -251,7 +251,7 @@ bool perform_jit_repairs(Simulator *sim) {
     if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit)) {
         g_policy->mark_strong();
         cout << "Marking policy strong cyclic." << endl;
-	}
+    }
         
     if (g_detect_deadends && (g_failed_open_states > 0)) {
         
