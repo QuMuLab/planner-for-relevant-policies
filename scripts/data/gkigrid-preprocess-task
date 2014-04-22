@@ -1,3 +1,0 @@
-if [[ $SGE_TASK_ID == %(task_num)d ]]; then
-    preprocess-task %(pddl_domain)s %(pddl_problem)s %(translator_executable)s %(translator_timeout)d %(translate_dir)s %(preprocessor_executable)s %(preprocessor_timeout)d %(preprocess_dir)s
-fi
