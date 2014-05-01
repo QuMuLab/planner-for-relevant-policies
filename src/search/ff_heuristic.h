@@ -28,6 +28,8 @@ protected:
 public:
     FFHeuristic(const Options &options);
     ~FFHeuristic();
+    
+    virtual void reset();
 };
 
 #endif

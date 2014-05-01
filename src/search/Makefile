@@ -121,6 +121,12 @@ HEADERS += pdbs/canonical_pdbs_heuristic.h \
            pdbs/util.h \
            pdbs/zero_one_pdbs_heuristic.h \
 
+HEADERS += policy-repair/regression.h \
+           policy-repair/policy.h \
+           policy-repair/simulator.h \
+           policy-repair/jit.h \
+           policy-repair/deadend.h \
+
 SHELL = /bin/bash
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
@@ -191,6 +197,7 @@ CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror
 
 HAVE_GCC_4_4 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.4\.\\\))
 HAVE_GCC_4_5 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.5\.\\\))
+HAVE_GCC_4_6 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.6\.\\\))
 
 ifdef HAVE_GCC_4_4
     CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu
@@ -198,6 +205,10 @@ endif
 
 ifdef HAVE_GCC_4_5
     CCOPT += -I/usr/include/c++/4.5/i686-linux-gnu
+endif
+#CCOPT += -I/usr/include/c++/4.4/i686-linux-gnu -Iext
+ifdef HAVE_GCC_4_6
+    CCOPT += -I/usr/include/c++/4.6/i686-linux-gnu
 endif
 
 LINKOPT  = -g

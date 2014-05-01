@@ -24,9 +24,16 @@ FFHeuristic::FFHeuristic(const Options &opts)
 FFHeuristic::~FFHeuristic() {
 }
 
+
+void FFHeuristic::reset() {
+    AdditiveHeuristic::reset();
+    relaxed_plan.resize(g_operators.size(), false);
+}
+
 // initialization
 void FFHeuristic::initialize() {
-    cout << "Initializing FF heuristic..." << endl;
+    if (!g_silent_planning)
+        cout << "Initializing FF heuristic..." << endl;
     AdditiveHeuristic::initialize();
     relaxed_plan.resize(g_operators.size(), false);
 }
@@ -60,9 +67,15 @@ void FFHeuristic::mark_preferred_operators_and_relaxed_plan(
 }
 
 int FFHeuristic::compute_heuristic(const State &state) {
+    if (g_detect_deadends && g_deadend_states->check_match(state))
+        return DEAD_END;
+    
     int h_add = compute_add_and_ff(state);
-    if (h_add == DEAD_END)
+    if (h_add == DEAD_END) {
+        if (g_record_online_deadends && !g_limit_states)
+            g_found_deadends.push_back(new State(state));
         return h_add;
+    }
 
     // Collecting the relaxed plan also sets the preferred operators.
     for (int i = 0; i < goal_propositions.size(); i++)

@@ -1,0 +1,6 @@
+(define (problem elev_2_3_2_3_25534)
+  (:domain elevators)
+  (:objects f2 - floor p2 p3 - pos e1 e2 - elevator c1 c2 c3 - coin)
+  (:init (at f1 p1) (dec_f f2 f1) (dec_p p2 p1) (dec_p p3 p2) (shaft e1 p2) (in e1 f2) (shaft e2 p1) (in e2 f1) (coin-at c1 f2 p2) (coin-at c2 f1 p1) (coin-at c3 f2 p1) (gate f2 p3))
+  (:goal (and (have c1) (have c2) (have c3)))
+)
