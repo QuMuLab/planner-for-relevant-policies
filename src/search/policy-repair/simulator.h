@@ -13,7 +13,6 @@
 #include "../state.h"
 #include "../operator.h"
 #include "../search_engine.h"
-#include "../state_var_t.h"
 #include "../rng.h"
 
 #include "policy.h"
