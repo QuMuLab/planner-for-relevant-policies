@@ -1,3 +1,4 @@
+~$
 \.pyc$
 ^experiments/issue[0-9]*/data/
 ^misc/autodoc/downward-xmlrpc\.secret$
@@ -16,3 +17,6 @@
 ^src/VAL/lex\.yy\.cc$
 ^src/VAL/validate$
 ^src/validate$
+^fond-benchmarks/RESULTS/backup/
+^prp-scripts/settings.py
+^prp-scripts/RESULTS

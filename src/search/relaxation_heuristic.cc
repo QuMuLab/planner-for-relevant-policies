@@ -19,6 +19,24 @@ RelaxationHeuristic::RelaxationHeuristic(const Options &opts)
 RelaxationHeuristic::~RelaxationHeuristic() {
 }
 
+void RelaxationHeuristic::reset() {
+    
+    Heuristic::reset();
+    
+    // Rebuild the goal propositions (there may be a new goal)
+    for (int i = 0; i < goal_propositions.size(); i++) {
+        goal_propositions[i]->is_goal = false;
+    }
+    
+    goal_propositions.clear();
+    
+    for (int i = 0; i < g_goal.size(); i++) {
+        int var = g_goal[i].first, val = g_goal[i].second;
+        propositions[var][val].is_goal = true;
+        goal_propositions.push_back(&propositions[var][val]);
+    }
+}
+
 // initialization
 void RelaxationHeuristic::initialize() {
     // Build propositions.
@@ -26,7 +44,7 @@ void RelaxationHeuristic::initialize() {
     propositions.resize(g_variable_domain.size());
     for (int var = 0; var < g_variable_domain.size(); var++) {
         for (int value = 0; value < g_variable_domain[var]; value++)
-            propositions[var].push_back(Proposition(prop_id++));
+            propositions[var].push_back(Proposition(prop_id++, var, value));
     }
 
     // Build goal propositions.
@@ -43,7 +61,9 @@ void RelaxationHeuristic::initialize() {
         build_unary_operators(g_axioms[i], -1);
 
     // Simplify unary operators.
-    simplify();
+    cout << " !! Warning: Disabling the simplification of unary operators !!" << endl;
+    cout << " !!           to keep the non-deterministic planning sound.  !!" << endl;
+    //simplify();
 
     // Cross-reference unary operators.
     for (int i = 0; i < unary_operators.size(); i++) {
@@ -125,7 +145,8 @@ void RelaxationHeuristic::simplify() {
     */
 
 
-    cout << "Simplifying " << unary_operators.size() << " unary operators..." << flush;
+    if (!g_silent_planning)
+        cout << "Simplifying " << unary_operators.size() << " unary operators..." << flush;
 
     typedef pair<vector<Proposition *>, Proposition *> HashKey;
     typedef hash_map<HashKey, int, hash_unary_operator> HashMap;
@@ -183,5 +204,6 @@ void RelaxationHeuristic::simplify() {
             unary_operators.push_back(old_unary_operators[unary_operator_no]);
     }
 
-    cout << " done! [" << unary_operators.size() << " unary operators]" << endl;
+    if (!g_silent_planning)
+        cout << " done! [" << unary_operators.size() << " unary operators]" << endl;
 }

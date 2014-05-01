@@ -64,6 +64,8 @@ public:
 
     void dump() const;
     void statistics() const;
+    
+    void reset();
 };
 
 #endif

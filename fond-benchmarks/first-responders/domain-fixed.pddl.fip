@@ -1,0 +1,91 @@
+(define (domain first-response)
+  (:requirements :typing :negative-preconditions)
+ (:types location victim status fire_unit medical_unit)
+ (:constants healthy hurt dying - status)
+ (:predicates 
+  (fire ?l - location)
+  (nfire ?l - location)
+  (victim-at ?v - victim ?l - location)
+  (victim-status ?v - victim ?s - status)
+  (hospital ?l - location)
+  (water-at ?l - location)
+  (adjacent ?l1 ?l2 - location)
+  (fire-unit-at ?u - fire_unit ?l - location)
+  (medical-unit-at ?u - medical_unit ?l - location)
+  (have-water ?u - fire_unit)
+  (have-victim-in-unit ?v - victim ?u - medical_unit)
+  )
+(:action drive-fire-unit
+  :parameters ( ?u - fire_unit ?from ?to - location )
+  :precondition (and (fire-unit-at ?u ?from) (adjacent ?to ?from) (not (fire ?to)))
+  :effect (and (fire-unit-at ?u ?to) (not (fire-unit-at ?u ?from)))
+)
+
+(:action drive-medical-unit
+  :parameters ( ?from ?to - location ?u - medical_unit )
+  :precondition (and (medical-unit-at ?u ?from) (adjacent ?to ?from) (not (fire ?to)))
+  :effect (and (medical-unit-at ?u ?to) (not (medical-unit-at ?u ?from)))
+)
+
+(:action load-fire-unit
+  :parameters ( ?u - fire_unit ?l - location )
+  :precondition (and (fire-unit-at ?u ?l) (water-at ?l))
+  :effect (have-water ?u)
+)
+
+(:action load-medical-unit
+  :parameters ( ?v - victim ?l - location ?u - medical_unit )
+  :precondition (and (medical-unit-at ?u ?l) (victim-at ?v ?l))
+  :effect (and (have-victim-in-unit ?v ?u) (not (victim-at ?v ?l)))
+)
+
+(:action D_1_unload-fire-unit
+  :parameters ( ?u - fire_unit ?l ?l1 - location )
+  :precondition (and (fire-unit-at ?u ?l) (adjacent ?l1 ?l) (have-water ?u) (fire ?l1))
+  :effect (not (have-water ?u))
+)
+
+(:action D_2_unload-fire-unit
+  :parameters ( ?u - fire_unit ?l ?l1 - location )
+  :precondition (and (fire-unit-at ?u ?l) (adjacent ?l1 ?l) (have-water ?u) (fire ?l1))
+  :effect (and (not (have-water ?u)) (nfire ?l1) (not (fire ?l1)))
+)
+
+(:action unload-medical-unit
+  :parameters ( ?v - victim ?l - location ?u - medical_unit )
+  :precondition (and (medical-unit-at ?u ?l) (have-victim-in-unit ?v ?u))
+  :effect (and (victim-at ?v ?l) (not (have-victim-in-unit ?v ?u)))
+)
+
+(:action D_1_treat-victim-on-scene-medical
+  :parameters ( ?v - victim ?l - location ?u - medical_unit )
+  :precondition (and (medical-unit-at ?u ?l) (victim-at ?v ?l) (victim-status ?v hurt))
+  :effect (and (medical-unit-at ?u ?l) (victim-at ?v ?l) (victim-status ?v hurt))
+)
+
+(:action D_2_treat-victim-on-scene-medical
+  :parameters ( ?v - victim ?l - location ?u - medical_unit )
+  :precondition (and (medical-unit-at ?u ?l) (victim-at ?v ?l) (victim-status ?v hurt))
+  :effect (and (victim-status ?v healthy) (not (victim-status ?v hurt)))
+)
+
+(:action D_1_treat-victim-on-scene-fire
+  :parameters ( ?u - fire_unit ?l - location ?v - victim )
+  :precondition (and (fire-unit-at ?u ?l) (victim-at ?v ?l) (victim-status ?v hurt))
+  :effect (and (fire-unit-at ?u ?l) (victim-at ?v ?l) (victim-status ?v hurt))
+)
+
+(:action D_2_treat-victim-on-scene-fire
+  :parameters ( ?u - fire_unit ?l - location ?v - victim )
+  :precondition (and (fire-unit-at ?u ?l) (victim-at ?v ?l) (victim-status ?v hurt))
+  :effect (and (victim-status ?v healthy) (not (victim-status ?v hurt)))
+)
+
+(:action treat-victim-at-hospital
+  :parameters ( ?l - location ?v - victim )
+  :precondition (and (victim-at ?v ?l) (hospital ?l))
+  :effect (and (victim-status ?v healthy) (not (victim-status ?v hurt)) (not (victim-status ?v dying)))
+)
+
+)
+

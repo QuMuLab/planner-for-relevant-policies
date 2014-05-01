@@ -1,0 +1,28 @@
+#! /bin/bash
+
+if [[ $# < 2 ]]; then
+    echo
+    echo "usage: ./validate-prp <domain> <problem> [--keep-files]"
+    echo
+    exit 1
+fi
+
+
+./plan-prp $1 $2 RES --dump-policy 2
+
+python ../prp-scripts/translate_policy.py > human_policy.out
+
+python ../prp-scripts/validator.py $1 $2 human_policy.out prp
+
+dot -Tpng graph.dot > graph.png
+
+if [ "--keep-files" != "$3" ]; then
+  ./cleanup
+  rm -f policy.out
+  rm -f human_policy.out
+  rm -f graph.dot
+  rm -f action.map
+  rm -f graph.png
+  rm -f unhandled.states
+  rm -f RES
+fi

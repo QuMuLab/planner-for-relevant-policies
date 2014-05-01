@@ -51,20 +51,17 @@ class Action(object):
             effect_tag = precondition_tag_opt
         assert effect_tag == ":effect"
         effect_list = next(iterator)
-        eff = []
-        if effect_list:
-            try:
-                cost = effects.parse_effects(effect_list, eff)
-            except ValueError as e:
-                raise SystemExit("Error in Action %s\nReason: %s." % (name, e))
+        try:
+            cost_eff_pairs = effects.parse_effects(effect_list)
+            if 1 == len(cost_eff_pairs):
+                cost_eff_pairs = [(cost_eff_pairs[0][0], cost_eff_pairs[0][1], '')]
+            else:
+                cost_eff_pairs = [(cost_eff_pairs[i][0], cost_eff_pairs[i][1], "_DETDUP_%d" % i) for i in range(len(cost_eff_pairs))]
+        except ValueError as e:
+            raise SystemExit("Error in Action %s\nReason: %s." % (name, e))
         for rest in iterator:
             assert False, rest
-        if eff:
-            return Action(name, parameters, len(parameters),
-                          precondition, eff, cost)
-        else:
-            return None
-
+        return [Action(name + suffix, parameters, len(parameters), precondition, eff, cost) for (cost, eff, suffix) in cost_eff_pairs]
     parse = staticmethod(parse)
     def dump(self):
         print("%s(%s)" % (self.name, ", ".join(map(str, self.parameters))))
@@ -125,14 +122,21 @@ class Action(object):
         for eff in self.effects:
             eff.instantiate(var_mapping, init_facts, fluent_facts,
                             objects_by_type, effects)
-        if effects:
-            if self.cost is None:
-                cost = 0
-            else:
-                cost = int(self.cost.instantiate(var_mapping, init_facts).expression.value)
-            return PropositionalAction(name, precondition, effects, cost)
+        # HAZ: We return a propositional action since it may be a failed
+        #      outcome of a determinized action.
+        if self.cost is None:
+            cost = 0
         else:
-            return None
+            cost = int(self.cost.instantiate(var_mapping, init_facts).expression.value)
+        return PropositionalAction(name, precondition, effects, cost)
+        #if effects:
+        #    if self.cost is None:
+        #        cost = 0
+        #    else:
+        #        cost = int(self.cost.instantiate(var_mapping, init_facts).expression.value)
+        #    return PropositionalAction(name, precondition, effects, cost)
+        #else:
+        #    return None
 
 class PropositionalAction:
     def __init__(self, name, precondition, effects, cost):

@@ -1,0 +1,6 @@
+(define (problem bw_26_26)
+  (:domain blocks-domain)
+  (:objects b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 - block)
+  (:init (emptyhand) (on b1 b17) (on b2 b16) (on b3 b4) (on b4 b22) (on b5 b18) (on b6 b3) (on b7 b26) (on b8 b2) (on b9 b14) (on b10 b20) (on b11 b19) (on-table b12) (on b13 b25) (on-table b14) (on b15 b5) (on b16 b24) (on b17 b15) (on b18 b21) (on-table b19) (on b20 b23) (on b21 b13) (on-table b22) (on b23 b6) (on b24 b7) (on b25 b10) (on b26 b1) (clear b8) (clear b9) (clear b11) (clear b12))
+  (:goal (and (emptyhand) (on b1 b16) (on-table b2) (on b3 b11) (on b4 b9) (on b5 b8) (on-table b6) (on b7 b12) (on b8 b26) (on-table b9) (on-table b10) (on-table b11) (on b12 b21) (on b13 b18) (on-table b14) (on b15 b10) (on b16 b22) (on b17 b1) (on b18 b14) (on b19 b20) (on-table b20) (on b21 b25) (on b22 b7) (on b23 b5) (on b24 b17) (on-table b25) (on-table b26) (clear b2) (clear b3) (clear b4) (clear b6) (clear b13) (clear b15) (clear b19) (clear b23) (clear b24)))
+)

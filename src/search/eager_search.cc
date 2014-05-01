@@ -4,6 +4,7 @@
 #include "heuristic.h"
 #include "option_parser.h"
 #include "successor_generator.h"
+#include "policy-repair/deadend.h"
 #include "g_evaluator.h"
 #include "sum_evaluator.h"
 #include "plugin.h"
@@ -244,7 +245,8 @@ pair<SearchNode, bool> EagerSearch::fetch_next_node() {
 
     while (true) {
         if (open_list->empty()) {
-            cout << "Completely explored state space -- no solution!" << endl;
+            if (!g_silent_planning)
+                cout << "Completely explored state space -- no solution!" << endl;
             // HACK! HACK! we do this because SearchNode has no default/copy constructor
             SearchNode dummy_node = search_space.get_node(g_initial_state());
             return make_pair(dummy_node, false);
