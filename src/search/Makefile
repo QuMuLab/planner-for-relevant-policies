@@ -126,6 +126,7 @@ HEADERS += policy-repair/regression.h \
            policy-repair/simulator.h \
            policy-repair/jit.h \
            policy-repair/deadend.h \
+           policy-repair/partial_state.h \
 
 SHELL = /bin/bash
 

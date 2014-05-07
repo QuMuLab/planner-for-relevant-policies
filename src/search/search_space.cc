@@ -179,3 +179,7 @@ void SearchSpace::dump() const {
 void SearchSpace::statistics() const {
     cout << "Number of registered states: " << g_state_registry->size() << endl;
 }
+
+void SearchSpace::reset() {
+    // TODO: Something should probably happen here, no?
+}

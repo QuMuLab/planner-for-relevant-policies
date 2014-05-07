@@ -7,11 +7,11 @@ void UnhandledState::dump() const {
 
 
 struct SCNode {
-    State * full_state;
-    State * expected_state;
+    PartialState * full_state;
+    PartialState * expected_state;
     RegressionStep * prev_regstep;
     const Operator * prev_op;
-    SCNode(State * fs, State * es, RegressionStep * pr, const Operator * op) :
+    SCNode(PartialState * fs, PartialState * es, RegressionStep * pr, const Operator * op) :
        full_state(fs), expected_state(es), prev_regstep(pr), prev_op(op) {}
 };
 
@@ -22,20 +22,19 @@ bool perform_jit_repairs(Simulator *sim) {
     //  from the partial policy of partial states that a strong cyclic solution still
     //  exists.
     stack<SCNode> open_list; // Open list we traverse until strong cyclicity is proven
-    set<State> seen; // Keeps track of the full states we've seen
-    vector<State *> created_states; // Used to clean up the created state objects
-    State * current_state; // The current step in the loop
-    State * current_goal; // The current goal in the loop
+    set<PartialState> seen; // Keeps track of the full states we've seen
+    vector<PartialState *> created_states; // Used to clean up the created state objects
+    PartialState * current_state; // The current step in the loop
+    PartialState * current_goal; // The current goal in the loop
     const Operator * prev_op; // The last operator used to get us to current_state
     RegressionStep * prev_regstep; // The last RegressionStep that triggered prev_op
     bool made_change = false; // True if we add anything to the g_policy (i.e., replan)
     g_failed_open_states = 0; // Number of open states we couldn't solve (i.e., deadends)
     int num_checked_states = 0; // Number of states we check
     int num_fixed_states = 0; // Number of states we were able to repair (by replanning)
-    vector<State *> failed_states; // The failed states (used for creating deadends)
+    vector<PartialState *> failed_states; // The failed states (used for creating deadends)
     
     bool debug_jic = false;
-    
     // In case we have an initial policy, we run the optimized scd.
     if (g_optimized_scd) {
         g_policy->init_scd();
@@ -45,16 +44,16 @@ bool perform_jit_repairs(Simulator *sim) {
     }
     
     // Back up the originial initial state
-    State *old_initial_state = new State(*g_initial_state);
+    PartialState *old_initial_state = new PartialState(g_initial_state());
     
     // Build the goal state
-    State *goal_orig = new State();
+    PartialState *goal_orig = new PartialState();
     for (int i = 0; i < g_goal.size(); i++) {
-        (*goal_orig)[g_goal[i].first] = state_var_t(g_goal[i].second);
+        (*goal_orig)[g_goal[i].first] = g_goal[i].second;
     }
     
-    current_state = new State(*g_initial_state);
-    current_goal = new State(*goal_orig);
+    current_state = new PartialState(g_initial_state());
+    current_goal = new PartialState(*goal_orig);
     open_list.push(SCNode(current_state, current_goal, NULL, NULL));
     
     created_states.push_back(current_state);
@@ -100,19 +99,19 @@ bool perform_jit_repairs(Simulator *sim) {
                     regstep = g_policy->get_best_step(*current_state);
                     
                     // prev_state holds the info needed before the operator was taken
-                    State * prev_state = new State(*(regstep->state), *prev_op, false);
+                    PartialState * prev_state = new PartialState(*(regstep->state), *prev_op, false);
                     
-                    State * updated = NULL;
+                    PartialState * updated = NULL;
                     // We augment the state to include the stronger conditions
                     for (int i = 0; i < g_variable_name.size(); i++) {
-                        assert ((state_var_t(-1) == (*prev_state)[i]) ||
-                                (state_var_t(-1) == (*(prev_regstep->state))[i]) ||
+                        assert ((-1 == (*prev_state)[i]) ||
+                                (-1 == (*(prev_regstep->state))[i]) ||
                                 ((*prev_state)[i] == (*(prev_regstep->state))[i]));
                         
-                        if ((state_var_t(-1) != (*prev_state)[i]) &&
-                            (state_var_t(-1) == (*(prev_regstep->state))[i])) {
+                        if ((-1 != (*prev_state)[i]) &&
+                            (-1 == (*(prev_regstep->state))[i])) {
                             if (!updated)
-                                updated = new State(*(prev_regstep->state));
+                                updated = new PartialState(*(prev_regstep->state));
                             (*updated)[i] = (*prev_state)[i];
                         }
                     }
@@ -146,20 +145,20 @@ bool perform_jit_repairs(Simulator *sim) {
                     if (debug_jic)
                         cout << "\nNot marked..." << endl;
                     // Record the expected state
-                    State *full_expected_state = new State(*current_state, *(regstep->op));
-                    State *expected_state = full_expected_state;
+                    PartialState *full_expected_state = new PartialState(*current_state, *(regstep->op));
+                    PartialState *expected_state = full_expected_state;
                     created_states.push_back(full_expected_state);
                     
                     if (g_partial_planlocal) {
                         RegressionStep * expected_regstep = g_policy->get_best_step(*full_expected_state);
                         if (expected_regstep) {
-                            expected_state = new State(*(expected_regstep->state));
+                            expected_state = new PartialState(*(expected_regstep->state));
                             created_states.push_back(expected_state);
                         }
                     }
                     
                     for (int i = 0; i < g_nondet_mapping[regstep->op->get_nondet_name()].size(); i++) {
-                        State *new_state = new State(*current_state, *(g_nondet_mapping[regstep->op->get_nondet_name()][i]));
+                        PartialState *new_state = new PartialState(*current_state, *(g_nondet_mapping[regstep->op->get_nondet_name()][i]));
                         created_states.push_back(new_state);
                         if (0 == seen.count(*new_state)) {
                             open_list.push(SCNode(new_state, expected_state, regstep, g_nondet_mapping[regstep->op->get_nondet_name()][i]));
@@ -199,8 +198,10 @@ bool perform_jit_repairs(Simulator *sim) {
                         cout << "Found the initial state to be a failed one. No strong cyclic plan exists." << endl;
                         cout << "Using the best policy found, with a score of " << g_best_policy_score << endl;
                     }
-                    g_initial_state = old_initial_state;
-                    sim->set_state(g_initial_state);
+                    g_state_registry->reset_initial_state();
+                    for (int i = 0; i < g_variable_name.size(); i++)
+                        g_initial_state_data[i] = (*old_initial_state)[i];
+                    sim->set_state(old_initial_state);
                     sim->set_goal(goal_orig);
                     
                     // Use the best policy we've found so far
@@ -240,8 +241,10 @@ bool perform_jit_repairs(Simulator *sim) {
         g_failed_open_states = failed_states.size();
     
     // Reset the original goal and initial state
-    g_initial_state = old_initial_state;
-    sim->set_state(g_initial_state);
+    g_state_registry->reset_initial_state();
+    for (int i = 0; i < g_variable_name.size(); i++)
+        g_initial_state_data[i] = (*old_initial_state)[i];
+    sim->set_state(old_initial_state);
     sim->set_goal(goal_orig);
     
     cout << "\nCould not close " << g_failed_open_states << " of " << num_fixed_states + g_failed_open_states << " open leaf states." << endl;

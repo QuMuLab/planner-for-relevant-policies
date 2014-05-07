@@ -32,8 +32,8 @@ LazySearch::~LazySearch() {
 void LazySearch::reset() {
     SearchEngine::reset();
 
-    current_state = *g_initial_state;
-    current_predecessor_buffer = NULL;
+    current_state = g_initial_state();
+    current_predecessor_id = StateID::no_state;
     current_operator = NULL;
     current_g = 0;
     current_real_g = 0;

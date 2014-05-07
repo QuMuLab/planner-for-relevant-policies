@@ -17,10 +17,13 @@
 
 #include "policy.h"
 #include "regression.h"
+#include "partial_state.h"
+
+using namespace std;
 
 class Simulator {
-    State *current_state;
-    State *current_goal;
+    PartialState *current_state;
+    PartialState *current_goal;
     
     SearchEngine *engine;
     int argc;
@@ -48,8 +51,8 @@ public:
     void run_once(bool stop_on_failure = false, Policy *pol = g_policy);
     bool replan();
     
-    void set_state(State * s) { current_state = new State(*s); }
-    void set_goal(State * s) { current_goal = new State(*s); }
+    void set_state(PartialState * s) { current_state = new PartialState(*s); }
+    void set_goal(PartialState * s) { current_goal = new PartialState(*s); }
     
     void record_stats();
     void reset_goal();
