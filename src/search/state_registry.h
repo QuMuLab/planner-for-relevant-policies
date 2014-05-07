@@ -175,6 +175,11 @@ public:
     */
     void subscribe(PerStateInformationBase *psi) const;
     void unsubscribe(PerStateInformationBase *psi) const;
+    
+    /*
+      Used to reset the initial state when new data is used for g_initial_state_data
+    */
+    void reset_initial_state();
 };
 
 #endif

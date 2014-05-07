@@ -9,12 +9,22 @@
 #include "policy-repair/simulator.h"
 #include "policy-repair/policy.h"
 #include "policy-repair/jit.h"
+#include "policy-repair/partial_state.h"
 
 
 #include <iostream>
 #include <list>
 #include <new>
 using namespace std;
+
+struct FOO {
+    PartialState * full_state;
+    PartialState * expected_state;
+    RegressionStep * prev_regstep;
+    const Operator * prev_op;
+    FOO(PartialState * fs, PartialState * es, RegressionStep * pr, const Operator * op) :
+       full_state(fs), expected_state(es), prev_regstep(pr), prev_op(op) {}
+};
 
 int main(int argc, const char **argv) {
     register_event_handlers();
@@ -85,13 +95,12 @@ int main(int argc, const char **argv) {
     }
     
     
-    
     // We start the jit timer here since we should include the initial search / policy construction
     g_timer_jit.resume();
     g_timer_search.resume();
     engine->search();
     g_timer_search.stop();
-
+        
     engine->save_plan_if_necessary();
     engine->statistics();
     engine->heuristic_statistics();
@@ -160,7 +169,7 @@ int main(int argc, const char **argv) {
     
     if (g_optimized_scd) {
         cout << "\n\nRunning a final SCD check..." << endl;
-        vector< State * > failed_states; // The failed states (used for creating deadends)
+        vector< PartialState * > failed_states; // The failed states (used for creating deadends)
         g_policy->init_scd();
         bool made_change = true; // This becomes false again eventually
         while (made_change)

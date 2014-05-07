@@ -8,7 +8,7 @@ if [[ $# < 2 ]]; then
 fi
 
 
-./plan-prp $1 $2 RES --dump-policy 2
+./plan-prp $1 $2 --dump-policy 2
 
 python ../prp-scripts/translate_policy.py > human_policy.out
 
@@ -24,5 +24,4 @@ if [ "--keep-files" != "$3" ]; then
   rm -f action.map
   rm -f graph.png
   rm -f unhandled.states
-  rm -f RES
 fi

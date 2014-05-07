@@ -60,6 +60,11 @@ const State &StateRegistry::get_initial_state() {
     return *cached_initial_state;
 }
 
+void StateRegistry::reset_initial_state() {
+    delete cached_initial_state;
+    cached_initial_state = 0;
+}
+
 //TODO it would be nice to move the actual state creation (and operator application)
 //     out of the StateRegistry. This could for example be done by global functions
 //     operating on state buffers (PackedStateBin *).

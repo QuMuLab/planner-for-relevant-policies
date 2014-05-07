@@ -27,14 +27,14 @@ using namespace std;
 */
 
 
-bool GeneratorSwitch::check_match(const State &curr, bool keep_all) {
+bool GeneratorSwitch::check_match(const PartialState &curr, bool keep_all) {
     if (immediate_items.size() > 0)
         return true;
     
-    if ((curr[switch_var] != state_var_t(-1)) && (generator_for_value[curr[switch_var]]->check_match(curr, keep_all)))
+    if ((curr[switch_var] != -1) && (generator_for_value[curr[switch_var]]->check_match(curr, keep_all)))
         return true;
     
-    if ((curr[switch_var] == state_var_t(-1)) && keep_all) {
+    if ((curr[switch_var] == -1) && keep_all) {
         for (int i = 0; i < g_variable_domain[switch_var]; i++) {
             if (generator_for_value[i]->check_match(curr, keep_all))
                 return true;
@@ -47,11 +47,11 @@ bool GeneratorSwitch::check_match(const State &curr, bool keep_all) {
     return false;
 }
 
-void GeneratorSwitch::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
+void GeneratorSwitch::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
     for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter)
         reg_items.push_back(*op_iter);
     
-    if (curr[switch_var] != state_var_t(-1))
+    if (curr[switch_var] != -1)
         generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items, keep_all);
     else if (keep_all) {
         for (int i = 0; i < g_variable_domain[switch_var]; i++) {
@@ -62,7 +62,7 @@ void GeneratorSwitch::generate_applicable_items(const State &curr, vector<Policy
     default_generator->generate_applicable_items(curr, reg_items, keep_all);
 }
 
-void GeneratorSwitch::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, int bound) {
+void GeneratorSwitch::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, int bound) {
     int best_val = 9999999;
     PolicyItem * best_rs = NULL;
     for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter)
@@ -76,7 +76,7 @@ void GeneratorSwitch::generate_applicable_items(const State &curr, vector<Policy
     if (best_val <= bound)
         reg_items.push_back(best_rs);
     
-    if (curr[switch_var] == state_var_t(-1)) {
+    if (curr[switch_var] == -1) {
         for (int i = 0; i < g_variable_domain[switch_var]; i++) {
             generator_for_value[i]->generate_applicable_items(curr, reg_items, bound);
         }
@@ -86,19 +86,19 @@ void GeneratorSwitch::generate_applicable_items(const State &curr, vector<Policy
     default_generator->generate_applicable_items(curr, reg_items, bound);
 }
 
-bool GeneratorLeaf::check_match(const State &, bool) {
+bool GeneratorLeaf::check_match(const PartialState &, bool) {
     if (applicable_items.size() > 0)
         return true;
     else
         return false;
 }
 
-void GeneratorLeaf::generate_applicable_items(const State &, vector<PolicyItem *> &reg_items, bool) {
+void GeneratorLeaf::generate_applicable_items(const PartialState &, vector<PolicyItem *> &reg_items, bool) {
     for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter)
         reg_items.push_back(*op_iter);
 }
 
-void GeneratorLeaf::generate_applicable_items(const State &, vector<PolicyItem *> &reg_items, int bound) {
+void GeneratorLeaf::generate_applicable_items(const PartialState &, vector<PolicyItem *> &reg_items, int bound) {
     int best_val = 9999999;
     PolicyItem * best_rs = NULL;
     for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter)
@@ -196,7 +196,7 @@ int GeneratorBase::get_best_var(list<PolicyItem *> &reg_items, set<int> &vars_se
     
     for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
         for (int i = 0; i < g_variable_name.size(); i++) {
-            if (state_var_t(-1) != (*((*op_iter)->state))[i]) {
+            if (-1 != (*((*op_iter)->state))[i]) {
                 var_count[i].first++;
             }
         }
@@ -217,7 +217,7 @@ int GeneratorBase::get_best_var(list<PolicyItem *> &reg_items, set<int> &vars_se
 
 bool GeneratorBase::reg_item_done(PolicyItem *op_iter, set<int> &vars_seen) {
     for (int i = 0; i < g_variable_name.size(); i++) {
-        if ((state_var_t(-1) != (*(op_iter->state))[i]) && (vars_seen.count(i) <= 0))
+        if ((-1 != (*(op_iter->state))[i]) && (vars_seen.count(i) <= 0))
             return false;
     }
     
@@ -257,7 +257,7 @@ GeneratorSwitch::GeneratorSwitch(list<PolicyItem *> &reg_items, set<int> &vars_s
     for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
         if (reg_item_done(*op_iter, vars_seen)) {
             immediate_items.push_back(*op_iter);
-        } else if (state_var_t(-1) != (*((*op_iter)->state))[switch_var]) {
+        } else if (-1 != (*((*op_iter)->state))[switch_var]) {
             value_items[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
         } else { // == -1
             default_items.push_back(*op_iter);
@@ -289,7 +289,7 @@ GeneratorBase *GeneratorSwitch::update_policy(list<PolicyItem *> &reg_items, set
     for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
         if (reg_item_done(*op_iter, vars_seen)) {
             immediate_items.push_back(*op_iter);
-        } else if (state_var_t(-1) != (*((*op_iter)->state))[switch_var]) {
+        } else if (-1 != (*((*op_iter)->state))[switch_var]) {
             value_items[(*((*op_iter)->state))[switch_var]].push_back(*op_iter);
         } else { // == -1
             default_items.push_back(*op_iter);
@@ -382,12 +382,12 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
     //  new action for deadends. This allows us to stop expanding earlier
     //  with the scd algorithm below.
     if (detect_deadends) {
-        vector<State *> new_deadends;
+        vector<PartialState *> new_deadends;
         for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
             RegressionStep * rs = (RegressionStep *)(*op_iter);
             if (!(rs->is_goal)) {
                 for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
-                    State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
+                    PartialState *succ_state = new PartialState(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
                     if (is_deadend(*succ_state)) {
                         generalize_deadend(*succ_state);
                         new_deadends.push_back(succ_state);
@@ -402,19 +402,19 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
     g_timer_policy_build.stop();
 }
 
-void Policy::generate_applicable_items(const State &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
+void Policy::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
     if (root)
         root->generate_applicable_items(curr, reg_items, keep_all);
 }
 
-bool Policy::check_match(const State &curr, bool keep_all) {
+bool Policy::check_match(const PartialState &curr, bool keep_all) {
     if (root)
         return root->check_match(curr, keep_all);
     else
         return false;
 }
 
-RegressionStep *Policy::get_best_step(const State &curr) {
+RegressionStep *Policy::get_best_step(const PartialState &curr) {
     
     if (0 == root)
         return 0;
@@ -544,10 +544,10 @@ void Policy::evaluate_random() {
 
 
 
-bool Policy::goal_sc_reachable(const State &_curr) {
+bool Policy::goal_sc_reachable(const PartialState &_curr) {
     
-    State *curr = new State(_curr);
-    State *old;
+    PartialState *curr = new PartialState(_curr);
+    PartialState *old;
     RegressionStep *rstep;
     
     // Instead of keeping a closed list, we just try to get to the
@@ -567,7 +567,7 @@ bool Policy::goal_sc_reachable(const State &_curr) {
         }
         
         old = curr;
-        curr = new State(*old, *(rstep->op));
+        curr = new PartialState(*old, *(rstep->op));
         
         delete old;
     }
@@ -582,7 +582,7 @@ void Policy::init_scd() {
          ((RegressionStep *)(*op_iter))->is_sc = true;
 }
 
-bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
+bool Policy::step_scd(vector<PartialState *> &failed_states, bool skip_deadends) {
     
     bool made_change = false;
     bool debug_scd = false;
@@ -608,7 +608,7 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                 //  number of regression steps we are guaranteed to see in a state matching
                 //  succ_state, but as long as we remain in parts of the policy that return
                 //  regression steps based on their sc_state then this will be valid.
-                State *succ_state = new State(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
+                PartialState *succ_state = new PartialState(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
                 vector<PolicyItem *> guaranteed_steps;
                 root->generate_applicable_items(*succ_state, guaranteed_steps, false);
                 
@@ -630,7 +630,7 @@ bool Policy::step_scd(vector<State *> &failed_states, bool skip_deadends) {
                         //  that succ_state entails the failed state.
                         is_failed_state = true;
                         for (int k = 0; k < g_variable_name.size(); k++) {
-                            if (((*(failed_states[j]))[k] != state_var_t(-1)) &&
+                            if (((*(failed_states[j]))[k] != -1) &&
                                 ((*(failed_states[j]))[k] != (*succ_state)[k])) {
                                 is_failed_state = false;
                                 break;
@@ -748,11 +748,11 @@ void Policy::dump_human_policy() {
          op_iter != all_items.end(); ++op_iter) {
         
         outfile << "\nIf holds:";
-        State *s = ((RegressionStep*)(*op_iter))->state;
+        PartialState *s = ((RegressionStep*)(*op_iter))->state;
         for (int i = 0; i < g_variable_domain.size(); i++) {
-            if (state_var_t(-1) != (*s)[i]) {
+            if (-1 != (*s)[i]) {
                 outfile << " ";
-                outfile << g_variable_name[i] << ":" << static_cast<int>((*s)[i]);
+                outfile << g_variable_name[i] << ":" << (*s)[i];
             }
         }
         outfile << endl;

@@ -8,6 +8,9 @@ cd search
 make "$@" || exit 1
 cd ..
 
+# Skip building VAL altogether (no point in fixing at this point)
+exit
+
 if [ ! -e VAL ]; then
     # Skip building validator if it isn't present.
     exit

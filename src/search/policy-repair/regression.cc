@@ -53,28 +53,24 @@ string RegressableOperator::get_name() {
 list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal, int distance, bool create_goal) {
     g_timer_regression.resume();
     list<PolicyItem *> reg_steps;
-    State *s = new State(*g_initial_state);
+    PartialState *s = new PartialState(g_initial_state());
     
     if (g_fullstate) {
         
-        vector<State *> states;
+        vector<PartialState *> states;
         states.push_back(s);
         
         for (int i = 0; i < plan.size(); i++) {
-            s = new State(*s, *plan[i]);
+            s = new PartialState(*s, *plan[i]);
             states.push_back(s);
         }
         
         if (create_goal) {
             
-            State *g = new State(*g_initial_state);
-            
-            for (int i = 0; i < g_variable_name.size(); i++) {
-                (*g)[i] = state_var_t(-1);
-            }
+            PartialState *g = new PartialState();
             
             for (int i = 0; i < goal.size(); i++) {
-                (*g)[goal[i].first] = state_var_t(goal[i].second);
+                (*g)[goal[i].first] = int(goal[i].second);
             }
         
             reg_steps.push_back(new RegressionStep(g, distance));
@@ -94,18 +90,16 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
         assert(states.empty());
         
     } else {
-        for (int i = 0; i < g_variable_name.size(); i++) {
-            (*s)[i] = state_var_t(-1);
-        }
+		s = new PartialState();
         
         for (int i = 0; i < goal.size(); i++) {
-            (*s)[goal[i].first] = state_var_t(goal[i].second);
+            (*s)[goal[i].first] = int(goal[i].second);
         }
     
         reg_steps.push_back(new RegressionStep(s, distance));
         
         for (int i = plan.size() - 1; i >= 0; i--) {
-            reg_steps.push_back(new RegressionStep(*plan[i], new State(*(reg_steps.back()->state), *plan[i], false), ++distance));
+            reg_steps.push_back(new RegressionStep(*plan[i], new PartialState(*(reg_steps.back()->state), *plan[i], false), ++distance));
         }
     }
     
@@ -116,14 +110,14 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
     
     // Strengthen all of the steps so they don't fire a forbidden state-action
     //  pair at some point. The strengthening is sufficient but not neccessary
-    s = new State(*g_initial_state);
-    State * old_s = s;
+    s = new PartialState(g_initial_state());
+    PartialState * old_s = s;
     int i = 0;
     for (list<PolicyItem *>::reverse_iterator op_iter = reg_steps.rbegin(); op_iter != reg_steps.rend(); ++op_iter) {
         assert(i < plan.size() || create_goal);
         if (i < plan.size()) {
             ((RegressionStep*)(*op_iter))->strengthen(s);
-            s = new State(*old_s, *plan[i], true);
+            s = new PartialState(*old_s, *plan[i], true);
             delete old_s;
             old_s = s;
             i++;
@@ -136,16 +130,16 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
 
 void generate_regressable_ops() {
     list<PolicyItem *> reg_steps;
-    State *s;
+    PartialState *s;
     for (int i = 0; i < g_operators.size(); i++) {
-        s = new State();
+        s = new PartialState();
         // Only applicable if the prevail and post conditions currently hold.
         for (int j = 0; j < g_operators[i].get_pre_post().size(); j++) {
-            (*s)[g_operators[i].get_pre_post()[j].var] = state_var_t(g_operators[i].get_pre_post()[j].post);
+            (*s)[g_operators[i].get_pre_post()[j].var] = g_operators[i].get_pre_post()[j].post;
         }
         
         for (int j = 0; j < g_operators[i].get_prevail().size(); j++) {
-            (*s)[g_operators[i].get_prevail()[j].var] = state_var_t(g_operators[i].get_prevail()[j].prev);
+            (*s)[g_operators[i].get_prevail()[j].var] = g_operators[i].get_prevail()[j].prev;
         }
         
         reg_steps.push_back(new RegressableOperator(g_operators[i], s));
@@ -154,7 +148,7 @@ void generate_regressable_ops() {
     g_regressable_ops->update_policy(reg_steps);
 }
 
-void RegressionStep::strengthen(State *s) {
+void RegressionStep::strengthen(PartialState *s) {
     
     if (is_goal)
         return;
@@ -170,19 +164,19 @@ void RegressionStep::strengthen(State *s) {
             
             for (int j = 0; j < g_variable_name.size(); j++) {
                 
-                state_var_t val = (*(((NondetDeadend*)(reg_items[i]))->state))[j];
+                int val = (*(((NondetDeadend*)(reg_items[i]))->state))[j];
                 
                 // We may have broken it in a previous iteration
-                if ((val != state_var_t(-1)) &&
+                if ((val != -1) &&
                     (val != (*state)[j]) &&
-                    ((*state)[j] != state_var_t(-1)))
+                    ((*state)[j] != -1))
                         break;
                 
                 // Just need to break one of the decisions
-                if ((val != state_var_t(-1)) &&
+                if ((val != -1) &&
                     (val != (*s)[j])) {
                     
-                    assert((*state)[j] == state_var_t(-1));
+                    assert((*state)[j] == -1);
                     (*state)[j] = (*s)[j];
                     break;
                     

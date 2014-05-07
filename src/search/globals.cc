@@ -73,7 +73,7 @@ bool test_policy(const State &state) {
         g_matched_distance = best_step->distance;
         
         for (int i = 0; i < g_variable_name.size(); i++) {
-            if (state_var_t(-1) != (*(best_step->state))[i]) {
+            if (-1 != (*(best_step->state))[i]) {
                 g_matched_policy.push_back(make_pair(i, (*(best_step->state))[i]));
             }
         }

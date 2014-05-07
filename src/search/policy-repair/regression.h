@@ -11,14 +11,17 @@
 #include "../search_engine.h"
 
 #include "policy.h"
+#include "partial_state.h"
 
 class GeneratorBase;
 
+using namespace std;
+
 struct PolicyItem {
-    State *state;
+    PartialState *state;
     Policy *pol;
     
-    PolicyItem(State *s) : state(s), pol(0) {}
+    PolicyItem(PartialState *s) : state(s), pol(0) {}
     virtual ~PolicyItem() {}
     virtual string get_name() = 0;
     virtual void dump() const = 0;
@@ -27,7 +30,7 @@ struct PolicyItem {
 struct NondetDeadend : PolicyItem {
     string op_name;
     
-    NondetDeadend(State *s, string name) : PolicyItem(s), op_name(name) {}
+    NondetDeadend(PartialState *s, string name) : PolicyItem(s), op_name(name) {}
     
     ~NondetDeadend() {}
     
@@ -38,7 +41,7 @@ struct NondetDeadend : PolicyItem {
 struct RegressableOperator : PolicyItem {
     const Operator *op;
     
-    RegressableOperator(const Operator &o, State *s) : PolicyItem(s), op(&o) {}
+    RegressableOperator(const Operator &o, PartialState *s) : PolicyItem(s), op(&o) {}
     
     ~RegressableOperator() {}
     
@@ -52,12 +55,12 @@ struct RegressionStep : PolicyItem {
     bool is_goal;
     bool is_sc;
 
-    RegressionStep(const Operator &o, State *s, int d) : PolicyItem(s), op(&o), distance(d), is_goal(false), is_sc(false) {}
-    RegressionStep(State *s, int d) : PolicyItem(s), distance(d), is_goal(true), is_sc(false) {}
+    RegressionStep(const Operator &o, PartialState *s, int d) : PolicyItem(s), op(&o), distance(d), is_goal(false), is_sc(false) {}
+    RegressionStep(PartialState *s, int d) : PolicyItem(s), distance(d), is_goal(true), is_sc(false) {}
     
     ~RegressionStep() {}
     
-    void strengthen(State *s);
+    void strengthen(PartialState *s);
 
     string get_name();
     void dump() const;

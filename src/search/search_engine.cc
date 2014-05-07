@@ -28,6 +28,8 @@ void SearchEngine::reset() {
     solved = false;
     search_space.reset();
     search_progress.reset();
+    delete g_state_registry;
+    g_state_registry = new StateRegistry;
     for (int i = 0; i < g_operators.size(); i++) {
         g_operators[i].unmark();
     }
@@ -61,12 +63,15 @@ void SearchEngine::search() {
         ;
     
     if (g_record_online_deadends && !g_limit_states) {
-        if (g_generalize_deadends) {
-            for (int i = 0; i < g_found_deadends.size(); i++)
-                generalize_deadend(*(g_found_deadends[i]));
+        vector<PartialState *> failed_states;
+        for (int i = 0; i < g_found_deadends.size(); i++) {
+            PartialState * fs = new PartialState(*(g_found_deadends[i]));
+            if (g_generalize_deadends)
+                generalize_deadend(*fs);
+            failed_states.push_back(fs);
         }
-//cout << "Number of online deadends: " << g_found_deadends.size() << endl;
-        update_deadends(g_found_deadends);
+        //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
+        update_deadends(failed_states);
     }
     if (search_progress.get_generated() > 2) {
         cout << "Generated " << search_progress.get_generated() << " state(s)." << endl;
