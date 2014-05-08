@@ -350,7 +350,7 @@ def doit_prp(domain, dom_probs, prp_params, exp_name = 'prp'):
 
     print "\n\nRunning %s experiments on domain, %s" % (exp_name, domain)
 
-    prp_args = ["../%s ../%s RES" % (item[0], item[1]) for item in dom_probs]
+    prp_args = ["../%s ../%s" % (item[0], item[1]) for item in dom_probs]
 
     prp_results = run_experiment(
         base_command = './../../src/plan-prp',
@@ -428,7 +428,7 @@ def dojic(dom, prob, max_jic):
 
     prp_results = run_experiment(
         base_command = './../../src/plan-prp',
-        single_arguments = {'domprob': ["../%s ../%s RES" % (dom, prob)]},
+        single_arguments = {'domprob': ["../%s ../%s" % (dom, prob)]},
         parameters = PRP_PARAMS['jic'],
         time_limit = TIME_LIMIT,
         memory_limit = MEM_LIMIT,
