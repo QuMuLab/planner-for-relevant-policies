@@ -3,7 +3,7 @@
 
 Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb) :
                     engine(eng), argc(_argc), argv(_argv), verbose(verb), found_solution(false), succeeded(false) {
-    current_state = new State(*g_initial_state);
+    current_state = new PartialState(g_initial_state());
     successful_states = 0;
     failed_states = 0;
     record_succeeded = 0;
@@ -11,7 +11,7 @@ Simulator::Simulator(SearchEngine *eng, int _argc, const char **_argv, bool verb
 }
 
 Simulator::Simulator(bool verb) : verbose(verb), found_solution(false), succeeded(false) {
-    current_state = new State(*g_initial_state);
+    current_state = new PartialState(g_initial_state());
     successful_states = 0;
     failed_states = 0;
     record_succeeded = 0;
@@ -46,7 +46,7 @@ void Simulator::record_stats() {
     if (succeeded)
         record_succeeded++;
     if (failed_states + successful_states >= g_trial_depth)
-		record_depth_limit++;
+        record_depth_limit++;
 }
 
 void Simulator::run_once(bool stop_on_failure, Policy *pol) {
@@ -56,8 +56,8 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol) {
     successful_states = 0;
     failed_states = 0;
     
-    State *orig_init_state = new State(*g_initial_state);
-    current_state = new State(*g_initial_state);
+    PartialState *orig_init_state = new PartialState(g_initial_state());
+    current_state = new PartialState(g_initial_state());
     
     reset_goal();
     
@@ -91,7 +91,9 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol) {
         }
     }
     
-    g_initial_state = orig_init_state;
+    g_state_registry->reset_initial_state();
+    for (int i = 0; i < g_variable_name.size(); i++)
+        g_initial_state_data[i] = (*orig_init_state)[i];
 }
 
 bool Simulator::execute_action(const Operator *op) {
@@ -110,8 +112,8 @@ bool Simulator::execute_action(const Operator *op) {
         chosen->dump();
     }
     
-    State *old_state = current_state;
-    current_state = new State(*old_state, *chosen);
+    PartialState *old_state = current_state;
+    current_state = new PartialState(*old_state, *chosen);
     delete old_state;
     
     return (op->get_name() == chosen->get_name());
@@ -141,11 +143,6 @@ bool Simulator::replan() {
     
     if (verbose)
         cout << "\nRequired to replan..." << endl;
-
-    //if (engine)
-    //    delete engine;
-    if (g_initial_state)
-        delete g_initial_state;
     
     if (!current_state) {
         cout << "Error: No current state for the replan." << endl;
@@ -154,7 +151,10 @@ bool Simulator::replan() {
     
     if (verbose)
         cout << "Creating initial state." << endl;
-    g_initial_state = new State(*current_state);
+    
+    g_state_registry->reset_initial_state();
+    for (int i = 0; i < g_variable_name.size(); i++)
+        g_initial_state_data[i] = (*current_state)[i];
     
     if (g_plan_locally) {
         if (verbose)
@@ -162,7 +162,7 @@ bool Simulator::replan() {
         
         g_goal.clear();
         for (int i = 0; i < g_variable_name.size(); i++) {
-            if ((*current_goal)[i] != state_var_t(-1))
+            if ((*current_goal)[i] != -1)
                 g_goal.push_back(make_pair(i, (*current_goal)[i]));
         }
     }
@@ -232,7 +232,7 @@ bool Simulator::replan() {
             
             if (verbose)
                 cout << "Updating the policy." << endl;
-            g_policy->update_policy(regression_steps);
+            g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
             
             reset_goal();
             return true;
@@ -281,7 +281,7 @@ bool Simulator::replan() {
                     
                     if (verbose)
                         cout << "Updating the policy." << endl;
-                    g_policy->update_policy(regression_steps);
+                    g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
                     
                     return true;
                 }

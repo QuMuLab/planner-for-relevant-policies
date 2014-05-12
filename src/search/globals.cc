@@ -4,10 +4,12 @@
 #include "causal_graph.h"
 #include "domain_transition_graph.h"
 #include "heuristic.h"
+#include "int_packer.h"
 #include "legacy_causal_graph.h"
 #include "operator.h"
 #include "rng.h"
 #include "state.h"
+#include "state_registry.h"
 #include "successor_generator.h"
 #include "timer.h"
 #include "utilities.h"
@@ -29,6 +31,7 @@ using namespace std;
 #include <ext/hash_map>
 using namespace __gnu_cxx;
 
+#include "state_registry.h"
 
 static const int PRE_FILE_VERSION = 3;
 
@@ -72,7 +75,7 @@ bool test_policy(const State &state) {
         g_matched_distance = best_step->distance;
         
         for (int i = 0; i < g_variable_name.size(); i++) {
-            if (state_var_t(-1) != (*(best_step->state))[i]) {
+            if (-1 != (*(best_step->state))[i]) {
                 g_matched_policy.push_back(make_pair(i, (*(best_step->state))[i]));
             }
         }
@@ -175,13 +178,6 @@ void read_variables(istream &in) {
         int range;
         in >> range;
         g_variable_domain.push_back(range);
-        if (range > numeric_limits<state_var_t>::max()) {
-            cerr << "This should not have happened!" << endl;
-            cerr << "Are you using the downward script, or are you using "
-                 << "downward-1 directly?" << endl;
-            exit_with(EXIT_INPUT_ERROR);
-        }
-
         in >> ws;
         vector<string> fact_names(range);
         for (size_t i = 0; i < fact_names.size(); i++)
@@ -245,6 +241,10 @@ void read_goal(istream &in) {
     check_magic(in, "begin_goal");
     int count;
     in >> count;
+    if (count < 1) {
+        cerr << "Task has no goal condition!" << endl;
+        exit_with(EXIT_INPUT_ERROR);
+    }
     for (int i = 0; i < count; i++) {
         int var, val;
         in >> var >> val;
@@ -281,7 +281,6 @@ void read_axioms(istream &in) {
         g_axioms.push_back(Operator(in, true));
 
     g_axiom_evaluator = new AxiomEvaluator;
-    g_axiom_evaluator->evaluate(*g_initial_state);
 }
 
 void read_everything(istream &in) {
@@ -289,7 +288,14 @@ void read_everything(istream &in) {
     read_metric(in);
     read_variables(in);
     read_mutexes(in);
-    g_initial_state = new State(in);
+    g_initial_state_data.resize(g_variable_domain.size());
+    check_magic(in, "begin_state");
+    for (int i = 0; i < g_variable_domain.size(); i++) {
+        in >> g_initial_state_data[i];
+    }
+    check_magic(in, "end_state");
+    g_default_axiom_values = g_initial_state_data;
+
     read_goal(in);
     read_operators(in);
     read_axioms(in);
@@ -302,6 +308,17 @@ void read_everything(istream &in) {
     // NOTE: causal graph is computed from the problem specification,
     // so must be built after the problem has been read in.
     g_causal_graph = new CausalGraph;
+
+    assert(!g_variable_domain.empty());
+    g_state_packer = new IntPacker(g_variable_domain);
+    cout << "Variables: " << g_variable_domain.size() << endl;
+    cout << "Bytes per state: "
+         << g_state_packer->get_num_bins() *
+            g_state_packer->get_bin_size_in_bytes() << endl;
+
+    // NOTE: state registry stores the sizes of the state, so must be
+    // built after the problem has been read in.
+    g_state_registry = new StateRegistry;
     
     /* Build the data structures required for mapping between the
      * deterministic actions and their non-deterministic equivalents. */
@@ -347,10 +364,11 @@ void dump_everything() {
     for (int i = 0; i < g_variable_name.size(); i++)
         cout << "  " << g_variable_name[i]
              << " (range " << g_variable_domain[i] << ")" << endl;
+    State initial_state = g_initial_state();
     cout << "Initial State (PDDL):" << endl;
-    g_initial_state->dump_pddl();
+    initial_state.dump_pddl();
     cout << "Initial State (FDR):" << endl;
-    g_initial_state->dump_fdr();
+    initial_state.dump_fdr();
     dump_goal();
     /*
     cout << "Successor Generator:" << endl;
@@ -360,13 +378,19 @@ void dump_everything() {
     */
 }
 
-void verify_no_axioms_no_cond_effects() {
-    if (!g_axioms.empty()) {
+bool has_axioms() {
+    return !g_axioms.empty();
+}
+
+void verify_no_axioms() {
+    if (has_axioms()) {
         cerr << "Heuristic does not support axioms!" << endl << "Terminating."
              << endl;
         exit_with(EXIT_UNSUPPORTED);
     }
+}
 
+int get_first_cond_effects_op_id() {
     for (int i = 0; i < g_operators.size(); i++) {
         const vector<PrePost> &pre_post = g_operators[i].get_pre_post();
         for (int j = 0; j < pre_post.size(); j++) {
@@ -382,19 +406,39 @@ void verify_no_axioms_no_cond_effects() {
             if (pre == -1 && cond.size() == 1 && cond[0].var == var
                 && cond[0].prev != post && g_variable_domain[var] == 2)
                 continue;
-
-            cerr << "Heuristic does not support conditional effects "
-                 << "(operator " << g_operators[i].get_name() << ")" << endl
-                 << "Terminating." << endl;
-            exit_with(EXIT_UNSUPPORTED);
+            return i;
         }
     }
+    return -1;
+}
+
+bool has_cond_effects() {
+    return get_first_cond_effects_op_id() != -1;
+}
+
+void verify_no_cond_effects() {
+    int op_id = get_first_cond_effects_op_id();
+    if (op_id != -1) {
+            cerr << "Heuristic does not support conditional effects "
+                 << "(operator " << g_operators[op_id].get_name() << ")" << endl
+                 << "Terminating." << endl;
+            exit_with(EXIT_UNSUPPORTED);
+    }
+}
+
+void verify_no_axioms_no_cond_effects() {
+    verify_no_axioms();
+    verify_no_cond_effects();
 }
 
 bool are_mutex(const pair<int, int> &a, const pair<int, int> &b) {
     if (a.first == b.first) // same variable: mutex iff different value
         return a.second != b.second;
     return bool(g_inconsistent_facts[a.first][a.second].count(b));
+}
+
+const State &g_initial_state() {
+    return g_state_registry->get_initial_state();
 }
 
 bool g_use_metric;
@@ -405,7 +449,8 @@ vector<int> g_variable_domain;
 vector<vector<string> > g_fact_names;
 vector<int> g_axiom_layers;
 vector<int> g_default_axiom_values;
-State *g_initial_state;
+IntPacker *g_state_packer;
+vector<int> g_initial_state_data;
 vector<pair<int, int> > g_goal;
 vector<Operator> g_operators;
 vector<Operator> g_axioms;
@@ -431,7 +476,7 @@ Policy *g_best_policy; // The best policy we've found so far
 vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts found while planning
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
 int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
-bool g_silent_planning = false;
+bool g_silent_planning = true;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run
 bool g_fullstate = false; // Use the full state for regression
 bool g_plan_locally = true; // Plan for the expected state rather than replanning to the goal
@@ -453,6 +498,7 @@ Heuristic *g_heuristic_for_reachability;
 int g_dump_policy = 0; // Whether or not we should dump the policy
 
 bool g_debug = false; // Flag for debugging parts of the code
+int g_debug_count = 1; // Index that allows to locate spots in the output
 
 Timer g_timer_regression;
 Timer g_timer_simulator;
@@ -466,3 +512,4 @@ Timer g_timer_jit;
 Timer g_timer;
 string g_plan_filename = "sas_plan";
 RandomNumberGenerator g_rng(2011); // Use an arbitrary default seed.
+StateRegistry *g_state_registry = 0;

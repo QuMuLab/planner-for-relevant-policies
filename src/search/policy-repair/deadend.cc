@@ -1,13 +1,13 @@
 #include "deadend.h"
 
 
-bool is_deadend(State &state) {
+bool is_deadend(PartialState &state) {
     ((AdditiveHeuristic *)g_heuristic_for_reachability)->reset();
     return (-1 == ((AdditiveHeuristic *)g_heuristic_for_reachability)->compute_add_and_ff(state));
 }
 
 
-void generalize_deadend(State &state) {
+void generalize_deadend(PartialState &state) {
     
     // We disable the pruning of forbidden operators, as we want to be
     //  sure that we have a weak deadend
@@ -47,13 +47,13 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
     list<PolicyItem *> de_items;
     list<PolicyItem *> de_states;
     
-    State * dummy_state = new State();
+    PartialState * dummy_state = new PartialState();
     
     for (int i = 0; i < failed_states.size(); i++) {
         
         // Generalize the deadend if need be
-        State * failed_state = failed_states[i]->de_state;
-        State * failed_state_prev = failed_states[i]->prev_state;
+        PartialState * failed_state = failed_states[i]->de_state;
+        PartialState * failed_state_prev = failed_states[i]->prev_state;
         const Operator * prev_op = failed_states[i]->prev_op;
         
         //cout << "Creating forbidden state-action pairs for deadend:" << endl;
@@ -73,13 +73,13 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
             
             RegressableOperator *ro = (RegressableOperator*)(reg_items[j]);
             
-            de_items.push_back(new NondetDeadend(new State(*failed_state, *(ro->op), false, dummy_state),
+            de_items.push_back(new NondetDeadend(new PartialState(*failed_state, *(ro->op), false, dummy_state),
                                                      ro->op->get_nondet_name()));
 
             //cout << "Creating new forbidden state-action pair:" << endl;
             //de_items.back()->dump();
 
-            de_states.push_back(new NondetDeadend(new State(*failed_state),
+            de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
                                                      ro->op->get_nondet_name()));
         }
         
@@ -95,13 +95,13 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
             RegressableOperator *ro = (RegressableOperator*)(reg_items[j]);
             
             de_items.push_back(new NondetDeadend(
-                                    new State(*failed_state, *(ro->op), false, ro->op->all_fire_context),
+                                    new PartialState(*failed_state, *(ro->op), false, ro->op->all_fire_context),
                                     ro->op->get_nondet_name()));
 
             //cout << "Creating new (all-fire) forbidden state-action pair:" << endl;
             //de_items.back()->dump();
 
-            de_states.push_back(new NondetDeadend(new State(*failed_state),
+            de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
                                                      ro->op->get_nondet_name()));
         }
         
@@ -111,13 +111,13 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
         //  build a forbidden state-action pair
         if (NULL != failed_state_prev) {
             de_items.push_back(new NondetDeadend(
-                    new State(*failed_state, *prev_op, false, failed_state_prev),
+                    new PartialState(*failed_state, *prev_op, false, failed_state_prev),
                     prev_op->get_nondet_name()));
             
             //cout << "Creating new (default) forbidden state-action pair:" << endl;
             //de_items.back()->dump();
             
-            de_states.push_back(new NondetDeadend(new State(*failed_state),
+            de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
                                                   prev_op->get_nondet_name()));
             
         }
@@ -130,13 +130,15 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
 }
 
 
-void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &curr, vector<const Operator *> &ops) {
+void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &_curr, vector<const Operator *> &ops) {
     if (g_detect_deadends && g_deadend_policy) {
+		
+		PartialState curr = PartialState(_curr);
         
         vector<PolicyItem *> reg_items;
         vector<const Operator *> orig_ops;
         
-        g_successor_generator_orig->generate_applicable_ops(curr, orig_ops);
+        g_successor_generator_orig->generate_applicable_ops(_curr, orig_ops);
         g_deadend_policy->generate_applicable_items(curr, reg_items);
         
         set<int> forbidden;
@@ -171,7 +173,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &curr, 
         
     } else {
         
-        g_successor_generator_orig->generate_applicable_ops(curr, ops);
+        g_successor_generator_orig->generate_applicable_ops(_curr, ops);
         
     }
     return;

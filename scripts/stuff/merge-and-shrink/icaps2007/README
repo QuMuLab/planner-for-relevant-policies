@@ -1,3 +1,0 @@
-./run-everything should completely rerun the ICAPS 2007 experiments
-from a pristine checkout, provided that preprocess and search have been
-built and a reasonably new Python version is available.

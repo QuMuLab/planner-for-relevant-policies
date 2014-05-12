@@ -1,42 +1,39 @@
+//////////
+// TODO //
+//////////
+// - Fix the dump functions to not print undefined values
+// - Move the old state functions into the state registry
+
+
 #include "state.h"
 
-#include "axioms.h"
 #include "globals.h"
-#include "operator.h"
 #include "utilities.h"
+#include "state_registry.h"
 
 #include <algorithm>
 #include <iostream>
 #include <cassert>
 using namespace std;
 
-void State::_allocate() {
-    borrowed_buffer = false;
-    vars = new state_var_t[g_variable_domain.size()];
+
+State::State(const PackedStateBin *buffer_, const StateRegistry &registry_,
+             StateID id_)
+    : buffer(buffer_),
+      registry(&registry_),
+      id(id_) {
+    assert(buffer);
+    assert(id != StateID::no_state);
 }
 
-void State::_deallocate() {
-    if (!borrowed_buffer)
-        delete[] vars;
+State::~State() {
 }
 
-void State::_copy_buffer_from_state(const State &state) {
-    // TODO: Profile if memcpy could speed this up significantly,
-    //       e.g. if we do blind A* search.
-    for (int i = 0; i < g_variable_domain.size(); i++)
-        vars[i] = state_var_t(state.vars[i]);
+int State::operator[](int index) const {
+    return g_state_packer->get(buffer, index);
 }
 
-State & State::operator=(const State &other) {
-    if (this != &other) {
-        if (borrowed_buffer)
-            _allocate();
-        _copy_buffer_from_state(other);
-    }
-    return *this;
-}
-
-State::State(istream &in) {
+/*State::State(istream &in) {
     _allocate();
     check_magic(in, "begin_state");
     for (int i = 0; i < g_variable_domain.size(); i++) {
@@ -112,38 +109,18 @@ State::State(const State &predecessor, const Operator &op, bool progress, State 
 
 State::~State() {
     _deallocate();
-}
+}*/
 
 void State::dump_pddl() const {
     for (int i = 0; i < g_variable_domain.size(); i++) {
-        const string &fact_name = g_fact_names[i][vars[i]];
+        const string &fact_name = g_fact_names[i][(*this)[i]];
         if (fact_name != "<none of those>")
             cout << fact_name << endl;
     }
 }
 
 void State::dump_fdr() const {
-    // We cast the values to int since we'd get bad output otherwise
-    // if state_var_t == char.
-    for (int i = 0; i < g_variable_domain.size(); i++) {
-        if (state_var_t(-1) != vars[i]) {
-            cout << "  #" << i << " [" << g_variable_name[i] << "] -> "
-                 << static_cast<int>(vars[i]) << endl;
-        }
-    }
-}
-
-bool State::operator==(const State &other) const {
-    int size = g_variable_domain.size();
-    return ::equal(vars, vars + size, other.vars);
-}
-
-bool State::operator<(const State &other) const {
-    int size = g_variable_domain.size();
-    return ::lexicographical_compare(vars, vars + size,
-                                     other.vars, other.vars + size);
-}
-
-size_t State::hash() const {
-    return ::hash_number_sequence(vars, g_variable_domain.size());
+    for (size_t i = 0; i < g_variable_domain.size(); ++i)
+        cout << "  #" << i << " [" << g_variable_name[i] << "] -> "
+             << (*this)[i] << endl;
 }

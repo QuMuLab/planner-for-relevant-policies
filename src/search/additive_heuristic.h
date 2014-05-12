@@ -3,6 +3,7 @@
 
 #include "priority_queue.h"
 #include "relaxation_heuristic.h"
+#include "policy-repair/partial_state.h"
 #include <cassert>
 
 class AdditiveHeuristic : public RelaxationHeuristic {
@@ -20,6 +21,7 @@ class AdditiveHeuristic : public RelaxationHeuristic {
 
     void setup_exploration_queue();
     void setup_exploration_queue_state(const State &state);
+    void setup_exploration_queue_state(const PartialState &state);
     bool relaxed_exploration(bool include_forbidden);
     void mark_preferred_operators(const State &state, Proposition *goal);
 
@@ -54,6 +56,7 @@ public:
     
     // Common part of h^add and h^ff computation.
     int compute_add_and_ff(const State &state);
+    int compute_add_and_ff(const PartialState &state);
 };
 
 #endif
