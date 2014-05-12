@@ -67,7 +67,14 @@ void AdditiveHeuristic::setup_exploration_queue() {
 
 void AdditiveHeuristic::setup_exploration_queue_state(const State &state) {
     for (int var = 0; var < propositions.size(); var++) {
-        if (state_var_t(-1) == state[var]) {
+		Proposition *init_prop = &propositions[var][state[var]];
+		enqueue_if_necessary(init_prop, 0, 0);
+	}
+}
+
+void AdditiveHeuristic::setup_exploration_queue_state(const PartialState &state) {
+    for (int var = 0; var < propositions.size(); var++) {
+        if (-1 == state[var]) {
             for (int val = 0; val < propositions[var].size(); val++) {
                 Proposition *init_prop = &propositions[var][val];
                 enqueue_if_necessary(init_prop, 0, 0);
@@ -187,6 +194,28 @@ int AdditiveHeuristic::compute_add_and_ff(const State &state) {
     return total_cost;
 }
 
+int AdditiveHeuristic::compute_add_and_ff(const PartialState &state) {
+    
+    setup_exploration_queue();
+    setup_exploration_queue_state(state);
+    bool worked = relaxed_exploration(false);
+    
+    if (g_check_with_forbidden && !worked) {
+        setup_exploration_queue();
+        setup_exploration_queue_state(state);
+        relaxed_exploration(true);
+    }
+
+    int total_cost = 0;
+    for (int i = 0; i < goal_propositions.size(); i++) {
+        int prop_cost = goal_propositions[i]->cost;
+        if (prop_cost == -1)
+            return DEAD_END;
+        increase_cost(total_cost, prop_cost);
+    }
+    return total_cost;
+}
+
 int AdditiveHeuristic::compute_heuristic(const State &state) {
     int h = compute_add_and_ff(state);
     if (h != DEAD_END) {
@@ -196,7 +225,20 @@ int AdditiveHeuristic::compute_heuristic(const State &state) {
     return h;
 }
 
-static ScalarEvaluator *_parse(OptionParser &parser) {
+static Heuristic *_parse(OptionParser &parser) {
+    parser.document_synopsis("Additive heuristic", "");
+    parser.document_language_support("action costs", "supported");
+    parser.document_language_support("conditional_effects", "supported");
+    parser.document_language_support(
+        "axioms",
+        "supported (in the sense that the planner won't complain -- "
+        "handling of axioms might be very stupid "
+        "and even render the heuristic unsafe)");
+    parser.document_property("admissible", "no");
+    parser.document_property("consistent", "no");
+    parser.document_property("safe", "yes for tasks without axioms");
+    parser.document_property("preferred operators", "yes");
+
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
@@ -205,4 +247,4 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         return new AdditiveHeuristic(opts);
 }
 
-static Plugin<ScalarEvaluator> _plugin("add", _parse);
+static Plugin<Heuristic> _plugin("add", _parse);

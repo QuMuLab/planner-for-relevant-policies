@@ -1,8 +1,6 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include "operator_cost.h"
-
 #include <iosfwd>
 #include <string>
 #include <vector>
@@ -12,6 +10,7 @@ class Axiom;
 class AxiomEvaluator;
 class CausalGraph;
 class DomainTransitionGraph;
+class IntPacker;
 class LegacyCausalGraph;
 class Operator;
 class RandomNumberGenerator;
@@ -19,6 +18,7 @@ class State;
 class Heuristic;
 class SuccessorGenerator;
 class Timer;
+class StateRegistry;
 class RandomNumberGenerator;
 class Policy;
 class DeadendAwareSuccessorGenerator;
@@ -32,6 +32,11 @@ int calculate_plan_cost(const std::vector<const Operator *> &plan);
 void read_everything(std::istream &in);
 void dump_everything();
 
+bool has_axioms();
+void verify_no_axioms();
+int get_first_cond_effects_op_id();
+bool has_cond_effects();
+void verify_no_cond_effects();
 void verify_no_axioms_no_cond_effects();
 
 void check_magic(std::istream &in, std::string magic);
@@ -58,7 +63,14 @@ extern std::vector<std::vector<std::string> > g_fact_names;
 extern std::vector<int> g_axiom_layers;
 extern std::vector<int> g_default_axiom_values;
 
-extern State *g_initial_state;
+extern IntPacker *g_state_packer;
+// This vector holds the initial values *before* the axioms have been evaluated.
+// Use the state registry to obtain the real initial state.
+extern std::vector<int> g_initial_state_data;
+// TODO The following function returns the initial state that is registered
+//      in g_state_registry. This is only a short-term solution. In the
+//      medium term, we should get rid of the global registry.
+extern const State &g_initial_state();
 extern std::vector<std::pair<int, int> > g_goal;
 
 extern std::vector<Operator> g_operators;
@@ -70,6 +82,10 @@ extern LegacyCausalGraph *g_legacy_causal_graph;
 extern Timer g_timer;
 extern std::string g_plan_filename;
 extern RandomNumberGenerator g_rng;
+// Only one global object for now. Could later be changed to use one instance
+// for each problem in this case the method State::get_id would also have to be
+// changed.
+extern StateRegistry *g_state_registry;
 
 extern SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can be pruned based on deadends
 extern DeadendAwareSuccessorGenerator *g_successor_generator;
@@ -111,6 +127,7 @@ extern Heuristic *g_heuristic_for_reachability;
 extern int g_dump_policy; // Whether or not we should dump the policy
 
 extern bool g_debug; // Flag for debugging parts of the code
+extern int g_debug_count; // Index that allows to locate spots in the output
 
 /* Timers */
 extern Timer g_timer_regression;

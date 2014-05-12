@@ -12,9 +12,9 @@
 
 void update_deadends(vector< DeadendTuple * > &failed_states);
 
-bool is_deadend(State &state);
+bool is_deadend(PartialState &state);
 
-void generalize_deadend(State &state);
+void generalize_deadend(PartialState &state);
 
 struct DeadendAwareSuccessorGenerator {
     void generate_applicable_ops(const State &curr, vector<const Operator *> &ops);

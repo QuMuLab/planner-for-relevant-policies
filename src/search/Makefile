@@ -6,10 +6,6 @@ USE_LP=0
 ## On OS X, this is unsupported and will be silently disabled.
 LINK_RELEASE_STATICALLY=1
 
-## Set STATE_VAR_BYTES to 1, 2 or 4 to control how large a state
-## variable is. There should be no need to tweak this manually.
-STATE_VAR_BYTES=1
-
 ## On a supported operating system, there should be no need to override
 ## the OS setting. If the provided code does not work even though your
 ## operating system is a supported one, please report this as a bug.
@@ -27,6 +23,7 @@ HEADERS = \
           g_evaluator.h \
           globals.h \
           heuristic.h \
+          int_packer.h \
           ipc_max_heuristic.h \
           iterated_search.h \
           lazy_search.h \
@@ -35,6 +32,9 @@ HEADERS = \
           operator.h \
           operator_cost.h \
           option_parser.h \
+          option_parser_util.h \
+          segmented_vector.h \
+          per_state_information.h \
           pref_evaluator.h \
           relaxation_heuristic.h \
           rng.h \
@@ -43,6 +43,8 @@ HEADERS = \
           search_progress.h \
           search_space.h \
           state.h \
+          state_id.h \
+          state_registry.h \
           successor_generator.h \
           sum_evaluator.h \
           timer.h \
@@ -97,17 +99,17 @@ HEADERS += landmarks/exploration.h \
            landmarks/landmark_factory_zhu_givan.h \
            landmarks/util.h \
 
-HEADERS += learning/AODE.h \
-           learning/classifier.h \
-           learning/composite_feature_extractor.h \
-           learning/feature_extractor.h \
-           learning/maximum_heuristic.h \
-           learning/naive_bayes_classifier.h \
-           learning/PDB_state_space_sample.h \
-           learning/probe_state_space_sample.h \
-           learning/selective_max_heuristic.h \
-           learning/state_space_sample.h \
-           learning/state_vars_feature_extractor.h \
+# HEADERS += learning/AODE.h \
+#            learning/classifier.h \
+#            learning/composite_feature_extractor.h \
+#            learning/feature_extractor.h \
+#            learning/maximum_heuristic.h \
+#            learning/naive_bayes_classifier.h \
+#            learning/PDB_state_space_sample.h \
+#            learning/probe_state_space_sample.h \
+#            learning/selective_max_heuristic.h \
+#            learning/state_space_sample.h \
+#            learning/state_vars_feature_extractor.h \
 
 HEADERS += pdbs/canonical_pdbs_heuristic.h \
            pdbs/dominance_pruner.h \
@@ -124,8 +126,10 @@ HEADERS += policy-repair/regression.h \
            policy-repair/simulator.h \
            policy-repair/jit.h \
            policy-repair/deadend.h \
+           policy-repair/partial_state.h \
 
 SHELL = /bin/bash
+
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET  = downward
 
@@ -158,12 +162,12 @@ LINK_RELEASE_STATICALLY=0
 endif
 
 
-OBJECT_SUFFIX_RELEASE = .$(STATE_VAR_BYTES)
-TARGET_SUFFIX_RELEASE = -$(STATE_VAR_BYTES)
-OBJECT_SUFFIX_DEBUG   = .$(STATE_VAR_BYTES).debug
-TARGET_SUFFIX_DEBUG   = -$(STATE_VAR_BYTES)-debug
-OBJECT_SUFFIX_PROFILE = .$(STATE_VAR_BYTES).profile
-TARGET_SUFFIX_PROFILE = -$(STATE_VAR_BYTES)-profile
+OBJECT_SUFFIX_RELEASE = .release
+TARGET_SUFFIX_RELEASE = -release
+OBJECT_SUFFIX_DEBUG   = .debug
+TARGET_SUFFIX_DEBUG   = -debug
+OBJECT_SUFFIX_PROFILE = .profile
+TARGET_SUFFIX_PROFILE = -profile
 
 OBJECTS_RELEASE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_RELEASE).o)
 TARGET_RELEASE  = $(TARGET)$(TARGET_SUFFIX_RELEASE)
@@ -174,7 +178,6 @@ TARGET_DEBUG    = $(TARGET)$(TARGET_SUFFIX_DEBUG)
 OBJECTS_PROFILE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_PROFILE).o)
 TARGET_PROFILE  = $(TARGET)$(TARGET_SUFFIX_PROFILE)
 
-
 CC     = g++
 DEPEND = g++ -MM
 
@@ -184,8 +187,8 @@ DEPEND = g++ -MM
 
 CCOPT = -Iext
 CCOPT += -g
-#CCOPT += -m32
-CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror -DSTATE_VAR_BYTES=$(STATE_VAR_BYTES)
+CCOPT += -m32
+CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror
 
 ## The following lines contain workarounds for bugs when
 ## cross-compiling to 64 bit on 32-bit systems using gcc 4.4 or gcc
@@ -210,7 +213,7 @@ ifdef HAVE_GCC_4_6
 endif
 
 LINKOPT  = -g
-#LINKOPT += -m32
+LINKOPT += -m32
 LINKOPT +=
 
 POSTLINKOPT =
@@ -327,7 +330,7 @@ $(OBJECTS_RELEASE): .obj/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
 debug: $(TARGET_DEBUG)
 
 $(TARGET_DEBUG): $(OBJECTS_DEBUG)
-	$(CC) $(LINKOPT) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG) $(LINKOPT_DEBUG)
+	$(CC) $(LINKOPT) $(LINKOPT_DEBUG) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG)
 
 $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 	@mkdir -p $$(dirname $@)
@@ -338,7 +341,7 @@ $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 profile: $(TARGET_PROFILE)
 
 $(TARGET_PROFILE): $(OBJECTS_PROFILE)
-	$(CC) $(LINKOPT) $(OBJECTS_PROFILE) $(POSTLINKOPT) $(POSTLINKOPT_PROFILE) -o $(TARGET_PROFILE) $(LINKOPT_PROFILE)
+	$(CC) $(LINKOPT) $(LINKOPT_PROFILE) $(OBJECTS_PROFILE) $(POSTLINKOPT) $(POSTLINKOPT_PROFILE) -o $(TARGET_PROFILE)
 
 $(OBJECTS_PROFILE): .obj/%$(OBJECT_SUFFIX_PROFILE).o: %.cc
 	@mkdir -p $$(dirname $@)
@@ -372,14 +375,10 @@ Makefile.depend: $(SOURCES) $(HEADERS)
 	    cat Makefile.temp0 >> Makefile.temp; \
 	done
 	rm -f Makefile.temp0 Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.temp0
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.temp0
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.temp0
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.depend
 	rm -f Makefile.temp
-	sed -e "s@\(.*\)\.$(STATE_VAR_BYTES)\.\(.*\)@\1.1.\2@" Makefile.temp0 >> Makefile.depend
-	sed -e "s@\(.*\)\.$(STATE_VAR_BYTES)\.\(.*\)@\1.2.\2@" Makefile.temp0 >> Makefile.depend
-	sed -e "s@\(.*\)\.$(STATE_VAR_BYTES)\.\(.*\)@\1.4.\2@" Makefile.temp0 >> Makefile.depend
-	rm -f Makefile.temp0
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),distclean)

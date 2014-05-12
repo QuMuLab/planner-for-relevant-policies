@@ -4,15 +4,15 @@
 using namespace std;
 
 #include "globals.h"
+#include "operator_cost.h"
+#include "option_parser.h"
 #include "search_engine.h"
 #include "timer.h"
-#include "option_parser.h"
 #include "policy-repair/deadend.h"
 
 SearchEngine::SearchEngine(const Options &opts)
     : search_space(OperatorCost(opts.get_enum("cost_type"))),
-      cost_type(OperatorCost(opts.get_enum("cost_type"))),
-      options(&opts) {
+      cost_type(OperatorCost(opts.get_enum("cost_type"))) {
     solved = false;
     if (opts.get<int>("bound") < 0) {
         cerr << "error: negative cost bound " << opts.get<int>("bound") << endl;
@@ -28,6 +28,8 @@ void SearchEngine::reset() {
     solved = false;
     search_space.reset();
     search_progress.reset();
+    delete g_state_registry;
+    g_state_registry = new StateRegistry;
     for (int i = 0; i < g_operators.size(); i++) {
         g_operators[i].unmark();
     }
@@ -61,12 +63,15 @@ void SearchEngine::search() {
         ;
     
     if (g_record_online_deadends && !g_limit_states) {
-        if (g_generalize_deadends) {
-            for (int i = 0; i < g_found_deadends.size(); i++)
-                generalize_deadend(*(g_found_deadends[i]->de_state));
+        vector<PartialState *> failed_states;
+        for (int i = 0; i < g_found_deadends.size(); i++) {
+            PartialState * fs = new PartialState(*(g_found_deadends[i]));
+            if (g_generalize_deadends)
+                generalize_deadend(*fs);
+            failed_states.push_back(fs);
         }
-//cout << "Number of online deadends: " << g_found_deadends.size() << endl;
-        update_deadends(g_found_deadends);
+        //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
+        update_deadends(failed_states);
     }
     if (search_progress.get_generated() > 2) {
         cout << "Generated " << search_progress.get_generated() << " state(s)." << endl;
@@ -99,15 +104,9 @@ int SearchEngine::get_adjusted_cost(const Operator &op) const {
 }
 
 void SearchEngine::add_options_to_parser(OptionParser &parser) {
-    vector<string> cost_types;
-    cost_types.push_back("NORMAL");
-    cost_types.push_back("ONE");
-    cost_types.push_back("PLUSONE");
-    parser.add_enum_option("cost_type",
-                           cost_types,
-                           "NORMAL",
-                           "operator cost adjustment type");
-    parser.add_option<int>("bound",
-                           numeric_limits<int>::max(),
-                           "exclusive bound on plan cost");
+    ::add_cost_type_option_to_parser(parser);
+    parser.add_option<int>(
+        "bound",
+        "exclusive depth bound on g-values. Cutoffs are always performed according to "
+        "the real cost, regardless of the cost_type parameter", "infinity");
 }

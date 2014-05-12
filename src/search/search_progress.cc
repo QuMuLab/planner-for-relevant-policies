@@ -1,4 +1,5 @@
 #include "search_progress.h"
+#include "utilities.h"
 
 #include <iostream>
 using namespace std;
@@ -102,6 +103,7 @@ void SearchProgress::print_line() const {
         cout << reopened_states << " reopened, ";
     }
     cout << "t=" << g_timer;
+    cout << ", " << get_peak_memory_in_kb() << " KB";
 }
 
 void SearchProgress::print_statistics() const {

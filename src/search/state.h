@@ -1,48 +1,53 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include "int_packer.h"
+#include "state_id.h"
+
 #include <iostream>
 #include <vector>
-using namespace std;
 
 class Operator;
+class StateRegistry;
 
-#include "state_var_t.h"
+typedef IntPacker::Bin PackedStateBin;
 
+// For documentation on classes relevant to storing and working with registered
+// states see the file state_registry.h.
 class State {
-    state_var_t *vars; // values for vars
-    bool borrowed_buffer;
-    void _allocate();
-    void _deallocate();
-    void _copy_buffer_from_state(const State &state);
+    friend class StateRegistry;
+    template <class Entry>
+    friend class PerStateInformation;
+    // Values for vars are maintained in a packed state and accessed on demand.
+    const PackedStateBin *buffer;
+    // registry isn't a reference because we want to support operator=
+    const StateRegistry *registry;
+    StateID id;
+    // Only used by the state registry.
+    State(const PackedStateBin *buffer_, const StateRegistry &registry_,
+          StateID id_);
 
+    const PackedStateBin *get_packed_buffer() const {
+        return buffer;
+    }
+
+    const StateRegistry &get_registry() const {
+        return *registry;
+    }
+
+    // No implementation to prevent default construction
+    State();
 public:
-    explicit State(istream &in);
-    State(); // Creates a state with -1 values for everything
-    State(const State &state);
-    State(const State &predecessor, const Operator &op, bool progress=true, State *context=NULL);
     ~State();
-    State &operator=(const State &other);
-    state_var_t &operator[](int index) {
-        return vars[index];
+
+    StateID get_id() const {
+        return id;
     }
-    int operator[](int index) const {
-        return vars[index];
-    }
+
+    int operator[](int index) const;
+
     void dump_pddl() const;
     void dump_fdr() const;
-    bool operator==(const State &other) const;
-    bool operator<(const State &other) const;
-    size_t hash() const;
-
-
-    explicit State(state_var_t *buffer) {
-        vars = buffer;
-        borrowed_buffer = true;
-    }
-    const state_var_t *get_buffer() const {
-        return vars;
-    }
 };
 
 #endif
