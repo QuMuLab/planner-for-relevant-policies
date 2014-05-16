@@ -260,6 +260,8 @@ void generate_regressable_ops() {
     }
     g_regressable_ops = new Policy();
     g_regressable_ops->update_policy(reg_steps);
+    g_regressable_cond_ops = new Policy();
+    g_regressable_cond_ops->update_policy(cond_reg_steps);
 }
 
 void RegressionStep::strengthen(PartialState *s) {
