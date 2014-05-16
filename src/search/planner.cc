@@ -169,7 +169,7 @@ int main(int argc, const char **argv) {
     
     if (g_optimized_scd) {
         cout << "\n\nRunning a final SCD check..." << endl;
-        vector< PartialState * > failed_states; // The failed states (used for creating deadends)
+        vector< DeadendTuple * > failed_states; // The failed states (used for creating deadends)
         g_policy->init_scd();
         bool made_change = true; // This becomes false again eventually
         while (made_change)

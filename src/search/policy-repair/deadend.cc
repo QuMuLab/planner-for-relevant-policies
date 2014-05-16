@@ -74,13 +74,13 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
             RegressableOperator *ro = (RegressableOperator*)(reg_items[j]);
             
             de_items.push_back(new NondetDeadend(new PartialState(*failed_state, *(ro->op), false, dummy_state),
-                                                     ro->op->get_nondet_name()));
+                                                     ro->op->nondet_index));
 
             //cout << "Creating new forbidden state-action pair:" << endl;
             //de_items.back()->dump();
 
             de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
-                                                     ro->op->get_nondet_name()));
+                                                     ro->op->nondet_index));
         }
         
         ////////////////////////////////////////////
@@ -96,13 +96,13 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
             
             de_items.push_back(new NondetDeadend(
                                     new PartialState(*failed_state, *(ro->op), false, ro->op->all_fire_context),
-                                    ro->op->get_nondet_name()));
+                                    ro->op->nondet_index));
 
             //cout << "Creating new (all-fire) forbidden state-action pair:" << endl;
             //de_items.back()->dump();
 
             de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
-                                                     ro->op->get_nondet_name()));
+                                                     ro->op->nondet_index));
         }
         
         ////////////////////////////////////////////
@@ -112,13 +112,13 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
         if (NULL != failed_state_prev) {
             de_items.push_back(new NondetDeadend(
                     new PartialState(*failed_state, *prev_op, false, failed_state_prev),
-                    prev_op->get_nondet_name()));
+                    prev_op->nondet_index));
             
             //cout << "Creating new (default) forbidden state-action pair:" << endl;
             //de_items.back()->dump();
             
             de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
-                                                  prev_op->get_nondet_name()));
+                                                  prev_op->nondet_index));
             
         }
     }
@@ -143,7 +143,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &_curr,
         
         set<int> forbidden;
         for (int i = 0; i < reg_items.size(); i++)
-            forbidden.insert(g_nondet_index_mapping[((NondetDeadend*)(reg_items[i]))->op_name]);
+            forbidden.insert(((NondetDeadend*)(reg_items[i]))->op_index);
         
         for (int i = 0; i < orig_ops.size(); i++) {
             if (0 == forbidden.count(orig_ops[i]->nondet_index)) {

@@ -76,7 +76,7 @@ int FFHeuristic::compute_heuristic(const State &state) {
             // HAZ: For now, we forget about trying to record the context
             //      for the deadend. This means that we may not have any
             //      forbidden state-action pairs created.
-            g_found_deadends.push_back(new DeadendTuple(new State(state), NULL, NULL));
+            g_found_deadends.push_back(new DeadendTuple(new PartialState(state), NULL, NULL));
         }
         return h_add;
     }

@@ -22,7 +22,7 @@ public:
     PartialState(); // Creates a state with -1 values for everything
     PartialState(const State &state);
     PartialState(const PartialState &state);
-    PartialState(const PartialState &predecessor, const Operator &op, bool progress=true);
+    PartialState(const PartialState &predecessor, const Operator &op, bool progress=true, PartialState *context=NULL);
     ~PartialState();
     PartialState &operator=(const PartialState &other);
     int &operator[](int index) {
