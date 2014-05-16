@@ -75,18 +75,18 @@ Operator::Operator(istream &in, bool axiom) {
      
     // Deal with the all-fire context (essentially every conditional head
     //  and precondition rolled into one state)
-    all_fire_context = new State();
+    all_fire_context = new PartialState();
     
     for (int i = 0; i < pre_post.size(); i++) {
-        (*all_fire_context)[pre_post[i].var] = state_var_t(pre_post[i].pre);
+        (*all_fire_context)[pre_post[i].var] = pre_post[i].pre;
         
         for (int j = 0; j < pre_post[i].cond.size(); j++) {
-            (*all_fire_context)[pre_post[i].cond[j].var] = state_var_t(pre_post[i].cond[j].prev);
+            (*all_fire_context)[pre_post[i].cond[j].var] = pre_post[i].cond[j].prev;
         }
     }
     
     for (int i = 0; i < prevail.size(); i++)
-        (*all_fire_context)[prevail[i].var] = state_var_t(prevail[i].prev);
+        (*all_fire_context)[prevail[i].var] = prevail[i].prev;
     
     
 }

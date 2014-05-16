@@ -382,15 +382,15 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
     //  new action for deadends. This allows us to stop expanding earlier
     //  with the scd algorithm below.
     if (detect_deadends) {
-        vector<PartialState *> new_deadends;
+        vector<DeadendTuple *> new_deadends;
         for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
             RegressionStep * rs = (RegressionStep *)(*op_iter);
             if (!(rs->is_goal)) {
-                for (int i = 0; i < g_nondet_mapping[rs->op->get_nondet_name()].size(); i++) {
-                    PartialState *succ_state = new PartialState(*(rs->state), *(g_nondet_mapping[rs->op->get_nondet_name()][i]));
+                for (int i = 0; i < g_nondet_mapping[rs->op->nondet_index]->size(); i++) {
+                    PartialState *succ_state = new PartialState(*(rs->state), *((*(g_nondet_mapping[rs->op->nondet_index]))[i]));
                     if (is_deadend(*succ_state)) {
                         generalize_deadend(*succ_state);
-                        new_deadends.push_back(succ_state);
+                        new_deadends.push_back(new DeadendTuple(succ_state, new PartialState(*(rs->state)), (*(g_nondet_mapping[rs->op->nondet_index]))[i]));
                     }
                 }
             }
@@ -434,7 +434,7 @@ RegressionStep *Policy::get_best_step(const PartialState &curr) {
     if (!complete)
         g_deadend_policy->generate_applicable_items(curr, forbidden_items);
     for (int i = 0; i < forbidden_items.size(); i++)
-        forbidden.insert(g_nondet_index_mapping[((NondetDeadend*)(forbidden_items[i]))->op_name]);
+        forbidden.insert(((NondetDeadend*)(forbidden_items[i]))->op_index);
     
     int best_index = -1;
     int best_val = 999999; // This will only be invalid if a plan length was > 10^6
@@ -600,7 +600,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
                 rs->dump();
             }
             
-            for (int i = 0; i < g_nondet_mapping[rs->op->nondet_index].size(); i++) {
+            for (int i = 0; i < g_nondet_mapping[rs->op->nondet_index]->size(); i++) {
                 // We use the sc_state for computing the guaranteed items, rather than
                 //  the original state for the regression step. The sc_state will be a
                 //  superset of the original state that includes the regression of newly
@@ -613,7 +613,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
                 root->generate_applicable_items(*succ_state, guaranteed_steps, false);
                 
                 if (debug_scd) {
-                    cout << "\nTesting successor (" << (i+1) << "/" << g_nondet_mapping[rs->op->get_nondet_name()].size() << "):" << endl;
+                    cout << "\nTesting successor (" << (i+1) << "/" << g_nondet_mapping[rs->op->nondet_index]->size() << "):" << endl;
                     succ_state->dump_pddl();
                 }
                 
@@ -715,7 +715,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
                     //cout << "Min sc cost = " << min_sc_cost << endl;
                     rs->is_sc = false;
                     made_change = true;
-                    i = g_nondet_mapping[rs->op->get_nondet_name()].size();
+                    i = g_nondet_mapping[rs->op->nondet_index]->size();
                     
                 } else {
                     

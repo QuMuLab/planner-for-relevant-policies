@@ -24,14 +24,21 @@ string RegressionStep::get_name() {
 
 void NondetDeadend::dump() const {
     cout << "Non-deterministic deadend:" << endl;
-    cout << "Operator: " << op_name << endl;
+    cout << "Operator: " << op_index << endl;
     cout << " -{ State }-" << endl;
     state->dump_fdr();
     cout << "" << endl;
 }
 
 string NondetDeadend::get_name() {
-    return op_name;
+    //return op_name;
+    string *toRet = new string("Nondet index: ");
+    *toRet += op_index;
+    return *toRet;
+}
+
+int NondetDeadend::get_index() {
+    return op_index;
 }
 
 
@@ -143,15 +150,15 @@ void generate_regressable_ops() {
         
         // First, consider operators that lack conditional effects
         if (0 == g_nondet_conditional_mask[g_operators[i].nondet_index]->size()) {
-            s = new State();
+            s = new PartialState();
             
             // Only applicable if the prevail and post conditions currently hold.
             for (int j = 0; j < g_operators[i].get_pre_post().size(); j++) {
-                (*s)[g_operators[i].get_pre_post()[j].var] = state_var_t(g_operators[i].get_pre_post()[j].post);
+                (*s)[g_operators[i].get_pre_post()[j].var] = int(g_operators[i].get_pre_post()[j].post);
             }
             
             for (int j = 0; j < g_operators[i].get_prevail().size(); j++) {
-                (*s)[g_operators[i].get_prevail()[j].var] = state_var_t(g_operators[i].get_prevail()[j].prev);
+                (*s)[g_operators[i].get_prevail()[j].var] = int(g_operators[i].get_prevail()[j].prev);
             }
             
             reg_steps.push_back(new RegressableOperator(g_operators[i], s));
@@ -267,7 +274,7 @@ void RegressionStep::strengthen(PartialState *s) {
     for (int i = 0; i < reg_items.size(); i++) {
         
         // If this holds, then we may trigger the forbidden pair
-        if (((NondetDeadend*)(reg_items[i]))->op_name == op->get_nondet_name()) {
+        if (((NondetDeadend*)(reg_items[i]))->op_index == op->nondet_index) {
             
             for (int j = 0; j < g_variable_name.size(); j++) {
                 

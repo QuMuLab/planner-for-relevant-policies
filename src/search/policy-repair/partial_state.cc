@@ -51,7 +51,7 @@ PartialState::PartialState(const PartialState &state) {
     _copy_buffer_from_state(state);
 }
 
-PartialState::PartialState(const PartialState &predecessor, const Operator &op, bool progress) {
+PartialState::PartialState(const PartialState &predecessor, const Operator &op, bool progress, PartialState *context) {
     assert(!op.is_axiom());
     _allocate();
     _copy_buffer_from_state(predecessor);
@@ -70,13 +70,24 @@ PartialState::PartialState(const PartialState &predecessor, const Operator &op, 
         }
         
     } else {
-        // Make sure there are no conditional effects
-        assert(!op.has_conditional_effect());
         
-        // Get all of the pre/post conditions (note: pre may be -1 here)
+        assert(NULL != context);
+        
+        // Get all of the pre/post conditions that fire (note: pre may be -1 here)
         for (int i = 0; i < op.get_pre_post().size(); i++) {
-            if (!g_fullstate || (int(op.get_pre_post()[i].pre) != -1))
-                vars[op.get_pre_post()[i].var] = int(op.get_pre_post()[i].pre);
+            if (op.get_pre_post()[i].does_fire(*context)) {
+                assert((predecessor[op.get_pre_post()[i].var] == -1) ||
+                       (predecessor[op.get_pre_post()[i].var] == (op.get_pre_post()[i].post)));
+                if (!g_fullstate || (op.get_pre_post()[i].pre != -1)) {
+                    vars[op.get_pre_post()[i].var] = op.get_pre_post()[i].pre;
+                }
+            }
+        }
+        
+        // Assign the values from the context that are mentioned in conditions
+        for (int i = 0; i < g_nondet_conditional_mask[op.nondet_index]->size(); i++) {
+            int var = (*(g_nondet_conditional_mask[op.nondet_index]))[i];
+            vars[var] = (*context)[var];
         }
         
         // Get all of the prevail conditions

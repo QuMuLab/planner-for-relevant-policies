@@ -15,6 +15,7 @@ class LegacyCausalGraph;
 class Operator;
 class RandomNumberGenerator;
 class State;
+class PartialState;
 class Heuristic;
 class SuccessorGenerator;
 class Timer;
@@ -44,11 +45,11 @@ void check_magic(std::istream &in, std::string magic);
 bool are_mutex(const std::pair<int, int> &a, const std::pair<int, int> &b);
 
 struct DeadendTuple {
-    State *de_state;
-    State *prev_state;
+    PartialState *de_state;
+    PartialState *prev_state;
     const Operator *prev_op;
 
-    DeadendTuple(State *ds, State *ps, const Operator *op) : de_state(ds), prev_state(ps), prev_op(op) {}
+    DeadendTuple(PartialState *ds, PartialState *ps, const Operator *op) : de_state(ds), prev_state(ps), prev_op(op) {}
     ~DeadendTuple();
 };
 
