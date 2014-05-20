@@ -27,14 +27,32 @@
     (mission-ended)
   )
   
-  (:action goto
+  (:action goto-base
     :parameters (?old_loc ?new_loc - zone)
     :precondition (and
                     (not (on-ground))
                     (not (at ?new_loc))
                     (at ?old_loc)
-                    (imply (not (= ?new_loc base))
-                           (human-alive))
+                    (= ?new_loc base)
+                  )
+    :effect (and
+    
+                (at ?new_loc)
+                (not (at ?old_loc))
+                
+                (when (and (human-onboard) (human-alive))
+                      (oneof (and) (not (human-alive))))
+	        )
+  )
+  
+  (:action goto-nonbase
+    :parameters (?old_loc ?new_loc - zone)
+    :precondition (and
+                    (not (on-ground))
+                    (not (at ?new_loc))
+                    (at ?old_loc)
+                    (not (= ?new_loc base))
+                    (human-alive)
                   )
     :effect (and
     
@@ -67,15 +85,14 @@
             )
   )
   
-  (:action land
+  (:action land-base
   
     :parameters (?loc - zone)
     
     :precondition (and
                     (at ?loc)
                     (not (on-ground))
-                    (imply (not (= ?loc base))
-                           (and (human-alive) (landable ?loc)))
+                    (= ?loc base)
                   )
     
     :effect (and
@@ -97,28 +114,70 @@
             )
   )
   
-  (:action takeoff
+  (:action land-nonbase
+  
+    :parameters (?loc - zone)
+    
+    :precondition (and
+                    (at ?loc)
+                    (not (on-ground))
+                    (not (= ?loc base))
+                    (human-alive)
+                    (landable ?loc)
+                  )
+    
+    :effect (and
+                
+                (on-ground)
+                
+                (when (not (= ?loc base))
+                    (not (landable ?loc)))
+                
+                (when (human-alive)
+                    (and
+                        (when (and (human-onboard) (= ?loc base))
+                              (human-rescued))
+                            
+                        (when (and (not (human-onboard)) (not (= ?loc base)))
+                              (oneof (not (human-alive)) (human-onboard)))
+                    )
+                )
+            )
+  )
+  
+  (:action takeoff-base
     :parameters (?loc - zone)
     :precondition (and
       (on-ground)
       (at ?loc)
-      (imply (= ?loc base)
-        (and
-	  (human-alive)
+      (= ?loc base)
+      (human-alive)
 	  (not (human-rescued))
-	)
-      )
     )
     :effect (not (on-ground))
   )
   
-  (:action end-mission
+  (:action takeoff-nonbase
+    :parameters (?loc - zone)
+    :precondition (and
+      (on-ground)
+      (at ?loc)
+      (not (= ?loc base))
+    )
+    :effect (not (on-ground))
+  )
+  
+  (:action end-mission-alive
     :precondition (and
         (at base)
-	(or
-	  (human-rescued)
-	  (not (human-alive))
-	)
+	    (human-rescued)
+      )
+    :effect (mission-ended)
+  )
+  (:action end-mission-dead
+    :precondition (and
+        (at base)
+	    (not (human-alive))
       )
     :effect (mission-ended)
   )
