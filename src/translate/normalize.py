@@ -216,6 +216,15 @@ def split_disjunctions(task):
     for proxy in tuple(all_conditions(task)):
         # Cannot use generator directly because we add/delete entries.
         if isinstance(proxy.condition, pddl.Disjunction):
+            
+            ######################################################
+            # HAZ: This is disabled for actions as it can lead
+            #      to odd effects in the translated domain.
+            assert False, "\n\nAction: %s\nError: " % proxy.owner.name + \
+                "You must avoid disjunctive actions until " + \
+                "the following issue is resolved:\n\n" + \
+                "          https://bitbucket.org/haz/planner-for-relevant-policies/issue/3\n"
+            
             for part in proxy.condition.parts:
                 new_proxy = proxy.clone_owner()
                 new_proxy.set(part)

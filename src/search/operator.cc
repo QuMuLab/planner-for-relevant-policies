@@ -107,7 +107,7 @@ void PrePost::dump() const {
 }
 
 void Operator::dump() const {
-    cout << name << "(" << nondet_name << "):";
+    cout << name << " (" << nondet_name << "):";
     for (int i = 0; i < prevail.size(); i++) {
         cout << " [";
         prevail[i].dump();

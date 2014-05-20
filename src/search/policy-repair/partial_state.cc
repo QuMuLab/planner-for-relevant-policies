@@ -11,13 +11,11 @@
 using namespace std;
 
 void PartialState::_allocate() {
-    borrowed_buffer = false;
     vars = new int[g_variable_domain.size()];
 }
 
 void PartialState::_deallocate() {
-    if (!borrowed_buffer)
-        delete[] vars;
+    delete[] vars;
 }
 
 void PartialState::_copy_buffer_from_state(const PartialState &state) {
@@ -27,8 +25,7 @@ void PartialState::_copy_buffer_from_state(const PartialState &state) {
 
 PartialState & PartialState::operator=(const PartialState &other) {
     if (this != &other) {
-        if (borrowed_buffer)
-            _allocate();
+        _allocate();
         _copy_buffer_from_state(other);
     }
     return *this;
