@@ -61,6 +61,9 @@ bool perform_jit_repairs(Simulator *sim) {
     created_states.push_back(current_state);
     created_states.push_back(current_goal);
     
+    if (debug_jic)
+        cout << "\n\nStarting another JIC round." << endl;
+    
     while (!open_list.empty() && (g_timer_jit() < g_jic_limit)) {
         num_checked_states++;
         current_state = open_list.top().full_state;
@@ -163,6 +166,7 @@ bool perform_jit_repairs(Simulator *sim) {
                     for (int i = 0; i < g_nondet_mapping[regstep->op->nondet_index]->size(); i++) {
                         PartialState *new_state = new PartialState(*current_state, *((*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
                         created_states.push_back(new_state);
+                        
                         if (0 == seen.count(*new_state)) {
                             open_list.push(SCNode(new_state, expected_state, current_state, regstep, (*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
                             if (debug_jic) {

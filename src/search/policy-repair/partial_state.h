@@ -13,7 +13,6 @@ class State;
 
 class PartialState {
     int *vars; // values for vars
-    bool borrowed_buffer;
     void _allocate();
     void _deallocate();
     void _copy_buffer_from_state(const PartialState &state);
@@ -37,14 +36,6 @@ public:
     bool operator<(const PartialState &other) const;
     size_t hash() const;
 
-
-    explicit PartialState(int *buffer) {
-        vars = buffer;
-        borrowed_buffer = true;
-    }
-    const int *get_buffer() const {
-        return vars;
-    }
 };
 
 #endif
