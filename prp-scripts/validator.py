@@ -39,13 +39,17 @@ class State:
 
 
 class VALAction:
-    def __init__(self, prec, eff, name):
+    def __init__(self, prec, effs, name, mapping):
         self.name = name
         self.ppres = set(filter(lambda x: x > 0, prec))
         self.npres = set([-1 * i for i in filter(lambda x: x < 0, prec)])
-        self.adds = set(filter(lambda x: x > 0, eff))
-        self.dels = set([-1 * i for i in filter(lambda x: x < 0, eff)])
-        self.eff = eff
+        self.effs = effs
+        self.mapping = mapping
+    
+    def __str__(self):
+        return "+Pre = %s / -Pre = %s / Effs = %s" % (str([self.mapping[fl] for fl in self.ppres]), \
+                                                      str([self.mapping[fl] for fl in self.npres]), \
+                                                      str(["(%s --> %s)" % (','.join([self.mapping[fl] for fl in c]), self.mapping[e]) for (c,e) in self.effs]))
 
 
 def validate(dfile, pfile, sol, val):
@@ -58,21 +62,21 @@ def validate(dfile, pfile, sol, val):
     unfluents = {}
     index = 1
     for f in problem.fluents:
-        fluents[str(f)] = index
-        fluents["not(%s)" % str(f)] = -1 * index
-        unfluents[index] = str(f)
-        unfluents[-1 * index] = "not(%s)" % str(f)
+        fluents[str(f).lower()] = index
+        fluents["not(%s)" % str(f).lower()] = -1 * index
+        unfluents[index] = str(f).lower()
+        unfluents[-1 * index] = "not(%s)" % str(f).lower()
         index += 1
 
     actions = {}
     for op in problem.operators:
         if '_' == op.name[-1]:
-            op_name = op.name[:-1]
+            op_name = op.name[:-1].lower()
         else:
-            op_name = op.name
+            op_name = op.name.lower()
 
         actions[op_name] = [VALAction(_convert_conjunction(fluents, op.precondition),
-                                      _convert_conjunction(fluents, eff), op_name)
+                                      _convert_cond_effect(fluents, eff), op_name, unfluents)
                             for eff in flatten(op)]
 
         #print "\n%s\n%s" % (op.name, '\n'.join(map(str, actions[op.name])))
@@ -86,7 +90,7 @@ def validate(dfile, pfile, sol, val):
     nodes = {init_state: 1, goal_state: 2}
     node_index = 3
 
-    G = nx.DiGraph()
+    G = nx.MultiDiGraph()
     G.add_node(1, label="I")
     G.add_node(2, label="G")
 
@@ -144,7 +148,7 @@ def validate(dfile, pfile, sol, val):
             i = 0
             for outcome in actions[a]:
                 i += 1
-                f.write("%d: %s\n" % (i, str([unfluents[fl] for fl in outcome.eff])))
+                f.write("%d: %s\n" % (i, " / ".join(["%s -> %s" % (map(str, [unfluents[fl] for fl in c]), unfluents[e]) for (c,e) in outcome.effs])))
 
     if len(unhandled) > 0:
         with open('unhandled.states', 'w') as f:
@@ -159,12 +163,29 @@ def validate(dfile, pfile, sol, val):
     print
 
 
+def _convert_cond_effect(mapping, eff):
+    if isinstance(eff, And):
+        return [_create_cond(mapping, f) for f in filter(lambda x: '=' not in str(x), eff.args)]
+    elif isinstance(eff, Primitive) or (isinstance(eff, Not) and isinstance(eff.args[0], Primitive)):
+        return [_create_cond(mapping, eff)]
+    elif isinstance(eff, When):
+        return [_create_cond(mapping, eff)]
+    else:
+        assert False, "Error: Tried converting a non-standard effect: %s" % str(eff)
+
+def _create_cond(mapping, eff):
+    if isinstance(eff, Primitive) or (isinstance(eff, Not) and isinstance(eff.args[0], Primitive)):
+        return (set(), mapping[str(eff).lower()])
+    elif isinstance(eff, When):
+        return (set(_convert_conjunction(mapping, eff.condition)), mapping[str(eff.result).lower()])
+    else:
+        assert False, "Error: Tried converting a non-standard single effect: %s" % str(eff)
 
 def _convert_conjunction(mapping, conj):
     if isinstance(conj, And):
-        return [mapping[str(f)] for f in filter(lambda x: '=' not in str(x), conj.args)]
-    elif isinstance(conj, Primitive):
-        return [mapping[str(conj)]]
+        return [mapping[str(f).lower()] for f in filter(lambda x: '=' not in str(x), conj.args)]
+    elif isinstance(conj, Primitive) or (isinstance(conj, Not) and isinstance(conj.args[0], Primitive)):
+        return [mapping[str(conj).lower()]]
     else:
         assert False, "Error: Tried converting a non-standard conjunction: %s" % str(conj)
 
@@ -175,7 +196,23 @@ def progress(s, o, m):
     assert o.ppres <= s.fluents and 0 == len(o.npres & s.fluents), \
         "Failed to progress %s:\nPrecondition: %s\nState:\n%s" % \
         (o.name, str(o.pres), _state_string(m, s))
-    return State(((s.fluents - o.dels) | o.adds))
+    
+    adds = set()
+    dels = set()
+    for eff in o.effs:
+        negeff = set(filter(lambda x: x < 0, eff[0]))
+        poseff = eff[0] - negeff
+        negeff = set(map(lambda x: x * -1, negeff))
+        if (poseff <= s.fluents) and 0 == len(negeff & s.fluents):
+            if eff[1] < 0:
+                dels.add(eff[1] * -1)
+            else:
+                adds.add(eff[1])
+    
+    if 0 != len(adds & dels):
+        print "Warning: Conflicting adds and deletes on action %s" % str(o)
+    
+    return State(((s.fluents - dels) | adds))
 
 
 if __name__ == '__main__':
