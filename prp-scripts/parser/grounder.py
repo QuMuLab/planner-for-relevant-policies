@@ -1,6 +1,6 @@
 from parser import Problem
 from action import Action
-from formula import Primitive, Forall, When
+from formula import Primitive, Forall, When, And
 from predicate import Predicate
 import itertools
 
@@ -208,13 +208,14 @@ class GroundProblem(Problem):
     def _get_unassigned_vars(self, formula, assigned):
         """Augment the dictionary in assigned with unassigned vars"""
 
-        if isinstance(formula, Forall):
-            try:
-                for v, t in formula.params:
-                    assigned[(v, hash(formula))] = self.type_to_obj[t]
-            except KeyError as e:
-                raise KeyError("Cannot get unassigned vars list due to bad parsing of forall object: %s" % str(formula))
-        elif isinstance(formula, Primitive):
+        #if isinstance(formula, Forall):
+        #    try:
+        #        for v, t in formula.params:
+        #            assigned[(v, hash(formula))] = self.type_to_obj[t]
+        #    except KeyError as e:
+        #        raise KeyError("Cannot get unassigned vars list due to bad parsing of forall object: %s" % str(formula))
+        #elif isinstance(formula, Primitive):
+        if isinstance(formula, Primitive):
             for v, t in formula.predicate.args:
                 if v.startswith("?") and v not in assigned:
                     raise KeyError("Found unbound variable %s in predicate %s" % v, str(formula.predicate))
@@ -232,10 +233,10 @@ class GroundProblem(Problem):
         """
 
         d = self._create_param_dict(params)
-
-        if action is not None and action.effect is not None:
+        
+        #if action is not None and action.effect is not None:
             # query the effect for any forall conditionals
-            self._get_unassigned_vars(action.effect, d)
+            #self._get_unassigned_vars(action.effect, d)
 
         param_names = list(d.keys())
         possible_values = [d[name] for name in param_names]
@@ -287,16 +288,16 @@ class GroundProblem(Problem):
         if isinstance(formula, Primitive):
             return Primitive(self._predicate_to_fluent(formula.predicate, assignment, fluent_dict))
         elif isinstance(formula, Forall):
-            for v, t in formula.params:
-                if(v, hash(formula)) in assignment:
-                    assignment[v] = assignment[(v, hash(formula))]
-
-            return Forall(formula.params,
-                          [self._partial_ground_formula(arg, assignment, fluent_dict) for arg in formula.args])
-
-            for v, t in formula.params:
-                if v in assignment:
-                    del(assignment[v])
+            
+            new_conjuncts = []
+            var_names, val_generator = self._create_valuations(formula.params)
+            for valuation in val_generator:
+                new_assignment = {var_name: val for var_name, val in zip(var_names, valuation)}
+                for k in assignment:
+                    new_assignment[k] = assignment[k]
+                new_conjuncts.append(self._partial_ground_formula(formula.args[0], new_assignment, fluent_dict))
+            return And(new_conjuncts)
+            
         elif isinstance(formula, When):
             return When(self._partial_ground_formula(formula.condition, assignment, fluent_dict),
                         self._partial_ground_formula(formula.result, assignment, fluent_dict))
@@ -328,6 +329,7 @@ class GroundProblem(Problem):
         self.operators = set([])
 
         for a in self.actions:
+            
             var_names, val_generator = self._create_valuations(a.parameters, a)
 
             for valuation in val_generator:

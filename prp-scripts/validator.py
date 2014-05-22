@@ -47,9 +47,10 @@ class VALAction:
         self.mapping = mapping
     
     def __str__(self):
-        return "+Pre = %s / -Pre = %s / Effs = %s" % (str([self.mapping[fl] for fl in self.ppres]), \
-                                                      str([self.mapping[fl] for fl in self.npres]), \
-                                                      str(["(%s --> %s)" % (','.join([self.mapping[fl] for fl in c]), self.mapping[e]) for (c,e) in self.effs]))
+        return "%s: +Pre = %s / -Pre = %s / Effs = %s" % (self.name, \
+                        str([self.mapping[fl] for fl in self.ppres]), \
+                        str([self.mapping[fl] for fl in self.npres]), \
+                        str(["(%s --> %s)" % (','.join([self.mapping[fl] for fl in c]), ','.join([self.mapping[fl] for fl in e])) for (c,e) in self.effs]))
 
 
 def validate(dfile, pfile, sol, val):
@@ -57,7 +58,7 @@ def validate(dfile, pfile, sol, val):
     print "\nParsing the problem..."
 
     problem = grounder.GroundProblem(dfile, pfile)
-
+    
     fluents = {}
     unfluents = {}
     index = 1
@@ -105,7 +106,7 @@ def validate(dfile, pfile, sol, val):
         u = open_list.pop(0)
         assert nodes[u] in G
 
-        #print "\nHandling state:"
+        #print "\n--------\nHandling state:"
         #print _state_string(unfluents, u)
 
         a = val.next_action(u)
@@ -118,6 +119,8 @@ def validate(dfile, pfile, sol, val):
             for outcome in actions[a]:
 
                 v = progress(u, outcome, unfluents)
+                #print "\nNew state:"
+                #print _state_string(unfluents, v)
                 i += 1
 
                 if v.is_goal(goal_fluents):
@@ -148,7 +151,7 @@ def validate(dfile, pfile, sol, val):
             i = 0
             for outcome in actions[a]:
                 i += 1
-                f.write("%d: %s\n" % (i, " / ".join(["%s -> %s" % (map(str, [unfluents[fl] for fl in c]), unfluents[e]) for (c,e) in outcome.effs])))
+                f.write("%d: %s\n" % (i, " / ".join(["%s -> %s" % (map(str, [unfluents[fl] for fl in c]), map(str, [unfluents[fl] for fl in e])) for (c,e) in outcome.effs])))
 
     if len(unhandled) > 0:
         with open('unhandled.states', 'w') as f:
@@ -175,9 +178,9 @@ def _convert_cond_effect(mapping, eff):
 
 def _create_cond(mapping, eff):
     if isinstance(eff, Primitive) or (isinstance(eff, Not) and isinstance(eff.args[0], Primitive)):
-        return (set(), mapping[str(eff).lower()])
+        return (set(), set([mapping[str(eff).lower()]]))
     elif isinstance(eff, When):
-        return (set(_convert_conjunction(mapping, eff.condition)), mapping[str(eff.result).lower()])
+        return (set(_convert_conjunction(mapping, eff.condition)), set(_convert_conjunction(mapping, eff.result)))
     else:
         assert False, "Error: Tried converting a non-standard single effect: %s" % str(eff)
 
@@ -197,6 +200,9 @@ def progress(s, o, m):
         "Failed to progress %s:\nPrecondition: %s\nState:\n%s" % \
         (o.name, str(o.pres), _state_string(m, s))
     
+    #print "\nProgressing the following operator:"
+    #print (o)
+    
     adds = set()
     dels = set()
     for eff in o.effs:
@@ -204,10 +210,11 @@ def progress(s, o, m):
         poseff = eff[0] - negeff
         negeff = set(map(lambda x: x * -1, negeff))
         if (poseff <= s.fluents) and 0 == len(negeff & s.fluents):
-            if eff[1] < 0:
-                dels.add(eff[1] * -1)
-            else:
-                adds.add(eff[1])
+            for reff in eff[1]:
+                if reff < 0:
+                    dels.add(reff * -1)
+                else:
+                    adds.add(reff)
     
     if 0 != len(adds & dels):
         print "Warning: Conflicting adds and deletes on action %s" % str(o)
