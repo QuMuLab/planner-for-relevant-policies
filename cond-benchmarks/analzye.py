@@ -4,16 +4,23 @@ from krrt.utils import read_file, get_opts
 good_domains = ['search-and-rescue', 'triangle-tireworld', 'miconic-simpleadl', 'schedule']
 dom_names = ['search', 'tireworld', 'miconic', 'schedule']
 
+title_lookup = {
+  'search-and-rescue': 'Search and Rescue',
+  'miconic-simpleadl': 'Buggy Miconic',
+  'schedule': 'Sloppy Schedule',
+  'triangle-tireworld': 'Tedious Tireworld'
+}
+
 def get_figsize(fig_width_pt):
     import math
     inches_per_pt = 1.0/72.0                # Convert pt to inch
     golden_mean = (math.sqrt(5)-1.0)/2.0    # Aesthetic ratio
     fig_width = fig_width_pt*inches_per_pt  # width in inches
     fig_height = fig_width*golden_mean     # height in inches
-    fig_size =  [fig_width,fig_height*1.7]      # exact figsize
+    fig_size =  [fig_width,fig_height]      # exact figsize
     return fig_size
 
-def individual_plot(xs, data, logplot):
+def individual_plot(xs, data, logplot, title):
     
     # Copied / modified from krrt
     import pylab
@@ -38,16 +45,10 @@ def individual_plot(xs, data, logplot):
     
     handle = ax1.plot(xs, data, c='b', ls='-')
     
+    ax1.set_title(title)
+    
     if logplot:
         ax1.set_yscale('log')
-    
-    
-    #ax1.xaxis.set_major_formatter( pylab.NullFormatter() )
-    #ax2.xaxis.set_major_formatter( pylab.NullFormatter() )
-    
-    #f.subplots_adjust(hspace=0,left=0.2,top=0.95,right=0.96)
-    #pylab.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
-    
     
     pylab.show()
 
@@ -61,18 +62,22 @@ if '-csv' in get_opts()[0]:
     print "Mean size: %f" % (sum(sizes) / len(sizes))
 
 elif '-size' in get_opts()[0]:
-    data = [line.split(',') for line in read_file(get_opts()[0]['-size'])[1:]]
+    dom = get_opts()[0]['-size']
+    fname = "%s.csv" % dom
+    data = [line.split(',') for line in read_file(fname)[1:]]
     times = sorted([float(i[0]) for i in data])
     sizes = sorted([float(i[1]) for i in data])
     xs = [i+1 for i in range(len(data))]
-    individual_plot(xs, sizes, False)
+    individual_plot(xs, sizes, False, title_lookup[dom])
 
 elif '-time' in get_opts()[0]:
-    data = [line.split(',') for line in read_file(get_opts()[0]['-time'])[1:]]
+    dom = get_opts()[0]['-time']
+    fname = "%s.csv" % dom
+    data = [line.split(',') for line in read_file(fname)[1:]]
     times = sorted([float(i[0]) for i in data])
     sizes = sorted([float(i[1]) for i in data])
     xs = [i+1 for i in range(len(data))]
-    individual_plot(xs, times, True)
+    individual_plot(xs, times, True, title_lookup[dom])
 
 else:
     
