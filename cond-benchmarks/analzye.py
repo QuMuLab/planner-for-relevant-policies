@@ -13,6 +13,44 @@ def get_figsize(fig_width_pt):
     fig_size =  [fig_width,fig_height*1.7]      # exact figsize
     return fig_size
 
+def individual_plot(xs, data, logplot):
+    
+    # Copied / modified from krrt
+    import pylab
+    pylab.rcParams.update({'backend': 'eps',
+                    'legend.pad': 0.1,    # empty space around the legend box
+                    'legend.fontsize': 11,
+                    'lines.markersize': 3,
+                    'font.size': 12,
+                    'font.family': 'serif',
+                    'ps.usedistiller': 'xpdf',
+                    #'font.family': 'sans-serif',
+                    'font.serif': 'Times New Roman',
+                    #'font.sans-serif': 'Helvetica',
+                    'text.usetex': True,
+                    'figure.figsize': get_figsize(250)})
+    
+    f, (ax1) = pylab.subplots(1)
+    
+    SYMBOLS = ['s', 'x', 'o', '^', '>', 'v', '<', 'd', 'p', 'h', '8']
+    COLOURS = ['b','g','k','m']
+    LINES = ['-', '--', '-.', ':']
+    
+    handle = ax1.plot(xs, data, c='b', ls='-')
+    
+    if logplot:
+        ax1.set_yscale('log')
+    
+    
+    #ax1.xaxis.set_major_formatter( pylab.NullFormatter() )
+    #ax2.xaxis.set_major_formatter( pylab.NullFormatter() )
+    
+    #f.subplots_adjust(hspace=0,left=0.2,top=0.95,right=0.96)
+    #pylab.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
+    
+    
+    pylab.show()
+
 if '-csv' in get_opts()[0]:
     data = [line.split(',') for line in read_file(get_opts()[0]['-csv'])[1:]]
     
@@ -21,6 +59,20 @@ if '-csv' in get_opts()[0]:
     
     print "Mean time: %f" % (sum(times) / len(times))
     print "Mean size: %f" % (sum(sizes) / len(sizes))
+
+elif '-size' in get_opts()[0]:
+    data = [line.split(',') for line in read_file(get_opts()[0]['-size'])[1:]]
+    times = sorted([float(i[0]) for i in data])
+    sizes = sorted([float(i[1]) for i in data])
+    xs = [i+1 for i in range(len(data))]
+    individual_plot(xs, sizes, False)
+
+elif '-time' in get_opts()[0]:
+    data = [line.split(',') for line in read_file(get_opts()[0]['-time'])[1:]]
+    times = sorted([float(i[0]) for i in data])
+    sizes = sorted([float(i[1]) for i in data])
+    xs = [i+1 for i in range(len(data))]
+    individual_plot(xs, times, True)
 
 else:
     
