@@ -28,6 +28,9 @@ def _flatten(eff):
 
     elif isinstance(eff, Oneof):
         return list(chain(*(map(_flatten, eff.args))))
+    
+    elif isinstance(eff, When):
+        return [When(eff.condition, res) for res in _flatten(eff.result)]
 
     else:
         if DEBUG:
