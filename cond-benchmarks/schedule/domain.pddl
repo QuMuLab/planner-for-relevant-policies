@@ -226,7 +226,7 @@
                     (oneof (and
                                 (when (busy spray-painter) (not (busy spray-painter)))
                                 (when (busy immersion-painter) (not (busy immersion-painter))))
-                           (and (busy spray-painter) (busy-immersion-painter)))
+                           (and (busy spray-painter) (busy immersion-painter)))
                     
                     
                    ))
