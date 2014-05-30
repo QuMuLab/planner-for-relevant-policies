@@ -142,6 +142,7 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
 }
 
 void generate_regressable_ops() {
+    
     list<PolicyItem *> reg_steps;
     list<PolicyItem *> cond_reg_steps;
     
@@ -255,13 +256,13 @@ void generate_regressable_ops() {
             else
                 delete s;
         }
-        
-        reg_steps.push_back(new RegressableOperator(g_operators[i], s));
     }
+    
     g_regressable_ops = new Policy();
     g_regressable_ops->update_policy(reg_steps);
     g_regressable_cond_ops = new Policy();
     g_regressable_cond_ops->update_policy(cond_reg_steps);
+    
 }
 
 void RegressionStep::strengthen(PartialState *s) {
