@@ -1,8 +1,8 @@
 
 import os, importlib
 
-from parser import grounder
-from parser.formula import *
+from fondparser import grounder
+from fondparser.formula import *
 from normalizer import flatten
 
 import networkx as nx
@@ -45,7 +45,7 @@ class VALAction:
         self.npres = set([-1 * i for i in filter(lambda x: x < 0, prec)])
         self.effs = effs
         self.mapping = mapping
-    
+
     def __str__(self):
         return "%s: +Pre = %s / -Pre = %s / Effs = %s" % (self.name, \
                         str([self.mapping[fl] for fl in self.ppres]), \
@@ -58,7 +58,7 @@ def validate(dfile, pfile, sol, val):
     print "\nParsing the problem..."
 
     problem = grounder.GroundProblem(dfile, pfile)
-    
+
     fluents = {}
     unfluents = {}
     index = 1
@@ -199,10 +199,10 @@ def progress(s, o, m):
     assert o.ppres <= s.fluents and 0 == len(o.npres & s.fluents), \
         "Failed to progress %s:\nPrecondition: %s\nState:\n%s" % \
         (o.name, str(o.pres), _state_string(m, s))
-    
+
     #print "\nProgressing the following operator:"
     #print (o)
-    
+
     adds = set()
     dels = set()
     for eff in o.effs:
@@ -215,10 +215,10 @@ def progress(s, o, m):
                     dels.add(reff * -1)
                 else:
                     adds.add(reff)
-    
+
     if 0 != len(adds & dels):
         print "Warning: Conflicting adds and deletes on action %s" % str(o)
-    
+
     return State(((s.fluents - dels) | adds))
 
 
