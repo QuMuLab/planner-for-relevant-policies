@@ -6,10 +6,10 @@ cd src/
 ./build_all
 
 Citation:
-./src/plan-prp --citation
+./src/prp --citation
 
 Usage:
-./src/plan-prp <domain> <problem> <output file> OPTIONS
+./src/prp <domain> <problem> OPTIONS
 
 Options:
 --jic-limit TIME_LIMIT
