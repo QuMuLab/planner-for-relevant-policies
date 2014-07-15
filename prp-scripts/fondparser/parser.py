@@ -40,7 +40,7 @@ class Problem(object):
 
     OBJECT = "default_objec"
 
-    def __init__(self, domain_file, problem_file):
+    def __init__(self, domain_file, problem_file = None):
         """
         Create a new problem instance.
 
@@ -106,7 +106,7 @@ class Problem(object):
         if self.types != p.types or self.parent_types != p.parent_types:
             print "types"
             return False
-        
+
         return True
 
     def _export_domain (self, fp, sp="  "):
@@ -168,7 +168,7 @@ class Problem(object):
         for f in self.init.args:
             o.append (f.export (2, sp, True))
         o.append (sp + ")") # close init
-        fp.write ("\n".join(o) + "\n") 
+        fp.write ("\n".join(o) + "\n")
 
         # goal
         o = []
@@ -195,7 +195,7 @@ class Problem(object):
             fp.close ()
 
     def __str__(self):
-        return "Problem %s from domain %s" % (self.problem_name, self.domain_name) 
+        return "Problem %s from domain %s" % (self.problem_name, self.domain_name)
 
     def __repr__(self):
         return str(self)
