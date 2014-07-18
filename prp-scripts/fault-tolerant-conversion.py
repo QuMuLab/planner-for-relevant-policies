@@ -56,7 +56,11 @@ def add_fault_limit(p, max_faults):
         assert isinstance(a.precondition, parser.And)
         a.precondition.args.append(parser.Primitive(started))
 
-    p.actions.append(parser.Action('start-planning', [], None, None, parser.And(map(parser.Primitive, [started, faults[0]]))))
+    p.actions.append(parser.Action('start-planning',
+                                   [],
+                                   None,
+                                   None,
+                                   parser.And(map(parser.Primitive, [started, faults[0]]))))
 
 
 def convert(dom_name):
@@ -105,7 +109,9 @@ def convert(dom_name):
             p._export_domain(sys.stdout)
             print "\n\n-----------------\n"
         elif 6 == next_action:
-            pass
+            print
+            answer = raw_input("What filename would you like to use? ")
+            p.export(answer, '')
         elif 7 == next_action:
             p = load_problem(dom_name)
         elif 8 == next_action:
