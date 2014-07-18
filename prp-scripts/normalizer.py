@@ -6,6 +6,11 @@ from itertools import product, chain
 
 DEBUG = False
 
+def normalize(op):
+    effs = flatten(op)
+    if len(effs) > 1:
+        op.effect = Oneof(effs)
+
 def flatten(op):
     return _flatten(op.effect)
 

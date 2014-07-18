@@ -2,6 +2,7 @@
 import readline, sys
 
 from fondparser import parser
+from normalizer import normalize
 
 
 def get_choice(query, options):
@@ -33,6 +34,8 @@ def convert(dom_name):
     p.max_faults = -1
 
     print "Normalizing..."
+    for a in p.actions:
+        normalize(a)
 
     print "Ready!"
 
@@ -49,7 +52,11 @@ def convert(dom_name):
                                   'Quit'])            # 7
 
         if 0 == next_action:
-            pass
+            print
+            print "Actions:"
+            for a in p.actions:
+                print " - %s" % a.name
+            print
         elif 1 == next_action:
             pass
         elif 2 == next_action:
@@ -72,7 +79,7 @@ def convert(dom_name):
 if __name__ == '__main__':
     print
     if len(sys.argv) != 2:
-        print "\n  Usage: python %s <domain>\n" % sys.argv[0]
+        print "  Usage: python %s <domain>\n" % sys.argv[0]
         sys.exit(1)
 
     convert(sys.argv[1])
