@@ -46,22 +46,63 @@ def add_fault_limit(p, max_faults):
     p.max_faults = max_faults
     started = parser.Predicate("started", None, [])
     p.predicates.append(started)
-    faults = []
+    p.faults = []
 
     for i in range(max_faults+1):
-        faults.append(parser.Predicate("faults_%d" % i, None, []))
-        p.predicates.append(faults[-1])
+        p.faults.append(parser.Predicate("faults_%d" % i, None, []))
+        p.predicates.append(p.faults[-1])
 
     for a in p.actions:
         assert isinstance(a.precondition, parser.And)
         a.precondition.args.append(parser.Primitive(started))
 
+        if isinstance(a.effect, parser.Oneof):
+            for eff in a.effect.args:
+                eff.faulty = False
+
     p.actions.append(parser.Action('start-planning',
                                    [],
                                    None,
                                    None,
-                                   parser.And(map(parser.Primitive, [started, faults[0]]))))
+                                   parser.And(map(parser.Primitive, [started, p.faults[0]]))))
 
+
+def add_faulty_outcome(p, action):
+    effs = filter(lambda eff: not eff.faulty, action.effect.args)
+    if len(effs) < 1:
+        print "Error: No more normal effects to become faulty."
+        return False
+    elif len(effs) == 1:
+        print "Warning: You are about to make the final effect faulty."
+
+    print "You have the following choice of outcomes:"
+    for i in range(len(effs)):
+        print "\n--- %d ---" % (i+1)
+        print str(effs[i])
+    print
+
+    outcome_choice = get_choice('Which outcome?', ['' for i in range(len(effs))] + ['Cancel'])
+
+    if outcome_choice == len(effs):
+        print "Cancelling..."
+        return False
+
+    eff = effs[outcome_choice]
+
+    eff.faulty = True
+    assert isinstance(eff, parser.And)
+
+    old_effect = parser.And(eff.args)
+    eff.args = []
+
+    for i in range(p.max_faults):
+        new_effect = parser.And(old_effect.args)
+        eff.args.append(parser.When(parser.Primitive(p.faults[i]), new_effect))
+        eff.args[-1].result.args.append(parser.Primitive(p.faults[i+1]))
+        eff.args[-1].result.args.append(parser.Not([parser.Primitive(p.faults[i])]))
+
+    print "Done..."
+    return True
 
 def convert(dom_name):
 
@@ -70,8 +111,8 @@ def convert(dom_name):
     while True:
 
         next_action = get_choice('What would you like to do?',
-                                 ['See the list of actions',  # 0
-                                  'Identify faulty outcomes', # 1
+                                 ['See the list of actions',   # 0
+                                  'Identify a faulty outcome', # 1
                                   'Set the maximum number of faults', # 2
                                   'Make the domain 1-primary normative (i.e., exactly 1 normal outcome)', # 3
                                   'Show domain statistics', # 4
@@ -87,7 +128,18 @@ def convert(dom_name):
                 print " - %s" % a.name
             print
         elif 1 == next_action:
-            pass
+            print
+            if -1 == p.max_faults:
+                print "Error: You must first set the maximum number of faults."
+                continue
+
+            action_choice = get_choice('Which action?', [a.name for a in p.actions])
+            action = p.actions[action_choice]
+
+            if not isinstance(action.effect, parser.Oneof):
+                print "Error: You can only make non-deterministic effects faulty."
+            else:
+                add_faulty_outcome(p, action)
         elif 2 == next_action:
             print
             if -1 != p.max_faults:

@@ -9,6 +9,9 @@ DEBUG = False
 def normalize(op):
     effs = flatten(op)
     if len(effs) > 1:
+        for i in range(len(effs)):
+            if not isinstance(effs[i], And):
+                effs[i] = And([effs[i]])
         op.effect = Oneof(effs)
 
 def flatten(op):
