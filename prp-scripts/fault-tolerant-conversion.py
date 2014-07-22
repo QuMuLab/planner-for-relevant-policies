@@ -73,9 +73,11 @@ def add_faulty_outcome(p, action):
         print "Error: No more normal effects to become faulty."
         return False
     elif len(effs) == 1:
-        print "Warning: You are about to make the final effect faulty."
+        print "\nWarning: You are about to make the final effect faulty."
+        if 1 == get_choice('Continue?', ['Yes', 'No']):
+            return False
 
-    print "You have the following choice of outcomes:"
+    print "\nYou have the following choice of outcomes:"
     for i in range(len(effs)):
         print "\n--- %d ---" % (i+1)
         print str(effs[i])
@@ -134,7 +136,21 @@ def convert(dom_name):
                 print "Error: You must first set the maximum number of faults."
                 continue
 
-            action_choice = get_choice('Which action?', [a.name for a in p.actions])
+            def action_valid(a):
+                if not isinstance(a.effect, parser.Oneof):
+                    return False
+                for eff in a.effect.args:
+                    if not eff.faulty:
+                        return True
+                return False
+
+            suitable_actions = filter(action_valid, p.actions)
+
+            if not suitable_actions:
+                print "Error: No actions available to make faulty."
+                continue
+
+            action_choice = get_choice('Which action?', [a.name for a in suitable_actions])
             action = p.actions[action_choice]
 
             if not isinstance(action.effect, parser.Oneof):
