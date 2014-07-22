@@ -163,12 +163,14 @@ def convert(dom_name):
                 print "Error: Max faults already set (reload the domain first)"
             else:
                 answer = raw_input("Maximum number of faults? ")
-                #try:
-                choice = int(answer)
-                assert choice >= 0
-                add_fault_limit(p, choice)
-                #except:
-                #    print "\nError: You must select a number for max faults (%s)" % str(answer)
+                try:
+                    choice = int(answer)
+                    if choice < 1:
+                        print "\nError: You must select a positive number for max faults."
+                    else:
+                        add_fault_limit(p, choice)
+                except ValueError:
+                    print "\nError: You must select a number for max faults (%s)" % str(answer)
         elif 3 == next_action:
             pass
         elif 4 == next_action:
