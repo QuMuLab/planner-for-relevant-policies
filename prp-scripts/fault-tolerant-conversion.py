@@ -62,7 +62,7 @@ def add_fault_limit(p, max_faults):
 
     p.actions.append(parser.Action('start-planning',
                                    [],
-                                   None,
+                                   parser.Not([parser.Primitive(started)]),
                                    None,
                                    parser.And(map(parser.Primitive, [started, p.faults[0]]))))
 
@@ -95,11 +95,12 @@ def add_faulty_outcome(p, action):
     old_effect = parser.And(eff.args)
     eff.args = []
 
+    eff.args.append(parser.When(parser.Not([parser.Primitive(p.faults[-1])]), old_effect))
+
     for i in range(p.max_faults):
-        new_effect = parser.And(old_effect.args)
-        eff.args.append(parser.When(parser.Primitive(p.faults[i]), new_effect))
-        eff.args[-1].result.args.append(parser.Primitive(p.faults[i+1]))
-        eff.args[-1].result.args.append(parser.Not([parser.Primitive(p.faults[i])]))
+        eff.args.append(parser.When(parser.Primitive(p.faults[i]),
+                                    parser.And([parser.Primitive(p.faults[i+1]),
+                                                parser.Not([parser.Primitive(p.faults[i])])])))
 
     print "Done..."
     return True
