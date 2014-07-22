@@ -1,10 +1,18 @@
 
-from parser.action import Action
-from parser.formula import *
+from fondparser.action import Action
+from fondparser.formula import *
 
 from itertools import product, chain
 
 DEBUG = False
+
+def normalize(op):
+    effs = flatten(op)
+    if len(effs) > 1:
+        for i in range(len(effs)):
+            if not isinstance(effs[i], And):
+                effs[i] = And([effs[i]])
+        op.effect = Oneof(effs)
 
 def flatten(op):
     return _flatten(op.effect)
@@ -28,7 +36,7 @@ def _flatten(eff):
 
     elif isinstance(eff, Oneof):
         return list(chain(*(map(_flatten, eff.args))))
-    
+
     elif isinstance(eff, When):
         return [When(eff.condition, res) for res in _flatten(eff.result)]
 
