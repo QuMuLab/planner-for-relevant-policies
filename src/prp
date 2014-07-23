@@ -32,7 +32,7 @@ if [ "--citation" = "$1" ]; then
 
 @inproceedings{muise-aaai-14,
   title={Computing Contingent Plans via Fully Observable Non-Deterministic Planning},
-  author={Muise, Christian and Bell, Vaishak and McIlraith, Sheila A.},
+  author={Muise, Christian and Belle, Vaishak and McIlraith, Sheila A.},
   booktitle={The 28th AAAI Conference on Artificial Intelligence},
   year={2014},
   url={http://www.haz.ca/papers/muise-aaai-14.pdf}
@@ -40,7 +40,7 @@ if [ "--citation" = "$1" ]; then
 
 @inproceedings{muise-icaps-14,
   title={Non-Deterministic Planning With Conditional Effects},
-  author={Muise, Christian and McIlraith, Sheila A. and Bell, Vaishak},
+  author={Muise, Christian and McIlraith, Sheila A. and Belle, Vaishak},
   booktitle={The 24th International Conference on Automated Planning and Scheduling},
   year={2014},
   url={http://www.haz.ca/papers/muise-icaps-14.pdf}
