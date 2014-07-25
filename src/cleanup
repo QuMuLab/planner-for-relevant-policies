@@ -5,6 +5,11 @@ rm -f output
 rm -f elapsed.time
 rm -f plan_numbers_and_cost
 rm -f sas_plan
+rm -f compile_plan.sh
+rm -f plan.dot
+rm -f plan.png
+rm -f compiled-domain.pddl
+rm -f compiled-problem.pddl
 
 NUM=1
 while [[ -e sas_plan.$NUM ]]; do

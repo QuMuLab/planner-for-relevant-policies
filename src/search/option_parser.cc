@@ -261,6 +261,12 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--optimized-scd") == 0) {
             ++i;
             g_optimized_scd = (1 == atoi(argv[i]));
+        } else if (arg.compare("--final-scd-check") == 0) {
+            ++i;
+            g_do_final_scd = (1 == atoi(argv[i]));
+        } else if (arg.compare("--scd-strengthening") == 0) {
+            ++i;
+            g_do_scd_strengthening = (1 == atoi(argv[i]));
         } else if (arg.compare("--dump-policy") == 0) {
             ++i;
             g_dump_policy = atoi(argv[i]);
@@ -323,8 +329,14 @@ string OptionParser::usage(string progname) {
         "    Generate and store deadend states that are found online.\n\n"
         "--optimized-scd 1/0\n"
         "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
-        "--dump-policy 1/2\n"
-        "    Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.\n\n"
+        "--final-scd-check 1/0\n"
+        "    Indicates if a final SCD check should be done when optimized-scd is set to 0.\n"
+        "    This has the benefit of analyzing the final policy for strong cyclic pairs. Default: 1.\n\n"
+        "--scd-strengthening 1/0\n"
+        "    Use strong cyclic strengthening for new states found. Default is 1\n\n"
+        "--dump-policy 1/2/3\n"
+        "    Dump the policy to the file policy.out. 1 creates a switch graph, 2 creates\n"
+        "    a human readable form, and 3 creates a dot graph of the contingent plan.\n\n"
         "--debug-output 1/0\n"
         "    Output plans and other information during the planning process.\n\n"
         "See http://www.haz.ca/research/prp for details.";

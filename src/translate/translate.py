@@ -497,6 +497,25 @@ def pddl_to_sas(task):
         (relaxed_reachable, atoms, actions, axioms,
          reachable_action_params) = instantiate.explore(task)
 
+
+
+
+    #print(" -{ Actions }-\n\n")
+    #for act in actions:
+    #    act.dump()
+    #    print("\n\n")
+
+
+
+    
+    with open("compile_plan.sh", "w") as text_file:
+        text_file.write("#!/bin/sh\n\n")
+        for act in actions:
+            if 'DETDUP'in act.name:
+                text_file.write("sed -i 's/%s/%s/g' plan.dot\n" % (act.name[1:-1], '\n'.join(filter(lambda x: '___' not in x, [str(eff[1])[5:-2] for eff in act.add_effects]))))
+        
+        text_file.write("\ndot plan.dot -Tpng > plan.png\n")
+
     if not relaxed_reachable:
         return unsolvable_sas_task("No relaxed solution")
 

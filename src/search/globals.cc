@@ -336,6 +336,15 @@ void read_everything(istream &in) {
             g_nondet_conditional_mask.push_back(new vector<int>());
                         
             cur_nondet++;
+            
+            // Record the sensing and invariant operators
+            if (g_operators[i].get_nondet_name().find("invariant") != string::npos) {
+                g_invariant_ops.insert(nondet_index);
+                //cout << "Priority operator: " << g_operators[i].get_nondet_name() << endl;
+            } else if (g_operators[i].get_nondet_name().find("sensor") != string::npos) {
+                g_sensor_ops.insert(nondet_index);
+            }
+            
         
         } else {
             nondet_index = g_nondet_index_mapping[g_operators[i].get_nondet_name()];
@@ -461,6 +470,8 @@ LegacyCausalGraph *g_legacy_causal_graph;
 
 SuccessorGenerator *g_successor_generator_orig; // Renamed so the ops can be pruned based on deadends
 DeadendAwareSuccessorGenerator *g_successor_generator;
+std::set<int> g_invariant_ops; // Indices of the invariant operators
+std::set<int> g_sensor_ops; // Indices of the sensor operators
 
 map<string, int> g_nondet_index_mapping; // Maps a non-deterministic action name to its id
 vector<vector<Operator *> *> g_nondet_mapping; // Maps a non-deterministic action id to a list of ground operators
@@ -489,6 +500,8 @@ bool g_check_with_forbidden = false; // We set this when a strong cyclic policy 
 bool g_generalize_deadends = true; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
 bool g_record_online_deadends = true; // Record the deadends as they occur online, and add them to the deadend policy after solving
 bool g_optimized_scd = true; // Do optimized strong cyclic detection
+bool g_do_final_scd = true; // Used to disable the final scd check once the policy is constructued
+bool g_do_scd_strengthening = true; // Used to disable the strong cyclic strengthening technique
 bool g_seeded = false; // Only want to seed once
 int g_trial_depth = 1000; // Used to limit the number of simulation steps
 int g_num_trials = 1; // Number of trials that should be used for the simulation

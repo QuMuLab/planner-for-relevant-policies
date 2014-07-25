@@ -6,6 +6,7 @@
 #include <vector>
 #include <fstream>
 #include <cassert>
+#include <stack>
 #include <map>
 
 #include "regression.h"
@@ -57,6 +58,7 @@ public:
     void evaluate();
     double get_score();
     int get_size() { return all_items.size(); }
+    int get_sc_size();
     bool is_complete() { return complete; }
     bool is_strong_cyclic() { return (1.1 == score); }
     
@@ -65,6 +67,7 @@ public:
     bool goal_sc_reachable(const PartialState &curr);
     
     void dump_human_policy();
+    void dump_contingent_plan();
 };
 
 

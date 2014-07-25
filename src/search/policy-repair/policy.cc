@@ -497,6 +497,16 @@ void Policy::generate_cpp_input(ofstream &outfile) const {
 }
 
 
+int Policy::get_sc_size() {
+    int count = 0;
+    for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
+         op_iter != all_items.end(); ++op_iter)
+         if (((RegressionStep *)(*op_iter))->is_sc)
+            count++;
+    
+    return count;
+}
+
 
 double Policy::get_score() {
     if (0.0 == score)
@@ -601,6 +611,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
             }
             
             for (int i = 0; i < g_nondet_mapping[rs->op->nondet_index]->size(); i++) {
+				
                 // We use the sc_state for computing the guaranteed items, rather than
                 //  the original state for the regression step. The sc_state will be a
                 //  superset of the original state that includes the regression of newly
@@ -761,4 +772,185 @@ void Policy::dump_human_policy() {
     
     outfile.close();
 }
+
+void Policy::dump_contingent_plan() {
+    
+    // Create the nodes / edges by simulating the plan (ignoring epistemic actions)
+    stack<PartialState *> open_list; // Open list we traverse
+    PartialState * current_state; // The current step in the loop
+    set<PartialState> seen; // Keeps track of the full states we've seen
+    set<PartialState> sc_seen; // Keeps track of the sc partial states we've seen
+    set<PartialState> goals; // Keeps track of the goal states we've seen
+    map<PartialState,int> state_id_mapping; // Maps a state to its id in the graph
+    map<PartialState,string> state_act_mapping; // Maps a state to its id in the graph
+    set<PartialState> nodes; // The actual nodes that will be used in the graph
+    set<int> obs_nodes; // Indicies for the observation nodes
+    map<int,string> obs_desc; // Descriptions for the observations
+    vector< pair<int,int> > edges; // Vector of edges that we need to create
+    set<RegressionStep*> steps_seen; // To count the number of regression steps we use
+    int collisions = 0;
+    
+    int current_id = 0;
+    
+    current_state = new PartialState(g_initial_state());
+    open_list.push(current_state);
+    state_id_mapping[*current_state] = current_id++;
+    nodes.insert(*current_state);
+    
+    while (!open_list.empty()) {
+    
+        current_state = open_list.top();
+        open_list.pop();
+        
+        if (0 == seen.count(*current_state)) {
+            
+            // See if we can handle this state
+            // --> simulate until a proper action is found
+            RegressionStep * regstep = g_policy->get_best_step(*current_state);
+            if (0 != regstep) {
+                if (0 != steps_seen.count(regstep))
+                    collisions++;
+                steps_seen.insert(regstep);
+            }
+            
+            PartialState * orig_current_state = current_state;
+            
+            while ((0 != regstep) && (!(regstep->is_goal)) && (0 == seen.count(*current_state)) &&
+                   ((string::npos != (regstep->op->get_nondet_name()).find("closure")) ||
+                   (string::npos != (regstep->op->get_nondet_name()).find("invariant")) ||
+                   (string::npos != (regstep->op->get_nondet_name()).find("__post__")) ||
+                   //(0 == (regstep->op->get_nondet_name()).find("edge-obs")) ||
+                   (string::npos != (regstep->op->get_nondet_name()).find("reach_new_goal_through_original_goal")))) {
+            
+                seen.insert(*current_state);
+                
+                assert(1 == g_nondet_mapping[regstep->op->nondet_index]->size());
+                
+                current_state = new PartialState(*current_state, *((*(g_nondet_mapping[regstep->op->nondet_index]))[0]));
+                regstep = g_policy->get_best_step(*current_state);
+                if (0 != regstep) {
+                    if (0 != steps_seen.count(regstep))
+                        collisions++;
+                    steps_seen.insert(regstep);
+                }
+                
+            }
+            
+            seen.insert(*current_state);
+            
+            if (regstep) {
+            
+                // Keep track of the goals for special marking
+                if (regstep->is_goal) {
+                
+                    goals.insert(*current_state);
+                    
+                    // This occurs when knowledge actions lead us to a goal state
+                    if (current_state != orig_current_state) {
+                        goals.insert(*orig_current_state);
+                    }
+                    
+                } else {
+                    
+                    // Assign the action
+                    state_act_mapping[*orig_current_state] = regstep->op->get_nondet_name();
+                    
+                    for (int i = 0; i < g_nondet_mapping[regstep->op->nondet_index]->size(); i++) {
+                    
+                        PartialState *new_state = new PartialState(*current_state, *((*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
+                        
+                        // If we are in a SC part of the policy, start using partial states to generate
+                        //  a more compact controller
+                        RegressionStep * future_regstep = g_policy->get_best_step(*new_state);
+                        if (0 != regstep) {
+                            if (0 != steps_seen.count(regstep))
+                                collisions++;
+                            steps_seen.insert(regstep);
+                        }
+                        bool found_sc_state = (future_regstep && future_regstep->is_sc && !(future_regstep->is_goal));
+                        if (found_sc_state) {
+                            new_state = new PartialState(*(future_regstep->state));
+                        }
+                        
+                        if ((0 == seen.count(*new_state)) && (0 == sc_seen.count(*new_state))) {
+                            open_list.push(new_state);
+                            if ((string::npos == regstep->op->get_nondet_name().find("closure")) &&
+                                (string::npos == regstep->op->get_nondet_name().find("invariant")) &&
+                                (string::npos == regstep->op->get_nondet_name().find("__post__")) &&
+                                //(0 != regstep->op->get_nondet_name().find("edge-obs")) &&
+                                (string::npos == regstep->op->get_nondet_name().find("reach_new_goal_through_original_goal"))) {
+                                nodes.insert(*new_state);
+                                state_id_mapping[*new_state] = current_id++;
+                            }
+                            if (found_sc_state) {
+                                sc_seen.insert(*new_state);
+                            }
+                        }
+                        
+                        if (g_nondet_mapping[regstep->op->nondet_index]->size() > 1) {
+                            obs_desc[current_id] = (*(g_nondet_mapping[regstep->op->nondet_index]))[i]->get_name();
+                        
+                            edges.push_back(make_pair(state_id_mapping[*orig_current_state], current_id));
+                            edges.push_back(make_pair(current_id, state_id_mapping[*new_state]));
+                            
+                            obs_nodes.insert(current_id++);
+                        } else {
+                            edges.push_back(make_pair(state_id_mapping[*orig_current_state], state_id_mapping[*new_state]));
+                        }
+                        
+                    }
+                }
+            } else {
+                // Maybe create a sink node?
+            }
+        }
+    }
+    
+    int node_count = 0;
+    int edge_count = 0;
+    int action_node_count = 0;
+    
+    fstream outfile;
+    outfile.open("plan.dot", ios::out);
+    
+    outfile << "digraph contingent_plan {" << endl;
+    outfile << "  _nil [style=\"invis\"];" << endl;
+    
+    for (set<PartialState>::iterator it=nodes.begin(); it!=nodes.end(); ++it) {
+        if (0 == state_act_mapping.count(*it)) {
+            if (0 == goals.count(*it))
+                outfile << "  " << state_id_mapping[*it] << " [label=\"??\"];" << endl;
+            else
+                outfile << "  " << state_id_mapping[*it] << " [label=\"Goal!\",peripheries=2];" << endl;
+        } else {
+            outfile << "  " << state_id_mapping[*it] << " [label=\"" << state_act_mapping[*it] << "\"];" << endl;
+            action_node_count++;
+        }
+        node_count++;
+    }
+    
+    for (set<int>::iterator it=obs_nodes.begin(); it!=obs_nodes.end(); ++it) {
+        outfile << "  " << *it << " [label=\"" << obs_desc[*it] << "\",shape=\"box\"];" << endl;
+    }
+    
+    for (int i = 0; i < edges.size(); ++i) {
+        outfile << "  " << edges[i].first << " -> " << edges[i].second << ";" << endl;
+        edge_count++;
+    }
+    
+    outfile << "  _nil -> 0 [label=\"\"];" << endl;
+    
+    outfile << "}" << endl;
+    
+    outfile.close();
+    
+    cout << "Nodes: " << node_count << endl;
+    cout << "Actions: " << action_node_count << endl;
+    cout << "Edges: " << edge_count << endl;
+    cout << "Steps Seen: " << steps_seen.size() << endl;
+    cout << "Collisions: " << collisions << endl;
+    
+    cout << endl;
+}
+
 

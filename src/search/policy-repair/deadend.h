@@ -7,6 +7,7 @@
 
 #include "regression.h"
 #include "policy.h"
+#include "partial_state.h"
 #include "../successor_generator.h"
 #include "../additive_heuristic.h"
 

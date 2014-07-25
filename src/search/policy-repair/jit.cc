@@ -99,7 +99,7 @@ bool perform_jit_repairs(Simulator *sim) {
                 
                 
                 // Add the new goals to the sc condition for the previous reg step
-                if (g_optimized_scd && prev_regstep && have_solution) {
+                if (g_optimized_scd && prev_regstep && have_solution && g_do_scd_strengthening) {
                     
                     // regstep is now at the start of the newly found plan
                     regstep = g_policy->get_best_step(*current_state);
