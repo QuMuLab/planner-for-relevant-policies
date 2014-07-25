@@ -189,6 +189,8 @@ def _convert_conjunction(mapping, conj):
         return [mapping[str(f).lower()] for f in filter(lambda x: '=' not in str(x), conj.args)]
     elif isinstance(conj, Primitive) or (isinstance(conj, Not) and isinstance(conj.args[0], Primitive)):
         return [mapping[str(conj).lower()]]
+    elif None == conj:
+        return []
     else:
         assert False, "Error: Tried converting a non-standard conjunction: %s" % str(conj)
 

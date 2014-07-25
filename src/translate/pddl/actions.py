@@ -29,6 +29,10 @@ class Action(object):
         action_tag = next(iterator)
         assert action_tag == ":action"
         name = next(iterator)
+        
+        # Make sure we bring in nondet actions that are already determinized
+        name = 'DETDUP'.join(name.split('detdup'))
+        
         parameters_tag_opt = next(iterator)
         if parameters_tag_opt == ":parameters":
             parameters = pddl_types.parse_typed_list(next(iterator),
@@ -53,10 +57,79 @@ class Action(object):
         effect_list = next(iterator)
         try:
             cost_eff_pairs = effects.parse_effects(effect_list)
-            if 1 == len(cost_eff_pairs):
-                cost_eff_pairs = [(cost_eff_pairs[0][0], cost_eff_pairs[0][1], '')]
-            else:
+            if len(cost_eff_pairs) > 1:
+                ###################
+                ## !!!WARNING!!!
+                ##   This means that regular non-det actions are not allowed now
+                #if 'sense_' == name[:6]:
+                # Negate the sensing output
+                #  This assumes that we "observe" just a single fluent
+                assert 2 == len(cost_eff_pairs)
+                
+                new_effs1 = filter(lambda x: 'can_observe' not in x.literal.predicate, [eff.copy() for eff in cost_eff_pairs[0][1]])
+                new_effs2 = filter(lambda x: 'can_observe' not in x.literal.predicate, [eff.copy() for eff in cost_eff_pairs[1][1]])
+                
+                for eff in new_effs1 + new_effs2:
+                    eff.literal = eff.literal.negate()
+                
+                cost_eff_pairs[0][1].extend(new_effs2)
+                cost_eff_pairs[1][1].extend(new_effs1)
+                
+                assert '__' not in cost_eff_pairs[0][1][1].literal.predicate
+                assert '__' not in cost_eff_pairs[1][1][1].literal.predicate
+                
+                if isinstance(precondition, conditions.Atom):
+                    old_pres = [precondition]
+                else:
+                    assert isinstance(precondition, conditions.Conjunction)
+                    old_pres = list(precondition.parts)
+                    print (old_pres)
+                
+                precondition = conditions.Conjunction(old_pres + [cost_eff_pairs[0][1][1].literal.negate(), cost_eff_pairs[1][1][1].literal.negate()])
+                
                 cost_eff_pairs = [(cost_eff_pairs[i][0], cost_eff_pairs[i][1], "_DETDUP_%d" % i) for i in range(len(cost_eff_pairs))]
+                
+            elif False and ('closure_' == name[:8]):
+                # If it is a closure action, then we split it up by having
+                #  a new action for each conditional effect with the condition
+                #  moved into the precondition.
+                toReturn = []
+                actionMapping = {}
+                for cond_eff in cost_eff_pairs[0][1]:
+                    
+                    if isinstance(cond_eff.condition, conditions.Literal):
+                        cond_eff.condition = conditions.Conjunction([cond_eff.condition])
+                    if isinstance(precondition, conditions.Literal):
+                        precondition = conditions.Conjunction([precondition])
+                        
+                    assert isinstance(cond_eff.condition, conditions.Conjunction)
+                    assert isinstance(precondition, conditions.Conjunction)
+                    assert cond_eff.condition.parts > 0
+                    
+                    if cond_eff.cond_index not in actionMapping:
+                        actionMapping[cond_eff.cond_index] = []
+                    actionMapping[cond_eff.cond_index].append(cond_eff)
+                
+                index = 1
+                
+                for cond_id in actionMapping.keys():
+                    
+                    new_precondition = conditions.Conjunction(precondition.parts + actionMapping[cond_id][0].condition.parts)
+                    
+                    #new_eff = conditions.Conjunction(map(lambda x: x.literal, actionMapping[cond_id]))
+                    new_eff = map(lambda x: effects.Effect(x.parameters, conditions.Truth(), x.literal), actionMapping[cond_id])
+                    
+                    toReturn.append(Action("%s_part_%d" % (name, index), parameters, len(parameters), new_precondition, new_eff, cost_eff_pairs[0][0]))
+                    
+                    #print ("\n\n")
+                    #toReturn[-1].dump()
+                    
+                    index += 1
+                    
+                #assert False, str(len(cost_eff_pairs[0][1]))
+                return toReturn
+            else:
+                cost_eff_pairs = [(cost_eff_pairs[0][0], cost_eff_pairs[0][1], '')]
         except ValueError as e:
             raise SystemExit("Error in Action %s\nReason: %s." % (name, e))
         for rest in iterator:

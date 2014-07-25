@@ -85,8 +85,13 @@ int main(int argc, const char **argv) {
     /***************************************
      * Assert the settings are consistent. *
      ***************************************/
-    if (((g_record_online_deadends || g_generalize_deadends) && !g_detect_deadends) ||
-        ((g_partial_planlocal || g_plan_locally_limited) && !g_plan_locally) ||
+    if ((g_record_online_deadends || g_generalize_deadends) && !g_detect_deadends) {
+        cout << "\nDisabling online deadend detection and deadend generalization." << endl;
+        g_record_online_deadends = false;
+        g_generalize_deadends = false;
+    }
+    
+    if (((g_partial_planlocal || g_plan_locally_limited) && !g_plan_locally) ||
         (g_optimized_scd && (g_jic_limit == 0)) ||
         (g_forgetpolicy && (g_jic_limit > 0))) {
             
@@ -176,12 +181,27 @@ int main(int argc, const char **argv) {
             made_change = g_policy->step_scd(failed_states, false);
     }
 
+    
+    // In case we have a final policy with SCD's disabled, we run the optimized scd one last time.
+    //  Note that we do this even though SCD may not have been used throughout the planning process
+    //  when the following condition is changed to (true || ...). It is disabled to see the effect
+    //  of the scd on compiled plans.
+    if (g_optimized_scd || g_do_final_scd) {
+        cout << "\n\nRunning a final SCD check..." << endl;
+        vector< DeadendTuple * > failed_states; // The failed states (used for creating deadends)
+        g_policy->init_scd();
+        bool made_change = true; // This becomes false again eventually
+        while (made_change)
+            made_change = g_policy->step_scd(failed_states);
+    }
+    
+    
     // Reset the deadend and scd settings for the online simulation(s)
     g_detect_deadends = false;
     g_generalize_deadends = false;
     g_record_online_deadends = false;
     g_optimized_scd = false;
-
+    
     cout << "\n\nRunning the simulation..." << endl;
     g_timer_simulator.resume();
     sim->run();
@@ -192,17 +212,19 @@ int main(int argc, const char **argv) {
     g_timer.stop();
     sim->dump();
     
-    cout << "\n\n" << endl;
     
     if (1 == g_dump_policy) {
-        cout << "Dumping the policy..." << endl;
+        cout << "\nDumping the policy...\n" << endl;
         ofstream outfile;
         outfile.open("policy.out", ios::out);
         g_policy->generate_cpp_input(outfile);
         outfile.close();
     } else if (2 == g_dump_policy) {
-        cout << "Dumping the policy..." << endl;
+        cout << "\nDumping the policy...\n" << endl;
         g_policy->dump_human_policy();
+    } else if (3 == g_dump_policy) {
+        cout << "\nDumping the contingent plan..." << endl;
+        g_policy->dump_contingent_plan();
     }
     
     if (sim->succeeded) {

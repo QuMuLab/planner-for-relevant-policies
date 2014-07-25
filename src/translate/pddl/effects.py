@@ -60,6 +60,8 @@ def add_effect(tmp_effect, result):
         # Check for contradictory effects
         condition = condition.simplified()
         new_effect = Effect(parameters, condition, effect)
+        if 'cond_index' in dir(tmp_effect):
+            new_effect.cond_index = tmp_effect.cond_index
         contradiction = Effect(parameters, condition, effect.negate())
         if not contradiction in result:
             result.append(new_effect)
@@ -179,13 +181,16 @@ class ConditionalEffect(object):
             for effect in norm_effect.effects:
                 assert isinstance(effect, SimpleEffect) or isinstance(effect, ConditionalEffect)
                 new_effects.append(ConditionalEffect(self.condition, effect))
+                new_effects[-1].cond_index = id(self)
             return ConjunctiveEffect(new_effects)
         elif isinstance(norm_effect, UniversalEffect):
             child = norm_effect.effect
             cond_effect = ConditionalEffect(self.condition, child)
             return UniversalEffect(norm_effect.parameters, cond_effect)
         else:
-            return ConditionalEffect(self.condition, norm_effect)
+            toRet = ConditionalEffect(self.condition, norm_effect)
+            toRet.cond_index = id(self)
+            return toRet
     def extract_cost(self):
         return None, self
 

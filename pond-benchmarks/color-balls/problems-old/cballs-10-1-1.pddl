@@ -1,0 +1,27 @@
+(define (problem n10-b1-c1)
+    (:domain colored-balls)
+    (:objects
+        p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 - pos
+        b1 - ball
+        c1 - color)
+    (:init
+        (suc p1 p2) (suc p2 p3) (suc p3 p4) (suc p4 p5) (suc p5 p6) (suc p6 p7) (suc p7 p8) (suc p8 p9) (suc p9 p10)
+        (at p1 p1)
+        (empty-arm)
+        (spot p3 p1 c1)
+        (not (ball-at-spot b1))
+        (oneof (ball-color b1 c1))
+        (oneof (ball-at-spot b1)
+                   (ball-pos b1 p1 p1) (ball-pos b1 p1 p2) (ball-pos b1 p1 p3) (ball-pos b1 p1 p4) (ball-pos b1 p1 p5) (ball-pos b1 p1 p6) (ball-pos b1 p1 p7) (ball-pos b1 p1 p8) (ball-pos b1 p1 p9) (ball-pos b1 p1 p10)
+                   (ball-pos b1 p2 p1) (ball-pos b1 p2 p2) (ball-pos b1 p2 p3) (ball-pos b1 p2 p4) (ball-pos b1 p2 p5) (ball-pos b1 p2 p6) (ball-pos b1 p2 p7) (ball-pos b1 p2 p8) (ball-pos b1 p2 p9) (ball-pos b1 p2 p10)
+                   (ball-pos b1 p3 p1) (ball-pos b1 p3 p2) (ball-pos b1 p3 p3) (ball-pos b1 p3 p4) (ball-pos b1 p3 p5) (ball-pos b1 p3 p6) (ball-pos b1 p3 p7) (ball-pos b1 p3 p8) (ball-pos b1 p3 p9) (ball-pos b1 p3 p10)
+                   (ball-pos b1 p4 p1) (ball-pos b1 p4 p2) (ball-pos b1 p4 p3) (ball-pos b1 p4 p4) (ball-pos b1 p4 p5) (ball-pos b1 p4 p6) (ball-pos b1 p4 p7) (ball-pos b1 p4 p8) (ball-pos b1 p4 p9) (ball-pos b1 p4 p10)
+                   (ball-pos b1 p5 p1) (ball-pos b1 p5 p2) (ball-pos b1 p5 p3) (ball-pos b1 p5 p4) (ball-pos b1 p5 p5) (ball-pos b1 p5 p6) (ball-pos b1 p5 p7) (ball-pos b1 p5 p8) (ball-pos b1 p5 p9) (ball-pos b1 p5 p10)
+                   (ball-pos b1 p6 p1) (ball-pos b1 p6 p2) (ball-pos b1 p6 p3) (ball-pos b1 p6 p4) (ball-pos b1 p6 p5) (ball-pos b1 p6 p6) (ball-pos b1 p6 p7) (ball-pos b1 p6 p8) (ball-pos b1 p6 p9) (ball-pos b1 p6 p10)
+                   (ball-pos b1 p7 p1) (ball-pos b1 p7 p2) (ball-pos b1 p7 p3) (ball-pos b1 p7 p4) (ball-pos b1 p7 p5) (ball-pos b1 p7 p6) (ball-pos b1 p7 p7) (ball-pos b1 p7 p8) (ball-pos b1 p7 p9) (ball-pos b1 p7 p10)
+                   (ball-pos b1 p8 p1) (ball-pos b1 p8 p2) (ball-pos b1 p8 p3) (ball-pos b1 p8 p4) (ball-pos b1 p8 p5) (ball-pos b1 p8 p6) (ball-pos b1 p8 p7) (ball-pos b1 p8 p8) (ball-pos b1 p8 p9) (ball-pos b1 p8 p10)
+                   (ball-pos b1 p9 p1) (ball-pos b1 p9 p2) (ball-pos b1 p9 p3) (ball-pos b1 p9 p4) (ball-pos b1 p9 p5) (ball-pos b1 p9 p6) (ball-pos b1 p9 p7) (ball-pos b1 p9 p8) (ball-pos b1 p9 p9) (ball-pos b1 p9 p10)
+                   (ball-pos b1 p10 p1) (ball-pos b1 p10 p2) (ball-pos b1 p10 p3) (ball-pos b1 p10 p4) (ball-pos b1 p10 p5) (ball-pos b1 p10 p6) (ball-pos b1 p10 p7) (ball-pos b1 p10 p8) (ball-pos b1 p10 p9) (ball-pos b1 p10 p10))
+    )
+    (:goal (and (ball-at-spot b1)))
+)

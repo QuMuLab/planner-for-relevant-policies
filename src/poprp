@@ -1,0 +1,28 @@
+#! /bin/bash
+
+set -e
+
+BASEDIR="$(dirname "$0")"
+
+function die {
+    echo "$@" 1>&2
+    exit 1
+}
+
+function usage {
+    die "usage: $(basename "$0") DOMAIN_FILE PROBLEM_FILE OPTIONS ..."
+}
+
+if [[ "$#" -lt 2 ]]; then
+    usage
+fi
+
+python ../prp-scripts/compile-contingent.py kreplanner -ind $1 -inp $2 -outd compiled-domain.pddl -outp compiled-problem.pddl
+
+shift 2
+
+# Note: Disabling the dead-end detection and optimized-scd seem to give the best
+#       results for contingent planning problems. To explicitly enable dead-end
+#       detection, just append "--detect-deadends 1" to the ./poprp command.
+./prp compiled-domain.pddl compiled-problem.pddl --detect-deadends 0 --optimized-scd 0 --dump-policy 3 "$@"
+

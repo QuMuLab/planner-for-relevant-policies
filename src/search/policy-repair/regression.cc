@@ -106,31 +106,23 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
         reg_steps.push_back(new RegressionStep(s, distance));
         
         for (int i = plan.size() - 1; i >= 0; i--) {
+            // First add the new regression step based on the partial state
+            //  being regressed and the context state in which the action
+            //  was executed in.
             reg_steps.push_back(new RegressionStep(*plan[i],
                 new PartialState(*(reg_steps.back()->state), *plan[i], false, states[i]),
                 ++distance));
+            
+            // Next strengthen the state to make sure that it won't fire
+            //  in the same state as an existing forbidden state-action
+            //  pair. The strengthening is sufficient but not necessary
+            ((RegressionStep*)(reg_steps.back()))->strengthen(states[i]);
         }
     }
     
     if (!create_goal) {
         delete reg_steps.front();
         reg_steps.pop_front();
-    }
-    
-    // Strengthen all of the steps so they don't fire a forbidden state-action
-    //  pair at some point. The strengthening is sufficient but not neccessary
-    s = new PartialState(g_initial_state());
-    PartialState * old_s = s;
-    int i = 0;
-    for (list<PolicyItem *>::reverse_iterator op_iter = reg_steps.rbegin(); op_iter != reg_steps.rend(); ++op_iter) {
-        assert(i < plan.size() || create_goal);
-        if (i < plan.size()) {
-            ((RegressionStep*)(*op_iter))->strengthen(s);
-            s = new PartialState(*old_s, *plan[i], true);
-            delete old_s;
-            old_s = s;
-            i++;
-        }
     }
     
     for (int i = 0; i < states.size(); i++)
