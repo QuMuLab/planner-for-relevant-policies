@@ -205,9 +205,9 @@ int main(int argc, const char **argv) {
         g_policy->dump_human_policy();
     }
     
-    if (sim->succeeded) {
-        exit_with(EXIT_PLAN_FOUND);
-    } else {
-        exit_with(EXIT_UNSOLVED_INCOMPLETE);
-    }
+    if (g_policy->is_strong_cyclic())
+        exit_with(EXIT_STRONG_CYCLIC);
+    else
+        exit_with(EXIT_NOT_STRONG_CYCLIC);
+    
 }
