@@ -40,7 +40,11 @@ enum ExitCode {
     EXIT_UNSOLVED_INCOMPLETE = 5,
     EXIT_OUT_OF_MEMORY = 6,
     // Currently unused.
-    EXIT_TIMEOUT = 7
+    EXIT_TIMEOUT = 7,
+    // Used for PRP
+    EXIT_STRONG_CYCLIC = 8,
+    EXIT_STRONG = 9,
+    EXIT_NOT_STRONG_CYCLIC = 10
 };
 
 extern void exit_with(ExitCode returncode) __attribute__((noreturn));

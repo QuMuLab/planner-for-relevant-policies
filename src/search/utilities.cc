@@ -79,6 +79,15 @@ void exit_with(ExitCode exitcode) {
     case EXIT_TIMEOUT:
         cout << "Time limit has been reached." << endl;
         break;
+    case EXIT_STRONG:
+        cout << "Strong plan found." << endl;
+        break;
+    case EXIT_STRONG_CYCLIC:
+        cout << "Strong cyclic plan found." << endl;
+        break;
+    case EXIT_NOT_STRONG_CYCLIC:
+        cout << "Plan found, but not strong cyclic." << endl;
+        break;
     default:
         cerr << "Exitcode: " << exitcode << endl;
         ABORT("Unkown exitcode.");
