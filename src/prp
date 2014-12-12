@@ -62,8 +62,6 @@ fi
 TIME="$TIME --output=elapsed.time --format=%S\n%U\n"
 
 if [[ "$#" -lt 2 ]]; then
-    echo "Too few params?"
-    echo "$#"
     usage
 fi
 
