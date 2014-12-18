@@ -93,8 +93,23 @@ bool perform_jit_repairs(Simulator *sim) {
                 sim->set_goal(current_goal);
                 have_solution = sim->replan();
                 
-                // It may happen that solving creates a bad policy, and a second pass catches this
-                if (!(g_policy->get_best_step(*current_state)))
+                //
+                // As part of the recording process of solving the
+                //  problem, we probe reachable states for new deadends
+                //  and this may generate new forbidden state-action
+                //  pairs. As a result, this can invalidate the weak
+                //  plan we just constructed. So, we continually try to
+                //  find a weak plan such that the newly detected dead-
+                //  ends don't squash the weak plan right away.
+                //
+                // Note: Future parts of the weak plan may not work
+                //       the loop completes, but if that's the case
+                //       then we will necesarily replan when we reach
+                //       that state (the returned regstep will avoid
+                //       forbidden state-action pairs and so null is
+                //       returned if the weak plan no longer works).
+                //
+                while (have_solution && !(g_policy->get_best_step(*current_state)))
                     have_solution = sim->replan();
                 
                 
