@@ -17,14 +17,6 @@
 #include <new>
 using namespace std;
 
-struct FOO {
-    PartialState * full_state;
-    PartialState * expected_state;
-    RegressionStep * prev_regstep;
-    const Operator * prev_op;
-    FOO(PartialState * fs, PartialState * es, RegressionStep * pr, const Operator * op) :
-       full_state(fs), expected_state(es), prev_regstep(pr), prev_op(op) {}
-};
 
 int main(int argc, const char **argv) {
     register_event_handlers();
