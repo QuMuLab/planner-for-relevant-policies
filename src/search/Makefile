@@ -317,6 +317,7 @@ all: release debug profile
 ## Build rules for the release target follow.
 
 release: $(TARGET_RELEASE)
+	rm -f $(TARGET_DEBUG)
 
 $(TARGET_RELEASE): $(OBJECTS_RELEASE)
 	$(CC) $(LINKOPT) $(LINKOPT_RELEASE) $(OBJECTS_RELEASE) $(POSTLINKOPT) $(POSTLINKOPT_RELEASE) -o $(TARGET_RELEASE)
@@ -328,6 +329,7 @@ $(OBJECTS_RELEASE): .obj/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
 ## Build rules for the debug target follow.
 
 debug: $(TARGET_DEBUG)
+	rm -f $(TARGET_RELEASE)
 
 $(TARGET_DEBUG): $(OBJECTS_DEBUG)
 	$(CC) $(LINKOPT) $(LINKOPT_DEBUG) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG)
