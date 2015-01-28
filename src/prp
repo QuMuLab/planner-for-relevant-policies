@@ -18,6 +18,9 @@ TRANSLATE="$BASEDIR/translate/translate.py"
 PREPROCESS="$BASEDIR/preprocess/preprocess"
 SEARCH="$BASEDIR/search/downward"
 
+# Settings
+INV_TIME_LIMIT="300"
+
 # Check for citation request
 if [ "--citation" = "$1" ]; then
   echo "
@@ -65,14 +68,20 @@ if [[ "$#" -lt 2 ]]; then
     usage
 fi
 
+IPC="ipc"
+if [[ "$1" == "debug" ]]; then
+    IPC="debug $IPC"
+    shift
+fi
+
 echo "1. Running translator"
 if [[ -e "$2" ]]; then
     echo "Second argument is a file name: use two translator arguments."
-    $TIME "$TRANSLATE" "$1" "$2"
+    $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1" "$2"
     shift 2
 else
     echo "Second argument is not a file name: auto-detect domain file."
-    $TIME "$TRANSLATE" "$1"
+    $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1"
     shift
 fi
 echo
@@ -82,8 +91,8 @@ $TIME --append "$PREPROCESS" < output.sas
 echo
 
 echo "3. Running search"
-echo "$SEARCH" ipc policy-repair < output "$@"
-"$SEARCH" ipc policy-repair < output "$@"
+echo "$SEARCH" "$IPC" policy-repair < output "$@"
+"$SEARCH" $IPC policy-repair < output "$@"
 echo
 
 

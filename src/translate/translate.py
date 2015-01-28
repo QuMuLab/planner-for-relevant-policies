@@ -636,6 +636,7 @@ def dump_statistics(sas_task):
 
 def parse_args():
     argparser = argparse.ArgumentParser()
+    argparser.add_argument("inv_limit", help="limit on the invariant synthesis")
     argparser.add_argument(
         "domain", nargs="?", help="path to domain pddl file")
     argparser.add_argument(
@@ -655,6 +656,8 @@ def main():
 
     with timers.timing("Normalizing task"):
         normalize.normalize(task)
+    
+    task.INVARIANT_TIME_LIMIT = int(args.inv_limit)
 
     if args.generate_relaxed_task:
         # Remove delete effects.
