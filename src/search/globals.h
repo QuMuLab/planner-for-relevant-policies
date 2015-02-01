@@ -119,6 +119,7 @@ extern bool g_check_with_forbidden; // We set this when a strong cyclic policy i
 extern bool g_generalize_deadends; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
 extern bool g_record_online_deadends; // Record the deadends as they occur online, and add them to the deadend policy after solving
 extern bool g_optimized_scd; // Do optimized strong cyclic detection
+extern bool g_final_fsap_free_round; // Do a final JIC pass with deadends disabled
 extern bool g_seeded; // Used to make sure we only seed the rng once
 extern int g_trial_depth; // Used to limit the number of simulation steps
 extern int g_num_trials; // Number of trials that should be used for the simulation

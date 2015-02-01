@@ -158,6 +158,34 @@ int main(int argc, const char **argv) {
         if (g_best_policy->get_score() > g_policy->get_score())
             g_policy = g_best_policy;
     }
+
+    if (g_final_fsap_free_round) {
+    
+        bool os1 = g_detect_deadends;
+        bool os2 = g_generalize_deadends;
+        bool os3 = g_record_online_deadends;
+        
+        g_detect_deadends = false;
+        g_generalize_deadends = false;
+        g_record_online_deadends = false;
+        
+        if (g_deadend_policy)
+            delete g_deadend_policy;
+        if (g_deadend_states)
+            delete g_deadend_states;
+        g_deadend_policy = new Policy();
+        g_deadend_states = new Policy();
+        
+        g_policy->mark_incomplete();
+        
+        if (!g_silent_planning)
+            cout << "\n\nDoing one final JIC round without deadend detection." << endl;
+        perform_jit_repairs(sim);
+        
+        g_detect_deadends = os1;
+        g_generalize_deadends = os2;
+        g_record_online_deadends = os3;
+    }
     
     if (g_optimized_scd) {
         cout << "\n\nRunning a final SCD check..." << endl;
