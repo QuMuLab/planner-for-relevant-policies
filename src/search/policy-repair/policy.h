@@ -53,6 +53,7 @@ public:
     
     void mark_strong() { score = 1.1; }
     void mark_complete() { complete = true; score = 0.0; }
+    void mark_incomplete() { complete = false; score = 0.0; }
     
     void evaluate();
     double get_score();
