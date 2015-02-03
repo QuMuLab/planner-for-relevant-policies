@@ -112,7 +112,7 @@ extern bool g_fullstate; // Use the full state for regression
 extern bool g_plan_locally; // Plan for the expected state rather than replanning to the goal
 extern bool g_plan_locally_limited; // Limit the local planning to a small number of search nodes
 extern bool g_limit_states; // Used to limit the search when replanning for a local goal
-extern bool g_limit_states_max; // Maximum number of states to expand in the subsequent search
+extern int g_limit_states_max; // Maximum number of states to expand in the subsequent search
 extern bool g_force_limit_states; // Forces the search to stop based on the g_limit_states_max
 extern bool g_plan_with_policy; // Stop planning when the policy matches
 extern bool g_partial_planlocal; // Plan locally to the partial state that would have matched our expected state
