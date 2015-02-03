@@ -172,8 +172,8 @@ int LazySearch::step() {
 
     if (node.is_new() || reopen) {
         
-        if (g_plan_locally_limited && g_limit_states) {
-            if (state_count > 100) // Gotta love magic numbers...
+        if (g_force_limit_states || (g_plan_locally_limited && g_limit_states)) {
+            if (state_count > g_limit_states_max)
                 return FAILED;
             else
                 state_count++;
