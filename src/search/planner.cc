@@ -164,10 +164,14 @@ int main(int argc, const char **argv) {
         bool os1 = g_detect_deadends;
         bool os2 = g_generalize_deadends;
         bool os3 = g_record_online_deadends;
+        bool os4 = g_force_limit_states;
+        int  os5 = g_limit_states_max;
         
         g_detect_deadends = false;
         g_generalize_deadends = false;
         g_record_online_deadends = false;
+        g_force_limit_states = true;
+        g_limit_states_max = 1000;
         
         if (g_deadend_policy)
             delete g_deadend_policy;
@@ -185,6 +189,8 @@ int main(int argc, const char **argv) {
         g_detect_deadends = os1;
         g_generalize_deadends = os2;
         g_record_online_deadends = os3;
+        g_force_limit_states = os4;
+        g_limit_states_max = os5;
     }
     
     if (g_optimized_scd) {
