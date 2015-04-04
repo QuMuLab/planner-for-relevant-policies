@@ -57,6 +57,8 @@ def add_fault_limit(p, max_faults):
         p.predicates.append(p.faults[-1])
 
     for a in p.actions:
+        if isinstance(a.precondition, parser.Primitive) or isinstance(a.precondition, parser.Not):
+            a.precondition = parser.And([a.precondition])
         assert isinstance(a.precondition, parser.And)
         a.precondition.args.append(parser.Primitive(started))
 
