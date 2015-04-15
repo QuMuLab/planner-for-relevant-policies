@@ -476,6 +476,7 @@ Policy *g_best_policy; // The best policy we've found so far
 vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts found while planning
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
 int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
+bool g_updated_deadends = false; // True if updating the policy created new deadends
 bool g_silent_planning = true;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run
 bool g_fullstate = false; // Use the full state for regression

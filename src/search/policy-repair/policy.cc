@@ -395,8 +395,10 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
                 }
             }
         }
-        if (new_deadends.size() > 0)
+        if (new_deadends.size() > 0) {
+            g_updated_deadends = true;
             update_deadends(new_deadends);
+        }
     }
     
     g_timer_policy_build.stop();
