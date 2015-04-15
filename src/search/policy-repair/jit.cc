@@ -278,17 +278,16 @@ bool perform_jit_repairs(Simulator *sim) {
     cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
     
     // If we closed every open state, then the policy must be strongly cyclic.
-    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit)) {
+    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit) && !made_change) {
         g_policy->mark_strong();
         cout << "Marking policy strong cyclic." << endl;
     }
-        
-    if (g_detect_deadends && (g_failed_open_states > 0)) {
-        
-        update_deadends(failed_states);
+    
+    if (made_change || (g_failed_open_states > 0)) {
         
         double cur_score = g_policy->get_score();
-        if (cur_score > g_best_policy_score) {
+        
+        if (g_policy->better_than(g_best_policy)) {
             
             cout << "Found a better policy of score " << cur_score << endl;
             
@@ -299,14 +298,19 @@ bool perform_jit_repairs(Simulator *sim) {
             g_best_policy = g_policy;
             
         } else {
-            
             cout << "Went through another policy of score " << cur_score << endl;
-            if (g_best_policy != g_policy)
-                delete g_policy;
         }
+        
+    }
+    
+    if (g_detect_deadends && (g_failed_open_states > 0) && (g_timer_jit() < g_jic_limit)) {
+        
+        update_deadends(failed_states);
         
         // We delete the policy so we can start from scratch next time with
         //  the deadends recorded.
+        if (g_best_policy != g_policy)
+            delete g_policy;
         g_policy = new Policy();
         
         made_change = true;
