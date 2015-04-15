@@ -303,9 +303,10 @@ bool perform_jit_repairs(Simulator *sim) {
         
     }
     
-    if (g_detect_deadends && (g_failed_open_states > 0) && (g_timer_jit() < g_jic_limit)) {
+    if (g_detect_deadends && ((g_failed_open_states > 0) || g_updated_deadends) && (g_timer_jit() < g_jic_limit)) {
         
         update_deadends(failed_states);
+        g_updated_deadends = false;
         
         // We delete the policy so we can start from scratch next time with
         //  the deadends recorded.

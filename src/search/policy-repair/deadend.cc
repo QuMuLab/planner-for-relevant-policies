@@ -57,7 +57,7 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
         const Operator * prev_op = failed_states[i]->prev_op;
         
         //cout << "Creating forbidden state-action pairs for deadend:" << endl;
-        //failed_state->dump();
+        //failed_state->dump_pddl();
         
         // HAZ: Only do the forbidden state-action computation when
         //  the non-deterministic action doesn't have any associated
