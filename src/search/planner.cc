@@ -159,7 +159,7 @@ int main(int argc, const char **argv) {
             g_policy = g_best_policy;
     }
 
-    if (g_final_fsap_free_round) {
+    if (!(g_policy->is_strong_cyclic()) && g_final_fsap_free_round) {
     
         bool os1 = g_detect_deadends;
         bool os2 = g_generalize_deadends;
