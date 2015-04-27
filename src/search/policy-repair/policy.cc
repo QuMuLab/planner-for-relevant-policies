@@ -767,18 +767,26 @@ bool regstep_compare(PolicyItem* first, PolicyItem* second) {
     else
         return ((RegressionStep*)first)->distance < ((RegressionStep*)second)->distance;
 }
-void Policy::dump_human_policy() {
+void Policy::dump_human_policy(bool fsap) {
     
-    all_items.sort(regstep_compare);
+    if (!fsap)
+        all_items.sort(regstep_compare);
     
     fstream outfile;
-    outfile.open("policy.out", ios::out);
+    if (!fsap)
+        outfile.open("policy.out", ios::out);
+    else
+        outfile.open("policy.fsap", ios::out);
         
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter) {
         
         outfile << "\nIf holds:";
-        PartialState *s = ((RegressionStep*)(*op_iter))->state;
+        PartialState *s;
+        if (fsap)
+            s = ((NondetDeadend*)(*op_iter))->state;
+        else
+            s = ((RegressionStep*)(*op_iter))->state;
         for (int i = 0; i < g_variable_domain.size(); i++) {
             if (-1 != (*s)[i]) {
                 outfile << " ";
@@ -786,7 +794,12 @@ void Policy::dump_human_policy() {
             }
         }
         outfile << endl;
-        outfile << "Execute: " << ((RegressionStep*)(*op_iter))->get_name() << endl;
+        if (fsap)
+            outfile << "Forbid: " << ((NondetDeadend*)(*op_iter))->get_name() << endl;
+        else
+            outfile << "Execute: " << ((RegressionStep*)(*op_iter))->get_name() << endl;
+            
+        
     }
     
     outfile.close();

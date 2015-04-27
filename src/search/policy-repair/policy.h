@@ -69,7 +69,7 @@ public:
     bool step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadends = true);
     bool goal_sc_reachable(const PartialState &curr);
     
-    void dump_human_policy();
+    void dump_human_policy(bool fsap=false);
 };
 
 

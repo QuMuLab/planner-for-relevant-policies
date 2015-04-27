@@ -502,6 +502,11 @@ Heuristic *g_heuristic_for_reachability;
 int g_dump_policy = 0; // Whether or not we should dump the policy
 int g_monotonicity_violations = 0; // Count on the number of times we need to add a deadend because of a bad policy loop
 
+bool g_optimize_final_policy = false; // Only keep the final pairs and FSAPs that are needed
+bool g_record_relevant_pairs = false; // If true, used pairs will be kept
+std::vector<RegressionStep *> g_relevant_regression_steps;
+std::vector<NondetDeadend *> g_relevant_fsaps;
+
 bool g_debug = false; // Flag for debugging parts of the code
 int g_debug_count = 1; // Index that allows to locate spots in the output
 

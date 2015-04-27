@@ -212,20 +212,39 @@ int main(int argc, const char **argv) {
     
     cout << "\n\n" << endl;
     
+    if (g_optimize_final_policy) {
+        g_timer_policy_build.resume();
+        
+        g_record_relevant_pairs = true;
+        perform_jit_repairs(sim);
+        
+        // Rebuild the policy
+        
+        g_timer_policy_build.stop();
+    }
+    
     g_timer.stop();
     sim->dump();
     
     cout << "\n\n" << endl;
     
     if (1 == g_dump_policy) {
-        cout << "Dumping the policy..." << endl;
+        
+        cout << "Dumping the policy and fsaps..." << endl;
         ofstream outfile;
+        
         outfile.open("policy.out", ios::out);
         g_policy->generate_cpp_input(outfile);
         outfile.close();
+        
+        outfile.open("policy.fsap", ios::out);
+        g_deadend_policy->generate_cpp_input(outfile);
+        outfile.close();
+        
     } else if (2 == g_dump_policy) {
-        cout << "Dumping the policy..." << endl;
+        cout << "Dumping the policy and fsaps..." << endl;
         g_policy->dump_human_policy();
+        g_deadend_policy->dump_human_policy(true);
     }
     
     if (g_policy->is_strong_cyclic())

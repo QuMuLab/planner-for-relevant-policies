@@ -264,6 +264,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--final-fsap-free-round") == 0) {
             ++i;
             g_final_fsap_free_round = atoi(argv[i]);
+        } else if (arg.compare("--optimize-final-policy") == 0) {
+            ++i;
+            g_optimize_final_policy = atoi(argv[i]);
         } else if (arg.compare("--dump-policy") == 0) {
             ++i;
             g_dump_policy = atoi(argv[i]);
@@ -328,6 +331,8 @@ string OptionParser::usage(string progname) {
         "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
         "--final-fsap-free-round 1/0 (default=0)\n"
         "    Do one final JIC round with the best policy found (closing every leaf possible).\n\n"
+        "--optimize-final-policy 1/0\n"
+        "    Do a final simulation and throw out any pair (or FSAP) not used.\n\n"
         "--dump-policy 1/2\n"
         "    Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.\n\n"
         "--debug-output 1/0\n"
