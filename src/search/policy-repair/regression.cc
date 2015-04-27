@@ -31,10 +31,7 @@ void NondetDeadend::dump() const {
 }
 
 string NondetDeadend::get_name() {
-    //return op_name;
-    string *toRet = new string("Nondet index: ");
-    *toRet += op_index;
-    return *toRet;
+    return (*(g_nondet_mapping[op_index]))[0]->get_nondet_name();
 }
 
 int NondetDeadend::get_index() {
