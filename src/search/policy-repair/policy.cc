@@ -395,8 +395,10 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
                 }
             }
         }
-        if (new_deadends.size() > 0)
+        if (new_deadends.size() > 0) {
+            g_updated_deadends = true;
             update_deadends(new_deadends);
+        }
     }
     
     g_timer_policy_build.stop();
@@ -460,6 +462,23 @@ RegressionStep *Policy::get_best_step(const PartialState &curr) {
             }
         }
     }
+    if (return_if_possible && (-1 == best_index)) {
+        for (int i = 0; i < current_steps.size(); i++) {
+            int cur_val = ((RegressionStep*)(current_steps[i]))->distance;
+            
+            if (cur_val < best_val) {
+                best_val = cur_val;
+                best_index = i;
+            }
+            
+            if (g_optimized_scd &&
+                ((RegressionStep*)(current_steps[i]))->is_sc &&
+                (cur_val < best_sc_val)) {
+                best_sc_val = cur_val;
+                best_sc_index = i;
+            }
+        }
+    }
     g_timer_policy_use.stop();
     
     if (-1 == best_index)
@@ -474,6 +493,7 @@ Policy::Policy() {
     root = 0;
     score = 0.0;
     complete = false;
+    return_if_possible = false;
 }
 
 Policy::~Policy() {
@@ -496,6 +516,16 @@ void Policy::generate_cpp_input(ofstream &outfile) const {
     root->generate_cpp_input(outfile);
 }
 
+
+bool Policy::better_than(Policy * other) {
+    if (get_score() > other->get_score())
+        return true;
+    
+    if (get_score() < other->get_score())
+        return false;
+    
+    return get_size() > other->get_size();
+}
 
 
 double Policy::get_score() {

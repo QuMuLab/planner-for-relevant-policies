@@ -173,18 +173,13 @@ int main(int argc, const char **argv) {
         g_force_limit_states = true;
         g_limit_states_max = 1000;
         
-        if (g_deadend_policy)
-            delete g_deadend_policy;
-        if (g_deadend_states)
-            delete g_deadend_states;
-        g_deadend_policy = new Policy();
-        g_deadend_states = new Policy();
-        
+        g_policy->return_if_possible = true;
         g_policy->mark_incomplete();
         
-        if (!g_silent_planning)
-            cout << "\n\nDoing one final JIC round without deadend detection." << endl;
+        cout << "\n\nDoing one final JIC round ignoring FSAPs for unhandled states." << endl;
         perform_jit_repairs(sim);
+        
+        g_policy->return_if_possible = false;
         
         g_detect_deadends = os1;
         g_generalize_deadends = os2;
@@ -207,6 +202,8 @@ int main(int argc, const char **argv) {
     g_generalize_deadends = false;
     g_record_online_deadends = false;
     g_optimized_scd = false;
+    // Allow selection of a forbidden action when no legal actions exist
+    g_policy->return_if_possible = true;
 
     cout << "\n\nRunning the simulation..." << endl;
     g_timer_simulator.resume();

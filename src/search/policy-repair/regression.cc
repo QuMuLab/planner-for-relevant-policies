@@ -24,9 +24,9 @@ string RegressionStep::get_name() {
 
 void NondetDeadend::dump() const {
     cout << "Non-deterministic deadend:" << endl;
-    cout << "Operator: " << op_index << endl;
+    cout << "Operator: " << g_operators[op_index].get_name() << endl;
     cout << " -{ State }-" << endl;
-    state->dump_fdr();
+    state->dump_pddl();
     cout << "" << endl;
 }
 

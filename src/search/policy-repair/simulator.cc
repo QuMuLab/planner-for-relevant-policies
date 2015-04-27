@@ -314,24 +314,25 @@ float standard_dev(vector<int> &nums) {
 }
 
 void Simulator::dump() {
-    cout << "-{ General Statistics }-" << endl;
-    cout << "Successful states: " << average(record_successful_states) << " +/- " << standard_dev(record_successful_states) << endl;
-    cout << "Replans: " << average(record_failed_states) << " +/- " << standard_dev(record_failed_states) << endl;
-    cout << "Actions: " << average(record_total_states) << " +/- " << standard_dev(record_total_states) << endl;
-    cout << "State-Action Pairs: " << g_policy->get_size() << endl;
-    cout << "Strongly Cyclic: " << (g_policy->is_strong_cyclic() ? "True" : "False") << endl;
-    cout << "Policy Score: " << g_policy->get_score() << endl;
-    cout << "Succeeded: " << record_succeeded << " / " << g_num_trials << endl;
-    cout << "Depth limit reached: " << record_depth_limit << " / " << g_num_trials << endl;
+    cout << "                  -{ General Statistics }-\n" << endl;
+    cout << "       Monotonicity violations: " << g_monotonicity_violations << endl;
+    cout << "             Successful states: " << average(record_successful_states) << " +/- " << standard_dev(record_successful_states) << endl;
+    cout << "                       Replans: " << average(record_failed_states) << " +/- " << standard_dev(record_failed_states) << endl;
+    cout << "                       Actions: " << average(record_total_states) << " +/- " << standard_dev(record_total_states) << endl;
+    cout << "            State-Action Pairs: " << g_policy->get_size() << endl;
+    cout << "               Strongly Cyclic: " << (g_policy->is_strong_cyclic() ? "True" : "False") << endl;
+    cout << "                  Policy Score: " << g_policy->get_score() << endl;
+    cout << "                     Succeeded: " << record_succeeded << " / " << g_num_trials << endl;
+    cout << " Depth limit (of " << g_trial_depth << ") reached: " << record_depth_limit << " / " << g_num_trials << endl;
     
-    cout << "\n-{ Timing Statistics }-" << endl;
-    cout << "Regression Computation: " << g_timer_regression << endl;
-    cout << "Engine Initialization: " << g_timer_engine_init << endl;
-    cout << "Search Time: " << g_timer_search << endl;
-    cout << "Policy Construction: " << g_timer_policy_build << endl;
-    cout << "Evaluating the policy quality: " << g_timer_policy_eval << endl;
-    cout << "Using the policy: " << g_timer_policy_use << endl;
-    cout << "Just-in-case Repairs: " << g_timer_jit << endl;
-    cout << "Simulator time: " << g_timer_simulator << endl;
-    cout << "Total time: " << g_timer << endl;
+    cout << "\n\n                  -{ Timing Statistics }-\n" << endl;
+    cout << "        Regression Computation: " << g_timer_regression << endl;
+    cout << "         Engine Initialization: " << g_timer_engine_init << endl;
+    cout << "                   Search Time: " << g_timer_search << endl;
+    cout << "           Policy Construction: " << g_timer_policy_build << endl;
+    cout << " Evaluating the policy quality: " << g_timer_policy_eval << endl;
+    cout << "              Using the policy: " << g_timer_policy_use << endl;
+    cout << "          Just-in-case Repairs: " << g_timer_jit << endl;
+    cout << "                Simulator time: " << g_timer_simulator << endl;
+    cout << "                    Total time: " << g_timer << endl;
 }

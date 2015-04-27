@@ -170,12 +170,28 @@ bool perform_jit_repairs(Simulator *sim) {
                     PartialState *expected_state = full_expected_state;
                     created_states.push_back(full_expected_state);
                     
-                    if (g_partial_planlocal) {
-                        RegressionStep * expected_regstep = g_policy->get_best_step(*full_expected_state);
-                        if (expected_regstep) {
-                            expected_state = new PartialState(*(expected_regstep->state));
-                            created_states.push_back(expected_state);
-                        }
+                    RegressionStep * expected_regstep = g_policy->get_best_step(*full_expected_state);
+                    
+                    if (g_partial_planlocal && expected_regstep) {
+                        expected_state = new PartialState(*(expected_regstep->state));
+                        created_states.push_back(expected_state);
+                    }
+                    
+                    // Make sure that we aren't looping because of forbidden
+                    //  state-action pairs
+                    if (expected_regstep && (expected_regstep->distance >= regstep->distance)) {
+                        g_monotonicity_violations++;
+                        // TODO: It's a shame to use a full state here
+                        //       for the deadend. However, we can't use
+                        //       the expected state, as that is what the
+                        //       false expected_regstep is using. What
+                        //       we need instead is the combination of
+                        //       reasons from the FSAPs that forbid the
+                        //       use of the /original/ regstep -- i.e.,
+                        //       what is the deadend context that led to
+                        //       having a crappy regstep be the only one
+                        //       available.
+                        failed_states.push_back(new DeadendTuple(full_expected_state, current_state, regstep->op));
                     }
                     
                     for (int i = 0; i < g_nondet_mapping[regstep->op->nondet_index]->size(); i++) {
@@ -278,17 +294,16 @@ bool perform_jit_repairs(Simulator *sim) {
     cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
     
     // If we closed every open state, then the policy must be strongly cyclic.
-    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit)) {
+    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit) && !made_change && !g_updated_deadends) {
         g_policy->mark_strong();
         cout << "Marking policy strong cyclic." << endl;
     }
-        
-    if (g_detect_deadends && (g_failed_open_states > 0)) {
-        
-        update_deadends(failed_states);
+    
+    if (made_change || (g_failed_open_states > 0)) {
         
         double cur_score = g_policy->get_score();
-        if (cur_score > g_best_policy_score) {
+        
+        if (g_policy->better_than(g_best_policy)) {
             
             cout << "Found a better policy of score " << cur_score << endl;
             
@@ -299,14 +314,20 @@ bool perform_jit_repairs(Simulator *sim) {
             g_best_policy = g_policy;
             
         } else {
-            
             cout << "Went through another policy of score " << cur_score << endl;
-            if (g_best_policy != g_policy)
-                delete g_policy;
         }
+        
+    }
+    
+    if (g_detect_deadends && ((g_failed_open_states > 0) || g_updated_deadends) && (g_timer_jit() < g_jic_limit)) {
+        
+        update_deadends(failed_states);
+        g_updated_deadends = false;
         
         // We delete the policy so we can start from scratch next time with
         //  the deadends recorded.
+        if (g_best_policy != g_policy)
+            delete g_policy;
         g_policy = new Policy();
         
         made_change = true;

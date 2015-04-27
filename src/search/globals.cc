@@ -476,6 +476,7 @@ Policy *g_best_policy; // The best policy we've found so far
 vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts found while planning
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
 int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
+bool g_updated_deadends = false; // True if updating the policy created new deadends
 bool g_silent_planning = true;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run
 bool g_fullstate = false; // Use the full state for regression
@@ -499,6 +500,7 @@ double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
 vector<pair<int, int> > g_goal_orig;
 Heuristic *g_heuristic_for_reachability;
 int g_dump_policy = 0; // Whether or not we should dump the policy
+int g_monotonicity_violations = 0; // Count on the number of times we need to add a deadend because of a bad policy loop
 
 bool g_debug = false; // Flag for debugging parts of the code
 int g_debug_count = 1; // Index that allows to locate spots in the output
