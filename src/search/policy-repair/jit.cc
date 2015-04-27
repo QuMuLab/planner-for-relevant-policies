@@ -180,7 +180,7 @@ bool perform_jit_repairs(Simulator *sim) {
                     // Make sure that we aren't looping because of forbidden
                     //  state-action pairs
                     if (expected_regstep && (expected_regstep->distance >= regstep->distance)) {
-                        cout << "VIOLATED THE MONOTONICITY!" << endl;
+                        g_monotonicity_violations++;
                         // TODO: It's a shame to use a full state here
                         //       for the deadend. However, we can't use
                         //       the expected state, as that is what the

@@ -500,6 +500,7 @@ double g_jic_limit = 1800.0; // Limit for the just-in-case repairs
 vector<pair<int, int> > g_goal_orig;
 Heuristic *g_heuristic_for_reachability;
 int g_dump_policy = 0; // Whether or not we should dump the policy
+int g_monotonicity_violations = 0; // Count on the number of times we need to add a deadend because of a bad policy loop
 
 bool g_debug = false; // Flag for debugging parts of the code
 int g_debug_count = 1; // Index that allows to locate spots in the output
