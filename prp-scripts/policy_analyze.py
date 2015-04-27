@@ -408,7 +408,7 @@ def ab_compare(res1, res2):
 
     def get_time(line):
         if line[4] == '-':
-            return float(line[2])
+            return max(0.1,float(line[2]))
         else:
             return float('inf')
 
