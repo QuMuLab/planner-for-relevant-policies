@@ -106,6 +106,7 @@ extern Policy *g_best_policy; // The best policy we've found so far
 extern std::vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts found while planning
 extern double g_best_policy_score; // Score for the best policy we've seen so far
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
+extern bool g_updated_deadends; // True if updating the policy created new deadends
 extern bool g_silent_planning; // Silence the planning output
 extern bool g_forgetpolicy; // Forget the policy after every simulation run
 extern bool g_fullstate; // Use the full state for regression
@@ -129,6 +130,7 @@ extern double g_jic_limit; // Limit for the just-in-case repairs
 extern std::vector<std::pair<int, int> > g_goal_orig;
 extern Heuristic *g_heuristic_for_reachability;
 extern int g_dump_policy; // Whether or not we should dump the policy
+extern int g_monotonicity_violations; // Count on the number of times we need to add a deadend because of a bad policy loop
 
 extern bool g_debug; // Flag for debugging parts of the code
 extern int g_debug_count; // Index that allows to locate spots in the output

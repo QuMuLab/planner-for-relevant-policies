@@ -41,6 +41,8 @@ public:
     Policy();
     ~Policy();
     
+    bool return_if_possible;
+    
     void dump() const;
     void generate_cpp_input(ofstream &outfile) const;
     
@@ -57,6 +59,8 @@ public:
     
     void evaluate();
     double get_score();
+    bool better_than(Policy * other);
+    
     int get_size() { return all_items.size(); }
     bool is_complete() { return complete; }
     bool is_strong_cyclic() { return (1.1 == score); }
