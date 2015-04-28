@@ -70,6 +70,8 @@ public:
     bool goal_sc_reachable(const PartialState &curr);
     
     void dump_human_policy(bool fsap=false);
+    
+    void copy_relevant_items(list<PolicyItem *> &items, bool checksc=false);
 };
 
 

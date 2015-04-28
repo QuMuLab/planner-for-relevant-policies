@@ -111,6 +111,7 @@ extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_updated_deadends; // True if updating the policy created new deadends
 extern bool g_silent_planning; // Silence the planning output
 extern bool g_forgetpolicy; // Forget the policy after every simulation run
+extern bool g_replan_during_simulation; // True if we want to allow the system to replan
 extern bool g_fullstate; // Use the full state for regression
 extern bool g_plan_locally; // Plan for the expected state rather than replanning to the goal
 extern bool g_plan_locally_limited; // Limit the local planning to a small number of search nodes
@@ -136,8 +137,6 @@ extern int g_monotonicity_violations; // Count on the number of times we need to
 
 extern bool g_optimize_final_policy; // Only keep the final pairs and FSAPs that are needed
 extern bool g_record_relevant_pairs; // If true, used pairs will be kept
-extern std::vector<RegressionStep *> g_relevant_regression_steps;
-extern std::vector<NondetDeadend *> g_relevant_fsaps;
 
 extern bool g_debug; // Flag for debugging parts of the code
 extern int g_debug_count; // Index that allows to locate spots in the output

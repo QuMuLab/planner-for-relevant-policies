@@ -479,6 +479,7 @@ int g_failed_open_states = 0; // Number of failed open states in the most recent
 bool g_updated_deadends = false; // True if updating the policy created new deadends
 bool g_silent_planning = true;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run
+bool g_replan_during_simulation = true; // True if we want to allow the system to replan
 bool g_fullstate = false; // Use the full state for regression
 bool g_plan_locally = true; // Plan for the expected state rather than replanning to the goal
 bool g_plan_locally_limited = true; // Limit the local planning to a small number of search nodes
@@ -504,8 +505,6 @@ int g_monotonicity_violations = 0; // Count on the number of times we need to ad
 
 bool g_optimize_final_policy = false; // Only keep the final pairs and FSAPs that are needed
 bool g_record_relevant_pairs = false; // If true, used pairs will be kept
-std::vector<RegressionStep *> g_relevant_regression_steps;
-std::vector<NondetDeadend *> g_relevant_fsaps;
 
 bool g_debug = false; // Flag for debugging parts of the code
 int g_debug_count = 1; // Index that allows to locate spots in the output

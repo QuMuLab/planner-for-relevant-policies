@@ -20,11 +20,16 @@ using namespace std;
 struct PolicyItem {
     PartialState *state;
     Policy *pol;
+    bool relevant;
+    int _generality;
     
-    PolicyItem(PartialState *s) : state(s), pol(0) {}
+    PolicyItem(PartialState *s) : state(s), pol(0), relevant(false), _generality(-1) {}
     virtual ~PolicyItem() {}
     virtual string get_name() = 0;
     virtual void dump() const = 0;
+    
+    int generality();
+    
 };
 
 struct NondetDeadend : PolicyItem {

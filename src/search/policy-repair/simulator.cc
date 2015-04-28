@@ -33,7 +33,8 @@ void Simulator::run() {
             g_deadend_states = new Policy();
         }
         
-        run_once();
+        run_once(!g_replan_during_simulation);
+        
         record_stats();
         
     }

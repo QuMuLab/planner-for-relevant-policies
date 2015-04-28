@@ -3,6 +3,7 @@
 
 void RegressionStep::dump() const {
     cout << "Regression Step (" << distance << ")" << endl;
+    cout << " Relevant: " << relevant << endl;
     cout << " SC: " << is_sc << endl;
     if (!is_goal) {
         cout << " -{ Operator }-" << endl;
@@ -38,6 +39,18 @@ int NondetDeadend::get_index() {
     return op_index;
 }
 
+int PolicyItem::generality() {
+    if (-1 != _generality) {
+        _generality = 0;
+        for (int i = 0; i < g_variable_name.size(); i++) {
+            if (-1 == (*state)[i]) {
+                _generality++;
+            }
+        }
+    }
+    
+    return _generality;
+}
 
 void RegressableOperator::dump() const {
     cout << "Regressable operator:" << endl;

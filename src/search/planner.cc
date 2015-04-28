@@ -196,36 +196,67 @@ int main(int argc, const char **argv) {
         while (made_change)
             made_change = g_policy->step_scd(failed_states, false);
     }
+    
+    // Allow selection of a forbidden action when no legal actions exist
+    g_policy->return_if_possible = true;
 
+    if (g_optimize_final_policy) {
+        g_timer_policy_build.resume();
+        
+        cout << "\n\nRunning a final JIT repair to see which pairs are relevant..." << endl;
+        g_record_relevant_pairs = true;
+        perform_jit_repairs(sim);
+        g_record_relevant_pairs = false;
+        cout << "...and creating the new policies..." << endl;
+        
+        g_timer_policy_build.stop();
+        
+        // Rebuild the policies
+        Policy * newPol = new Policy();
+        Policy * newFSAP = new Policy();
+        
+        list<PolicyItem *> reg_items;
+        list<PolicyItem *> fsap_items;
+        
+        g_policy->copy_relevant_items(reg_items, true);
+        g_deadend_policy->copy_relevant_items(fsap_items);
+        
+        newPol->update_policy(reg_items);
+        newFSAP->update_policy(fsap_items);
+        
+        // Re-enable the return_if_possible and other settings
+        newPol->return_if_possible = true;
+        if (g_policy->is_complete())
+            newPol->mark_complete();
+        if (g_policy->is_strong_cyclic())
+            newPol->mark_strong();
+        
+        // DO NOT DELETE: It deletes every PolicyItem
+        //delete g_policy;
+        //delete g_deadend_policy;
+        
+        g_policy = newPol;
+        g_deadend_policy = newFSAP;
+        
+    }
+    
     // Reset the deadend and scd settings for the online simulation(s)
     g_detect_deadends = false;
     g_generalize_deadends = false;
     g_record_online_deadends = false;
     g_optimized_scd = false;
-    // Allow selection of a forbidden action when no legal actions exist
-    g_policy->return_if_possible = true;
 
     cout << "\n\nRunning the simulation..." << endl;
     g_timer_simulator.resume();
     sim->run();
     g_timer_simulator.stop();
     
-    cout << "\n\n" << endl;
-    
-    if (g_optimize_final_policy) {
-        g_timer_policy_build.resume();
-        
-        g_record_relevant_pairs = true;
-        perform_jit_repairs(sim);
-        
-        // Rebuild the policy
-        
-        g_timer_policy_build.stop();
-    }
     
     g_timer.stop();
-    sim->dump();
     
+    
+    cout << "\n\n" << endl;
+    sim->dump();
     cout << "\n\n" << endl;
     
     if (1 == g_dump_policy) {
