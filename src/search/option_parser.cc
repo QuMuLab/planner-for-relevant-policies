@@ -234,6 +234,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--forgetpolicy") == 0) {
             ++i;
             g_forgetpolicy = (1 == atoi(argv[i]));
+        } else if (arg.compare("--replan-on-failure") == 0) {
+            ++i;
+            g_replan_during_simulation = (1 == atoi(argv[i]));
         } else if (arg.compare("--fullstate") == 0) {
             ++i;
             g_fullstate = (1 == atoi(argv[i]));
@@ -307,6 +310,8 @@ string OptionParser::usage(string progname) {
         "    Only perform JIC for the given time.\n\n"
         "--forgetpolicy 1/0\n"
         "    Throw out the policy after every simulation.\n\n"
+        "--replan-on-failure 1/0 (default=1)\n"
+        "    Replan if the state isn't recognized.\n\n"
         "--fullstate 1/0\n"
         "    Use full states in the regression.\n\n"
         "--planlocal 1/0\n"

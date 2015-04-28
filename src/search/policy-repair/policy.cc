@@ -404,6 +404,14 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
     g_timer_policy_build.stop();
 }
 
+void Policy::copy_relevant_items(list<PolicyItem *> &items, bool checksc) {
+    for (list<PolicyItem *>::const_iterator op_iter = all_items.begin(); op_iter != all_items.end(); ++op_iter) {
+        if ((*op_iter)->relevant || (checksc && ((RegressionStep*)(*op_iter))->is_sc)) {
+            items.push_back(*op_iter);
+        }
+    }
+}
+
 void Policy::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
     if (root)
         root->generate_applicable_items(curr, reg_items, keep_all);
@@ -438,6 +446,31 @@ RegressionStep *Policy::get_best_step(const PartialState &curr) {
     for (int i = 0; i < forbidden_items.size(); i++)
         forbidden.insert(((NondetDeadend*)(forbidden_items[i]))->op_index);
     
+    // If we are keeping track of the relevant deadends, then we mark the
+    //  most compact ones that trigger a forbidden action as being relevant.
+    map<int, vector<NondetDeadend *> *> ind_to_fsaps;
+    map<int, NondetDeadend*> ind_to_fsap;
+    if (g_record_relevant_pairs) {
+        // First get all of the fsaps sorted
+        for (int i = 0; i < forbidden_items.size(); i++) {
+            int ind = ((NondetDeadend*)(forbidden_items[i]))->op_index;
+            if (ind_to_fsaps.find(ind) == ind_to_fsaps.end())
+                ind_to_fsaps[ind] = new vector<NondetDeadend *>();
+            ind_to_fsaps[ind]->push_back(((NondetDeadend*)(forbidden_items[i])));
+        }
+        // Next find the best one for each index
+        for (map<int, vector<NondetDeadend *> *>::iterator it=ind_to_fsaps.begin(); it!=ind_to_fsaps.end(); ++it) {
+            int nondet_index = it->first;
+            vector<NondetDeadend *> fsaps = *(it->second);
+            ind_to_fsap[nondet_index] = fsaps[0];
+            for (int i = 0; i < fsaps.size(); i++) {
+                if (fsaps[i]->generality() > ind_to_fsap[nondet_index]->generality())
+                    ind_to_fsap[nondet_index] = fsaps[i];
+            }
+        }
+    }
+    
+    
     int best_index = -1;
     int best_val = 999999; // This will only be invalid if a plan length was > 10^6
     
@@ -460,6 +493,10 @@ RegressionStep *Policy::get_best_step(const PartialState &curr) {
                 best_sc_val = cur_val;
                 best_sc_index = i;
             }
+        } else if (g_record_relevant_pairs && (0 != forbidden.count(((RegressionStep*)(current_steps[i]))->op->nondet_index))) {
+            //cout << "Marking relevant fsap:" << endl;
+            //ind_to_fsap[((RegressionStep*)(current_steps[i]))->op->nondet_index]->dump();
+            ind_to_fsap[((RegressionStep*)(current_steps[i]))->op->nondet_index]->relevant = true;
         }
     }
     if (return_if_possible && (-1 == best_index)) {
@@ -481,12 +518,23 @@ RegressionStep *Policy::get_best_step(const PartialState &curr) {
     }
     g_timer_policy_use.stop();
     
-    if (-1 == best_index)
+    if (-1 == best_index) {
         return 0;
-    else if (g_optimized_scd && (-1 != best_sc_index))
+    } else if (g_optimized_scd && (-1 != best_sc_index)) {
+        if (g_record_relevant_pairs) {
+            //cout << "Marking relevant." << endl;
+            //((RegressionStep*)(current_steps[best_sc_index]))->relevant = true;
+            current_steps[best_sc_index]->relevant = true;
+        }
         return (RegressionStep*)(current_steps[best_sc_index]);
-    else
+    } else {
+        if (g_record_relevant_pairs) {
+            //cout << "Marking relevant." << endl;
+            //((RegressionStep*)(current_steps[best_index]))->relevant = true;
+            current_steps[best_index]->relevant = true;
+        }
         return (RegressionStep*)(current_steps[best_index]);
+    }
 }
 
 Policy::Policy() {

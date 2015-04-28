@@ -88,73 +88,80 @@ bool perform_jit_repairs(Simulator *sim) {
             bool have_solution = true;
             
             if (0 == regstep) {
-            
-                sim->set_state(current_state);
-                sim->set_goal(current_goal);
-                have_solution = sim->replan();
                 
-                //
-                // As part of the recording process of solving the
-                //  problem, we probe reachable states for new deadends
-                //  and this may generate new forbidden state-action
-                //  pairs. As a result, this can invalidate the weak
-                //  plan we just constructed. So, we continually try to
-                //  find a weak plan such that the newly detected dead-
-                //  ends don't squash the weak plan right away.
-                //
-                // Note: Future parts of the weak plan may not work
-                //       the loop completes, but if that's the case
-                //       then we will necesarily replan when we reach
-                //       that state (the returned regstep will avoid
-                //       forbidden state-action pairs and so null is
-                //       returned if the weak plan no longer works).
-                //
-                while (have_solution && !(g_policy->get_best_step(*current_state)))
+                // We don't bother replanning if we are just recording the
+                //  relevant pairs.
+                if (g_record_relevant_pairs) {
+                    have_solution = false;
+                } else {
+                    
+                    sim->set_state(current_state);
+                    sim->set_goal(current_goal);
                     have_solution = sim->replan();
-                
-                
-                // Add the new goals to the sc condition for the previous reg step
-                if (g_optimized_scd && prev_regstep && have_solution) {
                     
-                    // regstep is now at the start of the newly found plan
-                    regstep = g_policy->get_best_step(*current_state);
+                    //
+                    // As part of the recording process of solving the
+                    //  problem, we probe reachable states for new deadends
+                    //  and this may generate new forbidden state-action
+                    //  pairs. As a result, this can invalidate the weak
+                    //  plan we just constructed. So, we continually try to
+                    //  find a weak plan such that the newly detected dead-
+                    //  ends don't squash the weak plan right away.
+                    //
+                    // Note: Future parts of the weak plan may not work
+                    //       the loop completes, but if that's the case
+                    //       then we will necesarily replan when we reach
+                    //       that state (the returned regstep will avoid
+                    //       forbidden state-action pairs and so null is
+                    //       returned if the weak plan no longer works).
+                    //
+                    while (have_solution && !(g_policy->get_best_step(*current_state)))
+                        have_solution = sim->replan();
                     
-                    // prev_state holds the info needed before the operator was taken
-                    PartialState * prev_state = new PartialState(*(regstep->state), *prev_op, false, prev_regstep->state);
                     
-                    PartialState * updated = NULL;
-                    // We augment the state to include the stronger conditions
-                    for (int i = 0; i < g_variable_name.size(); i++) {
-                        assert ((-1 == (*prev_state)[i]) ||
-                                (-1 == (*(prev_regstep->state))[i]) ||
-                                ((*prev_state)[i] == (*(prev_regstep->state))[i]));
+                    // Add the new goals to the sc condition for the previous reg step
+                    if (g_optimized_scd && prev_regstep && have_solution) {
                         
-                        if ((-1 != (*prev_state)[i]) &&
-                            (-1 == (*(prev_regstep->state))[i])) {
-                            if (!updated)
-                                updated = new PartialState(*(prev_regstep->state));
-                            (*updated)[i] = (*prev_state)[i];
+                        // regstep is now at the start of the newly found plan
+                        regstep = g_policy->get_best_step(*current_state);
+                        
+                        // prev_state holds the info needed before the operator was taken
+                        PartialState * prev_state = new PartialState(*(regstep->state), *prev_op, false, prev_regstep->state);
+                        
+                        PartialState * updated = NULL;
+                        // We augment the state to include the stronger conditions
+                        for (int i = 0; i < g_variable_name.size(); i++) {
+                            assert ((-1 == (*prev_state)[i]) ||
+                                    (-1 == (*(prev_regstep->state))[i]) ||
+                                    ((*prev_state)[i] == (*(prev_regstep->state))[i]));
+                            
+                            if ((-1 != (*prev_state)[i]) &&
+                                (-1 == (*(prev_regstep->state))[i])) {
+                                if (!updated)
+                                    updated = new PartialState(*(prev_regstep->state));
+                                (*updated)[i] = (*prev_state)[i];
+                            }
                         }
+                        
+                        if (updated)
+                            g_policy->add_item(new RegressionStep(*(prev_regstep->op), updated, prev_regstep->distance));
                     }
                     
-                    if (updated)
-                        g_policy->add_item(new RegressionStep(*(prev_regstep->op), updated, prev_regstep->distance));
-                }
-                
-                // Since new policy has been added, we re-compute the sc detection
-                if (g_optimized_scd && have_solution) {
-                    g_policy->init_scd();
-                    bool _made_change = true;
-                    while (_made_change)
-                        _made_change = g_policy->step_scd(failed_states);
-                }
-                
-                if (have_solution) {
-                    num_fixed_states++;
-                    // We recompute the regstep here, just in case we need a better
-                    //  strong cyclic one after the sc detection occurs.
-                    regstep = g_policy->get_best_step(*current_state);
-                    made_change = true;
+                    // Since new policy has been added, we re-compute the sc detection
+                    if (g_optimized_scd && have_solution) {
+                        g_policy->init_scd();
+                        bool _made_change = true;
+                        while (_made_change)
+                            _made_change = g_policy->step_scd(failed_states);
+                    }
+                    
+                    if (have_solution) {
+                        num_fixed_states++;
+                        // We recompute the regstep here, just in case we need a better
+                        //  strong cyclic one after the sc detection occurs.
+                        regstep = g_policy->get_best_step(*current_state);
+                        made_change = true;
+                    }
                 }
             }
             
@@ -220,7 +227,7 @@ bool perform_jit_repairs(Simulator *sim) {
                 if (debug_jic)
                     cout << "\nState handled..." << endl;
                 
-            } else {
+            } else if (!g_record_relevant_pairs) { // Skip the deadend handling if we're just checking what's relevant
                 
                 if (debug_jic)
                     cout << "\nState failed..." << endl;
@@ -289,6 +296,16 @@ bool perform_jit_repairs(Simulator *sim) {
         g_initial_state_data[i] = (*old_initial_state)[i];
     sim->set_state(old_initial_state);
     sim->set_goal(goal_orig);
+    
+    // Short circuit early if we're just recording what's relevant
+    if (g_record_relevant_pairs) {
+        // Clean up the states we've created
+        for (int i = 0; i < created_states.size(); i++) {
+            if (created_states[i])
+                delete created_states[i];
+        }
+        return false;
+    }
     
     cout << "\nCould not close " << g_failed_open_states << " of " << num_fixed_states + g_failed_open_states << " open leaf states." << endl;
     cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
