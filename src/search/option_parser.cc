@@ -336,7 +336,7 @@ string OptionParser::usage(string progname) {
         "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
         "--final-fsap-free-round 1/0 (default=0)\n"
         "    Do one final JIC round with the best policy found (closing every leaf possible).\n\n"
-        "--optimize-final-policy 1/0\n"
+        "--optimize-final-policy 1/0 (default=0)\n"
         "    Do a final simulation and throw out any pair (or FSAP) not used.\n\n"
         "--dump-policy 1/2\n"
         "    Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.\n\n"

@@ -1,3 +1,4 @@
+
 Planner: PRP -- (P)lanner for (R)elevant (P)olicies
 Version: 0.3
 
@@ -17,6 +18,9 @@ Options:
 
 --forgetpolicy 1/0
     Throw out the policy after every simulation.
+
+--replan-on-failure 1/0 (default=1)
+    Replan if the state isn't recognized.
 
 --fullstate 1/0
     Use full states in the regression.
@@ -51,8 +55,15 @@ Options:
 --optimized-scd 1/0
     Perform optimized strong cyclic detection when checking the partial policy.
 
+--final-fsap-free-round 1/0 (default=0)
+    Do one final JIC round with the best policy found (closing every leaf possible).
+
+--optimize-final-policy 1/0 (default=0)
+    Do a final simulation and throw out any pair (or FSAP) not used.
+
 --dump-policy 1/2
     Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.
 
 --debug-output 1/0
     Output plans and other information during the planning process.
+
