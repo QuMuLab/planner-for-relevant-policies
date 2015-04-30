@@ -1,5 +1,5 @@
 
-import re
+import re, pprint
 
 def read_file(file_name):
     """Return a list of the lines of a file."""
@@ -88,14 +88,23 @@ for i in range(num_vars):
     for j in range(len(vals)):
         mapping["%s:%s" % (name, j)] = vals[j]
 
+print "Mapping:\n"
+print '\n'.join(["  %s\t<-> \t %s" % (k,mapping[k]) for k in sorted(mapping.keys())])
+print
+
+def translate_lines(lines):
+    for line in lines:
+        if 'If' == line[:2]:
+            print "If holds: %s" % '/'.join([mapping[item] for item in line.split(' ')[2:]])
+        else:
+            print line
+
+print "Policy:"
 policy_lines = read_file('policy.out')
-new_lines = []
-for line in policy_lines:
-    if 'If' == line[:2]:
-        print "If holds: %s" % '/'.join([mapping[item] for item in line.split(' ')[2:]])
-    else:
-        print line
+translate_lines(policy_lines)
+print
 
-#print mapping
-
-
+print "FSAP:"
+fsap_lines = read_file('policy.fsap')
+translate_lines(fsap_lines)
+print
