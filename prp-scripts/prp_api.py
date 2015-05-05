@@ -3,7 +3,7 @@ import os
 
 
 USAGE_STRING = """
-python prp-policy-api.py <solution>
+python prp_api.py <solution>
 
   Only used for testing the loading of a PRP policy.
 """
