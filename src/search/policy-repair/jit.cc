@@ -64,7 +64,7 @@ bool perform_jit_repairs(Simulator *sim) {
     if (debug_jic)
         cout << "\n\nStarting another JIC round." << endl;
     
-    while (!open_list.empty() && (g_timer_jit() < g_jic_limit)) {
+    while (!open_list.empty() && ((g_timer_jit() < g_jic_limit) || g_record_relevant_pairs)) {
         num_checked_states++;
         current_state = open_list.top().full_state;
         previous_state = open_list.top().previous_state;
