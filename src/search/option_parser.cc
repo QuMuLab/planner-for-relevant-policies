@@ -339,7 +339,7 @@ string OptionParser::usage(string progname) {
         "--optimize-final-policy 1/0 (default=0)\n"
         "    Do a final simulation and throw out any pair (or FSAP) not used.\n\n"
         "--dump-policy 1/2\n"
-        "    Dump the policy to the file policy.out. 1 creates a switch graph, while 2 creates a human readable form.\n\n"
+        "    Dump the policy to the file policy.out. 1 creates a switch graph (currently unsafe to use), while 2 creates a human readable form (preferred for use with the prp_api.py file).\n\n"
         "--debug-output 1/0\n"
         "    Output plans and other information during the planning process.\n\n"
         "See http://www.haz.ca/research/prp for details.";

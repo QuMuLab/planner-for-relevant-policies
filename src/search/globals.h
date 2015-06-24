@@ -134,6 +134,7 @@ extern std::vector<std::pair<int, int> > g_goal_orig;
 extern Heuristic *g_heuristic_for_reachability;
 extern int g_dump_policy; // Whether or not we should dump the policy
 extern int g_monotonicity_violations; // Count on the number of times we need to add a deadend because of a bad policy loop
+extern int g_num_regsteps; // Used to give each regstep an id based on when it was created
 
 extern bool g_optimize_final_policy; // Only keep the final pairs and FSAPs that are needed
 extern bool g_record_relevant_pairs; // If true, used pairs will be kept
