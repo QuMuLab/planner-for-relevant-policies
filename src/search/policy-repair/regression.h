@@ -62,9 +62,10 @@ struct RegressionStep : PolicyItem {
     int distance;
     bool is_goal;
     bool is_sc;
+    int step_id;
 
-    RegressionStep(const Operator &o, PartialState *s, int d) : PolicyItem(s), op(&o), distance(d), is_goal(false), is_sc(false) {}
-    RegressionStep(PartialState *s, int d) : PolicyItem(s), distance(d), is_goal(true), is_sc(false) {}
+    RegressionStep(const Operator &o, PartialState *s, int d) : PolicyItem(s), op(&o), distance(d), is_goal(false), is_sc(false), step_id(g_num_regsteps++) {}
+    RegressionStep(PartialState *s, int d) : PolicyItem(s), distance(d), is_goal(true), is_sc(false), step_id(g_num_regsteps++) {}
     
     ~RegressionStep() {}
     
@@ -76,8 +77,10 @@ struct RegressionStep : PolicyItem {
     bool operator< (const RegressionStep& other) const {
         if (is_sc != other.is_sc)
             return is_sc;
-        else
+        else if (distance != other.distance)
             return distance < other.distance;
+        else
+            return step_id < other.step_id;
     }
 };
 

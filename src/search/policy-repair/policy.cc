@@ -472,48 +472,35 @@ RegressionStep *Policy::get_best_step(const PartialState &curr) {
     
     
     int best_index = -1;
-    int best_val = 999999; // This will only be invalid if a plan length was > 10^6
-    
     int best_sc_index = -1;
-    int best_sc_val = 999999;
     
     for (int i = 0; i < current_steps.size(); i++) {
         if (((RegressionStep*)(current_steps[i]))->is_goal ||
             (0 == forbidden.count(((RegressionStep*)(current_steps[i]))->op->nondet_index))) {
-            int cur_val = ((RegressionStep*)(current_steps[i]))->distance;
             
-            if (cur_val < best_val) {
-                best_val = cur_val;
+            if ((-1 == best_index) || (*((RegressionStep*)(current_steps[i])) < *((RegressionStep*)(current_steps[best_index]))))
                 best_index = i;
-            }
             
-            if (g_optimized_scd &&
-                ((RegressionStep*)(current_steps[i]))->is_sc &&
-                (cur_val < best_sc_val)) {
-                best_sc_val = cur_val;
+            if (g_optimized_scd && ((RegressionStep*)(current_steps[i]))->is_sc &&
+                ((-1 == best_sc_index) || (*((RegressionStep*)(current_steps[i])) < *((RegressionStep*)(current_steps[best_sc_index])))))
                 best_sc_index = i;
-            }
+                
         } else if (g_record_relevant_pairs && (0 != forbidden.count(((RegressionStep*)(current_steps[i]))->op->nondet_index))) {
             //cout << "Marking relevant fsap:" << endl;
             //ind_to_fsap[((RegressionStep*)(current_steps[i]))->op->nondet_index]->dump();
             ind_to_fsap[((RegressionStep*)(current_steps[i]))->op->nondet_index]->relevant = true;
         }
     }
+    
     if (return_if_possible && (-1 == best_index)) {
         for (int i = 0; i < current_steps.size(); i++) {
-            int cur_val = ((RegressionStep*)(current_steps[i]))->distance;
             
-            if (cur_val < best_val) {
-                best_val = cur_val;
+            if ((-1 == best_index) || (*((RegressionStep*)(current_steps[i])) < *((RegressionStep*)(current_steps[best_index]))))
                 best_index = i;
-            }
             
-            if (g_optimized_scd &&
-                ((RegressionStep*)(current_steps[i]))->is_sc &&
-                (cur_val < best_sc_val)) {
-                best_sc_val = cur_val;
+            if (g_optimized_scd && ((RegressionStep*)(current_steps[i]))->is_sc &&
+                ((-1 == best_sc_index) || (*((RegressionStep*)(current_steps[i])) < *((RegressionStep*)(current_steps[best_sc_index])))))
                 best_sc_index = i;
-            }
         }
     }
     g_timer_policy_use.stop();
@@ -810,10 +797,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
 }
 
 bool regstep_compare(PolicyItem* first, PolicyItem* second) {
-    if (((RegressionStep*)first)->is_sc != ((RegressionStep*)second)->is_sc)
-        return ((RegressionStep*)first)->is_sc;
-    else
-        return ((RegressionStep*)first)->distance < ((RegressionStep*)second)->distance;
+    return *((RegressionStep*)first) < *((RegressionStep*)second);
 }
 void Policy::dump_human_policy(bool fsap) {
     
