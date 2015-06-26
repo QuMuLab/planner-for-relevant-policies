@@ -105,8 +105,17 @@ bool Simulator::execute_action(const Operator *op) {
     }
     
     // Choose the op
-    int choice = g_rng.next(g_nondet_mapping[op->nondet_index]->size());
-    Operator *chosen = (*(g_nondet_mapping[op->nondet_index]))[choice];
+    int total_weight = op->total_weight;	// this was set during parsing
+    int current_weight = 0;	// for finding the right choice
+    int chosen_weight = g_rng.next(total_weight);
+    int i;
+    for (i = 0; i < g_nondet_mapping[op->nondet_index]->size(); i++) {
+		current_weight += (*(g_nondet_mapping[op->nondet_index]))[i]->get_weight();
+		if (current_weight > chosen_weight) {
+			break;
+		}
+	}
+    Operator *chosen = (*(g_nondet_mapping[op->nondet_index]))[i];
     
     if (verbose) {
         cout << "Chosen operator:" << endl << "  ";

@@ -32,7 +32,7 @@ void NondetDeadend::dump() const {
 }
 
 string NondetDeadend::get_name() {
-    return (*(g_nondet_mapping[op_index]))[0]->get_nondet_name();
+    return (*(g_nondet_mapping[op_index]))[0]->get_nondet_name() + " / NSC / d=1026";
 }
 
 int NondetDeadend::get_index() {

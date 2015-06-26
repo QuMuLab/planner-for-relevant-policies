@@ -353,6 +353,20 @@ void read_everything(istream &in) {
             }
         }
     }
+    
+    // Set the total nondeterministic weights
+    for (int i = 0; i < g_operators.size(); i++) {
+		if (g_operators[i].total_weight == 1) {
+			int total = 0;
+			vector<Operator *> ops = *(g_nondet_mapping[g_operators[i].nondet_index]);
+			for (int j = 0; j < ops.size(); j++) {
+				total += ops[j]->get_weight();
+			}
+			for (int j = 0; j < ops.size(); j++) {
+				ops[j]->total_weight = total;
+			}
+		}
+	}
 }
 
 void dump_everything() {

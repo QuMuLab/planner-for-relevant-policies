@@ -21,6 +21,7 @@ Operator::Operator(istream &in, bool axiom) {
     marked = false;
     nondet_index = -1;
 
+	total_weight = 1;
     is_an_axiom = axiom;
     if (!is_an_axiom) {
         check_magic(in, "begin_operator");
@@ -43,16 +44,26 @@ Operator::Operator(istream &in, bool axiom) {
 
         check_magic(in, "end_operator");
         
-        // The nondet name is the original name of the non-deterministic action
-        if (name.find("_DETDUP") == string::npos) {
-            nondet_name = name;
+        int det_pos = name.find("_DETDUP_");
+        if (det_pos != string::npos) {
+            // int det_num_pos = det_pos + 8;
+            int weight_pos = name.find("_WEIGHT_");
+            if (weight_pos != string::npos) {
+                int weight_num_pos = weight_pos + 8;
+                nondet_name = name.substr(0, det_pos) + name.substr(name.find(" "), string::npos);
+                istringstream(name.substr(weight_num_pos, string::npos)) >> weight;
+            } else {
+                nondet_name = name.substr(0, det_pos) + name.substr(name.find(" "), string::npos);
+                weight = 1;
+            }
         } else {
-            nondet_name = name.substr(0, name.find("_DETDUP")) + name.substr(name.find(" "), string::npos);
+            nondet_name = name;
+            weight = 1;
         }
-        
     } else {
         name = "<axiom>";
         cost = 0;
+        weight = 1;
         check_magic(in, "begin_rule");
         pre_post.push_back(PrePost(in));
         check_magic(in, "end_rule");
