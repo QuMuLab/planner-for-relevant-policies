@@ -167,6 +167,17 @@ if [[ "$1" == "ipc" ]]; then
                 --search "lazy_greedy([h],preferred=[h])" \
                 --random-seed $SEED \
                 "$@" < $TEMPFILE
+    elif [[ "$CONFIG" == "policy-repair-probabilistic" ]]; then
+        echo "$PLANNER" \
+                --heuristic \""h=ff()"\" \
+                --search \""lazy_greedy([h],preferred=[h])"\" \
+                --random-seed $SEED \
+                "$@" "<" output
+        "$PLANNER" \
+                --heuristic "h=ff()" \
+                --search "lazy_greedy([h],preferred=[h])" \
+                --random-seed $SEED \
+                "$@" < $TEMPFILE
     elif [[ "$CONFIG" == "policy-repair-old" ]]; then
         "$PLANNER" \
                 --heuristic "hlm,hff=lm_ff_syn(lm_rhw(
