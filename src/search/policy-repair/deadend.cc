@@ -40,7 +40,7 @@ void generalize_deadend(PartialState &state) {
     g_check_with_forbidden = old_forbidden_val;
     
     //cout << "Found relaxed deadend:" << endl;
-    //state.dump();
+    //state.dump_pddl();
 }
 
 void update_deadends(vector< DeadendTuple* > &failed_states) {

@@ -63,11 +63,14 @@ void SearchEngine::search() {
         ;
     
     if (g_record_online_deadends && !g_limit_states) {
+        
+        //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
+        
         for (int i = 0; i < g_found_deadends.size(); i++) {
             if (g_generalize_deadends)
                 generalize_deadend(*(g_found_deadends[i]->de_state));
         }
-        //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
+        
         update_deadends(g_found_deadends);
     }
     if (search_progress.get_generated() > 2) {
