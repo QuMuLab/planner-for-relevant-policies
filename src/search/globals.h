@@ -109,6 +109,7 @@ extern std::vector< DeadendTuple * > g_found_deadends; // Vector of deadends / c
 extern double g_best_policy_score; // Score for the best policy we've seen so far
 extern int g_failed_open_states; // Numer of states we cannot find a plan for
 extern bool g_updated_deadends; // True if updating the policy created new deadends
+extern bool g_replan_detected_deadends; // True if the weak planning procedure created a new deadend
 extern bool g_silent_planning; // Silence the planning output
 extern bool g_forgetpolicy; // Forget the policy after every simulation run
 extern bool g_replan_during_simulation; // True if we want to allow the system to replan
@@ -124,6 +125,9 @@ extern bool g_detect_deadends; // Decide whether or not deadends should be detec
 extern bool g_check_with_forbidden; // We set this when a strong cyclic policy is failed to be found without using forbidden ops in the heuristic
 extern bool g_generalize_deadends; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
 extern bool g_record_online_deadends; // Record the deadends as they occur online, and add them to the deadend policy after solving
+extern bool g_sample_for_depth1_deadends; // Analyze the non-deterministic alternate states from the generated weak plans for deadends
+extern bool g_combine_deadends; // Combine FSAP conditions for a new deadend when there are no applicable actions
+extern int g_combined_count; // Number of times a deadend was generated from combining FSAPs
 extern bool g_optimized_scd; // Do optimized strong cyclic detection
 extern bool g_final_fsap_free_round; // Do a final JIC pass with deadends disabled
 extern bool g_seeded; // Used to make sure we only seed the rng once

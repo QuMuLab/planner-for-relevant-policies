@@ -261,6 +261,12 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--online-deadends") == 0) {
             ++i;
             g_record_online_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--sample-depth1-for-deadends") == 0) {
+            ++i;
+            g_sample_for_depth1_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--combine-deadends") == 0) {
+            ++i;
+            g_combine_deadends = (1 == atoi(argv[i]));
         } else if (arg.compare("--optimized-scd") == 0) {
             ++i;
             g_optimized_scd = (1 == atoi(argv[i]));
@@ -332,6 +338,10 @@ string OptionParser::usage(string progname) {
         "    Generalize the deadends found based on relaxed reachability.\n\n"
         "--online-deadends 1/0\n"
         "    Generate and store deadend states that are found online.\n\n"
+        "--sample-for-depth1-deadends 1/0 (default=1)\n"
+        "    Analyze the non-deterministic alternate states from the generated weak plans for deadends.\n\n"
+        "--combine-deadends 1/0 (default=1)\n"
+        "    Combine the FSAP conditions if every applicable action is forbidden to be a new deadend.\n\n"
         "--optimized-scd 1/0\n"
         "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
         "--final-fsap-free-round 1/0 (default=0)\n"

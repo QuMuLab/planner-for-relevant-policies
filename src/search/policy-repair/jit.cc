@@ -37,6 +37,7 @@ bool perform_jit_repairs(Simulator *sim) {
     vector< DeadendTuple * > failed_states; // The failed states (used for creating deadends)
     
     bool debug_jic = false;
+    
     // In case we have an initial policy, we run the optimized scd.
     if (g_optimized_scd) {
         g_policy->init_scd();
@@ -119,6 +120,23 @@ bool perform_jit_repairs(Simulator *sim) {
                         have_solution = sim->replan();
                     
                     
+                    //
+                    // With more advanced deadend detection, we iterate
+                    //  the solving process to try and nab every combined
+                    //  deadend possible. As long as new deadends are
+                    //  created during search, we keep invoking the search
+                    //  until it pulls things back to the initial state.
+                    bool orig_have_solution = have_solution;
+                    int unsolv_count = 1;
+                    while (g_combine_deadends && !have_solution && g_replan_detected_deadends) {
+                        cout << "Redoing the search to find more deadends (" << unsolv_count++ << ")." << endl;
+                        have_solution = sim->replan();
+                    }
+                    
+                    assert(orig_have_solution == have_solution);
+                    if (orig_have_solution != have_solution)
+                        cout << "Error: An solvable problem became solvable!" << endl;
+                    
                     // Add the new goals to the sc condition for the previous reg step
                     if (g_optimized_scd && prev_regstep && have_solution) {
                         
@@ -185,9 +203,21 @@ bool perform_jit_repairs(Simulator *sim) {
                     }
                     
                     // Make sure that we aren't looping because of forbidden
-                    //  state-action pairs
-                    if (expected_regstep && (expected_regstep->distance >= regstep->distance)) {
+                    //  state-action pairs (but have faith in our SCD!!)
+                    if (expected_regstep && (!(expected_regstep->is_sc)) &&
+                       (expected_regstep->distance >= regstep->distance)) {
+                        
+                        // Setting g_updated_deadends to true will cause
+                        //  the policy to be wiped and computed again with
+                        //  the new set of FSAPs. This shouldn't create
+                        //  a loop, as the only reason we would have a
+                        //  monotonicity violation is because new FSAPs
+                        //  are prohibiting the use of previously computed
+                        //  "best_step"'s as the expected_regstep.
+                        
                         g_monotonicity_violations++;
+                        g_updated_deadends = true;
+                        
                         // TODO: It's a shame to use a full state here
                         //       for the deadend. However, we can't use
                         //       the expected state, as that is what the
@@ -198,7 +228,14 @@ bool perform_jit_repairs(Simulator *sim) {
                         //       what is the deadend context that led to
                         //       having a crappy regstep be the only one
                         //       available.
-                        failed_states.push_back(new DeadendTuple(full_expected_state, current_state, regstep->op));
+                        
+                        //cout << "\n\n!!MONO!!" << endl;
+                        //cout << "Current regstep:" << endl;
+                        //regstep->dump();
+                        //cout << "Expected regstep:" << endl;
+                        //expected_regstep->dump();
+                        
+                        //failed_states.push_back(new DeadendTuple(full_expected_state, current_state, regstep->op));
                     }
                     
                     for (int i = 0; i < g_nondet_mapping[regstep->op->nondet_index]->size(); i++) {
@@ -267,12 +304,16 @@ bool perform_jit_repairs(Simulator *sim) {
                     return false;
                 } else {
                     if (g_detect_deadends) {
+                        bool generalized = true;
                         if (g_generalize_deadends)
-                            generalize_deadend(*current_state);
+                            generalized = generalize_deadend(*current_state);
                             
                         assert (NULL != current_state);
                         assert (NULL != previous_state);
                         assert (NULL != prev_op);
+                        if (!generalized)
+                            cout << "Is it really not a deadend? " << is_deadend(*current_state) << endl;;
+                        assert (generalized);
                         
                         failed_states.push_back(new DeadendTuple(current_state, previous_state, prev_op));
                     }
@@ -316,7 +357,7 @@ bool perform_jit_repairs(Simulator *sim) {
         cout << "Marking policy strong cyclic." << endl;
     }
     
-    if (made_change || (g_failed_open_states > 0)) {
+    if (made_change || (g_failed_open_states > 0) || g_updated_deadends) {
         
         double cur_score = g_policy->get_score();
         
@@ -337,7 +378,6 @@ bool perform_jit_repairs(Simulator *sim) {
     }
     
     if (g_detect_deadends && ((g_failed_open_states > 0) || g_updated_deadends) && (g_timer_jit() < g_jic_limit)) {
-        
         update_deadends(failed_states);
         g_updated_deadends = false;
         

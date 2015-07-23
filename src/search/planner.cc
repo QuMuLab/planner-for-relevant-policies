@@ -113,9 +113,12 @@ int main(int argc, const char **argv) {
     
     cout << "\n\nGenerating an initial policy..." << endl;
     g_policy = new Policy();
-    g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
+    g_policy->update_policy(regression_steps);
     g_best_policy = g_policy;
     g_best_policy_score = g_policy->get_score();
+    
+    if (g_sample_for_depth1_deadends)
+        sample_for_depth1_deadends(engine->get_plan(), new PartialState(g_initial_state()));
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
     //g_timer_jit.resume(); // Placed above to include the initial search time
@@ -130,7 +133,7 @@ int main(int argc, const char **argv) {
         if (!changes_made && !g_check_with_forbidden &&
             g_detect_deadends && !(g_policy->is_strong_cyclic()) &&
             (g_timer_jit() < g_jic_limit)) {
-            
+                
             g_check_with_forbidden = true;
             changes_made = true;
             if (g_best_policy != g_policy)

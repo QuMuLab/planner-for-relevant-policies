@@ -62,7 +62,8 @@ void SearchEngine::search() {
     while (step() == IN_PROGRESS)
         ;
     
-    if (g_record_online_deadends && !g_limit_states) {
+    if (g_record_online_deadends && !g_limit_states && g_found_deadends.size() > 0) {
+        g_replan_detected_deadends = true;
         for (int i = 0; i < g_found_deadends.size(); i++) {
             if (g_generalize_deadends)
                 generalize_deadend(*(g_found_deadends[i]->de_state));
