@@ -380,7 +380,7 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
     
     // As an optimization, we check the partial state successors of every
     //  new action for deadends. This allows us to stop expanding earlier
-    //  with the scd algorithm below.
+    //  with the scd algorithm.
     if (detect_deadends) {
         vector<DeadendTuple *> new_deadends;
         for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {

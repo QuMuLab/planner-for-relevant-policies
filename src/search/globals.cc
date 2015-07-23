@@ -477,6 +477,7 @@ vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts foun
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far
 int g_failed_open_states = 0; // Number of failed open states in the most recent jic run
 bool g_updated_deadends = false; // True if updating the policy created new deadends
+bool g_replan_detected_deadends = false; // True if the weak planning procedure created a new deadend
 bool g_silent_planning = true;
 bool g_forgetpolicy = false; // Forget the global policy after every simulation run
 bool g_replan_during_simulation = true; // True if we want to allow the system to replan
@@ -492,6 +493,9 @@ bool g_detect_deadends = true; // Decide whether or not deadends should be detec
 bool g_check_with_forbidden = false; // We set this when a strong cyclic policy is failed to be found without using forbidden ops in the heuristic
 bool g_generalize_deadends = true; // Try to find minimal sized deadends from the full state (based on relaxed reachability)
 bool g_record_online_deadends = true; // Record the deadends as they occur online, and add them to the deadend policy after solving
+bool g_sample_for_depth1_deadends = true; // Analyze the non-deterministic alternate states from the generated weak plans for deadends
+bool g_combine_deadends = true; // Combine FSAP conditions for a new deadend when there are no applicable actions
+int g_combined_count = 0; // Number of times a deadend was generated from combining FSAPs
 bool g_optimized_scd = true; // Do optimized strong cyclic detection
 bool g_final_fsap_free_round = false; // Do a final JIC pass with deadends disabled
 bool g_seeded = false; // Only want to seed once

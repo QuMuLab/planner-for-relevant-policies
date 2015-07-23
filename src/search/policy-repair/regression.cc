@@ -133,8 +133,11 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
     PartialState * old_s = s;
     int i = 0;
     for (list<PolicyItem *>::reverse_iterator op_iter = reg_steps.rbegin(); op_iter != reg_steps.rend(); ++op_iter) {
+        
         assert(i < plan.size() || create_goal);
+        
         if (i < plan.size()) {
+            // Strengthen if there's a previous FSAP that warrants it
             ((RegressionStep*)(*op_iter))->strengthen(s);
             s = new PartialState(*old_s, *plan[i], true);
             delete old_s;

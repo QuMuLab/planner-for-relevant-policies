@@ -47,6 +47,20 @@ void Heuristic::compute_forbidden(const State &state) {
     }
 }
 
+void Heuristic::compute_forbidden(const PartialState &state) {
+    if (g_detect_deadends) {
+        forbidden_ops.clear();
+        vector<PolicyItem *> reg_items;
+        g_deadend_policy->generate_applicable_items(state, reg_items);
+        for (int i = 0; i < reg_items.size(); i++) {
+            //cout << "Forbidding:" << endl;
+            //cout << ((NondetDeadend*)(reg_items[i]))->op_name << endl;
+            forbidden_ops.insert(((NondetDeadend*)(reg_items[i]))->op_index);
+            //forbidden_ops.insert(g_nondet_index_mapping[((NondetDeadend*)(reg_items[i]))->op_name]);
+        }
+    }
+}
+
 void Heuristic::evaluate(const State &state) {
     if (heuristic == NOT_INITIALIZED)
         initialize();

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "regression.h"
 #include "policy.h"
@@ -14,7 +15,9 @@ void update_deadends(vector< DeadendTuple * > &failed_states);
 
 bool is_deadend(PartialState &state);
 
-void generalize_deadend(PartialState &state);
+bool generalize_deadend(PartialState &state);
+
+bool sample_for_depth1_deadends(const SearchEngine::Plan &plan, PartialState *state);
 
 struct DeadendAwareSuccessorGenerator {
     void generate_applicable_ops(const State &curr, vector<const Operator *> &ops);

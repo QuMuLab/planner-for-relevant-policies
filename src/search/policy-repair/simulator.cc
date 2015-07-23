@@ -128,6 +128,8 @@ void Simulator::reset_goal() {
 
 bool Simulator::replan() {
     
+    g_replan_detected_deadends = false;
+    
     // If the policy is complete, searching further won't help us
     if (g_policy->is_complete())
         return false;
@@ -233,9 +235,16 @@ bool Simulator::replan() {
             
             if (verbose)
                 cout << "Updating the policy." << endl;
-            g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
+            g_policy->update_policy(regression_steps);
             
             reset_goal();
+            
+            if (g_sample_for_depth1_deadends) {
+                if (verbose)
+                    cout << "Analyzing for extra deadends (v1)." << endl;
+                sample_for_depth1_deadends(engine->get_plan(), new PartialState(g_initial_state()));
+            }
+            
             return true;
             
         } else {
@@ -282,7 +291,13 @@ bool Simulator::replan() {
                     
                     if (verbose)
                         cout << "Updating the policy." << endl;
-                    g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
+                    g_policy->update_policy(regression_steps);
+                    
+                    if (g_sample_for_depth1_deadends) {
+                        if (verbose)
+                            cout << "Analyzing for extra deadends (v2)." << endl;
+                        sample_for_depth1_deadends(engine->get_plan(), new PartialState(g_initial_state()));
+                    }
                     
                     return true;
                 }
@@ -316,6 +331,7 @@ float standard_dev(vector<int> &nums) {
 
 void Simulator::dump() {
     cout << "                  -{ General Statistics }-\n" << endl;
+    cout << "        FSAP Combination Count: " << g_combined_count << endl;
     cout << "       Monotonicity violations: " << g_monotonicity_violations << endl;
     cout << "             Successful states: " << average(record_successful_states) << " +/- " << standard_dev(record_successful_states) << endl;
     cout << "                       Replans: " << average(record_failed_states) << " +/- " << standard_dev(record_failed_states) << endl;
