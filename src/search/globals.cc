@@ -472,6 +472,7 @@ Policy *g_regressable_ops; // The policy to check what operators are applicable
 Policy *g_regressable_cond_ops; // The policy to check what operators with conditional effects are applicable
 Policy *g_deadend_policy; // Policy that returns the set of names for nondet operators that should be avoided
 Policy *g_deadend_states; // Policy that returns an item if the given state is a deadend
+Policy *g_temporary_deadends; // Policy that stores deadends as we find them online (to avoid repeated ones)
 Policy *g_best_policy; // The best policy we've found so far
 vector< DeadendTuple * > g_found_deadends; // Vector of deadends / contexts found while planning
 double g_best_policy_score = 0.0; // Score for the best policy we've seen so far

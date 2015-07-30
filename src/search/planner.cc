@@ -72,6 +72,7 @@ int main(int argc, const char **argv) {
      *      they may be consulted by certain parts of the code. */
     g_deadend_policy = new Policy();
     g_deadend_states = new Policy();
+    g_temporary_deadends = new Policy();
     
     
     /***************************************

@@ -67,16 +67,26 @@ void FFHeuristic::mark_preferred_operators_and_relaxed_plan(
 }
 
 int FFHeuristic::compute_heuristic(const State &state) {
-    if (g_detect_deadends && g_deadend_states->check_match(state))
+    if (g_detect_deadends &&
+            (g_deadend_states->check_match(state) ||
+             g_temporary_deadends->check_match(state)))
         return DEAD_END;
     
     int h_add = compute_add_and_ff(state);
     if (h_add == DEAD_END) {
+        
         if (g_record_online_deadends && !g_limit_states) {
+            
+            PartialState *de = new PartialState(state);
+            if (g_generalize_deadends)
+                generalize_deadend(*de);
+            
+            g_temporary_deadends->add_item(new NondetDeadend(de));
+                
             // HAZ: For now, we forget about trying to record the context
             //      for the deadend. This means that we may not have any
             //      forbidden state-action pairs created.
-            g_found_deadends.push_back(new DeadendTuple(new PartialState(state), NULL, NULL));
+            g_found_deadends.push_back(new DeadendTuple(de, NULL, NULL));
         }
         return h_add;
     }
