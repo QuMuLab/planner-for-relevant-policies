@@ -54,8 +54,11 @@ void SearchEngine::set_plan(const Plan &p) {
 
 void SearchEngine::search() {
     
-    if (g_record_online_deadends)
+    if (g_record_online_deadends) {
         g_found_deadends.clear();
+        delete g_temporary_deadends;
+        g_temporary_deadends = new Policy();
+    }
     
     initialize();
     Timer timer;
@@ -64,10 +67,6 @@ void SearchEngine::search() {
     
     if (g_record_online_deadends && !g_limit_states && g_found_deadends.size() > 0) {
         g_replan_detected_deadends = true;
-        for (int i = 0; i < g_found_deadends.size(); i++) {
-            if (g_generalize_deadends)
-                generalize_deadend(*(g_found_deadends[i]->de_state));
-        }
         //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
         update_deadends(g_found_deadends);
     }
