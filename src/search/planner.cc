@@ -133,7 +133,7 @@ int main(int argc, const char **argv) {
         if (!changes_made && !g_check_with_forbidden &&
             g_detect_deadends && !(g_policy->is_strong_cyclic()) &&
             (g_timer_jit() < g_jic_limit)) {
-                
+            
             g_check_with_forbidden = true;
             changes_made = true;
             if (g_best_policy != g_policy)

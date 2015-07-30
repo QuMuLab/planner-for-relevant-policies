@@ -129,7 +129,8 @@ bool perform_jit_repairs(Simulator *sim) {
                     bool orig_have_solution = have_solution;
                     int unsolv_count = 1;
                     while (g_combine_deadends && !have_solution && g_replan_detected_deadends) {
-                        cout << "Redoing the search to find more deadends (" << unsolv_count++ << ")." << endl;
+                        if (debug_jic)
+                            cout << "Redoing the search to find more deadends (" << unsolv_count++ << ")." << endl;
                         have_solution = sim->replan();
                     }
                     
@@ -217,25 +218,6 @@ bool perform_jit_repairs(Simulator *sim) {
                         
                         g_monotonicity_violations++;
                         g_updated_deadends = true;
-                        
-                        // TODO: It's a shame to use a full state here
-                        //       for the deadend. However, we can't use
-                        //       the expected state, as that is what the
-                        //       false expected_regstep is using. What
-                        //       we need instead is the combination of
-                        //       reasons from the FSAPs that forbid the
-                        //       use of the /original/ regstep -- i.e.,
-                        //       what is the deadend context that led to
-                        //       having a crappy regstep be the only one
-                        //       available.
-                        
-                        //cout << "\n\n!!MONO!!" << endl;
-                        //cout << "Current regstep:" << endl;
-                        //regstep->dump();
-                        //cout << "Expected regstep:" << endl;
-                        //expected_regstep->dump();
-                        
-                        //failed_states.push_back(new DeadendTuple(full_expected_state, current_state, regstep->op));
                     }
                     
                     for (int i = 0; i < g_nondet_mapping[regstep->op->nondet_index]->size(); i++) {
@@ -311,7 +293,8 @@ bool perform_jit_repairs(Simulator *sim) {
                         assert (NULL != current_state);
                         assert (NULL != previous_state);
                         assert (NULL != prev_op);
-                        if (!generalized)
+                        
+                        if (debug_jic && !generalized)
                             cout << "Is it really not a deadend? " << is_deadend(*current_state) << endl;;
                         assert (generalized);
                         
