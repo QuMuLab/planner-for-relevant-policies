@@ -42,7 +42,6 @@ void Heuristic::compute_forbidden(const State &state) {
             //cout << "Forbidding:" << endl;
             //cout << ((NondetDeadend*)(reg_items[i]))->op_name << endl;
             forbidden_ops.insert(((NondetDeadend*)(reg_items[i]))->op_index);
-            //forbidden_ops.insert(g_nondet_index_mapping[((NondetDeadend*)(reg_items[i]))->op_name]);
         }
     }
 }
@@ -56,7 +55,6 @@ void Heuristic::compute_forbidden(const PartialState &state) {
             //cout << "Forbidding:" << endl;
             //cout << ((NondetDeadend*)(reg_items[i]))->op_name << endl;
             forbidden_ops.insert(((NondetDeadend*)(reg_items[i]))->op_index);
-            //forbidden_ops.insert(g_nondet_index_mapping[((NondetDeadend*)(reg_items[i]))->op_name]);
         }
     }
 }

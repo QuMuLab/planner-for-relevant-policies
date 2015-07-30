@@ -3,7 +3,7 @@
 
 bool is_deadend(PartialState &state) {
     
-    // We must always set up the forbidden operators. Why? Well when are
+    // We must always set up the forbidden operators. Why? Well when we
     //  aren't checking with forbidden operators, they are always removed
     //  from the relaxed reachability -- this may create incorrect deadends
     //  but that's fine as we'll reset everything if we don't stumble on
@@ -22,10 +22,8 @@ bool generalize_deadend(PartialState &state) {
     
     // If the whole state isn't recognized as a deadend, then don't bother
     //  looking for a subset of the state
-    if (!is_deadend(state)) {
-        cout << "Not even a deadend!" << endl;
+    if (!is_deadend(state))
         return false;
-    }
     
     // We go through each variable and unset it, checking if the relaxed reachability
     //  is violated.
@@ -148,8 +146,8 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
 
 void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &_curr, vector<const Operator *> &ops) {
     if (g_detect_deadends && g_deadend_policy) {
-		
-		PartialState curr = PartialState(_curr);
+        
+        PartialState curr = PartialState(_curr);
         
         bool debug = false;
         
@@ -211,12 +209,11 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &_curr,
                 newDE->dump_pddl();
             }
             
-            cout << "COMBINED!!!" << endl;
-            
             g_combined_count++;
             
             vector<DeadendTuple *> failed_states;
             failed_states.push_back(new DeadendTuple(newDE, NULL, NULL));
+            g_updated_deadends = true;
             update_deadends(failed_states);
         }
         
