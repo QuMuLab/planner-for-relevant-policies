@@ -216,6 +216,9 @@ bool perform_jit_repairs(Simulator *sim) {
                         //  are prohibiting the use of previously computed
                         //  "best_step"'s as the expected_regstep.
                         
+                        if (debug_jic)
+                            cout << "Found a monotonicity violation." << endl;
+                        
                         g_monotonicity_violations++;
                         g_updated_deadends = true;
                     }
@@ -296,7 +299,6 @@ bool perform_jit_repairs(Simulator *sim) {
                         
                         if (debug_jic && !generalized)
                             cout << "Is it really not a deadend? " << is_deadend(*current_state) << endl;;
-                        assert (generalized);
                         
                         failed_states.push_back(new DeadendTuple(current_state, previous_state, prev_op));
                     }
