@@ -72,7 +72,12 @@ void SearchEngine::search() {
     }
     if (search_progress.get_generated() > 2) {
         cout << "Generated " << search_progress.get_generated() << " state(s)." << endl;
-        cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
+        
+        if (g_record_online_deadends && !g_limit_states)
+            cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s). ("
+                 << g_found_deadends.size() << " recorded)" << endl;
+        else
+            cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
     }
     if (!g_silent_planning)
         cout << "Actual search time: " << timer
