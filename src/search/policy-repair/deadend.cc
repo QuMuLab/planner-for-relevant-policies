@@ -67,6 +67,9 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
             cout << endl;
         }
         
+        // Add the failed state to our list of deadends
+        de_states.push_back(new NondetDeadend(new PartialState(*failed_state)));
+        
         // HAZ: Only do the forbidden state-action computation when
         //  the non-deterministic action doesn't have any associated
         //  conditional effects. This is ensured by the construction
@@ -83,14 +86,10 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
             
             de_items.push_back(new NondetDeadend(new PartialState(*failed_state, *(ro->op), false, dummy_state),
                                                      ro->op->nondet_index));
-
             if (debug) {
                 cout << "Creating new forbidden state-action pair:" << endl;
                 de_items.back()->dump();
             }
-
-            de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
-                                                     ro->op->nondet_index));
         }
         
         ////////////////////////////////////////////
@@ -112,9 +111,6 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
                 cout << "Creating new (all-fire) forbidden state-action pair:" << endl;
                 de_items.back()->dump();
             }
-
-            de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
-                                                     ro->op->nondet_index));
         }
         
         ////////////////////////////////////////////
@@ -130,10 +126,6 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
                 cout << "Creating new (default) forbidden state-action pair:" << endl;
                 de_items.back()->dump();
             }
-            
-            de_states.push_back(new NondetDeadend(new PartialState(*failed_state),
-                                                  prev_op->nondet_index));
-            
         }
     }
     

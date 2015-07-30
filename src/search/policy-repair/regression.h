@@ -33,11 +33,10 @@ struct PolicyItem {
 };
 
 struct NondetDeadend : PolicyItem {
-    //string op_name;
     int op_index;
     
-    //NondetDeadend(PartialState *s, int index, string name) : PolicyItem(s), op_index(index), op_name(name) {}
     NondetDeadend(PartialState *s, int index) : PolicyItem(s), op_index(index) {}
+    NondetDeadend(PartialState *s) : PolicyItem(s), op_index(-1) {}
     
     ~NondetDeadend() {}
     
