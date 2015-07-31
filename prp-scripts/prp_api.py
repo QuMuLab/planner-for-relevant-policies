@@ -3,9 +3,15 @@ import os
 
 
 USAGE_STRING = """
-python prp_api.py <solution>
+python prp_api.py <command> <solution file>
 
-  Only used for testing the loading of a PRP policy.
+  <solution file> should be the output of translate_policy.py.
+
+  <commmand> should be one of the following:
+
+    display: Display the parsed policy (just for debugging purposes)
+    circuit: Create the CNF version of the policy's circuit representation.
+             Creates files <solution file>.map and <solution file>.cnf
 """
 
 # http://stackoverflow.com/questions/1456373/two-way-reverse-map
@@ -78,15 +84,7 @@ class PRPPolicy:
                     return act
         return None
 
-if __name__ == '__main__':
-    if len(os.sys.argv) != 2:
-        print "\nError with input."
-        print USAGE_STRING
-        os.sys.exit(1)
-
-    print "Parsing solution..."
-    p = PRPPolicy(os.sys.argv[1])
-
+def display(p):
     from pprint import pprint
 
     print
@@ -101,3 +99,36 @@ if __name__ == '__main__':
     print "FSAP:"
     pprint(p.fsap)
     print
+
+def circuit(p):
+    from krrt.sat import CNF
+    
+    CLAUSES = []
+    
+    def partial_state_clause(ps):
+        aux = '+'.join(sorted(ps))
+        CLAUSES.append(map(CNF.Not, ps) + [aux])
+        for f in ps:
+            CLAUSES.append([CNF.Not(aux), f])
+        return aux
+    
+    for psap in p.policy:
+        print partial_state_clause(psap[0])
+
+if __name__ == '__main__':
+    if len(os.sys.argv) != 3:
+        print "\nError with input."
+        print USAGE_STRING
+        os.sys.exit(1)
+
+    print "Parsing solution..."
+    p = PRPPolicy(os.sys.argv[2])
+    
+    if 'display' == os.sys.argv[1]:
+        display(p)
+    elif 'circuit' == os.sys.argv[1]:
+        circuit(p)
+    else:
+        print "\nError with input."
+        print USAGE_STRING
+        os.sys.exit(1)
