@@ -46,7 +46,7 @@ public:
     void dump() const;
     void generate_cpp_input(ofstream &outfile) const;
     
-    void update_policy(list<PolicyItem *> &reg_items, bool detect_deadends = false);
+    void update_policy(list<PolicyItem *> &reg_items);
     void add_item(PolicyItem *item);
     void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all = false);
     bool check_match(const PartialState &curr, bool keep_all = false);

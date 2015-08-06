@@ -136,13 +136,13 @@ bool perform_jit_repairs(Simulator *sim) {
                     
                     assert(orig_have_solution == have_solution);
                     if (orig_have_solution != have_solution)
-                        cout << "Error: An solvable problem became solvable!" << endl;
+                        cout << "Error: A solvable problem became solvable!" << endl;
+                    
+                    // regstep is now at the start of the newly found plan
+                    regstep = g_policy->get_best_step(*current_state);
                     
                     // Add the new goals to the sc condition for the previous reg step
                     if (g_optimized_scd && prev_regstep && have_solution) {
-                        
-                        // regstep is now at the start of the newly found plan
-                        regstep = g_policy->get_best_step(*current_state);
                         
                         // prev_state holds the info needed before the operator was taken
                         PartialState * prev_state = new PartialState(*(regstep->state), *prev_op, false, prev_regstep->state);
@@ -163,7 +163,7 @@ bool perform_jit_repairs(Simulator *sim) {
                         }
                         
                         if (updated)
-                            g_policy->add_item(new RegressionStep(*(prev_regstep->op), updated, prev_regstep->distance));
+                            g_policy->add_item(new RegressionStep(*(prev_regstep->op), updated, prev_regstep->distance, regstep, prev_regstep->prev));
                     }
                     
                     // Since new policy has been added, we re-compute the sc detection

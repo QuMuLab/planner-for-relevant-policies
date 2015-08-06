@@ -361,11 +361,11 @@ GeneratorBase *GeneratorEmpty::update_policy(list<PolicyItem *> &reg_items, set<
 void Policy::add_item(PolicyItem *item) {
     list<PolicyItem *> reg_items;
     reg_items.push_back(item);
-    update_policy(reg_items, (g_detect_deadends && g_generalize_deadends));
+    update_policy(reg_items);
 }
 
 
-void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) {
+void Policy::update_policy(list<PolicyItem *> &reg_items) {
     g_timer_policy_build.resume();
 
     // Reset the score since a change is being made to the policy
@@ -377,29 +377,6 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
     else
         root = new GeneratorSwitch(reg_items, vars_seen);
     all_items.insert(all_items.end(), reg_items.begin(), reg_items.end());
-    
-    // As an optimization, we check the partial state successors of every
-    //  new action for deadends. This allows us to stop expanding earlier
-    //  with the scd algorithm.
-    if (detect_deadends) {
-        vector<DeadendTuple *> new_deadends;
-        for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
-            RegressionStep * rs = (RegressionStep *)(*op_iter);
-            if (!(rs->is_goal)) {
-                for (int i = 0; i < g_nondet_mapping[rs->op->nondet_index]->size(); i++) {
-                    PartialState *succ_state = new PartialState(*(rs->state), *((*(g_nondet_mapping[rs->op->nondet_index]))[i]));
-                    if (is_deadend(*succ_state)) {
-                        generalize_deadend(*succ_state);
-                        new_deadends.push_back(new DeadendTuple(succ_state, new PartialState(*(rs->state)), (*(g_nondet_mapping[rs->op->nondet_index]))[i]));
-                    }
-                }
-            }
-        }
-        if (new_deadends.size() > 0) {
-            g_updated_deadends = true;
-            update_deadends(new_deadends);
-        }
-    }
     
     g_timer_policy_build.stop();
 }
