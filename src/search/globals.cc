@@ -57,10 +57,13 @@ bool test_goal(const State &state) {
     }
     
     g_matched_distance = 0;
-    g_matched_policy.clear();
-    for (int i = 0; i < g_goal.size(); i++) {
-        g_matched_policy.push_back(make_pair(g_goal[i].first, g_goal[i].second));
-    }
+    
+    PartialState *gs = new PartialState();
+    for (int i = 0; i < g_goal.size(); i++)
+        (*gs)[g_goal[i].first] = g_goal[i].second;
+    RegressionStep *grs = new RegressionStep(gs, 0);
+    
+    g_matched_policy = grs;
     
     return true;
 }
@@ -71,14 +74,9 @@ bool test_policy(const State &state) {
     
     if ((best_step && g_plan_with_policy) || (best_step && best_step->is_goal)) {
         
-        g_matched_policy.clear();
+        g_matched_policy = best_step;
         g_matched_distance = best_step->distance;
         
-        for (int i = 0; i < g_variable_name.size(); i++) {
-            if (-1 != (*(best_step->state))[i]) {
-                g_matched_policy.push_back(make_pair(i, (*(best_step->state))[i]));
-            }
-        }
         return true;
     } else {
         return false;
@@ -465,7 +463,7 @@ DeadendAwareSuccessorGenerator *g_successor_generator;
 map<string, int> g_nondet_index_mapping; // Maps a non-deterministic action name to its id
 vector<vector<Operator *> *> g_nondet_mapping; // Maps a non-deterministic action id to a list of ground operators
 vector<vector<int> *> g_nondet_conditional_mask; // Maps a non-deterministic action id to the variables that must be defined when doing context-sensitive regression
-vector<pair<int, int> > g_matched_policy; // Contains the condition that matched when our policy recognized the state
+RegressionStep * g_matched_policy; // Contains the condition that matched when our policy recognized the state
 int g_matched_distance; // Containts the distance to the goal for the matched policy
 Policy *g_policy; // The policy to check while searching
 Policy *g_regressable_ops; // The policy to check what operators are applicable
