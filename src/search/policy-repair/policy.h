@@ -38,6 +38,10 @@ class Policy {
     
     list<PolicyItem *> all_items;
     
+    int opt_scd_countdown;
+    int opt_scd_countdown_step;
+    int opt_scd_last_size;
+    
 public:
     Policy();
     ~Policy();
@@ -66,7 +70,7 @@ public:
     bool is_complete() { return complete; }
     bool is_strong_cyclic() { return (1.1 == score); }
     
-    void init_scd();
+    void init_scd(bool force_count_reset = false);
     bool step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadends = true);
     bool goal_sc_reachable(const PartialState &curr);
     

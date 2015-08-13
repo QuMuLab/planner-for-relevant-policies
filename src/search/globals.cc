@@ -527,6 +527,8 @@ bool g_record_relevant_pairs = false; // If true, used pairs will be kept
 bool g_debug = false; // Flag for debugging parts of the code
 int g_debug_count = 1; // Index that allows to locate spots in the output
 
+bool g_safetybelt_optimized_scd = true; // Gradually disable the optimized SCD setting when it proves useless
+
 Timer g_timer_regression;
 Timer g_timer_simulator;
 Timer g_timer_engine_init;

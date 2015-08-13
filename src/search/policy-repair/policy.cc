@@ -506,6 +506,10 @@ Policy::Policy() {
     score = 0.0;
     complete = false;
     return_if_possible = false;
+    
+    opt_scd_countdown = 0;
+    opt_scd_countdown_step = 1;
+    opt_scd_last_size = 0;
 }
 
 Policy::~Policy() {
@@ -618,7 +622,18 @@ bool Policy::goal_sc_reachable(const PartialState &_curr) {
 }
 
 
-void Policy::init_scd() {
+void Policy::init_scd(bool force_count_reset) {
+
+    if (g_safetybelt_optimized_scd) {
+        if (force_count_reset)
+            opt_scd_countdown = 0;
+        
+        if (opt_scd_countdown > 0) {
+            opt_scd_countdown--;
+            return;
+        }
+    }
+    
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
          ((RegressionStep *)(*op_iter))->is_sc = true;
@@ -628,7 +643,12 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
     
     bool made_change = false;
     bool debug_scd = false;
+    int scd_count = all_items.size();
     //bool debug_scd = !g_silent_planning;
+    
+    // Skip the SCD phase if we are in a safety belt zone
+    if (g_safetybelt_optimized_scd && (opt_scd_countdown > 0))
+        return false;
     
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
@@ -716,6 +736,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
                         if (debug_scd) {
                             cout << "--- Umarking: No guaranteed steps." << endl;
                         }
+                        scd_count--;
                         rs->is_sc = false;
                         made_change = true;
                         delete succ_state;
@@ -755,6 +776,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
                         cout << "--- Unmarking: Strong cyclic guaranteed step failed to reach the goal." << endl;
                     }
                     //cout << "Min sc cost = " << min_sc_cost << endl;
+                    scd_count--;
                     rs->is_sc = false;
                     made_change = true;
                     i = g_nondet_mapping[rs->op->nondet_index]->size();
@@ -770,6 +792,18 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
             }
         }
     }
+    
+    if (!made_change && g_safetybelt_optimized_scd) {
+        if (scd_count > opt_scd_last_size) {
+            opt_scd_last_size = scd_count;
+            opt_scd_countdown = 0;
+            opt_scd_countdown_step = 1;
+        } else {
+            opt_scd_countdown = opt_scd_countdown_step;
+            opt_scd_countdown_step *= 2;
+        }
+    }
+    
     return made_change;
 }
 
