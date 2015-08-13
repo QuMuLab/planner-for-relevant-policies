@@ -198,8 +198,8 @@ int AdditiveHeuristic::compute_add_and_ff(const PartialState &state) {
     
     setup_exploration_queue();
     setup_exploration_queue_state(state);
-    bool worked = relaxed_exploration(false);
     
+    bool worked = relaxed_exploration(false);
     if (g_check_with_forbidden && !worked) {
         setup_exploration_queue();
         setup_exploration_queue_state(state);
