@@ -92,11 +92,30 @@ Operator::Operator(istream &in, bool axiom) {
 }
 
 void Prevail::dump() const {
-    cout << g_variable_name[var] << ": " << prev;
+    const string &fact_name = g_fact_names[var][prev];
+    if (fact_name != "<none of those>")
+        cout << fact_name;
+    else
+        cout << "[" << g_variable_name[var] << "] None of those.";
 }
 
 void PrePost::dump() const {
-    cout << g_variable_name[var] << ": " << pre << " => " << post;
+    
+    if (-1 == pre)
+        cout << "anything -> ";
+    else {
+        const string &pre_name = g_fact_names[var][pre];
+        if (pre_name != "<none of those>")
+            cout << pre_name << " -> ";
+        else
+            cout << "[" << g_variable_name[var] << "] None of those." << " -> ";
+    }
+    
+    const string &post_name = g_fact_names[var][post];
+    if (post_name != "<none of those>")
+        cout << post_name;
+    else
+        cout << "[" << g_variable_name[var] << "] None of those.";
     if (!cond.empty()) {
         cout << " if";
         for (int i = 0; i < cond.size(); i++) {

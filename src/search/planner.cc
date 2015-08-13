@@ -72,6 +72,7 @@ int main(int argc, const char **argv) {
      *      they may be consulted by certain parts of the code. */
     g_deadend_policy = new Policy();
     g_deadend_states = new Policy();
+    g_temporary_deadends = new Policy();
     
     
     /***************************************
@@ -109,13 +110,16 @@ int main(int argc, const char **argv) {
     Simulator *sim = new Simulator(engine, argc, argv, !g_silent_planning);
     
     cout << "\n\nRegressing the plan..." << endl;
-    list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
+    list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, 0, true);
     
     cout << "\n\nGenerating an initial policy..." << endl;
     g_policy = new Policy();
-    g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
+    g_policy->update_policy(regression_steps);
     g_best_policy = g_policy;
     g_best_policy_score = g_policy->get_score();
+    
+    if (g_sample_for_depth1_deadends)
+        sample_for_depth1_deadends(engine->get_plan(), new PartialState(g_initial_state()));
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
     //g_timer_jit.resume(); // Placed above to include the initial search time
