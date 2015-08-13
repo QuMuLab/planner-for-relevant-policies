@@ -13,7 +13,7 @@
 
   (:action changetire
     :parameters (?loc - location)
-    :precondition (and (not (not-flattire)) (have-tire) (vehicle-at ?loc))
+    :precondition (and (have-tire) (vehicle-at ?loc))
     :effect (and (not-flattire) (not (have-tire))))
 
   (:action taketire

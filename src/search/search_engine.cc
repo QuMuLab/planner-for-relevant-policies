@@ -54,28 +54,30 @@ void SearchEngine::set_plan(const Plan &p) {
 
 void SearchEngine::search() {
     
-    if (g_record_online_deadends)
+    if (g_record_online_deadends) {
         g_found_deadends.clear();
+        delete g_temporary_deadends;
+        g_temporary_deadends = new Policy();
+    }
     
     initialize();
     Timer timer;
     while (step() == IN_PROGRESS)
         ;
     
-    if (g_record_online_deadends && !g_limit_states) {
-        
+    if (g_record_online_deadends && !g_limit_states && g_found_deadends.size() > 0) {
+        g_replan_detected_deadends = true;
         //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
-        
-        for (int i = 0; i < g_found_deadends.size(); i++) {
-            if (g_generalize_deadends)
-                generalize_deadend(*(g_found_deadends[i]->de_state));
-        }
-        
         update_deadends(g_found_deadends);
     }
     if (search_progress.get_generated() > 2) {
         cout << "Generated " << search_progress.get_generated() << " state(s)." << endl;
-        cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
+        
+        if (g_record_online_deadends && !g_limit_states)
+            cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s). ("
+                 << g_found_deadends.size() << " recorded)" << endl;
+        else
+            cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
     }
     if (!g_silent_planning)
         cout << "Actual search time: " << timer
