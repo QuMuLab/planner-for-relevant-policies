@@ -42,6 +42,9 @@ class Policy {
     int opt_scd_last_size;
     
 public:
+
+    bool opt_scd_skipped;
+    
     Policy();
     ~Policy();
     

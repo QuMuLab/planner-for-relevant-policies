@@ -34,6 +34,7 @@ bool perform_jit_repairs(Simulator *sim) {
     g_failed_open_states = 0; // Number of open states we couldn't solve (i.e., deadends)
     int num_checked_states = 0; // Number of states we check
     int num_fixed_states = 0; // Number of states we were able to repair (by replanning)
+    int scd_skip_count = 0; // Number of times we checked a new state while having a dated SCD marking
     vector< DeadendTuple * > failed_states; // The failed states (used for creating deadends)
     
     bool debug_jic = false;
@@ -73,6 +74,21 @@ bool perform_jit_repairs(Simulator *sim) {
         prev_regstep = open_list.top().prev_regstep;
         prev_op = open_list.top().prev_op;
         open_list.pop();
+        
+        // If we are just going through states we know how to handle, give the SCD
+        //  phase a chance to re-compute in case we skipped it previously.
+        if (g_optimized_scd) {
+            if (g_policy->opt_scd_skipped) {
+                scd_skip_count++;
+                if (scd_skip_count > 100) {
+                    scd_skip_count = 0;
+                    g_policy->init_scd(true);
+                    bool _made_change = true;
+                    while (_made_change)
+                        _made_change = g_policy->step_scd(failed_states);
+                }
+            }
+        }
         
         if (debug_jic) {
             cout << "\n\nChecking state:" << endl;
@@ -168,6 +184,7 @@ bool perform_jit_repairs(Simulator *sim) {
                     
                     // Since new policy has been added, we re-compute the sc detection
                     if (g_optimized_scd && have_solution) {
+                        scd_skip_count = 0;
                         g_policy->init_scd();
                         bool _made_change = true;
                         while (_made_change)
