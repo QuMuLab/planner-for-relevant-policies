@@ -147,6 +147,8 @@ extern bool g_record_relevant_pairs; // If true, used pairs will be kept
 extern bool g_debug; // Flag for debugging parts of the code
 extern int g_debug_count; // Index that allows to locate spots in the output
 
+extern bool g_safetybelt_optimized_scd; // Gradually disable the optimized SCD setting when it proves useless
+
 /* Timers */
 extern Timer g_timer_regression;
 extern Timer g_timer_simulator;
