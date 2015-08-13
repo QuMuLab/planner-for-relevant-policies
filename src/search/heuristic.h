@@ -3,6 +3,7 @@
 
 #include "scalar_evaluator.h"
 #include "operator_cost.h"
+#include "policy-repair/partial_state.h"
 
 #include <map>
 #include <set>
@@ -64,6 +65,7 @@ public:
     virtual void reset() { preferred_operators.clear(); }
     std::set<int> forbidden_ops;
     void compute_forbidden(const State &state);
+    void compute_forbidden(const PartialState &state);
 };
 
 #endif

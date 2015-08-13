@@ -23,6 +23,10 @@ public:
     PartialState(const PartialState &state);
     PartialState(const PartialState &predecessor, const Operator &op, bool progress=true, PartialState *context=NULL);
     ~PartialState();
+    
+    void combine_with(const PartialState &state);
+    int size() const;
+    
     PartialState &operator=(const PartialState &other);
     int &operator[](int index) {
         return vars[index];
