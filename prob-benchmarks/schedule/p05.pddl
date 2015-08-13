@@ -28,6 +28,4 @@
          (not-dropped P9)
   )
   (:goal (and (alive) (forall (?c - class) (served ?c))))
-  (:goal-reward 1)
-  (:metric maximize (reward))
   )
