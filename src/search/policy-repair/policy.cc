@@ -510,6 +510,7 @@ Policy::Policy() {
     opt_scd_countdown = 0;
     opt_scd_countdown_step = 1;
     opt_scd_last_size = 0;
+    opt_scd_skipped = false;
 }
 
 Policy::~Policy() {
@@ -628,10 +629,8 @@ void Policy::init_scd(bool force_count_reset) {
         if (force_count_reset)
             opt_scd_countdown = 0;
         
-        if (opt_scd_countdown > 0) {
-            opt_scd_countdown--;
+        if (opt_scd_countdown > 0)
             return;
-        }
     }
     
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
@@ -647,8 +646,12 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
     //bool debug_scd = !g_silent_planning;
     
     // Skip the SCD phase if we are in a safety belt zone
-    if (g_safetybelt_optimized_scd && (opt_scd_countdown > 0))
+    if (g_safetybelt_optimized_scd && (opt_scd_countdown > 0)) {
+        opt_scd_countdown--;
+        opt_scd_skipped = true;
         return false;
+    } else
+        opt_scd_skipped = false;
     
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
@@ -794,7 +797,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
     }
     
     if (!made_change && g_safetybelt_optimized_scd) {
-        if (scd_count > opt_scd_last_size) {
+        if (scd_count > 1.5*opt_scd_last_size) {
             opt_scd_last_size = scd_count;
             opt_scd_countdown = 0;
             opt_scd_countdown_step = 1;
