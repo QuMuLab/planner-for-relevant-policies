@@ -37,7 +37,7 @@ PartialState::PartialState() {
         vars[i] = -1;
 }
 
-PartialState::PartialState(const State &state) {
+PartialState::PartialState(const StateInterface &state) {
 	_allocate();
 	for (int i = 0; i < g_variable_domain.size(); i++)
 		vars[i] = state[i];
