@@ -133,10 +133,19 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
     
     g_deadend_policy->update_policy(de_items);
     g_deadend_states->update_policy(de_states);
+    
+    if (g_repeat_fsap_backwards) {
+        for (std::list<PolicyItem *>::iterator it=de_items.begin(); it != de_items.end(); ++it) {
+            vector<const Operator *> ops;
+            g_successor_generator->generate_applicable_ops(*((*it)->state), ops);
+            if (ops.size() == 0)
+                cout << "\n\n ??? EH ???\n" << endl;
+        }
+    }
 }
 
 
-void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &_curr, vector<const Operator *> &ops) {
+void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterface &_curr, vector<const Operator *> &ops) {
     if (g_detect_deadends && g_deadend_policy) {
         
         PartialState curr = PartialState(_curr);
