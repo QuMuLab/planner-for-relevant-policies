@@ -541,6 +541,9 @@ bool Policy::better_than(Policy * other) {
     if (get_score() < other->get_score())
         return false;
     
+    if (is_strong_cyclic() != other->is_strong_cyclic())
+        return is_strong_cyclic();
+    
     return get_size() > other->get_size();
 }
 

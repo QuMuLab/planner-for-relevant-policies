@@ -359,7 +359,7 @@ bool perform_jit_repairs(Simulator *sim) {
         cout << "Marking policy strong cyclic." << endl;
     }
     
-    if (made_change || (g_failed_open_states > 0) || g_updated_deadends) {
+    if (made_change || (g_failed_open_states > 0) || g_updated_deadends || g_policy->is_strong_cyclic()) {
         
         double cur_score = g_policy->get_score();
         
