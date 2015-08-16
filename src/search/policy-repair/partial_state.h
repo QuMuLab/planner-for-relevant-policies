@@ -9,9 +9,9 @@
 using namespace std;
 
 class Operator;
-class State;
+class StateInterface;
 
-class PartialState {
+class PartialState : public StateInterface {
     int *vars; // values for vars
     void _allocate();
     void _deallocate();
@@ -19,7 +19,7 @@ class PartialState {
 
 public:
     PartialState(); // Creates a state with -1 values for everything
-    PartialState(const State &state);
+    PartialState(const StateInterface &state);
     PartialState(const PartialState &state);
     PartialState(const PartialState &predecessor, const Operator &op, bool progress=true, PartialState *context=NULL);
     ~PartialState();
