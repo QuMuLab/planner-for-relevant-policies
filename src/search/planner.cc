@@ -10,13 +10,59 @@
 #include "policy-repair/policy.h"
 #include "policy-repair/jit.h"
 #include "policy-repair/partial_state.h"
-
+#include "policy-repair/autotune_heuristic.h"
 
 #include <iostream>
 #include <list>
 #include <new>
+#include <unistd.h>
+#include <sys/wait.h>
+
 using namespace std;
 
+bool do_autotune(int argc, const char **argv){
+    bool do_autotune = false;
+    for(int i=0; i<argc; ++i)
+    {
+        if( strcmp(argv[i],"--autotune-heuristics") ==0 ){
+            if(strcmp(argv[i+1], "1") == 0){
+                do_autotune = true;
+                break;
+            }
+        }
+    }
+    return do_autotune;
+}
+
+const char** new_params(string heuristic_name, int argc, const char** argv){
+    
+    const char** char_matrix = ( const char** )malloc(argc * sizeof(const char*));
+    string rr = "lazy_greedy([" + heuristic_name + "],preferred=[" + heuristic_name + "])";
+    string ss = "\"" + heuristic_name + "=" + heuristic_name + "()\"";
+
+    char r[100];
+    strcpy(r, rr.c_str());
+    char s[100];
+    strcpy(s, ss.c_str());
+    
+    for(int i=0; i<argc; ++i)
+    {
+        if( strcmp(argv[i],"--search") ==0 ){
+            char_matrix[i] = argv[i];
+            char_matrix[i+1] = r;
+            i++;
+        }
+        else if( strcmp(argv[i],"--heuristic") ==0 ){
+            char_matrix[i] = argv[i];
+            char_matrix[i+1] = s;
+            i++;
+        }
+        else{
+            char_matrix[i] = argv[i];
+        }
+    }
+    return char_matrix;
+}
 
 int main(int argc, const char **argv) {
     register_event_handlers();
@@ -55,12 +101,51 @@ int main(int argc, const char **argv) {
     //then in normal mode
     g_timer_engine_init.resume();
     try {
-        OptionParser::parse_cmd_line(argc, argv, true);
+        if ( do_autotune(argc, argv) ){
+            pid_t pid_child1, pid_child2;
+            pid_child1 = fork();
+            if( pid_child1 > 0 ) // parent
+            {
+                pid_child2 = fork();
+                if(pid_child2 > 0) // parent
+                {
+                    pid_t fastest_child = wait(NULL);
+                    if(fastest_child == pid_child1){
+                        cout << "Using heuristic h_ff." << endl;
+                        argv = new_params("ff", argc, argv);
+                        kill(pid_child2, SIGKILL);
+                    }
+                    else if(fastest_child == pid_child2){
+                        cout << "Using heuristic h_add." << endl;
+                        argv = new_params("add", argc, argv);
+                        kill(pid_child1, SIGKILL);
+                    }
+                    else{
+                        cout << "Error in execution of the heuristics autotune." << endl;
+                        exit(-1);
+                    }
+                } else{ // child2
+                    argv = new_params("add", argc, argv);
+                    engine = OptionParser::parse_cmd_line(argc, argv, false);
+                    engine->search();
+
+                    _exit(EXIT_SUCCESS);
+                }
+            }else{ // child1
+                    argv = new_params("ff", argc, argv);
+                    engine = OptionParser::parse_cmd_line(argc, argv, false);
+                    engine->search();
+            
+                    _exit(EXIT_SUCCESS);
+            }
+        }
+        //OptionParser::parse_cmd_line(argc, argv, true);
         engine = OptionParser::parse_cmd_line(argc, argv, false);
     } catch (ParseError &pe) {
         cerr << pe << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
+    
     g_timer_engine_init.stop();
     
     /* HAZ: Unfortunately, this must go here (as supposed to globals.cc)
@@ -91,9 +176,10 @@ int main(int argc, const char **argv) {
     // We start the jit timer here since we should include the initial search / policy construction
     g_timer_jit.resume();
     g_timer_search.resume();
+
     engine->search();
     g_timer_search.stop();
-        
+
     engine->save_plan_if_necessary();
     engine->statistics();
     engine->heuristic_statistics();
@@ -134,7 +220,7 @@ int main(int argc, const char **argv) {
         if (!changes_made && !g_check_with_forbidden &&
             g_detect_deadends && !(g_policy->is_strong_cyclic()) &&
             (g_timer_jit() < g_jic_limit)) {
-            
+            cout << g_timer_jit() << "\t" << g_jic_limit << endl;
             g_check_with_forbidden = true;
             changes_made = true;
             if (g_best_policy != g_policy)

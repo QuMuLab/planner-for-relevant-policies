@@ -143,6 +143,7 @@ extern int g_num_regsteps; // Used to give each regstep an id based on when it w
 
 extern bool g_optimize_final_policy; // Only keep the final pairs and FSAPs that are needed
 extern bool g_record_relevant_pairs; // If true, used pairs will be kept
+extern bool g_autotune_heuristics; // If true, the heuristics chosen is the one that better adapts to the domain
 
 extern bool g_debug; // Flag for debugging parts of the code
 extern int g_debug_count; // Index that allows to locate spots in the output

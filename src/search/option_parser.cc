@@ -277,6 +277,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--optimize-final-policy") == 0) {
             ++i;
             g_optimize_final_policy = atoi(argv[i]);
+        } else if (arg.compare("--autotune-heuristics") == 0) {
+            ++i;
+            g_autotune_heuristics = atoi(argv[i]);
         } else if (arg.compare("--dump-policy") == 0) {
             ++i;
             g_dump_policy = atoi(argv[i]);
