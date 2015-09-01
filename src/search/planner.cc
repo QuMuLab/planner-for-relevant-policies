@@ -10,7 +10,6 @@
 #include "policy-repair/policy.h"
 #include "policy-repair/jit.h"
 #include "policy-repair/partial_state.h"
-#include "policy-repair/autotune_heuristic.h"
 
 #include <iostream>
 #include <list>
@@ -34,6 +33,11 @@ bool do_autotune(int argc, const char **argv){
     return do_autotune;
 }
 
+/*
+* This function returns a matrix of parameters that are fed to downward, 
+* and modifies the values of argv to set the search to lazy_gredy (BFS), 
+* and the heuristics to either hff or hadd as indicated in the input heuristic_name
+*/
 const char** new_params(string heuristic_name, int argc, const char** argv){
     
     const char** char_matrix = ( const char** )malloc(argc * sizeof(const char*));
@@ -100,6 +104,7 @@ int main(int argc, const char **argv) {
     //once in dry-run mode, to check for simple input errors,
     //then in normal mode
     g_timer_engine_init.resume();
+    OptionParser::parse_cmd_line(argc, argv, true);
     try {
         if ( do_autotune(argc, argv) ){
             pid_t pid_child1, pid_child2;
@@ -139,7 +144,6 @@ int main(int argc, const char **argv) {
                     _exit(EXIT_SUCCESS);
             }
         }
-        //OptionParser::parse_cmd_line(argc, argv, true);
         engine = OptionParser::parse_cmd_line(argc, argv, false);
     } catch (ParseError &pe) {
         cerr << pe << endl;
