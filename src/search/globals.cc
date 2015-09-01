@@ -523,7 +523,7 @@ int g_num_regsteps = 0; // Used to give each regstep an id based on when it was 
 
 bool g_optimize_final_policy = false; // Only keep the final pairs and FSAPs that are needed
 bool g_record_relevant_pairs = false; // If true, used pairs will be kept
-bool g_autotune_heuristics; // If true, the heuristics chosen is the one that better adapts to the domain
+bool g_autotune_heuristics = false; // If true, the heuristics chosen is the one that better adapts to the domain
 
 bool g_debug = false; // Flag for debugging parts of the code
 int g_debug_count = 1; // Index that allows to locate spots in the output
