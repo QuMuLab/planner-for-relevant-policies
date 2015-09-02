@@ -11,7 +11,8 @@ class SuccessorGenerator {
 public:
     virtual ~SuccessorGenerator() {}
     virtual void generate_applicable_ops(const StateInterface &curr,
-                                         std::vector<const Operator *> &ops) = 0;
+                                         std::vector<const Operator *> &ops,
+                                         bool keep_all) = 0;
     void dump() {_dump("  "); }
     virtual void _dump(std::string indent) = 0;
 };
