@@ -156,7 +156,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterfac
         vector<const Operator *> orig_ops;
         map<int, PolicyItem *> fsap_map;
         
-        g_successor_generator_orig->generate_applicable_ops(_curr, orig_ops);
+        g_successor_generator_orig->generate_applicable_ops(_curr, orig_ops, true);
         g_deadend_policy->generate_applicable_items(curr, reg_items);
         
         set<int> forbidden;
@@ -220,7 +220,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterfac
         
     } else {
         
-        g_successor_generator_orig->generate_applicable_ops(_curr, ops);
+        g_successor_generator_orig->generate_applicable_ops(_curr, ops, true);
         
     }
     return;
