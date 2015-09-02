@@ -41,26 +41,31 @@ bool do_autotune(int argc, const char **argv){
 const char** new_params(string heuristic_name, int argc, const char** argv){
     
     const char** char_matrix = ( const char** )malloc(argc * sizeof(const char*));
-    string rr = "lazy_greedy([" + heuristic_name + "],preferred=[" + heuristic_name + "])";
-    string ss = "\"" + heuristic_name + "=" + heuristic_name + "()\"";
+    string rr = "lazy_greedy([h],preferred=[h])";
+    string ss = "h=" + heuristic_name + "()";
 
-    char r[100];
+    char *r = (char *)malloc(100*sizeof(char));
     strcpy(r, rr.c_str());
-    char s[100];
+    char *s = (char *)malloc(100*sizeof(char));
     strcpy(s, ss.c_str());
     
     for(int i=0; i<argc; ++i)
     {
-        if( strcmp(argv[i],"--search") ==0 ){
+        if( strcmp(argv[i],"--search") == 0 ){
             char_matrix[i] = argv[i];
             char_matrix[i+1] = r;
             i++;
         }
-        else if( strcmp(argv[i],"--heuristic") ==0 ){
+        else if( strcmp(argv[i],"--heuristic") == 0 ){
             char_matrix[i] = argv[i];
             char_matrix[i+1] = s;
             i++;
         }
+        // else if( strcmp(argv[i],"--detect-deadends") == 0 or strcmp(argv[i],"--generalize-deadends") == 0 or strcmp(argv[i],"--online-deadends") == 0 ){
+        //     char_matrix[i] = argv[i];
+        //     char_matrix[i+1] = "0";
+        //     i++;
+        // }
         else{
             char_matrix[i] = argv[i];
         }
@@ -104,7 +109,7 @@ int main(int argc, const char **argv) {
     //once in dry-run mode, to check for simple input errors,
     //then in normal mode
     g_timer_engine_init.resume();
-    OptionParser::parse_cmd_line(argc, argv, true);
+
     try {
         if ( do_autotune(argc, argv) ){
             pid_t pid_child1, pid_child2;
@@ -115,6 +120,7 @@ int main(int argc, const char **argv) {
                 if(pid_child2 > 0) // parent
                 {
                     pid_t fastest_child = wait(NULL);
+
                     if(fastest_child == pid_child1){
                         cout << "Using heuristic h_ff." << endl;
                         argv = new_params("ff", argc, argv);
@@ -131,18 +137,24 @@ int main(int argc, const char **argv) {
                     }
                 } else{ // child2
                     argv = new_params("add", argc, argv);
+                    OptionParser::parse_cmd_line(argc, argv, true);
                     engine = OptionParser::parse_cmd_line(argc, argv, false);
                     engine->search();
+                    cout << "Initial total time: " << g_timer << endl;
 
                     _exit(EXIT_SUCCESS);
                 }
             }else{ // child1
                     argv = new_params("ff", argc, argv);
+                    OptionParser::parse_cmd_line(argc, argv, true);
                     engine = OptionParser::parse_cmd_line(argc, argv, false);
                     engine->search();
             
                     _exit(EXIT_SUCCESS);
             }
+        }
+        else{
+            OptionParser::parse_cmd_line(argc, argv, true);
         }
         engine = OptionParser::parse_cmd_line(argc, argv, false);
     } catch (ParseError &pe) {
