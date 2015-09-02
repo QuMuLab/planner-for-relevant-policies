@@ -104,6 +104,7 @@ class Operator {
     std::string name;
     std::string nondet_name;
     int cost;
+    int weight; // Used for probabilistic effects
 
     mutable bool marked; // Used for short-term marking of preferred operators
 public:
@@ -111,6 +112,8 @@ public:
     void dump() const;
     std::string get_name() const {return name; }
     std::string get_nondet_name() const {return nondet_name; }
+    int get_weight() const { return weight; }
+	int total_weight;	// Total weight of all nondet outcomes
     
     int nondet_index;
     PartialState * all_fire_context;
