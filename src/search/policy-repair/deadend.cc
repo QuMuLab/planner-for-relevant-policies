@@ -142,6 +142,7 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
                 vector< DeadendTuple* > new_failed_states;
                 new_failed_states.push_back(new DeadendTuple((*it)->state, NULL, NULL));
                 update_deadends(new_failed_states);
+                g_repeat_fsap_count++;
             }
         }
     }
