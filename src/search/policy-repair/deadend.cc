@@ -138,8 +138,11 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
         for (std::list<PolicyItem *>::iterator it=de_items.begin(); it != de_items.end(); ++it) {
             vector<const Operator *> ops;
             g_successor_generator->generate_applicable_ops(*((*it)->state), ops);
-            if (ops.size() == 0)
-                cout << "\n\n ??? EH ???\n" << endl;
+            if ((ops.size() == 0) && g_deadend_states->check_match(*((*it)->state), false)) {
+                vector< DeadendTuple* > new_failed_states;
+                new_failed_states.push_back(new DeadendTuple((*it)->state, NULL, NULL));
+                update_deadends(new_failed_states);
+            }
         }
     }
 }
