@@ -38,6 +38,7 @@ class Policy {
     
     list<PolicyItem *> all_items;
     
+    int opt_scd_count;
     int opt_scd_countdown;
     int opt_scd_countdown_step;
     int opt_scd_last_size;

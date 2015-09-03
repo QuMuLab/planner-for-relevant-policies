@@ -133,10 +133,26 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
     
     g_deadend_policy->update_policy(de_items);
     g_deadend_states->update_policy(de_states);
+    
+    if (g_repeat_fsap_backwards) {
+        for (std::list<PolicyItem *>::iterator it=de_items.begin(); it != de_items.end(); ++it) {
+            
+            // Make sure the partial state isn't already a deadend
+            if (!(g_deadend_states->check_match(*((*it)->state), false))) {
+                
+                // Just call the successor generator to see if the combination is triggered
+                vector<const Operator *> ops;
+                g_successor_generator->generate_applicable_ops(*((*it)->state), ops);
+                if (ops.size() == 0)
+                    g_repeat_fsap_count++;
+            }
+            
+        }
+    }
 }
 
 
-void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &_curr, vector<const Operator *> &ops) {
+void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterface &_curr, vector<const Operator *> &ops) {
     if (g_detect_deadends && g_deadend_policy) {
         
         PartialState curr = PartialState(_curr);
@@ -147,7 +163,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &_curr,
         vector<const Operator *> orig_ops;
         map<int, PolicyItem *> fsap_map;
         
-        g_successor_generator_orig->generate_applicable_ops(_curr, orig_ops);
+        g_successor_generator_orig->generate_applicable_ops(_curr, orig_ops, true);
         g_deadend_policy->generate_applicable_items(curr, reg_items);
         
         set<int> forbidden;
@@ -211,7 +227,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const State &_curr,
         
     } else {
         
-        g_successor_generator_orig->generate_applicable_ops(_curr, ops);
+        g_successor_generator_orig->generate_applicable_ops(_curr, ops, true);
         
     }
     return;

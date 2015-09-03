@@ -158,12 +158,12 @@ bool perform_jit_repairs(Simulator *sim) {
                     regstep = g_policy->get_best_step(*current_state);
                     
                     // Add the new goals to the sc condition for the previous reg step
+                    PartialState * updated = NULL;
                     if (g_optimized_scd && prev_regstep && have_solution) {
                         
                         // prev_state holds the info needed before the operator was taken
                         PartialState * prev_state = new PartialState(*(regstep->state), *prev_op, false, prev_regstep->state);
                         
-                        PartialState * updated = NULL;
                         // We augment the state to include the stronger conditions
                         for (int i = 0; i < g_variable_name.size(); i++) {
                             assert ((-1 == (*prev_state)[i]) ||
@@ -185,7 +185,7 @@ bool perform_jit_repairs(Simulator *sim) {
                     // Since new policy has been added, we re-compute the sc detection
                     if (g_optimized_scd && have_solution) {
                         scd_skip_count = 0;
-                        g_policy->init_scd();
+                        g_policy->init_scd(updated != NULL);
                         bool _made_change = true;
                         while (_made_change)
                             _made_change = g_policy->step_scd(failed_states);
@@ -359,7 +359,7 @@ bool perform_jit_repairs(Simulator *sim) {
         cout << "Marking policy strong cyclic." << endl;
     }
     
-    if (made_change || (g_failed_open_states > 0) || g_updated_deadends) {
+    if (made_change || (g_failed_open_states > 0) || g_updated_deadends || g_policy->is_strong_cyclic()) {
         
         double cur_score = g_policy->get_score();
         
