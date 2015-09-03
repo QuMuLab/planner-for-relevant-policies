@@ -16,8 +16,9 @@ class SuccessorGeneratorSwitch : public SuccessorGenerator {
     SuccessorGenerator *default_generator;
 public:
     SuccessorGeneratorSwitch(istream &in);
-    virtual void generate_applicable_ops(const State &curr,
-                                         vector<const Operator *> &ops);
+    virtual void generate_applicable_ops(const StateInterface &curr,
+                                         vector<const Operator *> &ops,
+                                         bool keep_all = false);
     virtual void _dump(string indent);
 };
 
@@ -25,8 +26,9 @@ class SuccessorGeneratorGenerate : public SuccessorGenerator {
     vector<const Operator *> op;
 public:
     SuccessorGeneratorGenerate(istream &in);
-    virtual void generate_applicable_ops(const State &curr,
-                                         vector<const Operator *> &ops);
+    virtual void generate_applicable_ops(const StateInterface &curr,
+                                         vector<const Operator *> &ops,
+                                         bool keep_all = false);
     virtual void _dump(string indent);
 };
 
@@ -39,10 +41,15 @@ SuccessorGeneratorSwitch::SuccessorGeneratorSwitch(istream &in) {
 }
 
 void SuccessorGeneratorSwitch::generate_applicable_ops(
-    const State &curr, vector<const Operator *> &ops) {
-    immediate_ops->generate_applicable_ops(curr, ops);
-    generator_for_value[curr[switch_var]]->generate_applicable_ops(curr, ops);
-    default_generator->generate_applicable_ops(curr, ops);
+    const StateInterface &curr, vector<const Operator *> &ops, bool keep_all) {
+    immediate_ops->generate_applicable_ops(curr, ops, keep_all);
+    if (-1 != curr[switch_var])
+        generator_for_value[curr[switch_var]]->generate_applicable_ops(curr, ops, keep_all);
+    else if (keep_all) {
+        for (int i = 0; i < g_variable_domain[switch_var]; i++)
+            generator_for_value[i]->generate_applicable_ops(curr, ops, keep_all);
+    }
+    default_generator->generate_applicable_ops(curr, ops, keep_all);
 }
 
 void SuccessorGeneratorSwitch::_dump(string indent) {
@@ -57,8 +64,9 @@ void SuccessorGeneratorSwitch::_dump(string indent) {
     default_generator->_dump(indent + "  ");
 }
 
-void SuccessorGeneratorGenerate::generate_applicable_ops(const State &,
-                                                         vector<const Operator *> &ops) {
+void SuccessorGeneratorGenerate::generate_applicable_ops(const StateInterface &,
+                                                         vector<const Operator *> &ops,
+                                                         bool) {
     ops.insert(ops.end(), op.begin(), op.end());
 }
 

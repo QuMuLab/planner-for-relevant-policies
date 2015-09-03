@@ -128,7 +128,9 @@ extern bool g_generalize_deadends; // Try to find minimal sized deadends from th
 extern bool g_record_online_deadends; // Record the deadends as they occur online, and add them to the deadend policy after solving
 extern bool g_sample_for_depth1_deadends; // Analyze the non-deterministic alternate states from the generated weak plans for deadends
 extern bool g_combine_deadends; // Combine FSAP conditions for a new deadend when there are no applicable actions
+extern bool g_repeat_fsap_backwards; // Keep making FSAPs as long as states where they hold have no applicable actions
 extern int g_combined_count; // Number of times a deadend was generated from combining FSAPs
+extern int g_repeat_fsap_count; // Number of times we applied the repeated FSAP technique
 extern bool g_optimized_scd; // Do optimized strong cyclic detection
 extern bool g_final_fsap_free_round; // Do a final JIC pass with deadends disabled
 extern bool g_seeded; // Used to make sure we only seed the rng once
