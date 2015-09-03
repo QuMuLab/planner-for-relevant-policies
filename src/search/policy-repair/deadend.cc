@@ -136,9 +136,14 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
     
     if (g_repeat_fsap_backwards) {
         for (std::list<PolicyItem *>::iterator it=de_items.begin(); it != de_items.end(); ++it) {
+            
             vector<const Operator *> ops;
             g_successor_generator->generate_applicable_ops(*((*it)->state), ops, true);
-            if ((ops.size() == 0) && g_deadend_states->check_match(*((*it)->state), false)) {
+            
+            if ((ops.size() == 0) && // Means that everything is forbidden here
+                ((*it)->state->size() < 0.5*g_variable_name.size()) && // Only do it if we have general deadends
+                !(g_deadend_states->check_match(*((*it)->state), false))) // Only do it if it isn't already a deadend
+            {
                 vector< DeadendTuple* > new_failed_states;
                 new_failed_states.push_back(new DeadendTuple((*it)->state, NULL, NULL));
                 update_deadends(new_failed_states);
