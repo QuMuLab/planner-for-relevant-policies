@@ -340,7 +340,10 @@ float standard_dev(vector<int> &nums) {
 
 void Simulator::dump() {
     cout << "                  -{ General Statistics }-\n" << endl;
-    cout << "             Repeat FSAP Count: " << g_repeat_fsap_count << endl;
+    
+    if (g_repeat_fsap_backwards)
+        cout << "             Repeat FSAP Count: " << g_repeat_fsap_count << endl;
+    
     cout << "        FSAP Combination Count: " << g_combined_count << endl;
     cout << "       Monotonicity violations: " << g_monotonicity_violations << endl;
     cout << "             Successful states: " << average(record_successful_states) << " +/- " << standard_dev(record_successful_states) << endl;

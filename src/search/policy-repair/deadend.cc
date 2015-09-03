@@ -136,14 +136,17 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
     
     if (g_repeat_fsap_backwards) {
         for (std::list<PolicyItem *>::iterator it=de_items.begin(); it != de_items.end(); ++it) {
-            vector<const Operator *> ops;
-            g_successor_generator->generate_applicable_ops(*((*it)->state), ops);
-            if ((ops.size() == 0) && g_deadend_states->check_match(*((*it)->state), false)) {
-                vector< DeadendTuple* > new_failed_states;
-                new_failed_states.push_back(new DeadendTuple((*it)->state, NULL, NULL));
-                update_deadends(new_failed_states);
-                g_repeat_fsap_count++;
+            
+            // Make sure the partial state isn't already a deadend
+            if (!(g_deadend_states->check_match(*((*it)->state), false))) {
+                
+                // Just call the successor generator to see if the combination is triggered
+                vector<const Operator *> ops;
+                g_successor_generator->generate_applicable_ops(*((*it)->state), ops);
+                if (ops.size() == 0)
+                    g_repeat_fsap_count++;
             }
+            
         }
     }
 }
