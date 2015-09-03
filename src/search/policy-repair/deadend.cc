@@ -137,7 +137,7 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
     if (g_repeat_fsap_backwards) {
         for (std::list<PolicyItem *>::iterator it=de_items.begin(); it != de_items.end(); ++it) {
             vector<const Operator *> ops;
-            g_successor_generator->generate_applicable_ops(*((*it)->state), ops);
+            g_successor_generator->generate_applicable_ops(*((*it)->state), ops, true);
             if ((ops.size() == 0) && g_deadend_states->check_match(*((*it)->state), false)) {
                 vector< DeadendTuple* > new_failed_states;
                 new_failed_states.push_back(new DeadendTuple((*it)->state, NULL, NULL));
@@ -149,7 +149,7 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
 }
 
 
-void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterface &_curr, vector<const Operator *> &ops) {
+void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterface &_curr, vector<const Operator *> &ops, bool skip_combination) {
     if (g_detect_deadends && g_deadend_policy) {
         
         PartialState curr = PartialState(_curr);
@@ -201,7 +201,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterfac
         }
         
         // Add this state as a deadend if we have ruled out everything
-        if (!g_limit_states && g_record_online_deadends &&
+        if (!g_limit_states && g_record_online_deadends && !skip_combination &&
              g_combine_deadends && (orig_ops.size() > 0) && ops.empty()) {
                  
             PartialState *newDE = new PartialState();
