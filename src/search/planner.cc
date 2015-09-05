@@ -87,6 +87,16 @@ int main(int argc, const char **argv) {
         exit(0);
     }
     
+    /*
+    * A. Camacho:   This is a hacky patch to allow for closing FSAPs 
+    *               in anytime searches. We reserve"
+    *               * 10% of the jic time to build a policy.
+    *               * 90% of the jic time to close FSAPs in the final round.
+    */
+    double g_anytime_limit = g_jic_limit; 
+    if(g_final_fsap_free_round)
+        g_jic_limit = g_anytime_limit/10;
+    
     
     // We start the jit timer here since we should include the initial search / policy construction
     g_timer_jit.resume();
@@ -162,6 +172,16 @@ int main(int argc, const char **argv) {
         if (g_best_policy->get_score() > g_policy->get_score())
             g_policy = g_best_policy;
     }
+
+
+    /*
+    * A. Camacho:   This is a hacky patch to allow for closing FSAPs 
+    *               in anytime searches. We reserve"
+    *               * 10% of the jic time to build a policy.
+    *               * 90% of the jic time to close FSAPs in the final round.
+    */
+    if(g_final_fsap_free_round)
+        g_jic_limit = g_anytime_limit;
 
     if (!(g_policy->is_strong_cyclic()) && g_final_fsap_free_round) {
     

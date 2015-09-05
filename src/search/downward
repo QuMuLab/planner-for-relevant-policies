@@ -169,12 +169,12 @@ if [[ "$1" == "ipc" ]]; then
                 "$@" < $TEMPFILE
     elif [[ "$CONFIG" == "policy-repair-probabilistic" ]]; then
         echo "$PLANNER" \
-                --heuristic \""h=ff()"\" \
+                --heuristic \""h=add()"\" \
                 --search \""lazy_greedy([h],preferred=[h])"\" \
                 --random-seed $SEED \
                 "$@" "<" output
         "$PLANNER" \
-                --heuristic "h=ff()" \
+                --heuristic "h=add()" \
                 --search "lazy_greedy([h],preferred=[h])" \
                 --random-seed $SEED \
                 "$@" < $TEMPFILE
