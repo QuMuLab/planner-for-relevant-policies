@@ -228,6 +228,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--trials") == 0) {
             ++i;
             g_num_trials = atoi(argv[i]);
+        } else if (arg.compare("--epochs") == 0) {
+            ++i;
+            g_num_epochs = atoi(argv[i]);
         } else if (arg.compare("--depth") == 0) {
             ++i;
             g_trial_depth = atoi(argv[i]);
@@ -317,7 +320,9 @@ string OptionParser::usage(string progname) {
         "--plan-file FILENAME\n"
         "    Plan will be output to a file called FILENAME\n\n"
         "--jic-limit TIME_LIMIT\n"
-        "    Only perform JIC for the given time.\n\n"
+        "    Only perform JIC for the given time. This will be cut in half if final-fsap-free-round is used.\n\n"
+        "--epochs EPOCH_COUNT (default=1)\n"
+        "    Minimum number of times to execute the JIC loop. Useful if deadends are present and a single pass takes too long.\n\n"
         "--forgetpolicy 1/0\n"
         "    Throw out the policy after every simulation.\n\n"
         "--replan-on-failure 1/0 (default=1)\n"

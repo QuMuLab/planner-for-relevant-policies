@@ -508,6 +508,7 @@ Heuristic *g_heuristic_for_reachability;
 int g_dump_policy = 0; // Whether or not we should dump the policy
 int g_monotonicity_violations = 0; // Count on the number of times we need to add a deadend because of a bad policy loop
 int g_num_regsteps = 0; // Used to give each regstep an id based on when it was created
+int g_num_epochs = 1; // Forced number of times to run the jic loop
 
 bool g_optimize_final_policy = false; // Only keep the final pairs and FSAPs that are needed
 bool g_record_relevant_pairs = false; // If true, used pairs will be kept
