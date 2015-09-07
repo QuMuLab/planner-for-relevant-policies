@@ -40,6 +40,17 @@ def instantiate(task, model):
     instantiated_actions = []
     instantiated_axioms = []
     reachable_action_parameters = defaultdict(list)
+
+    # Do a check for if any of the actions have a cost
+    # If not, use the approximated cost
+
+    isAllCostsInferred = True # Assume all are inferred until we find one that isn't
+    for atom in model:
+        if isinstance(atom.predicate, pddl.Action):
+            if (atom.predicate.cost and not isinstance(atom.predicate.cost, (int, long))):
+                isAllCostsInferred = False  # A real cost has been found
+                break
+
     for atom in model:
         if isinstance(atom.predicate, pddl.Action):
             action = atom.predicate
@@ -56,6 +67,9 @@ def instantiate(task, model):
             inst_action = action.instantiate(variable_mapping, init_facts,
                                              fluent_facts, type_to_objects)
             if inst_action:
+                if (not isAllCostsInferred and inst_action.isInferredCost):
+                    # Have to abandon the inferred cost
+                    inst_action.cost = 0
                 instantiated_actions.append(inst_action)
         elif isinstance(atom.predicate, pddl.Axiom):
             axiom = atom.predicate

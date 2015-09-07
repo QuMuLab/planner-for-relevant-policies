@@ -1,0 +1,44 @@
+2-tireworlds
+- Needs a domain file.
+
+blocksworld
+- OK
+
+boxworld
+- OK
+
+bus-fare
+- OK
+
+climber
+- OK
+
+ex-blocksworld
+- OK
+
+(TODO) Check if the policy scores match what the simulator gives (they should).
+
+rectangle-tireworld
+- OK
+-- /SO/ many bugs in this domain. It's still royally stupid / easy to solve, but whatever...
+-- Most of the problems are unsolvable with the (not (dead)) addition to the goal
+-- Probably best to skip this domain
+
+schedule
+- The conditional effects are too complex to compile away.
+
+search-and-rescue
+- Buggy:
+-- I think there may be a problem with the re-encoding (it should be forced to explore more areas).
+
+sysAdmin-SLP
+- The conditional effects are too complex to compile away.
+
+triangle-tireworld
+- OK
+
+zenotravel
+- OK
+-- Not so interesting in the context of MAXPROB -- no policy repair is required, and the metric is ignored.
+-- Maybe the use of highly probably outcomes gives an interesting result in this domain? It could select
+   things that are cheaper (as they are more probable).
