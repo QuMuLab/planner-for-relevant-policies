@@ -88,12 +88,30 @@ int main(int argc, const char **argv) {
     }
     
     
+    
+    /*********************
+     * Handle JIC Limits *
+     *********************/
+     
+    cout << "\nTotal allotted time (s): " << g_jic_limit << endl;
+    
     // If we are going to do a final FSAP-free round, then we modify the
     //  time limits to give a 50/50 split between the JIC phase and final
     //  round phase
-    float jic_ratio = 0.5;
+    double jic_ratio = 0.5;
     if (g_final_fsap_free_round)
         g_jic_limit *= jic_ratio;
+    
+    cout << "Max time for core JIC (remaining used in final-round repairs): " << g_jic_limit << endl;
+    
+    // Adjust the g_jic_limit so the epochs are handled properly
+    int epochs_remaining = g_num_epochs;
+    double single_jic_limit = g_jic_limit / (double)g_num_epochs;
+    g_jic_limit = single_jic_limit;
+    
+    cout << "Max time for each of the " << epochs_remaining << " epochs: " << g_jic_limit << endl << endl;
+    
+    
     
     // We start the jit timer here since we should include the initial search / policy construction
     g_timer_jit.resume();
@@ -134,6 +152,12 @@ int main(int argc, const char **argv) {
         changes_made = perform_jit_repairs(sim);
         if (!g_silent_planning)
             cout << "Finished repair round." << endl;
+        
+        if (g_timer_jit() >= g_jic_limit) {
+            epochs_remaining--;
+            if (epochs_remaining > 0)
+                g_jic_limit += single_jic_limit;
+        }
         
         // Check if we should re-run the repairs with forbidden ops used
         //  in the heurstic computation.
