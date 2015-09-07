@@ -496,6 +496,12 @@ def pddl_to_sas(task):
     with timers.timing("Instantiating", block=True):
         (relaxed_reachable, atoms, actions, axioms,
          reachable_action_params) = instantiate.explore(task)
+        # Rebuild the information for whether or not costs are inferred
+        isInferredCost = True
+        for instAction in actions:
+            if (not instAction.isInferredCost):
+                isInferredCost = False
+                break
 
     if not relaxed_reachable:
         return unsolvable_sas_task("No relaxed solution")
@@ -535,7 +541,7 @@ def pddl_to_sas(task):
         sas_task = translate_task(
             strips_to_sas, ranges, translation_key,
             mutex_dict, mutex_ranges, mutex_key,
-            task.init, goal_list, actions, axioms, task.use_min_cost_metric,
+            task.init, goal_list, actions, axioms, task.use_min_cost_metric or isInferredCost,
             implied_facts)
 
     print("%d effect conditions simplified" %
