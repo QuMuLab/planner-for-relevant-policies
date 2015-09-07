@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import copy
+import fractions
 
 from . import conditions
 from . import effects
@@ -56,7 +57,15 @@ class Action(object):
             if 1 == len(cost_eff_pairs):
                 cost_eff_pairs = [(cost_eff_pairs[0][0], cost_eff_pairs[0][1], '')]
             else:
-                cost_eff_pairs = [(cost_eff_pairs[i][0], cost_eff_pairs[i][1], "_DETDUP_%d" % i) for i in range(len(cost_eff_pairs))]
+                # Convert floats to fractions to output
+                # TODO : Benchmark this fraction conversion
+                all_fractions = []
+                for cep in cost_eff_pairs:
+                    all_fractions.append(fractions.Fraction(cep[2]).limit_denominator())
+                lcm = reduce(lambda a,b: (a*b)/fractions.gcd(a,b), [f.denominator for f in all_fractions], 1)
+                # Use the fractions and lcm to build the weights
+                cost_eff_pairs = [(cost_eff_pairs[i][0], cost_eff_pairs[i][1], "_DETDUP_%d_WEIGHT_%d" %
+                    (i, all_fractions[i].numerator*(lcm/all_fractions[i].denominator))) for i in range(len(cost_eff_pairs))]
         except ValueError as e:
             raise SystemExit("Error in Action %s\nReason: %s." % (name, e))
         for rest in iterator:
@@ -72,7 +81,10 @@ class Action(object):
             eff.dump()
         print("Cost:")
         if(self.cost):
-            self.cost.dump()
+            if (isinstance(self.cost, int)):
+                print("  " + self.cost)
+            else:
+                self.cost.dump()
         else:
             print("  None")
     def uniquify_variables(self):
@@ -126,9 +138,14 @@ class Action(object):
         #      outcome of a determinized action.
         if self.cost is None:
             cost = 0
+            isInferredCost = False
+        elif isinstance(self.cost, (int, long)):
+            cost = self.cost
+            isInferredCost = True
         else:
             cost = int(self.cost.instantiate(var_mapping, init_facts).expression.value)
-        return PropositionalAction(name, precondition, effects, cost)
+            isInferredCost = False
+        return PropositionalAction(name, precondition, effects, cost, isInferredCost)
         #if effects:
         #    if self.cost is None:
         #        cost = 0
@@ -139,7 +156,7 @@ class Action(object):
         #    return None
 
 class PropositionalAction:
-    def __init__(self, name, precondition, effects, cost):
+    def __init__(self, name, precondition, effects, cost, isInferredCost=False):
         self.name = name
         self.precondition = precondition
         self.add_effects = []
@@ -155,6 +172,8 @@ class PropositionalAction:
             if effect.negated and (condition, effect.negate()) not in self.add_effects:
                 self.del_effects.append((condition, effect.negate()))
         self.cost = cost
+        # Costs may be inferred from the probability, in which case, flag it here
+        self.isInferredCost = isInferredCost
     def __repr__(self):
         return "<PropositionalAction %r at %#x>" % (self.name, id(self))
     def dump(self):

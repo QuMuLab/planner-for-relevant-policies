@@ -48,7 +48,6 @@ def parse_condition_aux(alist, negated):
 
 def parse_literal(alist):
     if alist[0] == "not":
-        assert len(alist) == 2
         alist = alist[1]
         return NegatedAtom(alist[0], alist[1:])
     else:
@@ -281,7 +280,8 @@ class Literal(Condition):
         self.hash = hash((self.__class__, self.predicate, self.args))
     def __eq__(self, other):
         # Compare hash first for speed reasons.
-        return (self.hash == other.hash and
+        return (other != None and
+                self.hash == other.hash and
                 self.__class__ is other.__class__ and
                 self.predicate == other.predicate and
                 self.args == other.args)
