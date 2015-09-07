@@ -497,6 +497,7 @@ bool g_combine_deadends = true; // Combine FSAP conditions for a new deadend whe
 bool g_repeat_fsap_backwards = false; // Keep making FSAPs as long as states where they hold have no applicable actions
 int g_combined_count = 0; // Number of times a deadend was generated from combining FSAPs
 int g_repeat_fsap_count = 0; // Number of times we applied the repeated FSAP technique
+bool g_repeat_strengthening = false; // Continue to strengthen pairs back to the initial state.
 bool g_optimized_scd = true; // Do optimized strong cyclic detection
 bool g_final_fsap_free_round = false; // Do a final JIC pass with deadends disabled
 bool g_seeded = false; // Only want to seed once

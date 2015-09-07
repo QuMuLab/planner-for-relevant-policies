@@ -131,6 +131,7 @@ extern bool g_combine_deadends; // Combine FSAP conditions for a new deadend whe
 extern bool g_repeat_fsap_backwards; // Keep making FSAPs as long as states where they hold have no applicable actions
 extern int g_combined_count; // Number of times a deadend was generated from combining FSAPs
 extern int g_repeat_fsap_count; // Number of times we applied the repeated FSAP technique
+extern bool g_repeat_strengthening; // Continue to strengthen pairs back to the initial state.
 extern bool g_optimized_scd; // Do optimized strong cyclic detection
 extern bool g_final_fsap_free_round; // Do a final JIC pass with deadends disabled
 extern bool g_seeded; // Used to make sure we only seed the rng once
