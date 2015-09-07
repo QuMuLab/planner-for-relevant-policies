@@ -64,35 +64,50 @@ fi
 
 TIME="$TIME --output=elapsed.time --format=%S\n%U\n"
 
-if [[ "$#" -lt 2 ]]; then
-    usage
-fi
-
 IPC="ipc"
 if [[ "$1" == "debug" ]]; then
     IPC="debug $IPC"
     shift
 fi
 
-echo "1. Running translator"
-if [[ -e "$2" ]]; then
-    echo "Second argument is a file name: use two translator arguments."
-    $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1" "$2"
-    shift 2
-else
-    echo "Second argument is not a file name: auto-detect domain file."
-    $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1"
+run_planner() {
+    echo "1. Running translator"
+    $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1" "$2" || exit 1
+    echo "2. Running preprocessor"
+    $TIME --append "$PREPROCESS" < output.sas || exit 1
+    echo "3. Running search"
     shift
+    shift
+    PROB="$1"
+    shift
+    echo "$SEARCH" "$IPC" policy-repair-probabilistic --plan-file "$PROB" "$@" < output
+    "$SEARCH" $IPC policy-repair-probabilistic --plan-file "$PROB" "$@" < output
+}
+
+check_input_files() {
+    if [ ! -e "$1" ]; then
+	echo "Domain file \"$1\" does not exist."
+	exit 1
+    fi
+    if [ ! -e "$2" ]; then
+	echo "Problem file \"$2\" does not exist."
+	exit 1
+    fi
+}
+
+# Make sure we have at least 2 command line arguments
+if [[ "$#" -lt 2 ]]; then
+    usage
 fi
-echo
 
-echo "2. Running preprocessor"
-$TIME --append "$PREPROCESS" < output.sas
-echo
+DOMAIN="$1"
+shift
+PROB="$1"
+shift
 
-echo "3. Running search"
-echo "$SEARCH" "$IPC" policy-repair < output "$@"
-"$SEARCH" $IPC policy-repair < output "$@"
-echo
+check_input_files "$DOMAIN" "$PROB"
+
+# Command line arguments seem to be fine, run planner
+run_planner "$DOMAIN" "$PROB" "$RESULT" "$@"
 
 

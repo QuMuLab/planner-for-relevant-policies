@@ -34,6 +34,7 @@ class Policy {
     
     void evaluate_random();
     void evaluate_analytical();
+    double evaluate_analytical_recurse(State *s);
     
     list<PolicyItem *> all_items;
     
