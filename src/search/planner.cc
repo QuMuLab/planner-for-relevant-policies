@@ -190,7 +190,9 @@ int main(int argc, const char **argv) {
         g_policy->mark_incomplete();
         
         cout << "\n\nDoing one final JIC round ignoring FSAPs for unhandled states." << endl;
+        g_timer_jit.resume();
         perform_jit_repairs(sim);
+        g_timer_jit.stop();
         
         g_policy->return_if_possible = false;
         
