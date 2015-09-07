@@ -273,6 +273,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--repeat-fsaps-backwards") == 0) {
             ++i;
             g_repeat_fsap_backwards = (1 == atoi(argv[i]));
+        } else if (arg.compare("--repeat-strengthening") == 0) {
+            ++i;
+            g_repeat_strengthening = (1 == atoi(argv[i]));
         } else if (arg.compare("--optimized-scd") == 0) {
             ++i;
             g_optimized_scd = (atoi(argv[i]) > 0);
@@ -355,6 +358,8 @@ string OptionParser::usage(string progname) {
         "    Keep making FSAPs as long as states where they hold have no applicable actions (experimental and mostly damaging)\n\n"
         "--optimized-scd 2/1/0 (default=2)\n"
         "    Perform optimized strong cyclic detection when checking the partial policy. A value of 2 means that it will gradually disable the scd check if it is unhelpful for the particular problem being solved.\n\n"
+        "--repeat-strengthening 1/0 (default=0)\n"
+        "    Repeat the strong cyclic strengthening step back to the initial state. Adds many more state-action pairs, and so is disabled by default. Only useful when optimized-scd is very effective.\n\n"
         "--final-fsap-free-round 1/0 (default=0)\n"
         "    Do one final JIC round with the best policy found (closing every leaf possible).\n\n"
         "--optimize-final-policy 1/0 (default=0)\n"
