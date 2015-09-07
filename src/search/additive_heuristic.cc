@@ -65,14 +65,7 @@ void AdditiveHeuristic::setup_exploration_queue() {
     }
 }
 
-void AdditiveHeuristic::setup_exploration_queue_state(const State &state) {
-    for (int var = 0; var < propositions.size(); var++) {
-		Proposition *init_prop = &propositions[var][state[var]];
-		enqueue_if_necessary(init_prop, 0, 0);
-	}
-}
-
-void AdditiveHeuristic::setup_exploration_queue_state(const PartialState &state) {
+void AdditiveHeuristic::setup_exploration_queue_state(const StateInterface &state) {
     for (int var = 0; var < propositions.size(); var++) {
         if (-1 == state[var]) {
             for (int val = 0; val < propositions[var].size(); val++) {
@@ -172,34 +165,12 @@ void AdditiveHeuristic::mark_preferred_operators(
     }
 }
 
-int AdditiveHeuristic::compute_add_and_ff(const State &state) {
+int AdditiveHeuristic::compute_add_and_ff(const StateInterface &state) {
     
     setup_exploration_queue();
     setup_exploration_queue_state(state);
     bool worked = relaxed_exploration(false);
     
-    if (g_check_with_forbidden && !worked) {
-        setup_exploration_queue();
-        setup_exploration_queue_state(state);
-        relaxed_exploration(true);
-    }
-
-    int total_cost = 0;
-    for (int i = 0; i < goal_propositions.size(); i++) {
-        int prop_cost = goal_propositions[i]->cost;
-        if (prop_cost == -1)
-            return DEAD_END;
-        increase_cost(total_cost, prop_cost);
-    }
-    return total_cost;
-}
-
-int AdditiveHeuristic::compute_add_and_ff(const PartialState &state) {
-    
-    setup_exploration_queue();
-    setup_exploration_queue_state(state);
-    
-    bool worked = relaxed_exploration(false);
     if (g_check_with_forbidden && !worked) {
         setup_exploration_queue();
         setup_exploration_queue_state(state);

@@ -20,8 +20,7 @@ class AdditiveHeuristic : public RelaxationHeuristic {
     bool did_write_overflow_warning;
 
     void setup_exploration_queue();
-    void setup_exploration_queue_state(const State &state);
-    void setup_exploration_queue_state(const PartialState &state);
+    void setup_exploration_queue_state(const StateInterface &state);
     bool relaxed_exploration(bool include_forbidden);
     void mark_preferred_operators(const State &state, Proposition *goal);
 
@@ -55,8 +54,7 @@ public:
     ~AdditiveHeuristic();
     
     // Common part of h^add and h^ff computation.
-    int compute_add_and_ff(const State &state);
-    int compute_add_and_ff(const PartialState &state);
+    int compute_add_and_ff(const StateInterface &state);
 };
 
 #endif
