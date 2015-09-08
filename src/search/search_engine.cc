@@ -62,26 +62,31 @@ void SearchEngine::search() {
     
     initialize();
     Timer timer;
-    while (step() == IN_PROGRESS)
+    while ((step() == IN_PROGRESS) && (g_timer_jit() < g_jic_limit))
         ;
     
-    if (g_record_online_deadends && !g_limit_states && g_found_deadends.size() > 0) {
-        g_replan_detected_deadends = true;
-        //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
-        update_deadends(g_found_deadends);
+    if (g_timer_jit() < g_jic_limit) {
+        if (g_record_online_deadends && !g_limit_states && g_found_deadends.size() > 0) {
+            g_replan_detected_deadends = true;
+            //cout << "Number of online deadends: " << g_found_deadends.size() << endl;
+            update_deadends(g_found_deadends);
+        }
+        if (search_progress.get_generated() > 2) {
+            cout << "Generated " << search_progress.get_generated() << " state(s)." << endl;
+            
+            if (g_record_online_deadends && !g_limit_states)
+                cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s). ("
+                     << g_found_deadends.size() << " recorded)" << endl;
+            else
+                cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
+        }
+        if (!g_silent_planning)
+            cout << "Actual search time: " << timer
+                << " [t=" << g_timer << "]" << endl;
+    } else {
+        g_replan_detected_deadends = true; // Just in case there is a risk to mark this as solved
+        cout << "Killing search due to time limits." << endl;
     }
-    if (search_progress.get_generated() > 2) {
-        cout << "Generated " << search_progress.get_generated() << " state(s)." << endl;
-        
-        if (g_record_online_deadends && !g_limit_states)
-            cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s). ("
-                 << g_found_deadends.size() << " recorded)" << endl;
-        else
-            cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s)." << endl;
-    }
-    if (!g_silent_planning)
-        cout << "Actual search time: " << timer
-            << " [t=" << g_timer << "]" << endl;
 }
 
 bool SearchEngine::check_goal_and_set_plan(const State &state) {

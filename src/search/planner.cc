@@ -88,12 +88,19 @@ int main(int argc, const char **argv) {
     }
     
     
+    // If we are going to do a final FSAP-free round, then we modify the
+    //  time limits to give a 50/50 split between the JIC phase and final
+    //  round phase
+    float jic_ratio = 0.5;
+    if (g_final_fsap_free_round)
+        g_jic_limit *= jic_ratio;
+    
     // We start the jit timer here since we should include the initial search / policy construction
     g_timer_jit.resume();
     g_timer_search.resume();
     engine->search();
     g_timer_search.stop();
-        
+    
     engine->save_plan_if_necessary();
     engine->statistics();
     engine->heuristic_statistics();
@@ -122,7 +129,6 @@ int main(int argc, const char **argv) {
         sample_for_depth1_deadends(engine->get_plan(), new PartialState(g_initial_state()));
     
     cout << "\n\nComputing just-in-time repairs..." << endl;
-    //g_timer_jit.resume(); // Placed above to include the initial search time
     bool changes_made = true;
     while (changes_made) {
         changes_made = perform_jit_repairs(sim);
@@ -162,6 +168,9 @@ int main(int argc, const char **argv) {
         if (g_best_policy->get_score() > g_policy->get_score())
             g_policy = g_best_policy;
     }
+    
+    if (g_final_fsap_free_round)
+        g_jic_limit /= jic_ratio;
 
     if (!(g_policy->is_strong_cyclic()) && g_final_fsap_free_round) {
     
@@ -181,7 +190,9 @@ int main(int argc, const char **argv) {
         g_policy->mark_incomplete();
         
         cout << "\n\nDoing one final JIC round ignoring FSAPs for unhandled states." << endl;
+        g_timer_jit.resume();
         perform_jit_repairs(sim);
+        g_timer_jit.stop();
         
         g_policy->return_if_possible = false;
         

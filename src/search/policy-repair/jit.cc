@@ -144,7 +144,7 @@ bool perform_jit_repairs(Simulator *sim) {
                     //  until it pulls things back to the initial state.
                     bool orig_have_solution = have_solution;
                     int unsolv_count = 1;
-                    while (g_combine_deadends && !have_solution && g_replan_detected_deadends) {
+                    while (g_combine_deadends && !have_solution && g_replan_detected_deadends && (g_timer_jit() < g_jic_limit)) {
                         if (debug_jic)
                             cout << "Redoing the search to find more deadends (" << unsolv_count++ << ")." << endl;
                         have_solution = sim->replan();
