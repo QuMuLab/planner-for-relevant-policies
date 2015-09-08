@@ -37,7 +37,7 @@ PartialState::PartialState() {
         vars[i] = -1;
 }
 
-PartialState::PartialState(const State &state) {
+PartialState::PartialState(const StateInterface &state) {
 	_allocate();
 	for (int i = 0; i < g_variable_domain.size(); i++)
 		vars[i] = state[i];
@@ -100,6 +100,23 @@ PartialState::PartialState(const PartialState &predecessor, const Operator &op, 
 
 PartialState::~PartialState() {
     _deallocate();
+}
+
+void PartialState::combine_with(const PartialState &other) {
+    for (int i = 0; i < g_variable_domain.size(); i++) {
+        assert((vars[i] == -1) || (other[i] == -1) || (vars[i] == other[i]));
+        if (other[i] != -1)
+            vars[i] = other[i];
+    }
+}
+
+int PartialState::size() const {
+    int count = 0;
+    for (int i = 0; i < g_variable_domain.size(); i++) {
+        if (vars[i] != -1)
+            count++;
+    }
+    return count;
 }
 
 void PartialState::dump_pddl() const {

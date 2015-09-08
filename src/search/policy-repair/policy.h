@@ -37,7 +37,15 @@ class Policy {
     
     list<PolicyItem *> all_items;
     
+    int opt_scd_count;
+    int opt_scd_countdown;
+    int opt_scd_countdown_step;
+    int opt_scd_last_size;
+    
 public:
+
+    bool opt_scd_skipped;
+    
     Policy();
     ~Policy();
     
@@ -46,7 +54,7 @@ public:
     void dump() const;
     void generate_cpp_input(ofstream &outfile) const;
     
-    void update_policy(list<PolicyItem *> &reg_items, bool detect_deadends = false);
+    void update_policy(list<PolicyItem *> &reg_items);
     void add_item(PolicyItem *item);
     void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all = false);
     bool check_match(const PartialState &curr, bool keep_all = false);
@@ -65,7 +73,7 @@ public:
     bool is_complete() { return complete; }
     bool is_strong_cyclic() { return (1.1 == score); }
     
-    void init_scd();
+    void init_scd(bool force_count_reset = false);
     bool step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadends = true);
     bool goal_sc_reachable(const PartialState &curr);
     

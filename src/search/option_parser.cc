@@ -228,6 +228,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--trials") == 0) {
             ++i;
             g_num_trials = atoi(argv[i]);
+        } else if (arg.compare("--epochs") == 0) {
+            ++i;
+            g_num_epochs = atoi(argv[i]);
         } else if (arg.compare("--depth") == 0) {
             ++i;
             g_trial_depth = atoi(argv[i]);
@@ -261,9 +264,22 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--online-deadends") == 0) {
             ++i;
             g_record_online_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--sample-depth1-for-deadends") == 0) {
+            ++i;
+            g_sample_for_depth1_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--combine-deadends") == 0) {
+            ++i;
+            g_combine_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--repeat-fsaps-backwards") == 0) {
+            ++i;
+            g_repeat_fsap_backwards = (1 == atoi(argv[i]));
+        } else if (arg.compare("--repeat-strengthening") == 0) {
+            ++i;
+            g_repeat_strengthening = (1 == atoi(argv[i]));
         } else if (arg.compare("--optimized-scd") == 0) {
             ++i;
-            g_optimized_scd = (1 == atoi(argv[i]));
+            g_optimized_scd = (atoi(argv[i]) > 0);
+            g_safetybelt_optimized_scd = (2 == atoi(argv[i]));
         } else if (arg.compare("--final-fsap-free-round") == 0) {
             ++i;
             g_final_fsap_free_round = atoi(argv[i]);
@@ -307,7 +323,9 @@ string OptionParser::usage(string progname) {
         "--plan-file FILENAME\n"
         "    Plan will be output to a file called FILENAME\n\n"
         "--jic-limit TIME_LIMIT\n"
-        "    Only perform JIC for the given time.\n\n"
+        "    Only perform JIC for the given time. This will be cut in half if final-fsap-free-round is used.\n\n"
+        "--epochs EPOCH_COUNT (default=1)\n"
+        "    Minimum number of times to execute the JIC loop. Useful if deadends are present and a single pass takes too long.\n\n"
         "--forgetpolicy 1/0\n"
         "    Throw out the policy after every simulation.\n\n"
         "--replan-on-failure 1/0 (default=1)\n"
@@ -332,8 +350,16 @@ string OptionParser::usage(string progname) {
         "    Generalize the deadends found based on relaxed reachability.\n\n"
         "--online-deadends 1/0\n"
         "    Generate and store deadend states that are found online.\n\n"
-        "--optimized-scd 1/0\n"
-        "    Perform optimized strong cyclic detection when checking the partial policy.\n\n"
+        "--sample-for-depth1-deadends 1/0 (default=1)\n"
+        "    Analyze the non-deterministic alternate states from the generated weak plans for deadends.\n\n"
+        "--combine-deadends 1/0 (default=1)\n"
+        "    Combine the FSAP conditions if every applicable action is forbidden to be a new deadend.\n\n"
+        "--repeat-fsaps-backwards 1/0 (default=0)\n"
+        "    Keep making FSAPs as long as states where they hold have no applicable actions (experimental and mostly damaging)\n\n"
+        "--optimized-scd 2/1/0 (default=2)\n"
+        "    Perform optimized strong cyclic detection when checking the partial policy. A value of 2 means that it will gradually disable the scd check if it is unhelpful for the particular problem being solved.\n\n"
+        "--repeat-strengthening 1/0 (default=0)\n"
+        "    Repeat the strong cyclic strengthening step back to the initial state. Adds many more state-action pairs, and so is disabled by default. Only useful when optimized-scd is very effective.\n\n"
         "--final-fsap-free-round 1/0 (default=0)\n"
         "    Do one final JIC round with the best policy found (closing every leaf possible).\n\n"
         "--optimize-final-policy 1/0 (default=0)\n"
@@ -580,3 +606,4 @@ void OptionParser::set_parse_tree(const ParseTree &pt) {
 ParseTree *OptionParser::get_parse_tree() {
     return &parse_tree;
 }
+ 

@@ -72,6 +72,7 @@ int main(int argc, const char **argv) {
      *      they may be consulted by certain parts of the code. */
     g_deadend_policy = new Policy();
     g_deadend_states = new Policy();
+    g_temporary_deadends = new Policy();
     
     
     /***************************************
@@ -87,12 +88,37 @@ int main(int argc, const char **argv) {
     }
     
     
+    
+    /*********************
+     * Handle JIC Limits *
+     *********************/
+     
+    cout << "\nTotal allotted time (s): " << g_jic_limit << endl;
+    
+    // If we are going to do a final FSAP-free round, then we modify the
+    //  time limits to give a 50/50 split between the JIC phase and final
+    //  round phase
+    double jic_ratio = 0.5;
+    if (g_final_fsap_free_round)
+        g_jic_limit *= jic_ratio;
+    
+    cout << "Max time for core JIC (remaining used in final-round repairs): " << g_jic_limit << endl;
+    
+    // Adjust the g_jic_limit so the epochs are handled properly
+    int epochs_remaining = g_num_epochs;
+    double single_jic_limit = g_jic_limit / (double)g_num_epochs;
+    g_jic_limit = single_jic_limit;
+    
+    cout << "Max time for each of the " << epochs_remaining << " epochs: " << g_jic_limit << endl << endl;
+    
+    
+    
     // We start the jit timer here since we should include the initial search / policy construction
     g_timer_jit.resume();
     g_timer_search.resume();
     engine->search();
     g_timer_search.stop();
-        
+    
     engine->save_plan_if_necessary();
     engine->statistics();
     engine->heuristic_statistics();
@@ -109,21 +135,29 @@ int main(int argc, const char **argv) {
     Simulator *sim = new Simulator(engine, argc, argv, !g_silent_planning);
     
     cout << "\n\nRegressing the plan..." << endl;
-    list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_goal, 0, true);
+    list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, 0, true);
     
     cout << "\n\nGenerating an initial policy..." << endl;
     g_policy = new Policy();
-    g_policy->update_policy(regression_steps, (g_detect_deadends && g_generalize_deadends));
+    g_policy->update_policy(regression_steps);
     g_best_policy = g_policy;
     g_best_policy_score = g_policy->get_score();
     
+    if (g_sample_for_depth1_deadends)
+        sample_for_depth1_deadends(engine->get_plan(), new PartialState(g_initial_state()));
+    
     cout << "\n\nComputing just-in-time repairs..." << endl;
-    //g_timer_jit.resume(); // Placed above to include the initial search time
     bool changes_made = true;
     while (changes_made) {
         changes_made = perform_jit_repairs(sim);
         if (!g_silent_planning)
             cout << "Finished repair round." << endl;
+        
+        if (g_timer_jit() >= g_jic_limit) {
+            epochs_remaining--;
+            if (epochs_remaining > 0)
+                g_jic_limit += single_jic_limit;
+        }
         
         // Check if we should re-run the repairs with forbidden ops used
         //  in the heurstic computation.
@@ -158,6 +192,9 @@ int main(int argc, const char **argv) {
         if (g_best_policy->get_score() > g_policy->get_score())
             g_policy = g_best_policy;
     }
+    
+    if (g_final_fsap_free_round)
+        g_jic_limit /= jic_ratio;
 
     if (!(g_policy->is_strong_cyclic()) && g_final_fsap_free_round) {
     
@@ -177,7 +214,9 @@ int main(int argc, const char **argv) {
         g_policy->mark_incomplete();
         
         cout << "\n\nDoing one final JIC round ignoring FSAPs for unhandled states." << endl;
+        g_timer_jit.resume();
         perform_jit_repairs(sim);
+        g_timer_jit.stop();
         
         g_policy->return_if_possible = false;
         
@@ -191,7 +230,7 @@ int main(int argc, const char **argv) {
     if (g_optimized_scd) {
         cout << "\n\nRunning a final SCD check..." << endl;
         vector< DeadendTuple * > failed_states; // The failed states (used for creating deadends)
-        g_policy->init_scd();
+        g_policy->init_scd(true);
         bool made_change = true; // This becomes false again eventually
         while (made_change)
             made_change = g_policy->step_scd(failed_states, false);
