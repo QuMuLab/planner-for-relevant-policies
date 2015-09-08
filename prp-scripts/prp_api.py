@@ -9,9 +9,14 @@ python prp_api.py <command> <solution file>
 
   <commmand> should be one of the following:
 
-    display: Display the parsed policy (just for debugging purposes)
-    circuit: Create the CNF version of the policy's circuit representation.
-             Creates files <solution file>.map and <solution file>.cnf
+           display: Display the parsed policy (just for debugging purposes)
+
+     count-circuit: Create the CNF version of the policy to count the successful states.
+                    Creates files <solution file>.map and <solution file>.cnf
+
+    action-circuit: Create the CNF version of the policy's circuit representation
+                    that has inputs for the fluents and outputs for the actions.
+                    Creates the same files as the count-circuit command.
 """
 
 # http://stackoverflow.com/questions/1456373/two-way-reverse-map
@@ -100,20 +105,54 @@ def display(p):
     pprint(p.fsap)
     print
 
-def circuit(p):
+def action_circuit(p, mapfile, cnffile):
     from krrt.sat import CNF
-    
+
     CLAUSES = []
-    
+
     def partial_state_clause(ps):
         aux = '+'.join(sorted(ps))
         CLAUSES.append(map(CNF.Not, ps) + [aux])
         for f in ps:
             CLAUSES.append([CNF.Not(aux), f])
         return aux
-    
+
     for psap in p.policy:
         print partial_state_clause(psap[0])
+        print psap[1]
+        print
+
+
+def count_circuit(p, mapfile, cnffile):
+    from krrt.sat import CNF
+
+    CLAUSES = []
+
+    def partial_state_clause(ps):
+        aux = '+'.join(sorted(ps))
+        CLAUSES.append(map(CNF.Not, ps) + [aux])
+        for f in ps:
+            CLAUSES.append([CNF.Not(aux), f])
+        return aux
+
+    # For every <ps,a>, a->ps
+    for psap in p.policy:
+        for f in psap[0]:
+            CLAUSES.append([CNF.Not(psap[1]), f])
+
+    # For every <de,a>, de->!a
+    for act in p.fsap:
+        for de in p.fsap[act]:
+            CLAUSES.append(map(CNF.Not, de) + [CNF.Not(act)])
+
+    # At least one action is applicable
+    CLAUSES.append(set([psap[1] for psap in p.policy]))
+
+    print '\n'.join(map(str, CLAUSES))
+
+    F = CNF.Formula(CLAUSES)
+    F.writeMapping(mapfile)
+    F.writeCNF(cnffile)
 
 if __name__ == '__main__':
     if len(os.sys.argv) != 3:
@@ -123,11 +162,13 @@ if __name__ == '__main__':
 
     print "Parsing solution..."
     p = PRPPolicy(os.sys.argv[2])
-    
+
     if 'display' == os.sys.argv[1]:
         display(p)
-    elif 'circuit' == os.sys.argv[1]:
-        circuit(p)
+    elif 'count-circuit' == os.sys.argv[1]:
+        count_circuit(p, os.sys.argv[2]+'.map', os.sys.argv[2]+'.cnf')
+    elif 'action-circuit' == os.sys.argv[1]:
+        action_circuit(p, os.sys.argv[2]+'.map', os.sys.argv[2]+'.cnf')
     else:
         print "\nError with input."
         print USAGE_STRING
