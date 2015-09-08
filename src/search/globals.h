@@ -131,6 +131,7 @@ extern bool g_combine_deadends; // Combine FSAP conditions for a new deadend whe
 extern bool g_repeat_fsap_backwards; // Keep making FSAPs as long as states where they hold have no applicable actions
 extern int g_combined_count; // Number of times a deadend was generated from combining FSAPs
 extern int g_repeat_fsap_count; // Number of times we applied the repeated FSAP technique
+extern bool g_repeat_strengthening; // Continue to strengthen pairs back to the initial state.
 extern bool g_optimized_scd; // Do optimized strong cyclic detection
 extern bool g_final_fsap_free_round; // Do a final JIC pass with deadends disabled
 extern bool g_seeded; // Used to make sure we only seed the rng once
@@ -142,6 +143,7 @@ extern Heuristic *g_heuristic_for_reachability;
 extern int g_dump_policy; // Whether or not we should dump the policy
 extern int g_monotonicity_violations; // Count on the number of times we need to add a deadend because of a bad policy loop
 extern int g_num_regsteps; // Used to give each regstep an id based on when it was created
+extern int g_num_epochs; // Forced number of times to run the jic loop
 
 extern bool g_optimize_final_policy; // Only keep the final pairs and FSAPs that are needed
 extern bool g_record_relevant_pairs; // If true, used pairs will be kept
