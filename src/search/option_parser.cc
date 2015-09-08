@@ -261,7 +261,7 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--online-deadends") == 0) {
             ++i;
             g_record_online_deadends = (1 == atoi(argv[i]));
-        } else if (arg.compare("--sample-depth1-for-deadends") == 0) {
+        } else if (arg.compare("--sample-for-depth1-deadends") == 0) {
             ++i;
             g_sample_for_depth1_deadends = (1 == atoi(argv[i]));
         } else if (arg.compare("--combine-deadends") == 0) {
