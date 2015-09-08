@@ -361,11 +361,11 @@ GeneratorBase *GeneratorEmpty::update_policy(list<PolicyItem *> &reg_items, set<
 void Policy::add_item(PolicyItem *item) {
     list<PolicyItem *> reg_items;
     reg_items.push_back(item);
-    update_policy(reg_items, (g_detect_deadends && g_generalize_deadends));
+    update_policy(reg_items);
 }
 
 
-void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) {
+void Policy::update_policy(list<PolicyItem *> &reg_items) {
     g_timer_policy_build.resume();
 
     // Reset the score since a change is being made to the policy
@@ -377,29 +377,6 @@ void Policy::update_policy(list<PolicyItem *> &reg_items, bool detect_deadends) 
     else
         root = new GeneratorSwitch(reg_items, vars_seen);
     all_items.insert(all_items.end(), reg_items.begin(), reg_items.end());
-    
-    // As an optimization, we check the partial state successors of every
-    //  new action for deadends. This allows us to stop expanding earlier
-    //  with the scd algorithm below.
-    if (detect_deadends) {
-        vector<DeadendTuple *> new_deadends;
-        for (list<PolicyItem *>::iterator op_iter = reg_items.begin(); op_iter != reg_items.end(); ++op_iter) {
-            RegressionStep * rs = (RegressionStep *)(*op_iter);
-            if (!(rs->is_goal)) {
-                for (int i = 0; i < g_nondet_mapping[rs->op->nondet_index]->size(); i++) {
-                    PartialState *succ_state = new PartialState(*(rs->state), *((*(g_nondet_mapping[rs->op->nondet_index]))[i]));
-                    if (is_deadend(*succ_state)) {
-                        generalize_deadend(*succ_state);
-                        new_deadends.push_back(new DeadendTuple(succ_state, new PartialState(*(rs->state)), (*(g_nondet_mapping[rs->op->nondet_index]))[i]));
-                    }
-                }
-            }
-        }
-        if (new_deadends.size() > 0) {
-            g_updated_deadends = true;
-            update_deadends(new_deadends);
-        }
-    }
     
     g_timer_policy_build.stop();
 }
@@ -529,6 +506,12 @@ Policy::Policy() {
     score = 0.0;
     complete = false;
     return_if_possible = false;
+    
+    opt_scd_count = 0;
+    opt_scd_countdown = 0;
+    opt_scd_countdown_step = 1;
+    opt_scd_last_size = 0;
+    opt_scd_skipped = false;
 }
 
 Policy::~Policy() {
@@ -558,6 +541,9 @@ bool Policy::better_than(Policy * other) {
     
     if (get_score() < other->get_score())
         return false;
+    
+    if (is_strong_cyclic() != other->is_strong_cyclic())
+        return is_strong_cyclic();
     
     return get_size() > other->get_size();
 }
@@ -641,7 +627,21 @@ bool Policy::goal_sc_reachable(const PartialState &_curr) {
 }
 
 
-void Policy::init_scd() {
+void Policy::init_scd(bool force_count_reset) {
+
+    if (g_safetybelt_optimized_scd) {
+        if (force_count_reset) {
+            opt_scd_last_size = 0;
+            opt_scd_countdown = 0;
+            opt_scd_countdown_step = 1;
+        }
+        
+        if (opt_scd_countdown > 0)
+            return;
+    }
+    
+    opt_scd_count = all_items.size();
+    
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
          ((RegressionStep *)(*op_iter))->is_sc = true;
@@ -652,6 +652,14 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
     bool made_change = false;
     bool debug_scd = false;
     //bool debug_scd = !g_silent_planning;
+    
+    // Skip the SCD phase if we are in a safety belt zone
+    if (g_safetybelt_optimized_scd && (opt_scd_countdown > 0)) {
+        opt_scd_countdown--;
+        opt_scd_skipped = true;
+        return false;
+    } else
+        opt_scd_skipped = false;
     
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
          op_iter != all_items.end(); ++op_iter)
@@ -739,6 +747,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
                         if (debug_scd) {
                             cout << "--- Umarking: No guaranteed steps." << endl;
                         }
+                        opt_scd_count--;
                         rs->is_sc = false;
                         made_change = true;
                         delete succ_state;
@@ -778,6 +787,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
                         cout << "--- Unmarking: Strong cyclic guaranteed step failed to reach the goal." << endl;
                     }
                     //cout << "Min sc cost = " << min_sc_cost << endl;
+                    opt_scd_count--;
                     rs->is_sc = false;
                     made_change = true;
                     i = g_nondet_mapping[rs->op->nondet_index]->size();
@@ -793,6 +803,18 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
             }
         }
     }
+    
+    if (!made_change && g_safetybelt_optimized_scd) {
+        if (opt_scd_count > 1.5*opt_scd_last_size) {
+            opt_scd_last_size = opt_scd_count;
+            opt_scd_countdown = 0;
+            opt_scd_countdown_step = 1;
+        } else {
+            opt_scd_countdown = opt_scd_countdown_step;
+            opt_scd_countdown_step *= 2;
+        }
+    }
+    
     return made_change;
 }
 

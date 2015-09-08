@@ -12,9 +12,15 @@ class StateRegistry;
 
 typedef IntPacker::Bin PackedStateBin;
 
+class StateInterface {
+public:
+    virtual int operator[](int index) const = 0;
+    virtual ~StateInterface() {};
+};
+
 // For documentation on classes relevant to storing and working with registered
 // states see the file state_registry.h.
-class State {
+class State : public StateInterface {
     friend class StateRegistry;
     template <class Entry>
     friend class PerStateInformation;
@@ -49,5 +55,6 @@ public:
     void dump_pddl() const;
     void dump_fdr() const;
 };
+
 
 #endif

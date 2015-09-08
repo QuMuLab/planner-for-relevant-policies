@@ -2,7 +2,8 @@
 #include "policy.h"
 
 void RegressionStep::dump() const {
-    cout << "Regression Step (" << distance << ")" << endl;
+    cout << "Regression Step (" << this << ")" << endl;
+    cout << " Distance: " << distance << endl;
     cout << " Relevant: " << relevant << endl;
     cout << " SC: " << is_sc << endl;
     if (!is_goal) {
@@ -67,7 +68,7 @@ string RegressableOperator::get_name() {
 
 
 
-list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pair<int, int> > goal, int distance, bool create_goal) {
+list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, RegressionStep *goal_step, int distance, bool create_goal) {
     g_timer_regression.resume();
     list<PolicyItem *> reg_steps;
     PartialState *s = new PartialState(g_initial_state());
@@ -84,11 +85,7 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
             
         if (create_goal) {
             
-            PartialState *g = new PartialState();
-            
-            for (int i = 0; i < goal.size(); i++) {
-                (*g)[goal[i].first] = int(goal[i].second);
-            }
+            PartialState *g = new PartialState(*(goal_step->state));
         
             reg_steps.push_back(new RegressionStep(g, distance));
             
@@ -100,47 +97,40 @@ list<PolicyItem *> perform_regression(const SearchEngine::Plan &plan, vector<pai
         states.pop_back();
         
         for (int i = plan.size() - 1; i >= 0; i--) {
-            reg_steps.push_back(new RegressionStep(*plan[i], states.back(), ++distance));
+            RegressionStep *next = (RegressionStep*)reg_steps.back();
+            reg_steps.push_back(new RegressionStep(*plan[i], states.back(), ++distance, next));
+            next->prev = (RegressionStep*)reg_steps.back();
             states.pop_back();
         }
         
         assert(states.empty());
         
     } else {
-		s = new PartialState();
+		s = new PartialState(*(goal_step->state));
         
-        for (int i = 0; i < goal.size(); i++) {
-            (*s)[goal[i].first] = int(goal[i].second);
-        }
-    
         reg_steps.push_back(new RegressionStep(s, distance));
         
         for (int i = plan.size() - 1; i >= 0; i--) {
-            reg_steps.push_back(new RegressionStep(*plan[i],
-                new PartialState(*(reg_steps.back()->state), *plan[i], false, states[i]),
-                ++distance));
+            
+            RegressionStep *next = (RegressionStep*)reg_steps.back();
+            
+            PartialState *regressed = new PartialState(*(next->state), *plan[i], false, states[i]);
+            
+            reg_steps.push_back(new RegressionStep(*plan[i], regressed, ++distance, next));
+            
+            next->prev = (RegressionStep*)reg_steps.back();
+            
+            // Strengthen the step so it doesn't fire an FSAP at some
+            // some point. Strengthening is sufficient but not neccessary
+            ((RegressionStep*)reg_steps.back())->strengthen(states[i]);
+            
         }
     }
     
     if (!create_goal) {
         delete reg_steps.front();
         reg_steps.pop_front();
-    }
-    
-    // Strengthen all of the steps so they don't fire a forbidden state-action
-    //  pair at some point. The strengthening is sufficient but not neccessary
-    s = new PartialState(g_initial_state());
-    PartialState * old_s = s;
-    int i = 0;
-    for (list<PolicyItem *>::reverse_iterator op_iter = reg_steps.rbegin(); op_iter != reg_steps.rend(); ++op_iter) {
-        assert(i < plan.size() || create_goal);
-        if (i < plan.size()) {
-            ((RegressionStep*)(*op_iter))->strengthen(s);
-            s = new PartialState(*old_s, *plan[i], true);
-            delete old_s;
-            old_s = s;
-            i++;
-        }
+        ((RegressionStep*)reg_steps.front())->next = goal_step;
     }
     
     for (int i = 0; i < states.size(); i++)
