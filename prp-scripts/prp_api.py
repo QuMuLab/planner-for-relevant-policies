@@ -170,7 +170,7 @@ def count_circuit(p, mapfile, cnffile):
     F.writeMapping(mapfile)
     F.writeCNF(cnffile)
 
-    print "\nsharpSAT Command: ./sharpSAT %s\n" % cnffile
+    print "\nsharpSAT Command: ./bin/sharpSAT %s\n" % cnffile
 
     #print "\nD# Command: ./dsharp -projectionViaPriority -priority %s %s\n" % \
     #      (','.join(map(str, sorted([F.mapping[f] for f in FLUENTS]))), cnffile)
