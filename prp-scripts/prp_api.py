@@ -127,23 +127,31 @@ def count_circuit(p, mapfile, cnffile):
     from krrt.sat import CNF
 
     CLAUSES = []
+    FLUENTS = set()
 
-    def partial_state_clause(ps):
-        aux = '+'.join(sorted(ps))
-        CLAUSES.append(map(CNF.Not, ps) + [aux])
-        for f in ps:
-            CLAUSES.append([CNF.Not(aux), f])
-        return aux
+    def fluentvar(f):
+        if '!' == f[0]:
+            FLUENTS.add(CNF.Variable(f[1:]))
+            return CNF.Not(CNF.Variable(f[1:]))
+        else:
+            FLUENTS.add(CNF.Variable(f))
+            return CNF.Variable(f)
+
+    def neg(l):
+        if isinstance(l, CNF.Not):
+            return l.var
+        else:
+            return CNF.Not(l)
 
     # For every <ps,a>, a->ps
     for psap in p.policy:
         for f in psap[0]:
-            CLAUSES.append([CNF.Not(psap[1]), f])
+            CLAUSES.append([CNF.Not(psap[1]), fluentvar(f)])
 
     # For every <de,a>, de->!a
     for act in p.fsap:
         for de in p.fsap[act]:
-            CLAUSES.append(map(CNF.Not, de) + [CNF.Not(act)])
+            CLAUSES.append(map(neg, map(fluentvar, de)) + [CNF.Not(act)])
 
     # At least one action is applicable
     CLAUSES.append(set([psap[1] for psap in p.policy]))
@@ -153,6 +161,9 @@ def count_circuit(p, mapfile, cnffile):
     F = CNF.Formula(CLAUSES)
     F.writeMapping(mapfile)
     F.writeCNF(cnffile)
+
+    print "\nD# Command: ./dsharp -projectionViaPriority -priority %s %s\n" % \
+          (','.join(map(str, sorted([F.mapping[f] for f in FLUENTS]))), cnffile)
 
 if __name__ == '__main__':
     if len(os.sys.argv) != 3:
