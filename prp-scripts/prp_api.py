@@ -1,7 +1,6 @@
 
 import os
 
-
 USAGE_STRING = """
 python prp_api.py <command> <solution file>
 
@@ -18,6 +17,10 @@ python prp_api.py <command> <solution file>
                     that has inputs for the fluents and outputs for the actions.
                     Creates the same files as the count-circuit command.
 """
+
+
+DEBUG = False
+
 
 # http://stackoverflow.com/questions/1456373/two-way-reverse-map
 class TwoWayDict(dict):
@@ -148,6 +151,10 @@ def count_circuit(p, mapfile, cnffile):
         for f in psap[0]:
             CLAUSES.append([CNF.Not(psap[1]), fluentvar(f)])
 
+    # To avoid projection: For every <ps,a>, ps->a
+    for psap in p.policy:
+        CLAUSES.append([psap[1]] + map(CNF.Not, map(fluentvar, psap[0])))
+
     # For every <de,a>, de->!a
     for act in p.fsap:
         for de in p.fsap[act]:
@@ -156,14 +163,17 @@ def count_circuit(p, mapfile, cnffile):
     # At least one action is applicable
     CLAUSES.append(set([psap[1] for psap in p.policy]))
 
-    print '\n'.join(map(str, CLAUSES))
+    if DEBUG:
+        print '\n'.join(map(str, CLAUSES))
 
     F = CNF.Formula(CLAUSES)
     F.writeMapping(mapfile)
     F.writeCNF(cnffile)
 
-    print "\nD# Command: ./dsharp -projectionViaPriority -priority %s %s\n" % \
-          (','.join(map(str, sorted([F.mapping[f] for f in FLUENTS]))), cnffile)
+    print "\nsharpSAT Command: ./sharpSAT %s\n" % cnffile
+
+    #print "\nD# Command: ./dsharp -projectionViaPriority -priority %s %s\n" % \
+    #      (','.join(map(str, sorted([F.mapping[f] for f in FLUENTS]))), cnffile)
 
 if __name__ == '__main__':
     if len(os.sys.argv) != 3:
