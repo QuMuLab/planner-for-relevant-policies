@@ -157,35 +157,69 @@ bool perform_jit_repairs(Simulator *sim) {
                     // regstep is now at the start of the newly found plan
                     regstep = g_policy->get_best_step(*current_state);
                     
-                    // Add the new goals to the sc condition for the previous reg step
-                    PartialState * updated = NULL;
+                    // Add the new goals to the sc condition for the previous reg step(s)
+                    bool strengthened = false;
                     if (g_optimized_scd && prev_regstep && have_solution) {
                         
                         // prev_state holds the info needed before the operator was taken
-                        PartialState * prev_state = new PartialState(*(regstep->state), *prev_op, false, prev_regstep->state);
+                        PartialState * prev_str_state = new PartialState(*(regstep->state), *prev_op, false, prev_regstep->state);
+                        RegressionStep * prev_str_regstep = prev_regstep;
+                        RegressionStep * str_regstep = regstep;
+                        PartialState * updated = NULL;
                         
-                        // We augment the state to include the stronger conditions
-                        for (int i = 0; i < g_variable_name.size(); i++) {
-                            assert ((-1 == (*prev_state)[i]) ||
-                                    (-1 == (*(prev_regstep->state))[i]) ||
-                                    ((*prev_state)[i] == (*(prev_regstep->state))[i]));
+                        bool repeating = true;
+                        while(repeating) {
                             
-                            if ((-1 != (*prev_state)[i]) &&
-                                (-1 == (*(prev_regstep->state))[i])) {
-                                if (!updated)
-                                    updated = new PartialState(*(prev_regstep->state));
-                                (*updated)[i] = (*prev_state)[i];
+                            // We augment the state to include the stronger conditions
+                            for (int i = 0; i < g_variable_name.size(); i++) {
+                                
+                                // The regression through various outcomes should coincide
+                                assert ((-1 == (*prev_str_state)[i]) ||
+                                        (-1 == (*(prev_str_regstep->state))[i]) ||
+                                        ((*prev_str_state)[i] == (*(prev_str_regstep->state))[i]));
+                                
+                                if ((-1 != (*prev_str_state)[i]) &&
+                                    (-1 == (*(prev_str_regstep->state))[i]))
+                                {
+                                    strengthened = true;
+                                    if (!updated)
+                                        updated = new PartialState(*(prev_str_regstep->state));
+                                    (*updated)[i] = (*prev_str_state)[i];
+                                }
                             }
+                            
+                            if (updated) {
+                                
+                                str_regstep = new RegressionStep(*(prev_str_regstep->op), updated, prev_str_regstep->distance, str_regstep, prev_str_regstep->prev);
+                                str_regstep->next->prev = str_regstep;
+                                
+                                g_policy->add_item(str_regstep);
+                                
+                                if (debug_jic) {
+                                    cout << "Adding strengthened step:" << endl;
+                                    str_regstep->dump();
+                                }
+                                
+                                prev_str_regstep = str_regstep->prev;
+                                
+                                delete prev_str_state;
+                                
+                                if (prev_str_regstep)
+                                    prev_str_state = new PartialState(*(str_regstep->state), *(prev_str_regstep->op), false, prev_str_regstep->state);
+                                
+                                updated = NULL;
+                                
+                                repeating = (g_repeat_strengthening && (prev_str_regstep != NULL));
+                                
+                            } else
+                                repeating = false;
                         }
-                        
-                        if (updated)
-                            g_policy->add_item(new RegressionStep(*(prev_regstep->op), updated, prev_regstep->distance, regstep, prev_regstep->prev));
                     }
                     
                     // Since new policy has been added, we re-compute the sc detection
                     if (g_optimized_scd && have_solution) {
                         scd_skip_count = 0;
-                        g_policy->init_scd(updated != NULL);
+                        g_policy->init_scd(strengthened);
                         bool _made_change = true;
                         while (_made_change)
                             _made_change = g_policy->step_scd(failed_states);
