@@ -16,16 +16,6 @@ bool perform_jit_repairs(Simulator *sim) {
     stack<SCNode> * open_list; // Open list we traverse until strong cyclicity is proven
     vector<PartialState *> * created_states; // Used to clean up the created state objects
 
-    if (g_policy->seen) {
-        seen = g_policy->seen;
-        open_list = g_policy->open_list;
-        created_states = g_policy->created_states;
-    } else {
-        seen = new set<PartialState>();
-        open_list = new stack<SCNode>();
-        created_states = new vector<PartialState *>();
-    }
-
     PartialState * current_state; // The current step in the loop
     PartialState * previous_state; // The previous step in the loop (leading to the current_state)
     PartialState * current_goal; // The current goal in the loop
@@ -57,15 +47,26 @@ bool perform_jit_repairs(Simulator *sim) {
         (*goal_orig)[g_goal[i].first] = g_goal[i].second;
     }
 
-    current_state = new PartialState(g_initial_state());
-    current_goal = new PartialState(*goal_orig);
-    open_list->push(SCNode(current_state, current_goal, NULL, NULL, NULL));
-
-    created_states->push_back(current_state);
-    created_states->push_back(current_goal);
-
     if (debug_jic)
         cout << "\n\nStarting another JIC round." << endl;
+
+    if (g_policy->seen) {
+        cout << "Restoring the search from a previous epoch..." << endl;
+        seen = g_policy->seen;
+        open_list = g_policy->open_list;
+        created_states = g_policy->created_states;
+    } else {
+        seen = new set<PartialState>();
+        open_list = new stack<SCNode>();
+        created_states = new vector<PartialState *>();
+
+        current_state = new PartialState(g_initial_state());
+        current_goal = new PartialState(*goal_orig);
+        open_list->push(SCNode(current_state, current_goal, NULL, NULL, NULL));
+
+        created_states->push_back(current_state);
+        created_states->push_back(current_goal);
+    }
 
     while (!open_list->empty() && ((g_timer_jit() < g_jic_limit) || g_record_relevant_pairs)) {
         num_checked_states++;
