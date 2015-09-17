@@ -154,7 +154,7 @@ bool perform_jit_repairs(Simulator *sim) {
 
                     assert(orig_have_solution == have_solution);
                     if (orig_have_solution != have_solution)
-                        cout << "Error: A solvable problem became solvable!" << endl;
+                        cout << "Error: An unsolvable problem became solvable!" << endl;
 
                     // regstep is now at the start of the newly found plan
                     regstep = g_policy->get_best_step(*current_state);
