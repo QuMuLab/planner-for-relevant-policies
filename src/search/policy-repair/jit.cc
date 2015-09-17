@@ -429,9 +429,10 @@ bool perform_jit_repairs(Simulator *sim) {
     }
 
     // Store the jic rollout in case we want to pick the search up in the
-    //  next epoch
-    if ((g_num_epochs > 1) && (g_timer_jit() >= g_jic_limit) &&
-        (g_failed_open_states == 0) && !g_updated_deadends)
+    //  next epoch or final fsap-free round
+    if ((g_timer_jit() >= g_jic_limit) &&
+        (g_failed_open_states == 0) &&
+        !g_updated_deadends)
     {
         g_policy->seen = seen;
         g_policy->open_list = open_list;
