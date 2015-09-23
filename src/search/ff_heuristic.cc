@@ -88,19 +88,10 @@ int FFHeuristic::compute_heuristic(const State &state) {
             //      forbidden state-action pairs created.
             g_found_deadends.push_back(new DeadendTuple(de, NULL, NULL));
 
-
-
-
-
-
-            // TODO: Don't leave these lines here
-            update_deadends(g_found_deadends);
-            g_found_deadends.clear();
-
-
-
-
-
+            if (g_detect_unsolvability) {
+                update_deadends(g_found_deadends);
+                g_found_deadends.clear();
+            }
         }
         return h_add;
     }
