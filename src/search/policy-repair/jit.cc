@@ -27,6 +27,9 @@ bool perform_jit_repairs(Simulator *sim) {
     int num_fixed_states = 0; // Number of states we were able to repair (by replanning)
     int scd_skip_count = 0; // Number of times we checked a new state while having a dated SCD marking
     vector< DeadendTuple * > failed_states; // The failed states (used for creating deadends)
+    const SCNode * current_node = NULL;
+
+    bool warm_start = false; // Keep track if we've continued a search, or started from scratch
 
     bool debug_jic = false;
 
@@ -52,6 +55,7 @@ bool perform_jit_repairs(Simulator *sim) {
 
     if (g_policy->seen) {
         cout << "Restoring the search from a previous epoch..." << endl;
+        warm_start = true;
         seen = g_policy->seen;
         open_list = g_policy->open_list;
         created_states = g_policy->created_states;
@@ -68,6 +72,11 @@ bool perform_jit_repairs(Simulator *sim) {
         created_states->push_back(current_goal);
     }
 
+    if (debug_jic) {
+        cout << "Starting JIC times: " << g_timer_jit() << " / " << g_jic_limit << endl;
+        cout << "Starting states: " << open_list->size() << endl;
+    }
+
     while (!open_list->empty() && ((g_timer_jit() < g_jic_limit) || g_record_relevant_pairs)) {
         num_checked_states++;
         current_state = open_list->top().full_state;
@@ -75,6 +84,7 @@ bool perform_jit_repairs(Simulator *sim) {
         current_goal = open_list->top().expected_state;
         prev_regstep = open_list->top().prev_regstep;
         prev_op = open_list->top().prev_op;
+        current_node = &(open_list->top());
         open_list->pop();
 
         // If we are just going through states we know how to handle, give the SCD
@@ -364,6 +374,12 @@ bool perform_jit_repairs(Simulator *sim) {
         }
     }
 
+    bool finished_early = (g_jic_limit <= g_timer_jit());
+    if (debug_jic) {
+        cout << "Remaining states: " << open_list->size() << endl;
+        cout << "Ending JIC times: " << g_timer_jit() << " / " << g_jic_limit << endl;
+    }
+
     // We need to update the value since some may have been added to the
     //  list during optimized_scd
     if (g_detect_deadends)
@@ -390,7 +406,9 @@ bool perform_jit_repairs(Simulator *sim) {
     cout << "Investigated " << num_checked_states << " states for the strong cyclic plan." << endl;
 
     // If we closed every open state, then the policy must be strongly cyclic.
-    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit) && !made_change && !g_updated_deadends) {
+    if ((0 == g_failed_open_states) && (g_timer_jit() < g_jic_limit) &&
+        !made_change && !g_updated_deadends && !warm_start)
+    {
         g_policy->mark_strong();
         cout << "Marking policy strong cyclic." << endl;
     }
@@ -429,10 +447,13 @@ bool perform_jit_repairs(Simulator *sim) {
     }
 
     // Store the jic rollout in case we want to pick the search up in the
-    //  next epoch
-    if ((g_num_epochs > 1) && (g_timer_jit() >= g_jic_limit) &&
-        (g_failed_open_states == 0) && !g_updated_deadends)
-    {
+    //  next epoch or final fsap-free round
+    if (finished_early && (g_failed_open_states == 0) && !g_updated_deadends) {
+        // Add the most recent SCNode in case we start up another epoch
+        if (current_node)
+            open_list->push(*current_node);
+
+        cout << "Saving the jic search state." << endl;
         g_policy->seen = seen;
         g_policy->open_list = open_list;
         g_policy->created_states = created_states;
@@ -447,6 +468,12 @@ bool perform_jit_repairs(Simulator *sim) {
         delete seen;
         delete open_list;
         delete created_states;
+
+        if (warm_start) {
+            g_policy->seen = NULL;
+            g_policy->open_list = NULL;
+            g_policy->created_states = NULL;
+        }
     }
 
     return made_change;
