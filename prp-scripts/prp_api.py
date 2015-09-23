@@ -11,7 +11,8 @@ python prp_api.py <command> <solution file>
            display: Display the parsed policy (just for debugging purposes)
 
      count-circuit: Create the CNF version of the policy to count the successful states.
-                    Creates files <solution file>.map and <solution file>.cnf
+                    Creates files <solution file>.map and <solution file>.cnf, and then
+                    uses sharpSAT to count the models.
 
     action-circuit: Create the CNF version of the policy's circuit representation
                     that has inputs for the fluents and outputs for the actions.
@@ -108,29 +109,45 @@ def display(p):
     pprint(p.fsap)
     print
 
+
+
+
+
+def partial_state_clause(ps):
+    from krrt.sat import CNF
+    new_clauses = []
+    aux = '+'.join(sorted(ps))
+    new_clauses.append(map(CNF.Not, ps) + [aux])
+    for f in ps:
+        new_clauses.append([CNF.Not(aux), f])
+    return (aux, new_clauses)
+
+def neg(l):
+    from krrt.sat import CNF
+    if isinstance(l, CNF.Not):
+        return l.var
+    else:
+        return CNF.Not(l)
+
+
 def action_circuit(p, mapfile, cnffile):
     from krrt.sat import CNF
 
     CLAUSES = []
 
-    def partial_state_clause(ps):
-        aux = '+'.join(sorted(ps))
-        CLAUSES.append(map(CNF.Not, ps) + [aux])
-        for f in ps:
-            CLAUSES.append([CNF.Not(aux), f])
-        return aux
-
     for psap in p.policy:
-        print partial_state_clause(psap[0])
+        print CLAUSES.extend(partial_state_clause(psap[0])[1])
         print psap[1]
         print
 
 
-def count_circuit(p, mapfile, cnffile):
+def count_circuit(p, mapfile, cnffile, force_full=False):
     from krrt.sat import CNF
+    from krrt.utils import get_lines
 
     CLAUSES = []
     FLUENTS = set()
+    AUX = set()
 
     def fluentvar(f):
         if '!' == f[0]:
@@ -140,28 +157,38 @@ def count_circuit(p, mapfile, cnffile):
             FLUENTS.add(CNF.Variable(f))
             return CNF.Variable(f)
 
-    def neg(l):
-        if isinstance(l, CNF.Not):
-            return l.var
-        else:
-            return CNF.Not(l)
+    if not force_full and len(p.fsap) == 0:
+        inverted = True
+        CLAUSES = [map(neg, map(fluentvar, psap[0])) for psap in p.policy]
 
-    # For every <ps,a>, a->ps
-    for psap in p.policy:
-        for f in psap[0]:
-            CLAUSES.append([CNF.Not(psap[1]), fluentvar(f)])
+    else:
+        inverted = False
+        print "Warning: Mixing FSAP and Policy leads to difficult CNF theories"
+        # For every a, a -> \/_{<ps,a> in P}, ps
+        A = set([psap[1] for psap in p.policy])
+        for a in A:
+            PS = [psap[0] for psap in filter(lambda x: x[1] == a, p.policy)]
+            psaux = []
+            for ps in PS:
+                (aux, clauses) = partial_state_clause(ps)
+                if aux not in AUX:
+                    AUX.add(aux)
+                    CLAUSES.extend(clauses)
+                psaux.append(aux)
+            CLAUSES.append([CNF.Not(a)] + psaux)
 
-    # To avoid projection: For every <ps,a>, ps->a
-    for psap in p.policy:
-        CLAUSES.append([psap[1]] + map(CNF.Not, map(fluentvar, psap[0])))
 
-    # For every <de,a>, de->!a
-    for act in p.fsap:
-        for de in p.fsap[act]:
-            CLAUSES.append(map(neg, map(fluentvar, de)) + [CNF.Not(act)])
+        # To avoid projection: For every <ps,a>, ps->a
+        for psap in p.policy:
+            CLAUSES.append([psap[1]] + map(CNF.Not, map(fluentvar, psap[0])))
 
-    # At least one action is applicable
-    CLAUSES.append(set([psap[1] for psap in p.policy]))
+        # For every <de,a>, de->!a
+        for act in p.fsap:
+            for de in p.fsap[act]:
+                CLAUSES.append(map(neg, map(fluentvar, de)) + [CNF.Not(act)])
+
+        # At least one action is applicable
+        CLAUSES.append(set([psap[1] for psap in p.policy]))
 
     if DEBUG:
         print '\n'.join(map(str, CLAUSES))
@@ -170,7 +197,18 @@ def count_circuit(p, mapfile, cnffile):
     F.writeMapping(mapfile)
     F.writeCNF(cnffile)
 
-    print "\nsharpSAT Command: ./bin/sharpSAT %s\n" % cnffile
+    cmd = "./bin/sharpSAT %s > %s.log" % (cnffile, cnffile)
+    print "\nRunning sharpSAT Command: %s" % cmd
+    print "Solving..."
+    os.system(cmd)
+
+    print "Counting..."
+    count = int(get_lines("%s.log" % cnffile, lower_bound='# solutions', upper_bound='# END')[0].strip())
+    if inverted:
+        print "Inverting..."
+        count = 2**len(FLUENTS) - count
+
+    print "\nStates Handled: %d\n" % count
 
     #print "\nD# Command: ./dsharp -projectionViaPriority -priority %s %s\n" % \
     #      (','.join(map(str, sorted([F.mapping[f] for f in FLUENTS]))), cnffile)
