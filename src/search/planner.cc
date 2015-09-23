@@ -111,15 +111,9 @@ int main(int argc, const char **argv) {
 
     cout << "Max time for each of the " << epochs_remaining << " epochs: " << g_jic_limit << endl << endl;
 
-
-
-
-
-    cout << " !!! Warning !!!" << endl;
-    cout << "  Don't forget to remove the code in ff_heuristic.cc" << endl;
-
-
-
+    if (g_detect_unsolvability) {
+        cout << "Simply trying to determine if the problem has no weak plan." << endl;
+    }
 
     // We start the jit timer here since we should include the initial search / policy construction
     g_timer_jit.resume();
@@ -136,21 +130,28 @@ int main(int argc, const char **argv) {
 
     if (!engine->found_solution()) {
         cout << "No solution -- aborting repairs." << endl;
-        cout << "Repeating the search 10 times to see FSAP effectiveness" << endl;
 
-        for (int i=0; i < 10; i++) {
+        if (g_detect_unsolvability) {
+            cout << "Repeating the search 10 times to see FSAP effectiveness" << endl;
+
+            for (int i=0; i < 10; i++) {
+                cout << "Combination count: " << g_combined_count << endl;
+                cout << "\n ------------------------------" << endl;
+                engine->reset();
+                g_timer_jit.resume();
+                g_timer_search.resume();
+                engine->search();
+                g_timer_search.stop();
+
+                engine->save_plan_if_necessary();
+                engine->statistics();
+                engine->heuristic_statistics();
+            }
             cout << "\n ------------------------------" << endl;
-            engine->reset();
-            g_timer_jit.resume();
-            g_timer_search.resume();
-            engine->search();
-            g_timer_search.stop();
-
-            engine->save_plan_if_necessary();
-            engine->statistics();
-            engine->heuristic_statistics();
         }
-        cout << "\n ------------------------------" << endl;
+        exit(1);
+    } else if (g_detect_unsolvability) {
+        cout << "Solution was found. Aborting the search for a strong cyclic one given that --detect-unsolvability was used." << endl;
         exit(1);
     }
 

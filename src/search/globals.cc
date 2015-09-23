@@ -55,28 +55,28 @@ bool test_goal(const State &state) {
             return false;
         }
     }
-    
+
     g_matched_distance = 0;
-    
+
     PartialState *gs = new PartialState();
     for (int i = 0; i < g_goal.size(); i++)
         (*gs)[g_goal[i].first] = g_goal[i].second;
     RegressionStep *grs = new RegressionStep(gs, 0);
-    
+
     g_matched_policy = grs;
-    
+
     return true;
 }
 
 bool test_policy(const State &state) {
-    
+
     RegressionStep * best_step = g_policy->get_best_step(state);
-    
+
     if ((best_step && g_plan_with_policy) || (best_step && best_step->is_goal)) {
-        
+
         g_matched_policy = best_step;
         g_matched_distance = best_step->distance;
-        
+
         return true;
     } else {
         return false;
@@ -269,7 +269,7 @@ void read_operators(istream &in) {
 void read_axioms(istream &in) {
     int count;
     in >> count;
-    
+
     // HAZ: Make sure axioms are /not/ considered
     if (count > 0) {
         cout << "\n\nError: Axioms are not permitted.\n" << endl;
@@ -317,31 +317,31 @@ void read_everything(istream &in) {
     // NOTE: state registry stores the sizes of the state, so must be
     // built after the problem has been read in.
     g_state_registry = new StateRegistry;
-    
+
     /* Build the data structures required for mapping between the
      * deterministic actions and their non-deterministic equivalents. */
     int cur_nondet = 0;
     for (int i = 0; i < g_operators.size(); i++) {
-        
+
         int nondet_index = -1;
-        
+
         if (g_nondet_index_mapping.find(g_operators[i].get_nondet_name()) == g_nondet_index_mapping.end()) {
-            
+
             nondet_index = cur_nondet;
             g_nondet_index_mapping[g_operators[i].get_nondet_name()] = cur_nondet;
-            
+
             g_nondet_mapping.push_back(new vector<Operator *>());
             g_nondet_conditional_mask.push_back(new vector<int>());
-                        
+
             cur_nondet++;
-        
+
         } else {
             nondet_index = g_nondet_index_mapping[g_operators[i].get_nondet_name()];
         }
-        
+
         g_operators[i].nondet_index = nondet_index;
         g_nondet_mapping[nondet_index]->push_back(&g_operators[i]);
-        
+
         for (int j = 0; j < g_operators[i].get_pre_post().size(); j++) {
             for (int k = 0; k < g_operators[i].get_pre_post()[j].cond.size(); k++) {
                 int var = g_operators[i].get_pre_post()[j].cond[k].var;
@@ -495,6 +495,7 @@ bool g_record_online_deadends = true; // Record the deadends as they occur onlin
 bool g_sample_for_depth1_deadends = true; // Analyze the non-deterministic alternate states from the generated weak plans for deadends
 bool g_combine_deadends = true; // Combine FSAP conditions for a new deadend when there are no applicable actions
 bool g_repeat_fsap_backwards = false; // Keep making FSAPs as long as states where they hold have no applicable actions
+bool g_detect_unsolvability = false; // Run the software as an unsolvability detector (i.e., be very aggressive trying to detect deadends)
 int g_combined_count = 0; // Number of times a deadend was generated from combining FSAPs
 int g_repeat_fsap_count = 0; // Number of times we applied the repeated FSAP technique
 bool g_repeat_strengthening = false; // Continue to strengthen pairs back to the initial state.
