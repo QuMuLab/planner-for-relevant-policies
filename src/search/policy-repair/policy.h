@@ -62,7 +62,7 @@ public:
 
     void update_policy(list<PolicyItem *> &reg_items);
     void add_item(PolicyItem *item);
-    void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all = false);
+    void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all = false, bool only_if_relevant = false);
     bool check_match(const PartialState &curr, bool keep_all = false);
     RegressionStep *get_best_step(const PartialState &curr);
     bool empty() { return (0 == root); }
@@ -95,7 +95,7 @@ public:
     virtual void dump(string indent) const = 0;
     virtual void generate_cpp_input(ofstream &outfile) const = 0;
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen) = 0;
-    virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all) = 0;
+    virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all, bool only_if_relevant) = 0;
     virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, int bound) = 0;
     virtual bool check_match(const PartialState &curr, bool keep_all) = 0;
 
@@ -118,7 +118,7 @@ public:
                     GeneratorBase *default_gen);
     GeneratorSwitch(list<PolicyItem *> &reg_items, set<int> &vars_seen);
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
-    virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all);
+    virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all, bool only_if_relevant);
     virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, int bound);
     virtual bool check_match(const PartialState &curr, bool keep_all);
     virtual void dump(string indent) const;
@@ -130,7 +130,7 @@ class GeneratorLeaf : public GeneratorBase {
 public:
     GeneratorLeaf(list<PolicyItem *> &reg_items);
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
-    virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all);
+    virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all, bool only_if_relevant);
     virtual void generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, int bound);
     virtual bool check_match(const PartialState &curr, bool keep_all);
     virtual void dump(string indent) const;
@@ -140,7 +140,7 @@ public:
 class GeneratorEmpty : public GeneratorBase {
 public:
     virtual GeneratorBase *update_policy(list<PolicyItem *> &reg_items, set<int> &vars_seen);
-    virtual void generate_applicable_items(const PartialState &, vector<PolicyItem *> &, bool) {}
+    virtual void generate_applicable_items(const PartialState &, vector<PolicyItem *> &, bool, bool) {}
     virtual void generate_applicable_items(const PartialState &, vector<PolicyItem *> &, int) {}
     virtual bool check_match(const PartialState &, bool) {return false;}
     virtual void dump(string indent) const;
