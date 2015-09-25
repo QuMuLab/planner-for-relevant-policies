@@ -47,19 +47,21 @@ bool GeneratorSwitch::check_match(const PartialState &curr, bool keep_all) {
     return false;
 }
 
-void GeneratorSwitch::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
-    for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter)
-        reg_items.push_back(*op_iter);
+void GeneratorSwitch::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all, bool only_if_relevant) {
+    for (list<PolicyItem *>::iterator op_iter = immediate_items.begin(); op_iter != immediate_items.end(); ++op_iter) {
+        if (!only_if_relevant || (*op_iter)->check_relevance(curr))
+            reg_items.push_back(*op_iter);
+    }
 
     if (curr[switch_var] != -1)
-        generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items, keep_all);
+        generator_for_value[curr[switch_var]]->generate_applicable_items(curr, reg_items, keep_all, only_if_relevant);
     else if (keep_all) {
         for (int i = 0; i < g_variable_domain[switch_var]; i++) {
-            generator_for_value[i]->generate_applicable_items(curr, reg_items, keep_all);
+            generator_for_value[i]->generate_applicable_items(curr, reg_items, keep_all, only_if_relevant);
         }
     }
 
-    default_generator->generate_applicable_items(curr, reg_items, keep_all);
+    default_generator->generate_applicable_items(curr, reg_items, keep_all, only_if_relevant);
 }
 
 void GeneratorSwitch::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, int bound) {
@@ -93,9 +95,11 @@ bool GeneratorLeaf::check_match(const PartialState &, bool) {
         return false;
 }
 
-void GeneratorLeaf::generate_applicable_items(const PartialState &, vector<PolicyItem *> &reg_items, bool) {
-    for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter)
-        reg_items.push_back(*op_iter);
+void GeneratorLeaf::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool, bool only_if_relevant) {
+    for (list<PolicyItem *>::iterator op_iter = applicable_items.begin(); op_iter != applicable_items.end(); ++op_iter) {
+        if (!only_if_relevant || (*op_iter)->check_relevance(curr))
+            reg_items.push_back(*op_iter);
+    }
 }
 
 void GeneratorLeaf::generate_applicable_items(const PartialState &, vector<PolicyItem *> &reg_items, int bound) {
@@ -389,9 +393,12 @@ void Policy::copy_relevant_items(list<PolicyItem *> &items, bool checksc) {
     }
 }
 
-void Policy::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all) {
+void Policy::generate_applicable_items(const PartialState &curr, vector<PolicyItem *> &reg_items, bool keep_all, bool only_if_relevant) {
+
+    assert (!only_if_relevant || keep_all);
+
     if (root)
-        root->generate_applicable_items(curr, reg_items, keep_all);
+        root->generate_applicable_items(curr, reg_items, keep_all, only_if_relevant);
 }
 
 bool Policy::check_match(const PartialState &curr, bool keep_all) {
