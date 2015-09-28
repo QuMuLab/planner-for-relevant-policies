@@ -157,7 +157,7 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterfac
 
         PartialState curr = PartialState(_curr);
 
-        bool debug = true;
+        bool debug = false;
 
         vector<PolicyItem *> reg_items;
         vector<const Operator *> orig_ops;
