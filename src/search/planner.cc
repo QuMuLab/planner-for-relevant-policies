@@ -113,6 +113,7 @@ int main(int argc, const char **argv) {
 
     if (g_detect_unsolvability) {
         cout << "Simply trying to determine if the problem has no weak plan." << endl;
+        g_check_with_forbidden = true;
     }
 
     // We start the jit timer here since we should include the initial search / policy construction
@@ -137,6 +138,7 @@ int main(int argc, const char **argv) {
             for (int i=0; i < 10; i++) {
                 cout << "Combination count: " << g_combined_count << endl;
                 cout << "\n ------------------------------" << endl;
+                g_deadend_states = new Policy();
                 engine->reset();
                 g_timer_jit.resume();
                 g_timer_search.resume();
