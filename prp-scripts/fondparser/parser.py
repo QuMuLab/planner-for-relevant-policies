@@ -119,15 +119,23 @@ class Problem(object):
         fp.write ("(domain %s)%s" % (self.domain_name, "\n"))
 
         # requirements
+        NONDET = ''
+        for a in self.actions:
+            if isinstance(a.effect, Oneof):
+                NONDET = ' :non-deterministic'
         if len (self.types) > 1 or list(self.types)[0] != Predicate.OBJECT:
-            fp.write (sp + "(:requirements :strips :typing)\n")
+            fp.write (sp + "(:requirements :strips :typing%s)\n" % NONDET)
         else:
-            fp.write (sp + "(:requirements :strips)\n")
+            fp.write (sp + "(:requirements :strips%s)\n" % NONDET)
 
         # types
         #TODO likely wrong, doesn't capture the type hierarchy
         s = " ".join (filter(lambda t: t!= Predicate.OBJECT, self.types))
         fp.write (sp + "(:types %s)%s" %(s, "\n"))
+
+        # constants
+        s = ('\n'+sp+'  ').join(["%s - %s" % (' '.join(self.const_unmap[t]), t) for t in self.const_unmap])
+        fp.write ("%s(:constants\n%s  %s\n%s)\n\n" % (sp, sp, s, sp))
 
         # predicates
         fp.write (sp + "(:predicates " + "\n")
@@ -269,6 +277,9 @@ class Problem(object):
 
         #TODO this may not be correct, depending on the type hierchy
         const_map = {const: list(self.obj_to_type[const])[0] for const in self.objects}
+        self.const_unmap = {t: [] for t in set([list(self.obj_to_type[const])[0] for const in self.objects])}
+        for const in self.objects:
+            self.const_unmap[list(self.obj_to_type[const])[0]].append(const)
 
         self.predicates = [self.to_predicate(c, map=const_map) for c in parse_tree[":predicates"].children]
 

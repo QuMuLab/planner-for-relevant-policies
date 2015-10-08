@@ -80,12 +80,15 @@ void exit_with(ExitCode exitcode) {
         cout << "Time limit has been reached." << endl;
         break;
     case EXIT_STRONG:
+        exitcode = EXIT_PLAN_FOUND;
         cout << "Strong plan found." << endl;
         break;
     case EXIT_STRONG_CYCLIC:
+        exitcode = EXIT_PLAN_FOUND;
         cout << "Strong cyclic plan found." << endl;
         break;
     case EXIT_NOT_STRONG_CYCLIC:
+        exitcode = EXIT_PLAN_FOUND;
         cout << "Plan found, but not strong cyclic." << endl;
         break;
     default:
