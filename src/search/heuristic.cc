@@ -33,24 +33,11 @@ void Heuristic::set_preferred(const Operator *op) {
     }
 }
 
-void Heuristic::compute_forbidden(const State &state) {
+void Heuristic::compute_forbidden(const StateInterface &state) {
     if (g_detect_deadends) {
         forbidden_ops.clear();
         vector<PolicyItem *> reg_items;
-        g_deadend_policy->generate_applicable_items(state, reg_items);
-        for (int i = 0; i < reg_items.size(); i++) {
-            //cout << "Forbidding:" << endl;
-            //cout << ((NondetDeadend*)(reg_items[i]))->op_name << endl;
-            forbidden_ops.insert(((NondetDeadend*)(reg_items[i]))->op_index);
-        }
-    }
-}
-
-void Heuristic::compute_forbidden(const PartialState &state) {
-    if (g_detect_deadends) {
-        forbidden_ops.clear();
-        vector<PolicyItem *> reg_items;
-        g_deadend_policy->generate_applicable_items(state, reg_items);
+        g_deadend_policy->generate_applicable_items(state, reg_items, false, false);
         for (int i = 0; i < reg_items.size(); i++) {
             //cout << "Forbidding:" << endl;
             //cout << ((NondetDeadend*)(reg_items[i]))->op_name << endl;
@@ -62,13 +49,13 @@ void Heuristic::compute_forbidden(const PartialState &state) {
 void Heuristic::evaluate(const State &state) {
     if (heuristic == NOT_INITIALIZED)
         initialize();
-    
+
     preferred_operators.clear();
     for (int i = 0; i < g_operators.size(); i++)
         g_operators[i].unmark();
-    
+
     compute_forbidden(state);
-    
+
     heuristic = compute_heuristic(state);
     for (int i = 0; i < preferred_operators.size(); i++)
         preferred_operators[i]->unmark();

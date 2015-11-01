@@ -415,7 +415,7 @@ RegressionStep *Policy::get_best_step(const PartialState &curr) {
 
     g_timer_policy_use.resume();
     vector<PolicyItem *> current_steps;
-    generate_applicable_items(curr, current_steps);
+    generate_applicable_items(curr, current_steps, false, false);
 
     if (0 == current_steps.size()) {
         g_timer_policy_use.stop();
@@ -426,7 +426,7 @@ RegressionStep *Policy::get_best_step(const PartialState &curr) {
     vector<PolicyItem *> forbidden_items;
     set<int> forbidden;
     if (!complete)
-        g_deadend_policy->generate_applicable_items(curr, forbidden_items);
+        g_deadend_policy->generate_applicable_items(curr, forbidden_items, false, false);
     for (int i = 0; i < forbidden_items.size(); i++)
         forbidden.insert(((NondetDeadend*)(forbidden_items[i]))->op_index);
 
@@ -698,7 +698,7 @@ bool Policy::step_scd(vector< DeadendTuple * > &failed_states, bool skip_deadend
                 //  regression steps based on their sc_state then this will be valid.
                 PartialState *succ_state = new PartialState(*(rs->state), *((*(g_nondet_mapping[rs->op->nondet_index]))[i]));
                 vector<PolicyItem *> guaranteed_steps;
-                root->generate_applicable_items(*succ_state, guaranteed_steps, false);
+                root->generate_applicable_items(*succ_state, guaranteed_steps, false, false);
 
                 if (debug_scd) {
                     cout << "\nTesting successor (" << (i+1) << "/" << g_nondet_mapping[rs->op->nondet_index]->size() << "):" << endl;
