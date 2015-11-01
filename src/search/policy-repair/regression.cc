@@ -291,7 +291,7 @@ void RegressionStep::strengthen(PartialState *s) {
         return;
 
     vector<PolicyItem *> reg_items;
-    g_deadend_policy->generate_applicable_items(*state, reg_items, true);
+    g_deadend_policy->generate_applicable_items(*state, reg_items, true, false);
 
     // Each item could potentially be a forbidden state-action pair
     for (int i = 0; i < reg_items.size(); i++) {
