@@ -67,7 +67,8 @@ string RegressableOperator::get_name() {
 }
 
 bool RegressableOperator::check_relevance(const PartialState &ps) {
-    cout << "." << flush;
+
+    bool debug = false;
 
     for (int i = 0; i < op->get_pre_post().size(); i++) {
         if (-1 != ps[op->get_pre_post()[i].var])
@@ -79,10 +80,13 @@ bool RegressableOperator::check_relevance(const PartialState &ps) {
             return true;
     }
 
-    cout << "\nReturning false for operator..." << endl;
-    op->dump();
-    cout << "...and partial state..." << endl;
-    ps.dump_pddl();
+    if (debug) {
+        cout << "\nReturning false for check_relevance using operator..." << endl;
+        op->dump();
+        cout << "...and partial state..." << endl;
+        ps.dump_pddl();
+    }
+
     return false;
 }
 
