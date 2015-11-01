@@ -77,7 +77,7 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
 
         // Get the regressable operators for the given state.
         vector<PolicyItem *> reg_items;
-        g_regressable_ops->generate_applicable_items(*failed_state, reg_items, true, false);
+        g_regressable_ops->generate_applicable_items(*failed_state, reg_items, true, g_regress_only_relevant_deadends);
 
         // For each operator, create a new deadend avoidance pair
         for (int j = 0; j < reg_items.size(); j++) {
@@ -96,7 +96,7 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
 
         // Check to see if we have any consistent "all-fire" operators
         reg_items.clear();
-        g_regressable_cond_ops->generate_applicable_items(*failed_state, reg_items, true, false);
+        g_regressable_cond_ops->generate_applicable_items(*failed_state, reg_items, true, g_regress_only_relevant_deadends);
 
         // For each operator, create a new deadend avoidance pair
         for (int j = 0; j < reg_items.size(); j++) {
