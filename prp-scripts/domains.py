@@ -23,6 +23,11 @@ for i in range(1,10):
 for i in range(10,16):
     blocks2.append(("%s/blocksworld-2/domain.pddl" % DOMAIN_LOCATION, "%s/blocksworld-2/p%d.pddl" % (DOMAIN_LOCATION, i)))
 
+# Chain of Rooms
+chainofrooms = []
+for i in range(1,11):
+    chainofrooms.append(("%s/chain-of-rooms/domain.pddl" % DOMAIN_LOCATION, "%s/chain-of-rooms/p%d0.pddl" % (DOMAIN_LOCATION, i)))
+
 # Faults
 faults = []
 for i in range(1,11):
@@ -86,6 +91,7 @@ DOMAINS = {
     'blocksworld-new': blocks_new,
     'blocksworld-orig': blocks_orig,
     'blocksworld-2': blocks2,
+    'chain': chainofrooms,
     'faults': faults,
     'faults-test': faults[0:2],
     'first' : first,
