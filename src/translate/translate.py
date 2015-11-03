@@ -275,7 +275,7 @@ def translate_strips_operator_aux(operator, dictionary, ranges, mutex_dict,
                         new_cond[cvar] = cval
                     else:
                         effects_by_variable[var][none_of_those].append(new_cond)
-    new_name = operator.name.split()[0] + suffix + ''.join(operator.name.split()[1:])
+    new_name = operator.name.split(' ')[0] + suffix + ' '.join(operator.name.split(' ')[1:])
     return build_sas_operator(new_name, condition, effects_by_variable,
                               operator.cost, ranges, implied_facts)
 
