@@ -5,7 +5,11 @@ from fondparser import parser, formula
 from fondparser.action import Action
 from normalizer import normalize
 
-PATTERN = '<name>_DETDUP_<num>'
+# PRP style
+# PATTERN = '<name>_DETDUP_<num>'
+
+# FIP style
+PATTERN = 'D_<num>_<name>'
 
 def determinize(ifile, ofile):
 
