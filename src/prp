@@ -4,26 +4,25 @@ set -e
 
 BASEDIR="$(dirname "$0")"
 
+# Paths to planner components
+TRANSLATE="$BASEDIR/translate/translate.py"
+PREPROCESS="$BASEDIR/preprocess/preprocess"
+SEARCH="$BASEDIR/search/downward"
+MAXWIDTH=5
+
+# Settings
+INV_TIME_LIMIT="300"
 function die {
     echo "$@" 1>&2
     exit 1
 }
 
 function usage {
-    die "usage: $(basename "$0") [DOMAIN_FILE] PROBLEM_FILE SEARCH_OPTION ..."
+    die "usage: $(basename "$0") [--citation] [--strong] DOMAIN_FILE PROBLEM_FILE SEARCH_OPTION ..."
 }
 
-# Paths to planner components
-TRANSLATE="$BASEDIR/translate/translate.py"
-PREPROCESS="$BASEDIR/preprocess/preprocess"
-SEARCH="$BASEDIR/search/downward"
-
-# Settings
-INV_TIME_LIMIT="300"
-
-# Check for citation request
-if [ "--citation" = "$1" ]; then
-  echo "
+function cite {
+    echo "
 @inproceedings{muise12icapsfond,
   author = {Christian Muise and Sheila A McIlraith and J Christopher Beck},
   title = {Improved Non-deterministic Planning by Exploiting State Relevance},
@@ -48,51 +47,107 @@ if [ "--citation" = "$1" ]; then
   year={2014},
   url={http://www.haz.ca/papers/muise-icaps-14.pdf}
 }
-"
-  exit 1
-fi
+    "
+    exit 0
+}
 
-# Need to explicitly ask for GNU time (from MacPorts) on Mac OS X.
-if [[ "$(uname)" == "Darwin" ]]; then
-    TIME="gtime"
-    if ! which $TIME >/dev/null; then
-        die "$TIME must be installed on Mac OSX (from MacPorts, perhaps) for this to work"
+function run {
+    # Need to explicitly ask for GNU time (from MacPorts) on Mac OS X.
+    if [[ "$(uname)" == "Darwin" ]]; then
+        TIME="gtime"
+        if ! which $TIME >/dev/null; then
+            die "$TIME must be installed on Mac OSX (from MacPorts, perhaps) for this to work"
+        fi
+    else
+        TIME="command time"
     fi
+
+    TIME="$TIME --output=elapsed.time --format=%S\n%U\n"
+
+    if [[ "$#" -lt 2 ]]; then
+        usage
+    fi
+    
+    IPC="ipc"
+    if [[ "$1" == "debug" ]]; then
+        IPC="debug $IPC"
+        shift
+    fi
+
+    echo "1. Running translator"
+    if [[ -e "$2" ]]; then
+        echo "Second argument is a file name: use two translator arguments."
+        $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1" "$2"
+        shift 2
+    else
+        echo "Second argument is not a file name: auto-detect domain file."
+        $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1"
+        shift
+    fi
+    echo
+
+    echo "2. Running preprocessor"
+    $TIME --append "$PREPROCESS" < output.sas
+    echo
+
+    echo "3. Running search"
+    echo "$SEARCH" "$IPC" policy-repair < output "$@"
+    "$SEARCH" $IPC policy-repair < output "$@"
+    echo
+    
+    exit 0
+}
+
+if [ "--citation" = "$1" ]; then
+    cite
+elif [ "--strong" = "$1" ]; then
+
+    # Uncomment for running experiments.
+    tail -f STRONG_OUTPUT &
+    TAIL_PID=$!
+    
+    STRONG_OUTPUT="STRONG_OUTPUT"
+
+    echo
+    echo "-----------------------------"
+    echo " -- Doing strong planning --"
+    echo "-----------------------------"
+    
+    for (( i=1; i<=$MAXWIDTH; i++ ))
+    do
+        echo -n "."
+        
+        echo "Compiling domain..." > $STRONG_OUTPUT
+        echo "" >> $STRONG_OUTPUT
+        
+        python $BASEDIR/../prp-scripts/strong-acyclic-conversion.py "$2" strong-domain.pddl "$i" >> $STRONG_OUTPUT 2>&1
+        echo "" >> $STRONG_OUTPUT
+        
+        echo "Solving compiled problem..." >> $STRONG_OUTPUT
+        "$BASEDIR/prp" strong-domain.pddl "${@:3}" >> $STRONG_OUTPUT 2>&1
+        
+        if grep -Fxq "Strong cyclic plan found." $STRONG_OUTPUT
+        then
+            echo
+            echo
+            echo "Strong Plan Found!"
+            echo "Width: $i"
+            echo
+            rm -f strong-domain.pddl
+            kill "$TAIL_PID"
+            exit 0
+        fi
+    done
+    
+    echo
+    echo
+    echo "No strong plan found."
+    echo "Max width: $MAXWIDTH"
+    echo
+    rm -f strong-domain.pddl
+    kill "$TAIL_PID"
+    exit 0
 else
-    TIME="command time"
+    run "$@"
 fi
-
-TIME="$TIME --output=elapsed.time --format=%S\n%U\n"
-
-if [[ "$#" -lt 2 ]]; then
-    usage
-fi
-
-IPC="ipc"
-if [[ "$1" == "debug" ]]; then
-    IPC="debug $IPC"
-    shift
-fi
-
-echo "1. Running translator"
-if [[ -e "$2" ]]; then
-    echo "Second argument is a file name: use two translator arguments."
-    $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1" "$2"
-    shift 2
-else
-    echo "Second argument is not a file name: auto-detect domain file."
-    $TIME "$TRANSLATE" "$INV_TIME_LIMIT" "$1"
-    shift
-fi
-echo
-
-echo "2. Running preprocessor"
-$TIME --append "$PREPROCESS" < output.sas
-echo
-
-echo "3. Running search"
-echo "$SEARCH" "$IPC" policy-repair < output "$@"
-"$SEARCH" $IPC policy-repair < output "$@"
-echo
-
 
