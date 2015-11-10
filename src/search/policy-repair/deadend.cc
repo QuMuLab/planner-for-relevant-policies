@@ -166,6 +166,9 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterfac
 
         bool debug = false;
 
+        if (debug)
+            cout << "\nRunning the deadend aware successor generator..." << endl;
+
         vector<PolicyItem *> reg_items;
         vector<const Operator *> orig_ops;
         map<int, PolicyItem *> fsap_map;
