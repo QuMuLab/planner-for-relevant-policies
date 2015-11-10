@@ -39,6 +39,8 @@ PRP_W1 = BASEDIR + "/acyclic-testing/prp-w1.sh"
 PRP_ACYCLIC = "/home/cjmuise/Projects/strong-prp/src/prp --strong"
 PRP_CYCLIC = "/home/cjmuise/Projects/strong-prp/src/prp"
 
+FIP_SC = BASEDIR + "/acyclic-testing/fip-sc.sh"
+
 
 def check_segfault(outfile):
     return match_value(outfile, '.*Segmentation fault.*')
@@ -142,6 +144,9 @@ def do_width1_eval(domain):
 
     def mynda_success(out):
         return match_value(out, '.*The protagonist has got a winning strategy\..*')
+    
+    def fip_success(out):
+        return match_value(out, '.*A strong solution was found!.*')
 
     domprobs = DOMAINS[domain]
 
@@ -160,6 +165,9 @@ def do_width1_eval(domain):
     run_exp('exp_w1--mynd_w1', domain, MYND_W1, domprobs, mynd_success, -1)
     run_exp('exp_w1--mynd_cyclic', domain, MYND_CYCLIC, domprobs, mynd_success, -1)
     run_exp('exp_w1--mynd_acyclic', domain, MYND_ACYCLIC, domprobs, mynda_success, -1)
+    
+    print "\nTesting strongFIP"
+    run_exp('exp_w1--fip', domain, FIP_SC, domprobs, fip_success)
 
 
 def do_prp_width_eval(domain):
