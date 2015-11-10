@@ -33,11 +33,14 @@ MYND_ACYCLIC = BASEDIR + "/acyclic-testing/mynd-acyclic.sh"
 MYND_CYCLIC = BASEDIR + "/acyclic-testing/mynd-cyclic.sh"
 
 GRENDEL_W1 = BASEDIR + "/acyclic-testing/grendel-w1.sh"
-GRENDEL_CYCLIC = "/home/cjmuise/Projects/grendel/grendel_astar.py"
+#GRENDEL_CYCLIC = "/home/cjmuise/Projects/grendel/grendel_astar.py"
+GRENDEL_CYCLIC = "/u/cjmuise/EXPERIMENTS/grendel/grendel_astar.py"
 
 PRP_W1 = BASEDIR + "/acyclic-testing/prp-w1.sh"
-PRP_ACYCLIC = "/home/cjmuise/Projects/strong-prp/src/prp --strong"
-PRP_CYCLIC = "/home/cjmuise/Projects/strong-prp/src/prp"
+#PRP_ACYCLIC = "/home/cjmuise/Projects/strong-prp/src/prp --strong"
+#PRP_CYCLIC = "/home/cjmuise/Projects/strong-prp/src/prp"
+PRP_ACYCLIC = "/u/cjmuise/EXPERIMENTS/strong-prp/src/prp --strong"
+PRP_CYCLIC = "/u/cjmuise/EXPERIMENTS/strong-prp/src/prp"
 
 FIP_SC = BASEDIR + "/acyclic-testing/fip-sc.sh"
 
