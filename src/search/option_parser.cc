@@ -355,7 +355,7 @@ string OptionParser::usage(string progname) {
         "    Generate and store deadend states that are found online.\n\n"
         "--sample-for-depth1-deadends 1/0 (default=1)\n"
         "    Analyze the non-deterministic alternate states from the generated weak plans for deadends.\n\n"
-        "--combine-deadends 1/0 (default=1)\n"
+        "--combine-deadends 1/0 (default=0)\n"
         "    Combine the FSAP conditions if every applicable action is forbidden to be a new deadend.\n\n"
         "--repeat-fsaps-backwards 1/0 (default=0)\n"
         "    Keep making FSAPs as long as states where they hold have no applicable actions (experimental and mostly damaging)\n\n"
