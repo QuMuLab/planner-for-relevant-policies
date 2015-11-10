@@ -245,6 +245,8 @@ def analyze_w1(domain):
 
     grendel_cyc_data = load_CSV("RESULTS/exp_w1--grendel_cyclic-%s-results.csv" % domain)[1:]
     grendel_w1_data = load_CSV("RESULTS/exp_w1--grendel_w1-%s-results.csv" % domain)[1:]
+    
+    fip_data = load_CSV("RESULTS/exp_w1--fip-%s-results.csv" % domain)[1:]
 
     probs = set([l[1] for l in prp_w1_data])
     times = {}
@@ -257,12 +259,13 @@ def analyze_w1(domain):
         times[p].append(float(filter(lambda x: p == x[1], mynd_w1_data)[0][2]))
         times[p].append(float(filter(lambda x: p == x[1], mynd_cyc_data)[0][2]))
         times[p].append(float(filter(lambda x: p == x[1], mynd_acyc_data)[0][2]))
+        times[p].append(float(filter(lambda x: p == x[1], fip_data)[0][2]))
 
-    scores = [0.0] * 7
-    totals = [0.0] * 7
+    scores = [0.0] * 8
+    totals = [0.0] * 8
     for p in times:
         best = min(times[p])
-        for i in range(7):
+        for i in range(8):
             scores[i] += best / times[p][i]
             totals[i] += times[p][i]
 
@@ -274,6 +277,7 @@ def analyze_w1(domain):
     solved.append(float(len(filter(lambda x: '-' == x[-1], mynd_w1_data))))
     solved.append(float(len(filter(lambda x: '-' == x[-1], mynd_cyc_data))))
     solved.append(float(len(filter(lambda x: '-' == x[-1], mynd_acyc_data))))
+    solved.append(float(len(filter(lambda x: '-' == x[-1], fip_data))))
 
     print "\n---------------------------"
     print "  Domain:  %s" % domain
@@ -287,6 +291,7 @@ def analyze_w1(domain):
     print "     MyND W1: %.2f" % scores[4]
     print "    MyND Cyc: %.2f" % scores[5]
     print "   MyND Acyc: %.2f" % scores[6]
+    print "         FIP: %.2f" % scores[7]
 
     print "\n Time totals:"
     print "      PRP W1: %.2f \t/ %d = %.2f" % (totals[0], solved[0], totals[0] / solved[0])
@@ -296,6 +301,7 @@ def analyze_w1(domain):
     print "     MyND W1: %.2f \t/ %d = %.2f" % (totals[4], solved[4], totals[4] / solved[4])
     print "    MyND Cyc: %.2f \t/ %d = %.2f" % (totals[5], solved[5], totals[5] / solved[5])
     print "   MyND Acyc: %.2f \t/ %d = %.2f" % (totals[6], solved[6], totals[6] / solved[6])
+    print "         FIP: %.2f \t/ %d = %.2f" % (totals[7], solved[7], totals[7] / solved[7])
 
     print "\n      {PRP}"
     print "      W1 Solved: %d" % len(filter(lambda x: '-' == x[-1], prp_w1_data))
@@ -316,6 +322,11 @@ def analyze_w1(domain):
     print "   W1 Time / Mem: %d / %d" % (len(filter(lambda x: 'T' == x[-1], mynd_w1_data)), len(filter(lambda x: 'M' == x[-1], mynd_w1_data)))
     print "  Cyc Time / Mem: %d / %d" % (len(filter(lambda x: 'T' == x[-1], mynd_cyc_data)), len(filter(lambda x: 'M' == x[-1], mynd_cyc_data)))
     print " Acyc Time / Mem: %d / %d" % (len(filter(lambda x: 'T' == x[-1], mynd_acyc_data)), len(filter(lambda x: 'M' == x[-1], mynd_acyc_data)))
+
+    print "\n      {FIP}"
+    print "      Solved: %d" % len(filter(lambda x: '-' == x[-1], fip_data))
+    print "  Time / Mem: %d / %d" % (len(filter(lambda x: 'T' == x[-1], fip_data)), len(filter(lambda x: 'M' == x[-1], fip_data)))
+
 
     print
 
