@@ -1,5 +1,29 @@
 
+import glob
+
 DOMAIN_LOCATION = '../fond-benchmarks/'
+
+
+# Strong (st_) domains from strongFIP
+st_blocksworld = []
+for i in range(1,31):
+    st_blocksworld.append(("%s/st_blocksworld/domain.pddl" % DOMAIN_LOCATION, "%s/st_blocksworld/p%d.pddl" % (DOMAIN_LOCATION, i)))
+
+st_faults = []
+for i in range(1,11):
+    st_faults.append(("%s/st_faults/d_%d_%d.pddl" % (DOMAIN_LOCATION, i, i), "%s/st_faults/p_%d_%d.pddl" % (DOMAIN_LOCATION, i, i)))
+
+st_first = []
+st_first_probs = glob.glob("%s/st_first_responders/p_*" % DOMAIN_LOCATION)
+for pfile in sorted(st_first_probs):
+    st_first.append(("%s/st_first_responders/domain.pddl" % DOMAIN_LOCATION, pfile))
+
+st_tires = []
+st_tires_probs = glob.glob("%s/st_tires/p*" % DOMAIN_LOCATION)
+for pfile in sorted(st_tires_probs):
+    st_tires.append(("%s/st_tires/domain.pddl" % DOMAIN_LOCATION, pfile))
+
+
 
 # Blocksworld
 blocks = []
@@ -106,7 +130,11 @@ DOMAINS = {
     'triangle-tire-test' : triangle_tire[0:2],
     'bus-fare' : bus_fare,
     'climber' : climber,
-    'river' : river
+    'river' : river,
+    'st_blocks' : st_blocksworld,
+    'st_first' : st_first,
+    'st_tires' : st_tires,
+    'st_faults' : st_faults
 }
 
 REDUNDANT_DOMAINS = {
