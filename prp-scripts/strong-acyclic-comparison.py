@@ -96,7 +96,7 @@ def run_exp(exp_name, domain, solver, dom_probs, check_success, memory=MEM_LIMIT
         clean_sandbox = False,
         trials = TRIALS,
         output_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.out'),
-        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.out')
+        error_file_func = (lambda res: res.single_args['domprob'].split(' ')[1].split('/')[-1]+'.'+str(res.id)+'.err')
     )
 
     timeouts = 0
