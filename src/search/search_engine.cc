@@ -53,18 +53,18 @@ void SearchEngine::set_plan(const Plan &p) {
 }
 
 void SearchEngine::search() {
-    
+
     if (g_record_online_deadends) {
         g_found_deadends.clear();
         delete g_temporary_deadends;
         g_temporary_deadends = new Policy();
     }
-    
+
     initialize();
     Timer timer;
     while ((step() == IN_PROGRESS) && (g_timer_jit() < g_jic_limit))
         ;
-    
+
     if (g_timer_jit() < g_jic_limit) {
         if (g_record_online_deadends && !g_limit_states && g_found_deadends.size() > 0) {
             g_replan_detected_deadends = true;
@@ -73,7 +73,7 @@ void SearchEngine::search() {
         }
         if (search_progress.get_generated() > 2) {
             cout << "Generated " << search_progress.get_generated() << " state(s)." << endl;
-            
+
             if (g_record_online_deadends && !g_limit_states)
                 cout << "Dead ends: " << search_progress.get_deadend_states() << " state(s). ("
                      << g_found_deadends.size() << " recorded)" << endl;
