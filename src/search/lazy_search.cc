@@ -62,7 +62,7 @@ void LazySearch::initialize() {
         return;
     else
         was_initialized = true;
-    
+
     assert(open_list != NULL);
     set<Heuristic *> hset;
     open_list->get_involved_heuristics(hset);
@@ -171,15 +171,15 @@ int LazySearch::step() {
     bool reopen = reopen_closed_nodes && (current_g < node.get_g()) && !node.is_dead_end() && !node.is_new();
 
     if (node.is_new() || reopen) {
-        
+
         if (g_force_limit_states || (g_plan_locally_limited && g_limit_states)) {
             if (state_count > g_limit_states_max)
                 return FAILED;
             else
                 state_count++;
         }
-        
-        
+
+
         StateID dummy_id = current_predecessor_id;
         // HACK! HACK! we do this because SearchNode has no default/copy constructor
         if (dummy_id == StateID::no_state) {

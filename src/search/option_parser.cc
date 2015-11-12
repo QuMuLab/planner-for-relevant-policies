@@ -276,6 +276,9 @@ SearchEngine *OptionParser::parse_cmd_line(
         } else if (arg.compare("--relevant-deadend-regression") == 0) {
             ++i;
             g_regress_only_relevant_deadends = (1 == atoi(argv[i]));
+        } else if (arg.compare("--detect-unsolvability") == 0) {
+            ++i;
+            g_detect_unsolvability = (1 == atoi(argv[i]));
         } else if (arg.compare("--repeat-strengthening") == 0) {
             ++i;
             g_repeat_strengthening = (1 == atoi(argv[i]));
@@ -359,6 +362,8 @@ string OptionParser::usage(string progname) {
         "    Combine the FSAP conditions if every applicable action is forbidden to be a new deadend.\n\n"
         "--repeat-fsaps-backwards 1/0 (default=0)\n"
         "    Keep making FSAPs as long as states where they hold have no applicable actions (experimental and mostly damaging)\n\n"
+        "--detect-unsolvability 1/0 (default=0)\n"
+        "    Run the software as an unsolvability detector (i.e., be very aggressive trying to detect deadends)\n\n"
         "--optimized-scd 2/1/0 (default=2)\n"
         "    Perform optimized strong cyclic detection when checking the partial policy. A value of 2 means that it will gradually disable the scd check if it is unhelpful for the particular problem being solved.\n\n"
         "--repeat-strengthening 1/0 (default=0)\n"

@@ -496,6 +496,7 @@ bool g_sample_for_depth1_deadends = true; // Analyze the non-deterministic alter
 bool g_combine_deadends = false; // Combine FSAP conditions for a new deadend when there are no applicable actions
 bool g_repeat_fsap_backwards = false; // Keep making FSAPs as long as states where they hold have no applicable actions
 bool g_regress_only_relevant_deadends = false; // Only regresses a deadend for an FSAP if the action triggers the deadend
+bool g_detect_unsolvability = false; // Run the software as an unsolvability detector (i.e., be very aggressive trying to detect deadends)
 int g_combined_count = 0; // Number of times a deadend was generated from combining FSAPs
 int g_repeat_fsap_count = 0; // Number of times we applied the repeated FSAP technique
 bool g_repeat_strengthening = false; // Continue to strengthen pairs back to the initial state.
