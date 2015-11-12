@@ -1,3 +1,4 @@
+data.out
 ~$
 \.pyc$
 ^experiments/issue[0-9]*/data/
