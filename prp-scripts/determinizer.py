@@ -5,13 +5,12 @@ from fondparser import parser, formula
 from fondparser.action import Action
 from normalizer import normalize
 
-# PRP style
-# PATTERN = '<name>_DETDUP_<num>'
+PATTERNS = {'PRP': '<name>_DETDUP_<num>',
+            'FIP': 'D_<num>_<name>'}
 
-# FIP style
-PATTERN = 'D_<num>_<name>'
+def determinize(ptype, ifile, ofile):
 
-def determinize(ifile, ofile):
+    pattern = PATTERNS[ptype]
 
     p_fake = parser.Problem(ifile)
     p = parser.Problem(ifile)
@@ -29,7 +28,7 @@ def determinize(ifile, ofile):
     for a in p_fake.actions:
         if a.name in nondet_actions:
             for i in range(len(a.effect.args)):
-                name = a.name.join(PATTERN.split('<name>'))
+                name = a.name.join(pattern.split('<name>'))
                 name = str(i+1).join(name.split('<num>'))
                 a2 = Action(name, a.parameters, a.precondition, a.observe, a.effect.args[i])
                 p.actions.append(a2)
@@ -41,8 +40,8 @@ def determinize(ifile, ofile):
 
 if __name__ == '__main__':
     print
-    if len(sys.argv) != 3:
-        print "  Usage: python %s <fond domain> <determinized domain>\n" % sys.argv[0]
+    if (len(sys.argv) != 4) or (sys.argv[1] not in ['FIP', 'PRP']):
+        print "  Usage: python %s [FIP|PRP] <fond domain> <determinized domain>\n" % sys.argv[0]
         sys.exit(1)
 
-    determinize(sys.argv[1], sys.argv[2])
+    determinize(sys.argv[1], sys.argv[2], sys.argv[3])
