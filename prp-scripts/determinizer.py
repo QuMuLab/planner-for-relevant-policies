@@ -8,6 +8,8 @@ from normalizer import normalize
 PATTERNS = {'PRP': '<name>_DETDUP_<num>',
             'FIP': 'D_<num>_<name>'}
 
+PLANNER_INDEX = {'PRP':0, 'FIP':1} # They each count from different bases
+
 def determinize(ptype, ifile, ofile):
 
     pattern = PATTERNS[ptype]
@@ -29,7 +31,7 @@ def determinize(ptype, ifile, ofile):
         if a.name in nondet_actions:
             for i in range(len(a.effect.args)):
                 name = a.name.join(pattern.split('<name>'))
-                name = str(i+1).join(name.split('<num>'))
+                name = str(i+PLANNER_INDEX[ptype]).join(name.split('<num>'))
                 a2 = Action(name, a.parameters, a.precondition, a.observe, a.effect.args[i])
                 p.actions.append(a2)
         else:
