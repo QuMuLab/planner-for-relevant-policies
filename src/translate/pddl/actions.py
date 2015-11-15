@@ -29,6 +29,8 @@ class Action(object):
         action_tag = next(iterator)
         assert action_tag == ":action"
         name = next(iterator)
+        # Make sure DETDUP is capitalized
+        name = 'DETDUP'.join(name.split('detdup'))
         parameters_tag_opt = next(iterator)
         if parameters_tag_opt == ":parameters":
             parameters = pddl_types.parse_typed_list(next(iterator),
