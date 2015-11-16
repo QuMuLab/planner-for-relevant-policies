@@ -56,10 +56,10 @@ void AdditiveHeuristic::setup_exploration_queue() {
     // Deal with operators and axioms without preconditions.
     for (int i = 0; i < unary_operators.size(); i++) {
         UnaryOperator &op = unary_operators[i];
-        
+
         op.unsatisfied_preconditions = op.precondition.size();
         op.cost = op.base_cost; // will be increased by precondition costs
-        
+
         if (op.unsatisfied_preconditions == 0)
             enqueue_if_necessary(op.effect, op.base_cost, &op);
     }
@@ -95,47 +95,39 @@ bool AdditiveHeuristic::relaxed_exploration(bool include_forbidden) {
         const vector<UnaryOperator *> &triggered_operators =
             prop->precondition_of;
         for (int i = 0; i < triggered_operators.size(); i++) {
-            
+
             UnaryOperator *unary_op = triggered_operators[i];
             increase_cost(unary_op->cost, prop_cost);
             unary_op->unsatisfied_preconditions--;
-            
+
             // HAZ: This assertion no longer holds with forbidden operators
-            //assert(unary_op->unsatisfied_preconditions >= 0);
-            
+            assert(unary_op->unsatisfied_preconditions >= 0);
+
+
+
+
+
+            // TODO: If the unary_op has all of its preconditions satisfied
+            //       then it should not be forbidden (make this an assumption
+            //       below). When enqueing, if it's a precondition of the
+            //       action, then all matching operators should be erased.
+            //       If it's just a condition in the fsap, then only ones
+            //       matching the fsaps should be erased. This probably
+            //       needs to be rethought.
+
+
+
+
             if (unary_op->unsatisfied_preconditions == 0) {
-                
+
                 bool is_forbidden = (0 != forbidden_ops.count(g_operators[unary_op->operator_no].nondet_index));
-                
-                if (!g_detect_deadends || !is_forbidden ||
-                    (include_forbidden && (unary_op->cost != unary_op->base_cost)))
+
+                if (!g_detect_deadends || !is_forbidden)
                     enqueue_if_necessary(unary_op->effect,
                                          unary_op->cost,
-                                         unary_op);
-                
-            }
-            
-            // HAZ: If we have a unary operator with an effect that triggers
-            //       a forbidden operator that is already satisfied (precondition
-            //       wise), then we should trigger the forbidden op. This arises
-            //       in rare cases where the forbidden op is required later in
-            //       the plan, and this approach relies on the fact that all of
-            //       the initial state props are handled first.
-            if (g_detect_deadends && include_forbidden && (forbidden_ops.size() > 0)) {
-                
-                const vector<UnaryOperator *> &new_triggered_operators = unary_op->effect->precondition_of;
-        
-                for (int j = 0; j < new_triggered_operators.size(); j++) {
-                    if (0 != forbidden_ops.count(g_operators[new_triggered_operators[j]->operator_no].nondet_index)) {
-                        
-                        if (new_triggered_operators[j]->unsatisfied_preconditions <= 0) {
-                            increase_cost(new_triggered_operators[j]->cost, unary_op->cost);
-                            enqueue_if_necessary(new_triggered_operators[j]->effect,
-                                                 new_triggered_operators[j]->cost,
-                                                 new_triggered_operators[j]);
-                        }
-                    }
-                }
+                                         unary_op, include_forbidden);
+                else assert(unary_op->cost == unary_op->base_cost);
+
             }
         }
     }
@@ -166,11 +158,11 @@ void AdditiveHeuristic::mark_preferred_operators(
 }
 
 int AdditiveHeuristic::compute_add_and_ff(const StateInterface &state) {
-    
+
     setup_exploration_queue();
     setup_exploration_queue_state(state);
     bool worked = relaxed_exploration(false);
-    
+
     if (g_check_with_forbidden && !worked) {
         setup_exploration_queue();
         setup_exploration_queue_state(state);

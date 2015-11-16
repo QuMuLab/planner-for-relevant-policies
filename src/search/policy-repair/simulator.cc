@@ -20,7 +20,7 @@ Simulator::Simulator(bool verb) : verbose(verb), found_solution(false), succeede
 
 void Simulator::run() {
     for (int i = 0; i < g_num_trials; i++) {
-        
+
         if (g_forgetpolicy) {
             delete g_policy;
             g_policy = new Policy();
@@ -32,11 +32,11 @@ void Simulator::run() {
             g_deadend_policy = new Policy();
             g_deadend_states = new Policy();
         }
-        
+
         run_once(!g_replan_during_simulation);
-        
+
         record_stats();
-        
+
     }
 }
 
@@ -56,21 +56,21 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol) {
     RegressionStep * current_step;
     successful_states = 0;
     failed_states = 0;
-    
+
     PartialState *orig_init_state = new PartialState(g_initial_state());
     current_state = new PartialState(g_initial_state());
-    
+
     reset_goal();
-    
+
     // To prevent infinite loops with 0-probability exit, we limit the loops
     while(!found_solution && (failed_states + successful_states < g_trial_depth)) {
         // Get the best action (if any)
         current_step = pol->get_best_step(*current_state);
-        
+
         if (current_step) {
-            
+
             successful_states++;
-            
+
             if (current_step->is_goal) {
                 if (verbose || ((1 == g_num_trials) && !stop_on_failure))
                     cout << "...achieved the goal!" << endl;
@@ -80,7 +80,7 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol) {
                 // Execute the non-deterministic action
                 execute_action(current_step->op);
             }
-        
+
         } else {
             failed_states++;
             if (stop_on_failure || !replan()) {
@@ -91,32 +91,32 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol) {
             }
         }
     }
-    
+
     g_state_registry->reset_initial_state();
     for (int i = 0; i < g_variable_name.size(); i++)
         g_initial_state_data[i] = (*orig_init_state)[i];
 }
 
 bool Simulator::execute_action(const Operator *op) {
-    
+
     if (verbose) {
         cout << "\nExpected operator:" << endl << "  ";
         op->dump();
     }
-    
+
     // Choose the op
     int choice = g_rng.next(g_nondet_mapping[op->nondet_index]->size());
     Operator *chosen = (*(g_nondet_mapping[op->nondet_index]))[choice];
-    
+
     if (verbose) {
         cout << "Chosen operator:" << endl << "  ";
         chosen->dump();
     }
-    
+
     PartialState *old_state = current_state;
     current_state = new PartialState(*old_state, *chosen);
     delete old_state;
-    
+
     return (op->get_name() == chosen->get_name());
 }
 
@@ -127,13 +127,13 @@ void Simulator::reset_goal() {
 }
 
 bool Simulator::replan() {
-    
+
     g_replan_detected_deadends = false;
-    
+
     // If the policy is complete, searching further won't help us
     if (g_policy->is_complete())
         return false;
-    
+
     // If we are detecting deadends, and know this is one, don't even try
     if (g_detect_deadends) {
         if (g_deadend_states->check_match(*current_state, false))
@@ -143,33 +143,33 @@ bool Simulator::replan() {
     // If we can detect that this is a deadend for the original goal, forget about it
     if (is_deadend(*current_state))
         return false;
-    
+
     if (verbose)
         cout << "\nRequired to replan..." << endl;
-    
+
     if (!current_state) {
         cout << "Error: No current state for the replan." << endl;
         exit(0);
     }
-    
+
     if (verbose)
         cout << "Creating initial state." << endl;
-    
+
     g_state_registry->reset_initial_state();
     for (int i = 0; i < g_variable_name.size(); i++)
         g_initial_state_data[i] = (*current_state)[i];
-    
+
     if (g_plan_locally) {
         if (verbose)
             cout << "Resetting the goal state." << endl;
-        
+
         g_goal.clear();
         for (int i = 0; i < g_variable_name.size(); i++) {
             if ((*current_goal)[i] != -1)
                 g_goal.push_back(make_pair(i, (*current_goal)[i]));
         }
     }
-    
+
     if (verbose)
         cout << "Creating new engine." << endl;
     bool engine_ready = true;
@@ -184,16 +184,16 @@ bool Simulator::replan() {
         engine_ready = false;
     }
     g_timer_engine_init.stop();
-    
+
     bool try_again = g_plan_locally; // Will hold later only if the engine was created, and no plan works, and we want to plan locally
-    
+
     if (!engine_ready && g_plan_locally) {
         try_again = false;
         if (verbose)
             cout << "Failed to create the engine for the new goal." << endl;
-        
+
         reset_goal();
-        
+
         if (verbose)
             cout << "Creating new engine." << endl;
         engine_ready = true;
@@ -209,51 +209,51 @@ bool Simulator::replan() {
         }
         g_timer_engine_init.stop();
     }
-    
+
     if (engine_ready) {
         if (verbose)
             cout << "Searching for a solution." << endl;
-        
+
         if (try_again)
             g_limit_states = true;
         g_timer_search.resume();
         engine->search();
         g_timer_search.stop();
         g_limit_states = false;
-        
+
         if (engine->found_solution()) {
-            
+
             if (verbose) {
                 engine->save_plan_if_necessary();
                 engine->statistics();
                 engine->heuristic_statistics();
             }
-            
+
             if (verbose)
                 cout << "Building the regression list." << endl;
             list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
-            
+
             if (verbose)
                 cout << "Updating the policy." << endl;
             g_policy->update_policy(regression_steps);
-            
+
             reset_goal();
-            
+
             if (g_sample_for_depth1_deadends) {
                 if (verbose)
                     cout << "Analyzing for extra deadends (v1)." << endl;
                 sample_for_depth1_deadends(engine->get_plan(), new PartialState(g_initial_state()));
             }
-            
+
             return true;
-            
+
         } else {
-            
+
             reset_goal();
-            
+
             if (try_again) {
                 //delete engine;
-                
+
                 if (verbose)
                     cout << "Creating new engine." << endl;
                 g_timer_engine_init.resume();
@@ -270,35 +270,35 @@ bool Simulator::replan() {
                     return false;
                 }
                 g_timer_engine_init.stop();
-                
+
                 if (verbose)
                     cout << "Searching for a solution." << endl;
                 g_timer_search.resume();
                 engine->search();
                 g_timer_search.stop();
-                
+
                 if (engine->found_solution()) {
-                    
+
                     if (verbose) {
                         engine->save_plan_if_necessary();
                         engine->statistics();
                         engine->heuristic_statistics();
                     }
-                    
+
                     if (verbose)
                         cout << "Building the regression list." << endl;
                     list<PolicyItem *> regression_steps = perform_regression(engine->get_plan(), g_matched_policy, g_matched_distance, g_policy->empty());
-                    
+
                     if (verbose)
                         cout << "Updating the policy." << endl;
                     g_policy->update_policy(regression_steps);
-                    
+
                     if (g_sample_for_depth1_deadends) {
                         if (verbose)
                             cout << "Analyzing for extra deadends (v2)." << endl;
                         sample_for_depth1_deadends(engine->get_plan(), new PartialState(g_initial_state()));
                     }
-                    
+
                     return true;
                 }
             }
@@ -331,10 +331,10 @@ float standard_dev(vector<int> &nums) {
 
 void Simulator::dump() {
     cout << "                  -{ General Statistics }-\n" << endl;
-    
+
     if (g_repeat_fsap_backwards)
         cout << "             Repeat FSAP Count: " << g_repeat_fsap_count << endl;
-    
+
     cout << "        FSAP Combination Count: " << g_combined_count << endl;
     cout << "       Monotonicity violations: " << g_monotonicity_violations << endl;
     cout << "             Successful states: " << average(record_successful_states) << " +/- " << standard_dev(record_successful_states) << endl;
@@ -347,7 +347,7 @@ void Simulator::dump() {
     cout << "                  Policy Score: " << g_policy->get_score() << endl;
     cout << "                     Succeeded: " << record_succeeded << " / " << g_num_trials << endl;
     cout << " Depth limit (of " << g_trial_depth << ") reached: " << record_depth_limit << " / " << g_num_trials << endl;
-    
+
     cout << "\n\n                  -{ Timing Statistics }-\n" << endl;
     cout << "        Regression Computation: " << g_timer_regression << endl;
     cout << "         Engine Initialization: " << g_timer_engine_init << endl;
