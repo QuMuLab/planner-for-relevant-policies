@@ -63,7 +63,8 @@ public:
 
     // for policy handling
     virtual void reset() { preferred_operators.clear(); }
-    std::set<int> forbidden_ops;
+    std::multiset<int> forbidden_ops;
+    std::map<int, vector<int> * > fsap_cond_var_to_fsap;
     void compute_forbidden(const StateInterface &state);
 };
 
