@@ -129,8 +129,7 @@ class Problem(object):
             fp.write (sp + "(:requirements :strips%s)\n" % NONDET)
 
         # types
-        #TODO likely wrong, doesn't capture the type hierarchy
-        s = " ".join (filter(lambda t: t!= Predicate.OBJECT, self.types))
+        s =  ('\n'+sp+'  ').join( "%s - %s" % (o,t) for o,t in self.parent_types.iteritems() )
         fp.write (sp + "(:types %s)%s" %(s, "\n"))
 
         # constants
