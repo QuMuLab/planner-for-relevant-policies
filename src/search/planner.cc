@@ -289,15 +289,15 @@ int main(int argc, const char **argv) {
     g_timer_simulator.resume();
     sim->run();
     g_timer_simulator.stop();
-    
-    
     g_timer.stop();
     
+    cout << "\n\nComputing Optimal Weak Plan Length..." << endl;
+    sim->run_best();
+
     
     cout << "\n\n" << endl;
     sim->dump();
     cout << "\n\n" << endl;
-    
     if (1 == g_dump_policy) {
         
         cout << "Dumping the policy and fsaps..." << endl;
