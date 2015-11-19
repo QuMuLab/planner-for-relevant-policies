@@ -39,6 +39,7 @@ class Simulator {
     vector<int> record_total_states;
     
     bool execute_action(const Operator *op);
+    bool execute_unfair_action(const Operator *op);
     
     bool verbose;
     bool found_solution;
@@ -49,6 +50,7 @@ public:
     
     void run();
     void run_once(bool stop_on_failure = false, Policy *pol = g_policy);
+    void run_best(bool stop_on_failure = false, Policy *pol = g_policy);
     bool replan();
     
     void set_state(PartialState * s) { current_state = new PartialState(*s); }

@@ -97,6 +97,76 @@ void Simulator::run_once(bool stop_on_failure, Policy *pol) {
         g_initial_state_data[i] = (*orig_init_state)[i];
 }
 
+
+void Simulator::run_best(bool stop_on_failure, Policy *pol) {
+    int n_world_actions = 0;
+    
+    found_solution = false;
+    succeeded = false;
+    RegressionStep * current_step;
+    successful_states = 0;
+    failed_states = 0;
+    
+    PartialState *orig_init_state = new PartialState(g_initial_state());
+    current_state = new PartialState(g_initial_state());
+    
+    reset_goal();
+    
+    // To prevent infinite loops with 0-probability exit, we limit the loops
+    while(!found_solution && (failed_states + successful_states < g_trial_depth)) {
+        // Get the best action (if any)
+        current_step = pol->get_best_step(*current_state);
+        
+        if (current_step) {
+            
+            successful_states++;
+            
+            if (current_step->is_goal) {
+                if (verbose || ((1 == g_num_trials) && !stop_on_failure))
+                    cout << "...achieved the goal!" << endl;
+                succeeded = true;
+                found_solution = true;
+            } else {
+                // Execute the non-deterministic action
+                if(current_step->op->get_name().length() < 2 or current_step->op->get_name().substr(0,2) != "o_") {
+                    n_world_actions++;
+                }
+
+                execute_unfair_action(current_step->op);
+            }
+        
+        } else {
+            failed_states++;
+            if (stop_on_failure || !replan()) {
+                if (verbose || ((1 == g_num_trials) && !stop_on_failure))
+                    cout << "Got into a dead-end state..." << endl;
+                succeeded = false;
+                found_solution = true;
+            }
+        }
+    }
+    
+    g_state_registry->reset_initial_state();
+    for (int i = 0; i < g_variable_name.size(); i++)
+        g_initial_state_data[i] = (*orig_init_state)[i];
+        
+    cout << "World Actions in Optimal Plan: " << n_world_actions << endl;
+}
+
+bool Simulator::execute_unfair_action(const Operator *chosen) {
+    
+    if (verbose) {
+        cout << "\nChoosing Expected operator:" << endl << "  ";
+        chosen->dump();
+    }
+    
+    PartialState *old_state = current_state;
+    current_state = new PartialState(*old_state, *chosen);
+    delete old_state;
+    
+    return true;
+}
+
 bool Simulator::execute_action(const Operator *op) {
     
     if (verbose) {
