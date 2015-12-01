@@ -78,8 +78,6 @@ void Heuristic::evaluate(const State &state) {
     for (int i = 0; i < g_operators.size(); i++)
         g_operators[i].unmark();
 
-    compute_forbidden(state);
-
     heuristic = compute_heuristic(state);
     for (int i = 0; i < preferred_operators.size(); i++)
         preferred_operators[i]->unmark();

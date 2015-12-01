@@ -134,13 +134,6 @@ void update_deadends(vector< DeadendTuple* > &failed_states) {
     g_deadend_policy->update_policy(de_items);
     g_deadend_states->update_policy(de_states);
 
-    if (g_detect_unsolvability) {
-        PartialState * ps = new PartialState(g_initial_state());
-        if (is_deadend(*ps))
-            cout << "INIT DEADEND!!" << endl;
-        delete ps;
-    }
-
     if (g_repeat_fsap_backwards) {
         for (std::list<PolicyItem *>::iterator it=de_items.begin(); it != de_items.end(); ++it) {
 
