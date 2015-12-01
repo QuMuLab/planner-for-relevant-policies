@@ -115,6 +115,19 @@ bool AdditiveHeuristic::relaxed_exploration(bool include_forbidden) {
             //       matching the fsaps should be erased. This probably
             //       needs to be rethought.
 
+            // TODO: Currently there is an issue with the approach using
+            //       enqueue_if_necessary. When a forbidden operator is
+            //       detected as applicable and ready, is_forbidden may
+            //       return true, and then the enqueue never occur. Then
+            //       later in the process a new prop may remove the same
+            //       operator from the forbidden list through an enqueue
+            //       while at the same time we'll never trigger the same
+            //       operator because it was re-enabled through an fsap
+            //       condition that isn't also a precondition. Thus, we
+            //       may technically have a situation where an operator
+            //       is permanently forbidden, even if it is usable in
+            //       the future.
+
 
 
 
@@ -180,6 +193,9 @@ int AdditiveHeuristic::compute_add_and_ff(const StateInterface &state) {
 }
 
 int AdditiveHeuristic::compute_heuristic(const State &state) {
+
+    compute_forbidden(state);
+
     int h = compute_add_and_ff(state);
     if (h != DEAD_END) {
         for (int i = 0; i < goal_propositions.size(); i++)
