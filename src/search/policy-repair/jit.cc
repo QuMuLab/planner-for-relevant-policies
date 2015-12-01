@@ -173,8 +173,11 @@ bool perform_jit_repairs(Simulator *sim) {
                     bool strengthened = false;
                     if (g_optimized_scd && prev_regstep && have_solution) {
 
+                        assert(prev_op != prev_regstep->op);
+
                         // prev_state holds the info needed before the operator was taken
-                        PartialState * prev_str_state = new PartialState(*(regstep->state), *prev_op, false, prev_regstep->state);
+                        PartialState * prev_str_state = new PartialState(*(regstep->state), *prev_op, false, previous_state);
+                        const Operator * prev_str_op = prev_op;
                         RegressionStep * prev_str_regstep = prev_regstep;
                         RegressionStep * str_regstep = regstep;
                         PartialState * updated = NULL;
@@ -202,7 +205,7 @@ bool perform_jit_repairs(Simulator *sim) {
 
                             if (updated) {
 
-                                str_regstep = new RegressionStep(*(prev_str_regstep->op), updated, prev_str_regstep->distance, str_regstep, prev_str_regstep->prev);
+                                str_regstep = new RegressionStep(*(prev_str_op), updated, prev_str_regstep->distance, str_regstep, prev_str_regstep->prev);
                                 str_regstep->next->prev = str_regstep;
 
                                 g_policy->add_item(str_regstep);
@@ -210,14 +213,17 @@ bool perform_jit_repairs(Simulator *sim) {
                                 if (debug_jic) {
                                     cout << "Adding strengthened step:" << endl;
                                     str_regstep->dump();
+                                    prev_regstep->dump();
                                 }
 
                                 prev_str_regstep = str_regstep->prev;
 
                                 delete prev_str_state;
 
-                                if (prev_str_regstep)
+                                if (prev_str_regstep) {
                                     prev_str_state = new PartialState(*(str_regstep->state), *(prev_str_regstep->op), false, prev_str_regstep->state);
+                                    prev_str_op = prev_str_regstep->op;
+                                }
 
                                 updated = NULL;
 
