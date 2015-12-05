@@ -144,8 +144,11 @@ bool perform_jit_repairs(Simulator *sim) {
                     //       forbidden state-action pairs and so null is
                     //       returned if the weak plan no longer works).
                     //
-                    while (have_solution && !(g_policy->get_best_step(*current_state)))
+                    while (have_solution && !(g_policy->get_best_step(*current_state))) {
+                        if (debug_jic)
+                            cout << "\n  Required to search again because the found weak plan is ruled out." << endl;
                         have_solution = sim->replan();
+                    }
 
 
                     //
@@ -171,9 +174,8 @@ bool perform_jit_repairs(Simulator *sim) {
 
                     // Add the new goals to the sc condition for the previous reg step(s)
                     bool strengthened = false;
-                    if (g_optimized_scd && prev_regstep && have_solution) {
-
-                        assert(prev_op != prev_regstep->op);
+                    if (prev_regstep && (prev_op != prev_regstep->op) &&
+                        g_optimized_scd && prev_regstep && have_solution) {
 
                         // prev_state holds the info needed before the operator was taken
                         PartialState * prev_str_state = new PartialState(*(regstep->state), *prev_op, false, previous_state);
