@@ -139,7 +139,7 @@ bool AdditiveHeuristic::relaxed_exploration(bool include_forbidden) {
                     enqueue_if_necessary(unary_op->effect,
                                          unary_op->cost,
                                          unary_op, include_forbidden);
-                else assert(unary_op->cost == unary_op->base_cost);
+                //else assert(unary_op->cost == unary_op->base_cost);
 
             }
         }

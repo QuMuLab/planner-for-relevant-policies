@@ -17,7 +17,7 @@
  *   I realize there is a lot of duplication here, but I'd
  *   rather not start to try and define State and PartialState
  *   in terms of one another to avoid the overloading.
- * 
+ *
  ****************************************************************/
 
 struct Prevail {
@@ -29,19 +29,25 @@ struct Prevail {
     bool is_applicable(const State &state) const {
         assert(var >= 0 && var < g_variable_name.size());
         assert(prev >= 0 && prev < g_variable_domain[var]);
-        
+
         if (-1 == prev) {
             cout << "\n\nError: You probably tried progressing a partial state that has underspecified variables for the conditional effects.\n" << endl;
             exit(1);
         }
-        
+
         return state[var] == prev;
     }
-    
+
     bool is_applicable(const PartialState &state) const {
         assert(var >= 0 && var < g_variable_name.size());
         assert(prev >= 0 && prev < g_variable_domain[var]);
         return state[var] == prev;
+    }
+
+    bool is_possibly_applicable(const PartialState &state) const {
+        assert(var >= 0 && var < g_variable_name.size());
+        assert(prev >= 0 && prev < g_variable_domain[var]);
+        return (state[var] == prev) || (state[var] == -1);
     }
 
     bool operator==(const Prevail &other) const {
@@ -69,11 +75,17 @@ struct PrePost {
         assert(pre == -1 || (pre >= 0 && pre < g_variable_domain[var]));
         return pre == -1 || state[var] == pre;
     }
-    
+
     bool is_applicable(const PartialState &state) const {
         assert(var >= 0 && var < g_variable_name.size());
         assert(pre == -1 || (pre >= 0 && pre < g_variable_domain[var]));
         return pre == -1 || state[var] == pre;
+    }
+
+    bool is_possibly_applicable(const PartialState &state) const {
+        assert(var >= 0 && var < g_variable_name.size());
+        assert(pre == -1 || (pre >= 0 && pre < g_variable_domain[var]));
+        return (pre == -1) || (state[var] == pre) || (state[var] == -1);
     }
 
     bool does_fire(const State &state) const {
@@ -82,7 +94,7 @@ struct PrePost {
                 return false;
         return true;
     }
-    
+
     bool does_fire(const PartialState &state) const {
         for (int i = 0; i < cond.size(); i++)
             if (!cond[i].is_applicable(state))
@@ -111,7 +123,7 @@ public:
     void dump() const;
     std::string get_name() const {return name; }
     std::string get_nondet_name() const {return nondet_name; }
-    
+
     int nondet_index;
     PartialState * all_fire_context;
 
@@ -120,7 +132,7 @@ public:
     const std::vector<Prevail> &get_prevail() const {return prevail; }
     const std::vector<PrePost> &get_pre_post() const {return pre_post; }
 
-    bool is_applicable(const State &state) const {
+    bool is_applicable(const StateInterface &state) const {
         for (int i = 0; i < prevail.size(); i++)
             if (!prevail[i].is_applicable(state))
                 return false;
@@ -129,15 +141,27 @@ public:
                 return false;
         return true;
     }
-    
-    bool is_applicable(const PartialState &state) const {
+
+    bool is_possibly_applicable(const StateInterface &state) const {
         for (int i = 0; i < prevail.size(); i++)
-            if (!prevail[i].is_applicable(state))
+            if (!prevail[i].is_possibly_applicable(state))
                 return false;
         for (int i = 0; i < pre_post.size(); i++)
-            if (!pre_post[i].is_applicable(state))
+            if (!pre_post[i].is_possibly_applicable(state))
                 return false;
         return true;
+    }
+
+    int compute_conflict_var(const StateInterface &state) const {
+        for (int i = 0; i < prevail.size(); i++) {
+            if ((state[prevail[i].var] != -1) && (state[prevail[i].var] != prevail[i].prev))
+                return prevail[i].var;
+        }
+        for (int i = 0; i < pre_post.size(); i++) {
+            if ((state[pre_post[i].var] != -1) && (pre_post[i].pre != -1) && (state[pre_post[i].var] != pre_post[i].pre))
+                return pre_post[i].var;
+        }
+        return -1;
     }
 
     bool has_conditional_effect() const {

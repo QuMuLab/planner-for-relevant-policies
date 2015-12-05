@@ -210,9 +210,23 @@ void DeadendAwareSuccessorGenerator::generate_applicable_ops(const StateInterfac
         if (!g_limit_states && g_record_online_deadends &&
              g_combine_deadends && (orig_ops.size() > 0) && ops.empty()) {
 
+            // Combind all of the FSAPs
             PartialState *newDE = new PartialState();
             for (int i = 0; i < ruled_out.size(); i++) {
                 newDE->combine_with(*(((NondetDeadend*)(fsap_map[ruled_out[i]]))->state));
+            }
+
+            // Also rule out all of the unapplicable actions
+            for (int i = 0; i < g_operators.size(); i++) {
+                if (0 == forbidden.count(g_operators[i].nondet_index)) {
+                    if (g_operators[i].is_possibly_applicable(*newDE)) {
+                        assert (!(g_operators[i].is_possibly_applicable(curr)));
+                        int conflict_var = g_operators[i].compute_conflict_var(curr);
+                        assert (conflict_var != -1);
+                        assert ((*newDE)[conflict_var] == -1);
+                        (*newDE)[conflict_var] = curr[conflict_var];
+                    }
+                }
             }
 
             if (debug) {
