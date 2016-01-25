@@ -880,9 +880,10 @@ int Policy::get_world_size() {
          op_iter != all_items.end(); ++op_iter) {
         
         if ( ((RegressionStep*)(*op_iter))->get_name().find("o_") == 0 )
-            n_world_actions ++;
+            continue;
         else if ( ((RegressionStep*)(*op_iter))->get_name().find("jaces") == 0 )
-            n_world_actions ++;
+            continue;
+        n_world_actions ++;
     }
     return n_world_actions;
 }
