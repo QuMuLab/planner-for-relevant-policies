@@ -412,6 +412,7 @@ void Simulator::dump() {
     cout << "                       Actions: " << average(record_total_states) << " +/- " << standard_dev(record_total_states) << endl;
     cout << "             Recorded Deadends: " << g_deadend_states->get_size() << endl;
     cout << "            State-Action Pairs: " << g_policy->get_size() << endl;
+    cout << "            State-WorldAction Pairs: " << g_policy->get_world_size() << endl;
     cout << "  Forbidden State-Action Pairs: " << g_deadend_policy->get_size() << endl;
     cout << "               Strongly Cyclic: " << (g_policy->is_strong_cyclic() ? "True" : "False") << endl;
     cout << "                  Policy Score: " << g_policy->get_score() << endl;
