@@ -76,6 +76,8 @@ public:
     bool better_than(Policy * other);
 
     int get_size() { return all_items.size(); }
+    //int get_size() { return get_world_size(); }
+    int get_world_size();
     bool is_complete() { return complete; }
     bool is_strong_cyclic() { return (1.1 == score); }
 

@@ -874,3 +874,15 @@ void Policy::dump_human_policy(bool fsap) {
     outfile.close();
 }
 
+int Policy::get_world_size() {
+    int n_world_actions = 0;
+    for (list<PolicyItem *>::const_iterator op_iter = all_items.begin();
+         op_iter != all_items.end(); ++op_iter) {
+        
+        if ( ((RegressionStep*)(*op_iter))->get_name().find("o_") == 0 )
+            n_world_actions ++;
+        else if ( ((RegressionStep*)(*op_iter))->get_name().find("jaces") == 0 )
+            n_world_actions ++;
+    }
+    return n_world_actions;
+}
