@@ -840,7 +840,7 @@ void Policy::dump_human_policy(bool fsap) {
 int Policy::get_world_size() {
     int n_world_pairs = 0;
     for (list<PolicyItem *>::const_iterator op_iter = all_items.begin(); op_iter != all_items.end(); ++op_iter) {
-        if ( (*op_iter)->get_name().find("turn_fair_operator") != std::string::npos) {
+        if ( (*op_iter)->get_name().find("turn_fair_operator") == std::string::npos) {
             n_world_pairs++;
         }
     }
