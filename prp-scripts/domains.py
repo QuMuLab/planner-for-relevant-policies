@@ -1,5 +1,6 @@
 
 DOMAIN_LOCATION = '../fond-benchmarks/'
+UNFAIR_DOMAIN_LOCATION = '../unfair-fond-benchmarks/'
 
 # Blocksworld
 blocks = []
@@ -78,6 +79,11 @@ bus_fare = [("%s/interesting/bus-fare-domain.pddl" % DOMAIN_LOCATION, "%s/intere
 climber = [("%s/interesting/climber-domain.pddl" % DOMAIN_LOCATION, "%s/interesting/climber-prob.pddl" % DOMAIN_LOCATION)]
 river = [("%s/interesting/river-domain.pddl" % DOMAIN_LOCATION, "%s/interesting/river-prob.pddl" % DOMAIN_LOCATION)]
 
+# Unfair Blocksworld-2 (fixed domain)
+unfair_blocks_new = []
+for i in range(2,16):
+    unfair_blocks_new.append(("%s/blocksworld-new/domain-fixed.pddl" % UNFAIR_DOMAIN_LOCATION, "%s/blocksworld-new/p%d.pddl" % (UNFAIR_DOMAIN_LOCATION, i)))
+
 
 # FINAL
 DOMAINS = {
@@ -100,7 +106,8 @@ DOMAINS = {
     'triangle-tire-test' : triangle_tire[0:2],
     'bus-fare' : bus_fare,
     'climber' : climber,
-    'river' : river
+    'river' : river,
+    'unfair_blocksworld-new': unfair_blocks_new
 }
 
 REDUNDANT_DOMAINS = {

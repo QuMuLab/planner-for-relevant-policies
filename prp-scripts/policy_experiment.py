@@ -61,6 +61,18 @@ PRP_PARAMS = {'best': { '--jic-limit': [18000],
                         '--generalize-deadends': [1],
                         '--online-deadends': [1],
                         '--optimized-scd': [1]},
+            'best-unfair': { '--jic-limit': [18000],
+                        '--trials': [100],
+                        '--forgetpolicy': [0],
+                        '--fullstate': [0],
+                        '--planlocal': [0],
+                        '--partial-planlocal': [0],
+                        '--plan-with-policy': [1],
+                        '--limit-planlocal': [0],
+                        '--detect-deadends': [0],
+                        '--generalize-deadends': [0],
+                        '--online-deadends': [0],
+                        '--optimized-scd': [0]},
 
               'no-local': { '--jic-limit': [18000],
                         '--trials': [100],
@@ -483,6 +495,9 @@ if __name__ == '__main__':
 
     if 'prp' in flags:
         doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['best'])
+
+    if 'unfair-prp' in flags:
+        doit(myargs['-domain'], dofip=False, doprp=True, prp_params = PRP_PARAMS['best-unfair'])
 
     if 'ffreplan-vs-prp' in flags:
         if '-redundant' in myargs:
