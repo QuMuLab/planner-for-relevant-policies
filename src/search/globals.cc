@@ -264,8 +264,22 @@ void dump_goal() {
 void read_operators(istream &in) {
     int count;
     in >> count;
-    for (int i = 0; i < count; i++)
-        g_operators.push_back(Operator(in, false));
+    // AC: A hack to remove special operators "turn_fair" and "turn_unfair" separate from usual operators.
+    for (int i = 0; i < count; i++){
+        Operator *op = new Operator(in, false);
+        //if (op->get_name().find("turn_fair_operator") != std::string::npos) {
+        if (op->get_name() == "turn_fair_operator ") {
+            g_turn_fair_operator = op;
+        }
+        //else if (op->get_name().find("turn_unfair_operator") != std::string::npos) {
+        else if (op->get_name() == "turn_unfair_operator ") {
+            g_turn_unfair_operator = op;
+        }
+        else {
+            g_operators.push_back(*op);
+        }
+        
+    }
 }
 
 void read_axioms(istream &in) {
@@ -353,6 +367,28 @@ void read_everything(istream &in) {
             }
         }
     }
+    int nondet_index = -1;
+
+    nondet_index = cur_nondet;
+    g_nondet_index_mapping[g_turn_fair_operator->get_nondet_name()] = cur_nondet;
+    
+    g_nondet_mapping.push_back(new vector<Operator *>());
+    g_nondet_conditional_mask.push_back(new vector<int>());
+                
+    cur_nondet++;
+
+    g_turn_fair_operator->nondet_index = nondet_index;
+    g_nondet_mapping[nondet_index]->push_back(g_turn_fair_operator);
+    
+    for (int j = 0; j < g_turn_fair_operator->get_pre_post().size(); j++) {
+        for (int k = 0; k < g_turn_fair_operator->get_pre_post()[j].cond.size(); k++) {
+            int var = g_turn_fair_operator->get_pre_post()[j].cond[k].var;
+            vector<int> *var_list = g_nondet_conditional_mask[nondet_index];
+            if (find(var_list->begin(), var_list->end(), var) == var_list->end())
+                g_nondet_conditional_mask[nondet_index]->push_back(var);
+        }
+    }
+    
 }
 
 void dump_everything() {
@@ -453,6 +489,8 @@ IntPacker *g_state_packer;
 vector<int> g_initial_state_data;
 vector<pair<int, int> > g_goal;
 vector<Operator> g_operators;
+Operator *g_turn_fair_operator; //AC: a hack to handle the special operator that enables fair actions
+Operator *g_turn_unfair_operator; //AC: a hack to handle the special operator that enables unfair actions
 vector<Operator> g_axioms;
 AxiomEvaluator *g_axiom_evaluator;
 vector<DomainTransitionGraph *> g_transition_graphs;

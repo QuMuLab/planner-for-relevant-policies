@@ -77,6 +77,8 @@ extern const State &g_initial_state();
 extern std::vector<std::pair<int, int> > g_goal;
 
 extern std::vector<Operator> g_operators;
+extern Operator *g_turn_fair_operator; //AC: a hack to handle the special operator that enables fair actions
+extern Operator *g_turn_unfair_operator; //AC: a hack to handle the special operator that enables unfair actions
 extern std::vector<Operator> g_axioms;
 extern AxiomEvaluator *g_axiom_evaluator;
 extern std::vector<DomainTransitionGraph *> g_transition_graphs;

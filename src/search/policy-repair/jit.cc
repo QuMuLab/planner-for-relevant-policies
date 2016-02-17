@@ -24,6 +24,7 @@ bool perform_jit_repairs(Simulator *sim) {
     //  exists.
     stack<SCNode> open_list; // Open list we traverse until strong cyclicity is proven
     set<PartialState> seen; // Keeps track of the full states we've seen
+    stack<SCNode> deferred_list; // Open list we traverse until strong cyclicity is proven
     vector<PartialState *> created_states; // Used to clean up the created state objects
     PartialState * current_state; // The current step in the loop
     PartialState * previous_state; // The previous step in the loop (leading to the current_state)
@@ -36,7 +37,7 @@ bool perform_jit_repairs(Simulator *sim) {
     int num_fixed_states = 0; // Number of states we were able to repair (by replanning)
     vector< DeadendTuple * > failed_states; // The failed states (used for creating deadends)
     
-    bool debug_jic = false;
+    bool debug_jic = true;
     // In case we have an initial policy, we run the optimized scd.
     if (g_optimized_scd) {
         g_policy->init_scd();
@@ -64,15 +65,25 @@ bool perform_jit_repairs(Simulator *sim) {
     if (debug_jic)
         cout << "\n\nStarting another JIC round." << endl;
     
-    while (!open_list.empty() && ((g_timer_jit() < g_jic_limit) || g_record_relevant_pairs)) {
+    while (!(open_list.empty() && deferred_list.empty()) && ((g_timer_jit() < g_jic_limit) || g_record_relevant_pairs)) {
         num_checked_states++;
-        current_state = open_list.top().full_state;
-        previous_state = open_list.top().previous_state;
-        current_goal = open_list.top().expected_state;
-        prev_regstep = open_list.top().prev_regstep;
-        prev_op = open_list.top().prev_op;
-        open_list.pop();
-        
+        if (!open_list.empty()) {
+            current_state = open_list.top().full_state;
+            previous_state = open_list.top().previous_state;
+            current_goal = open_list.top().expected_state;
+            prev_regstep = open_list.top().prev_regstep;
+            prev_op = open_list.top().prev_op;
+            open_list.pop();
+        }
+        else {
+            assert(!deferred_list.empty());
+            current_state = deferred_list.top().full_state;
+            previous_state = deferred_list.top().previous_state;
+            current_goal = deferred_list.top().expected_state;
+            prev_regstep = deferred_list.top().prev_regstep;
+            prev_op = deferred_list.top().prev_op;
+            deferred_list.pop();
+        }
         if (debug_jic) {
             cout << "\n\nChecking state:" << endl;
             current_state->dump_pddl();
@@ -86,7 +97,7 @@ bool perform_jit_repairs(Simulator *sim) {
             RegressionStep * regstep = g_policy->get_best_step(*current_state);
             
             bool have_solution = true;
-            
+
             if (0 == regstep) {
                 
                 // We don't bother replanning if we are just recording the
@@ -94,34 +105,68 @@ bool perform_jit_repairs(Simulator *sim) {
                 if (g_record_relevant_pairs) {
                     have_solution = false;
                 } else {
-                    
-                    sim->set_state(current_state);
-                    sim->set_goal(current_goal);
-                    have_solution = sim->replan();
-                    
-                    //
-                    // As part of the recording process of solving the
-                    //  problem, we probe reachable states for new deadends
-                    //  and this may generate new forbidden state-action
-                    //  pairs. As a result, this can invalidate the weak
-                    //  plan we just constructed. So, we continually try to
-                    //  find a weak plan such that the newly detected dead-
-                    //  ends don't squash the weak plan right away.
-                    //
-                    // Note: Future parts of the weak plan may not work
-                    //       the loop completes, but if that's the case
-                    //       then we will necesarily replan when we reach
-                    //       that state (the returned regstep will avoid
-                    //       forbidden state-action pairs and so null is
-                    //       returned if the weak plan no longer works).
-                    //
-                    while (have_solution && !(g_policy->get_best_step(*current_state)))
+                    if (g_turn_unfair_operator->is_applicable(*current_state) ) { // AC: check if a g_turn_unfair_operator can be applied 
+                        assert(!g_turn_fair_operator->is_applicable(*current_state));
+  
+                        sim->set_state(current_state);
+                        sim->set_goal(current_goal);
                         have_solution = sim->replan();
-                    
+                        
+                        //
+                        // As part of the recording process of solving the
+                        //  problem, we probe reachable states for new deadends
+                        //  and this may generate new forbidden state-action
+                        //  pairs. As a result, this can invalidate the weak
+                        //  plan we just constructed. So, we continually try to
+                        //  find a weak plan such that the newly detected dead-
+                        //  ends don't squash the weak plan right away.
+                        //
+                        // Note: Future parts of the weak plan may not work
+                        //       the loop completes, but if that's the case
+                        //       then we will necesarily replan when we reach
+                        //       that state (the returned regstep will avoid
+                        //       forbidden state-action pairs and so null is
+                        //       returned if the weak plan no longer works).
+                        //
+                        while (have_solution && !(g_policy->get_best_step(*current_state)))
+                            have_solution = sim->replan();
+                    } else  { // AC: check if a g_turn_fair_operator can be applied
+                        assert(g_turn_fair_operator->is_applicable(*current_state));
+                        assert(!g_turn_unfair_operator->is_applicable(*current_state));
+
+                        // Turning (fair) fluent true and adding state to open_list
+                        PartialState *fair_state = new PartialState(*current_state, *g_turn_fair_operator);
+                        
+                        sim->set_state(fair_state);
+                        sim->set_goal(current_goal);
+                        have_solution = sim->replan();
+                        // Check if we are in a deadend
+                        while (have_solution && !(g_policy->get_best_step(*fair_state)))
+                            have_solution = sim->replan();
+                        delete(fair_state);
+                        sim->set_state(current_state);
+                        
+                        if(have_solution) {
+                            regstep = g_policy->get_best_step(*current_state);
+                            if (regstep == 0) {
+                                g_policy->add_item(new RegressionStep(*g_turn_fair_operator, new PartialState(*current_state), 1 + prev_regstep->distance));
+                            }
+                            //sanity check
+                            sim->set_state(current_state);
+                            while (have_solution && !(g_policy->get_best_step(*current_state)))
+                                have_solution = sim->replan();
+                            
+                            regstep = g_policy->get_best_step(*current_state);
+                            assert(regstep != 0);
+                        }
+
+                        
+                    }
                     
                     // Add the new goals to the sc condition for the previous reg step
                     if (g_optimized_scd && prev_regstep && have_solution) {
-                        
+                            cout << "\n\nCheck point 4:" << endl;
+
                         // regstep is now at the start of the newly found plan
                         regstep = g_policy->get_best_step(*current_state);
                         
@@ -164,12 +209,11 @@ bool perform_jit_repairs(Simulator *sim) {
                     }
                 }
             }
-            
             if (have_solution) {
-                
                 assert(regstep);
-                
+
                 if ( ! (regstep->is_goal || (g_optimized_scd && regstep->is_sc))) {
+
                     if (debug_jic)
                         cout << "\nNot marked..." << endl;
                     // Record the expected state
@@ -200,16 +244,28 @@ bool perform_jit_repairs(Simulator *sim) {
                         //       available.
                         failed_states.push_back(new DeadendTuple(full_expected_state, current_state, regstep->op));
                     }
-                    
                     for (int i = 0; i < g_nondet_mapping[regstep->op->nondet_index]->size(); i++) {
                         PartialState *new_state = new PartialState(*current_state, *((*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
                         created_states.push_back(new_state);
-                        
+
                         if (0 == seen.count(*new_state)) {
-                            open_list.push(SCNode(new_state, expected_state, current_state, regstep, (*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
-                            if (debug_jic) {
-                                cout << "\nAdding new state:" << endl;
-                                new_state->dump_pddl();
+                            if (g_turn_fair_operator->is_applicable(*new_state) ) { // AC: check if a g_turn_fair_operator can be applied
+                                assert(!g_turn_unfair_operator->is_applicable(*new_state));
+                                
+                                deferred_list.push(SCNode(new_state, expected_state, current_state, regstep, (*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
+                                if (debug_jic) {
+                                    cout << "\nAdding new state:" << endl;
+                                    new_state->dump_pddl();
+                                }
+                            } else {
+                                assert(g_turn_unfair_operator->is_applicable(*new_state));
+                                assert(!g_turn_fair_operator->is_applicable(*new_state));
+                                
+                                open_list.push(SCNode(new_state, expected_state, current_state, regstep, (*(g_nondet_mapping[regstep->op->nondet_index]))[i]));
+                                if (debug_jic) {
+                                    cout << "\nAdding new state:" << endl;
+                                    new_state->dump_pddl();
+                                }
                             }
                         }
                     }
@@ -226,7 +282,6 @@ bool perform_jit_repairs(Simulator *sim) {
                 
                 if (debug_jic)
                     cout << "\nState handled..." << endl;
-                
             } else if (!g_record_relevant_pairs) { // Skip the deadend handling if we're just checking what's relevant
                 
                 if (debug_jic)
@@ -284,7 +339,6 @@ bool perform_jit_repairs(Simulator *sim) {
             }
         }
     }
-    
     // We need to update the value since some may have been added to the
     //  list during optimized_scd
     if (g_detect_deadends)

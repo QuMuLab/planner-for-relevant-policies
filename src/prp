@@ -87,7 +87,7 @@ fi
 echo
 
 echo "2. Running preprocessor"
-$TIME --append "$PREPROCESS" < output.sas
+sed 's/detdup/DETDUP/g' output.sas | $TIME --append "$PREPROCESS"
 echo
 
 echo "3. Running search"
