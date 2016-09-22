@@ -8,7 +8,7 @@ if [[ $# < 2 ]]; then
 fi
 
 
-./prp $1 $2 --dump-policy 2
+./prp $1 $2 --dump-policy 2 --optimize-final-policy 1
 
 python ../prp-scripts/translate_policy.py > human_policy.out
 
