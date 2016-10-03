@@ -180,22 +180,22 @@ def remove_universal_quantifiers_without_axioms(task):
             new_parts = [lit_replacement(part, obj_map) for part in condition.parts]
             return condition.change_parts(new_parts)
         return True
-        
+
     def recurse(condition):
-        
+
         if isinstance(condition, pddl.UniversalCondition):
-            
+
             assert 1 == len(condition.parts)
             template = recurse(condition.parts[0])
-            
+
             type_lists = []
             for param in condition.parameters:
                 type_lists.append(filter(lambda obj: obj.type == param.type, task.objects))
-            
+
             object_combos = list(product(*type_lists))
             types = [param.name for param in condition.parameters]
             copies = []
-            
+
             for combo in object_combos:
                 copies.append(lit_replacement(template, dict(zip(types, [obj.name for obj in combo]))))
 
@@ -203,7 +203,7 @@ def remove_universal_quantifiers_without_axioms(task):
         else:
             new_parts = [recurse(part) for part in condition.parts]
             return condition.change_parts(new_parts)
-            
+
     for proxy in tuple(all_conditions(task)):
         if proxy.condition.has_universal_part():
             proxy.set(recurse(proxy.condition).simplified())
@@ -271,19 +271,13 @@ def split_disjunctions(task):
     for proxy in tuple(all_conditions(task)):
         # Cannot use generator directly because we add/delete entries.
         if isinstance(proxy.condition, pddl.Disjunction):
-            
-            ######################################################
-            # HAZ: This is disabled for actions as it can lead
-            #      to odd effects in the translated domain.
-            assert False, "\n\nAction: %s\nError: " % proxy.owner.name + \
-                "You must avoid disjunctive actions until " + \
-                "the following issue is resolved:\n\n" + \
-                "          https://bitbucket.org/haz/planner-for-relevant-policies/issue/3\n"
-            
+            i = 1
             for part in proxy.condition.parts:
                 new_proxy = proxy.clone_owner()
                 new_proxy.set(part)
                 new_proxy.register_owner(task)
+                new_proxy.owner.name += str(i)
+                i += 1
             proxy.delete_owner(task)
 
 # [4] Pull existential quantifiers out of conjunctions and group them.
