@@ -6,6 +6,7 @@ from fondparser.formula import *
 from normalizer import flatten
 
 import networkx as nx
+from networkx.drawing.nx_pydot import write_dot
 
 USAGE_STRING = """
 Usage: python validator.py <domain> <problem> <solution> <interpreter>
@@ -143,7 +144,7 @@ def validate(dfile, pfile, sol, val):
     print "\tStrong: %s" % str(0 == len(list(nx.simple_cycles(G))))
     print " Strong Cyclic: %s" % str(G.number_of_nodes() == len(nx.single_source_shortest_path(G.reverse(), nodes[goal_state])))
 
-    nx.write_dot(G, 'graph.dot')
+    write_dot(G, 'graph.dot')
 
     with open('action.map', 'w') as f:
         for a in actions:
