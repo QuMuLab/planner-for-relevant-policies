@@ -1,15 +1,22 @@
 
-Planner: PRP -- (P)lanner for (R)elevant (P)olicies
-Version: 0.4
+# Planner: PRP -- (P)lanner for (R)elevant (P)olicies
 
-Build:
+* Version: 0.4
+* [Wiki](https://github.com/QuMuLab/planner-for-relevant-policies/wiki)
+
+## Build
+```
 cd src/
 ./build_all
+```
 
-Citation:
+## Citing
+```
 ./src/prp --citation
+```
 
-Usage:
+## Usage
+```
 ./src/prp <domain> <problem> OPTIONS
 
 Options:
@@ -66,4 +73,4 @@ Options:
 
 --debug-output 1/0
     Output plans and other information during the planning process.
-
+```
