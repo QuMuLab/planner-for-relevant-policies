@@ -1,6 +1,8 @@
 
 # Planner: PRP -- (P)lanner for (R)elevant (P)olicies
 
+![PRP logo](logo.png)
+
 * Version: 0.4
 * [Wiki](https://github.com/QuMuLab/planner-for-relevant-policies/wiki)
 
