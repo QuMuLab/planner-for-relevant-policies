@@ -12,10 +12,10 @@ def _translate_grendel_fluent(f):
 def load(pol, fmap):
     global POLICY
 
-    print "\nLoading GRENDEL policy..."
+    print("\nLoading GRENDEL policy...")
 
     with open(pol, 'r') as f:
-        file_lines = filter(lambda x: x != '', [line.rstrip("\n") for line in f.readlines()])
+        file_lines = [x for x in [line.rstrip("\n") for line in f.readlines()] if x != '']
 
     POLICY = []
 
@@ -26,12 +26,10 @@ def load(pol, fmap):
         assert ')' == file_lines.pop(0)
 
         nfluents = set([fmap[_translate_grendel_fluent(f)] for f in \
-                        filter(lambda x: '(not' == x[:4], \
-                               fluent_line.split('(and ')[-1][:-1].split('/'))])
+                        [x for x in fluent_line.split('(and ')[-1][:-1].split('/') if '(not' == x[:4]]])
 
         pfluents = set([fmap[_translate_grendel_fluent(f)] for f in \
-                        filter(lambda x: '(not' != x[:4], \
-                               fluent_line.split('(and ')[-1][:-1].split('/'))])
+                        [x for x in fluent_line.split('(and ')[-1][:-1].split('/') if '(not' != x[:4]]])
 
         action = action_line.split(':action ')[-1][1:-1].strip().replace(' ', '_')
         POLICY.append((nfluents, pfluents, action))

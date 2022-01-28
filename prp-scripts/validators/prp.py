@@ -23,10 +23,10 @@ def load(pol, fmap):
     global POLICY
     global FSAP
 
-    print "\nLoading PRP policy..."
+    print("\nLoading PRP policy...")
 
     with open(pol, 'r') as f:
-        file_lines = filter(lambda x: x != '', [line.rstrip("\n") for line in f.readlines()])
+        file_lines = [x for x in [line.rstrip("\n") for line in f.readlines()] if x != '']
 
     POLICY = []
     FSAP = {}
@@ -50,11 +50,9 @@ def load(pol, fmap):
             continue
 
         nfluents = set([fmap[f.strip().replace(',', '')[4:-1]] for f in \
-                        filter(lambda x: 'not(' == x[:4], \
-                               fluent_line.split(':')[-1][1:].split('/'))])
+                        [x for x in fluent_line.split(':')[-1][1:].split('/') if 'not(' == x[:4]]])
         pfluents = set([fmap[f.strip().replace(',', '')] for f in \
-                        filter(lambda x: ('not(' != x[:4]) and (len(x) > 0), \
-                               fluent_line.split(':')[-1][1:].split('/'))])
+                        [x for x in fluent_line.split(':')[-1][1:].split('/') if ('not(' != x[:4]) and (len(x) > 0)]])
         action = file_lines.pop(0).split(':')[-1].split('/')[0][1:-1].strip().replace(' ', '_')
 
         if STAGE_POL == stage:

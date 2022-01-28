@@ -19,28 +19,28 @@ def flatten(op):
 
 def combine(eff_lists):
     if DEBUG:
-        print "\nCombining:\n%s" % '\n'.join(map(str, eff_lists))
-        print "Result: %s\n" % [And(filter(lambda x: x != And([]), list(choice))) for choice in product(*eff_lists)]
-    return [And(filter(lambda x: x != And([]), list(choice))) for choice in product(*eff_lists)]
+        print("\nCombining:\n%s" % '\n'.join(map(str, eff_lists)))
+        print("Result: %s\n" % [And([x for x in list(choice) if x != And([])]) for choice in product(*eff_lists)])
+    return [And([x for x in list(choice) if x != And([])]) for choice in product(*eff_lists)]
 
 def _flatten(eff):
 
     if DEBUG:
-        print "Flattening %s" % str(eff)
+        print("Flattening %s" % str(eff))
 
     if isinstance(eff, And):
         if 0 == len(eff.args):
             return [eff]
         else:
-            return combine(map(_flatten, eff.args))
+            return combine(list(map(_flatten, eff.args)))
 
     elif isinstance(eff, Oneof):
-        return list(chain(*(map(_flatten, eff.args))))
+        return list(chain(*(list(map(_flatten, eff.args)))))
 
     elif isinstance(eff, When):
         return [When(eff.condition, res) for res in _flatten(eff.result)]
 
     else:
         if DEBUG:
-            print "Base: %s" % str(eff)
+            print("Base: %s" % str(eff))
         return [eff]
