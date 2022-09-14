@@ -187,7 +187,6 @@ DEPEND = g++ -MM
 
 CCOPT = -Iext
 CCOPT += -g
-CCOPT += -m32
 CCOPT += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror
 
 ## The following lines contain workarounds for bugs when
@@ -213,7 +212,6 @@ ifdef HAVE_GCC_4_6
 endif
 
 LINKOPT  = -g
-LINKOPT += -m32
 LINKOPT +=
 
 POSTLINKOPT =
