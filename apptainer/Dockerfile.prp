@@ -1,0 +1,52 @@
+# This file has been modified from the FastDownward version
+
+# The recipe below implements a Docker multi-stage build:
+# <https://docs.docker.com/develop/develop-images/multistage-build/>
+
+###############################################################################
+# A first image to build the planner
+###############################################################################
+FROM ubuntu:18.04 AS builder
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    ca-certificates \
+    cmake           \
+    g++             \
+    git             \
+    libgmp3-dev     \
+    make            \
+    python3         \
+    wget            \
+    time            \
+    zlib1g-dev
+
+# Set up some environment variables.
+ENV CXX g++
+
+# Install Fast Downward.
+WORKDIR /workspace/prp/
+RUN git clone --depth 1 https://github.com/QuMuLab/planner-for-relevant-policies.git .
+RUN cd src && ./build_all -j 4 release
+RUN strip --strip-all src/preprocess/preprocess
+RUN strip --strip-all src/search/downward-release
+
+
+###############################################################################
+# The final image to run the planner
+###############################################################################
+FROM ubuntu:20.04 AS runner
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    python3 time python-is-python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace/prp/
+
+# Copy the relevant files from the previous docker build into this build.
+COPY --from=builder /workspace/prp/src/prp .
+COPY --from=builder /workspace/prp/src/translate ./translate
+COPY --from=builder /workspace/prp/src/preprocess/preprocess ./preprocess/preprocess
+COPY --from=builder /workspace/prp/src/search/downward ./search/downward
+COPY --from=builder /workspace/prp/src/search/downward-release ./search/downward-release
+
+ENTRYPOINT ["/workspace/prp/prp"]

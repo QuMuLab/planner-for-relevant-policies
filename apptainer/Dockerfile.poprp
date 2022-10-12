@@ -25,8 +25,7 @@ ENV CXX g++
 
 # Install Fast Downward.
 WORKDIR /workspace/prp/
-# RUN git clone --depth 1 --branch contingent https://github.com/QuMuLab/planner-for-relevant-policies.git . && \
-RUN git clone --depth 1 https://github.com/QuMuLab/planner-for-relevant-policies.git .
+RUN git clone --depth 1 --branch contingent https://github.com/QuMuLab/planner-for-relevant-policies.git .
 RUN cd src && ./build_all -j 4 release
 RUN strip --strip-all src/preprocess/preprocess
 RUN strip --strip-all src/search/downward-release
