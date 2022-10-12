@@ -24,7 +24,7 @@ Usage: python policy_experiment.py <TASK> -domain <domain> ...
         """
 
 if not os.path.exists('settings.py'):
-    print "\nNo settings detected. Creating settings.py...\n"
+    print("\nNo settings detected. Creating settings.py...\n")
     s =  "TRIALS = 10\n"
     s += "CORES = 1\n"
     s += "MEM_LIMIT = 2000\n"
@@ -209,7 +209,7 @@ PRP_PARAMS = {'best': { '--jic-limit': [18000],
 
 def parse_fip(outfile):
     runtime = get_value(outfile, '.* ([0-9]+\.?[0-9]+) seconds searching.*', float)
-    policy_size = len(filter(lambda x: 'case S' in x, read_file(outfile)))
+    policy_size = len([x for x in read_file(outfile) if 'case S' in x])
     return runtime, policy_size
 
 def check_segfault(outfile):
@@ -298,7 +298,7 @@ def doit(domain, dofip = True, doprp = True, redundant = 0, prp_params = PRP_PAR
 
 def doit_fip(domain, dom_probs, exp_name = 'fip'):
 
-    print "\n\nRunning FIP experiments on domain, %s" % domain
+    print("\n\nRunning FIP experiments on domain, %s" % domain)
 
     fip_args = ["-o ../%s.fip -f ../%s" % (item[0], item[1]) for item in dom_probs]
 
@@ -340,15 +340,15 @@ def doit_fip(domain, dom_probs, exp_name = 'fip'):
                 run, size = parse_fip(result.output_file)
                 fip_csv.append("%s,%s,%f,%d,-" % (domain, prob, run, size))
 
-    print "\nTimed out %d times." % timeouts
-    print "Ran out of memory %d times." % memouts
-    print "Unknown error %d times." % errorouts
+    print("\nTimed out %d times." % timeouts)
+    print("Ran out of memory %d times." % memouts)
+    print("Unknown error %d times." % errorouts)
     append_file("RESULTS/%s-%s-results.csv" % (exp_name, domain), fip_csv)
 
 
 def doit_prp(domain, dom_probs, prp_params, exp_name = 'prp'):
 
-    print "\n\nRunning %s experiments on domain, %s" % (exp_name, domain)
+    print("\n\nRunning %s experiments on domain, %s" % (exp_name, domain))
 
     prp_args = ["../%s ../%s" % (item[0], item[1]) for item in dom_probs]
 
@@ -409,17 +409,17 @@ def doit_prp(domain, dom_probs, prp_params, exp_name = 'prp'):
                                                             successful_states, replans, actions, policy_score,
                                                             str(strongly_cyclic), str(succeeded)))
 
-    print "\nTimed out %d times." % timeouts
-    print "Ran out of memory %d times." % memouts
-    print "Unknown error %d times." % errorouts
-    print "Invalid parameter settings %d times." % parametererrors
+    print("\nTimed out %d times." % timeouts)
+    print("Ran out of memory %d times." % memouts)
+    print("Unknown error %d times." % errorouts)
+    print("Invalid parameter settings %d times." % parametererrors)
     append_file("RESULTS/%s-%s-results.csv" % (exp_name, domain), prp_csv)
 
 
 def dojic(dom, prob, max_jic):
-    print "Running a varied jic experiment for the following domain / problem:"
-    print dom
-    print prob
+    print("Running a varied jic experiment for the following domain / problem:")
+    print(dom)
+    print(prob)
 
     exp_name = "jic"
     domain = dom.split('/')[-2]
@@ -463,8 +463,8 @@ if __name__ == '__main__':
         TRIALS = int(myargs['-trials'])
 
     if '-domain' not in myargs:
-        print "Error: Must choose a domain:"
-        print USAGE_STRING
+        print("Error: Must choose a domain:")
+        print(USAGE_STRING)
         os._exit(1)
 
     if 'ablation' in flags:
@@ -500,17 +500,17 @@ if __name__ == '__main__':
         doit(myargs['-domain'], prp_params = PRP_PARAMS['best'])
 
     if 'redundant' in flags:
-        for i in REDUNDANT_DOMAINS[myargs['-domain']].keys():
+        for i in list(REDUNDANT_DOMAINS[myargs['-domain']].keys()):
             doit(myargs['-domain'], redundant = i)
 
     if 'jic' in flags:
         if '-problem' not in myargs:
-            print "Error: Must choose a problem:"
-            print USAGE_STRING
+            print("Error: Must choose a problem:")
+            print(USAGE_STRING)
             os._exit(1)
         if '-limit' not in myargs:
-            print "Error: Must choose a limit:"
-            print USAGE_STRING
+            print("Error: Must choose a limit:")
+            print(USAGE_STRING)
             os._exit(1)
 
         dojic(myargs['-domain'], myargs['-problem'], int(myargs['-limit']))

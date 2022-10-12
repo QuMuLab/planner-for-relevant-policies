@@ -1,6 +1,6 @@
 # The following modules are the available utils
-from experimentation import get_value, match_value, get_lines, run_experiment, run_command
-from fileio import read_file, write_file, append_file, load_CSV, save_CSV
+from .experimentation import get_value, match_value, get_lines, run_experiment, run_command
+from .fileio import read_file, write_file, append_file, load_CSV, save_CSV
 
 #####################
 # General Utilities #
@@ -17,11 +17,11 @@ def get_file_list(dir_name, forbidden_list = None, match_list = None):
         forbidden_patterns.extend(forbidden_list)
     
     for item in forbidden_patterns:
-        file_list = filter(lambda x: item not in x, file_list)
+        file_list = [x for x in file_list if item not in x]
     
     if match_list:
         for match_item in match_list:
-            file_list = filter(lambda x:match_item in x, file_list)
+            file_list = [x for x in file_list if match_item in x]
     
     return file_list
 

@@ -11,7 +11,7 @@ except:
     def product(*args, **kwds):
         # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
         # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
-        pools = map(tuple, args) * kwds.get('repeat', 1)
+        pools = list(map(tuple, args)) * kwds.get('repeat', 1)
         result = [[]]
         for pool in pools:
             result = [x+[y] for x in result for y in pool]
@@ -19,7 +19,7 @@ except:
             yield tuple(prod)
 
 
-from result_handlers import Result, ResultSet
+from .result_handlers import Result, ResultSet
 
 def check_memout(result):
     MEMORY_CODES = ['std::bad_alloc', 'MemoryError', 'NO MEMORY']
@@ -43,7 +43,7 @@ def get_value(file_name, regex, value_type = float):
     if results:
         return value_type(results.group(1))
     else:
-        print "Could not find the value, %s, in the file provided: %s" % (regex, file_name)
+        print("Could not find the value, %s, in the file provided: %s" % (regex, file_name))
         return value_type(0.0)
 
 def match_value(file_name, regex):
@@ -126,7 +126,7 @@ def run_experiment( base_directory = ".",
                     ):
 
     if not base_command:
-        print "Must supply command for the experiment."
+        print("Must supply command for the experiment.")
         return
 
     #--- Make sure the default settings are appropriate
@@ -154,7 +154,7 @@ def run_experiment( base_directory = ".",
 
     #- Format the single arguments as fake parameters
     if single_arguments:
-        for item in single_arguments.keys():
+        for item in list(single_arguments.keys()):
             single_list = []
             for setting in single_arguments[item]:
                 single_list.append("%sKRDELIMNARF%s" % (item, setting))
@@ -163,7 +163,7 @@ def run_experiment( base_directory = ".",
 
     #- Format the parameters as arguments
     if parameters:
-        for item in parameters.keys():
+        for item in list(parameters.keys()):
             single_list = []
             for setting in parameters[item]:
                 single_list.append("%s %s" % (item, setting))
@@ -177,7 +177,7 @@ def run_experiment( base_directory = ".",
 
         single_arg_settings_string = " ".join(
             [item.split("KRDELIMNARF")[1] for item in \
-             filter(lambda x: len(x.split("KRDELIMNARF")) > 1, single_arg_settings)
+             [x for x in single_arg_settings if len(x.split("KRDELIMNARF")) > 1]
              ])
 
         for parameter_settings in product(*param_list):
@@ -266,13 +266,13 @@ def _run_multiple(cmds, timeout, memory, cores, progress_file, sandbox, clean_sa
             if progress_file:
                 os.system("echo \"%s\" > %s" % (message, progress_file))
             else:
-                print message
+                print(message)
 
         #-- Get the problem id
         id = todo.pop()
 
         #-- If all the cores are taken, hold off until one frees up
-        if len(pids.keys()) == cores:
+        if len(list(pids.keys())) == cores:
             (pid, status) = os.wait()
             
             exit_code = status >> 8
@@ -318,7 +318,7 @@ def _run_multiple(cmds, timeout, memory, cores, progress_file, sandbox, clean_sa
                 os._exit(return_signal // 256)
             os._exit(return_signal % 256)
 
-    while len(pids.keys()) > 0:
+    while len(list(pids.keys())) > 0:
         (pid, status) = os.wait()
         
         exit_code = status >> 8

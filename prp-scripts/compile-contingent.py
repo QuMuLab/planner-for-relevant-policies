@@ -31,11 +31,11 @@ bad_strings = set(['FOO', # Dummy predicates introduced by cf2cs
 def convert_cf2cs(ind = 'domain-cf2cs.pddl', inp = 'problem-cf2cs.pddl', outd = 'out-dom.pddl', outp = 'out-prob.pddl'):
     
     # Do the initial conversion
-    print "Running the following command..."
+    print("Running the following command...")
     cf2cs_string = "./cf2cs -t0 -mac -cond -ckinl -ckit -cdisjk0 -fp -cnap -cnamac -sn -tsn %s %s" % (ind, inp)
-    print cf2cs_string
+    print(cf2cs_string)
     run_command(cf2cs_string, MEMLIMIT=MEMLIMIT, TIMELIMIT=TIMELIMIT)
-    print
+    print()
     
     
     domain_lines = read_file('new-d.pddl')
@@ -43,18 +43,18 @@ def convert_cf2cs(ind = 'domain-cf2cs.pddl', inp = 'problem-cf2cs.pddl', outd = 
     
     
     # Strip out the nonsense fluents
-    print "Stripping out the unused fluents..."
+    print("Stripping out the unused fluents...")
     for word in bad_strings:
-        domain_lines = filter(lambda x: word not in x, domain_lines)
-        problem_lines = filter(lambda x: word not in x, problem_lines)
-    print
+        domain_lines = [x for x in domain_lines if word not in x]
+        problem_lines = [x for x in problem_lines if word not in x]
+    print()
     
     
     # Convert the observation actions
-    print "Converting observations to non-deterministic actions..."
+    print("Converting observations to non-deterministic actions...")
     
     # Count the observation actions
-    obs_count = len(filter(lambda x: '(:observation' in x, domain_lines))
+    obs_count = len([x for x in domain_lines if '(:observation' in x])
     obs_preds = ["(CAN_OBSERVE_%d)" % (d+1) for d in range(obs_count)]
     current_obs = 0
     
@@ -86,31 +86,31 @@ def convert_cf2cs(ind = 'domain-cf2cs.pddl', inp = 'problem-cf2cs.pddl', outd = 
             
     # Fix the problem file to have the new fluents
     problem_lines = problem_lines[:3] + ["\n".join(["    %s" % o for o in obs_preds])] + problem_lines[3:]
-    print
+    print()
     
     # Write output and clean up
-    print "Writing new domain / problem and cleaning up..."
+    print("Writing new domain / problem and cleaning up...")
     write_file(outd, domain_lines)
     write_file(outp, problem_lines)
     os.system('rm new-d.pddl')
     os.system('rm new-p.pddl')
-    print
+    print()
 
 
 def convert_kreplanner(ind = 'domain-krep.pddl', inp = 'problem-krep.pddl', outd = 'out-dom.pddl', outp = 'out-prob.pddl'):
     
     # Do the initial conversion
-    print "Running the following command..."
+    print("Running the following command...")
     krep_string = os.path.abspath('../prp-scripts/external/k-replanner') + " --options=kp:print:preprocessed --keep-intermediate-files --max-time 10 %s %s" % (ind, inp)
-    print krep_string
+    print(krep_string)
     run_command(krep_string, MEMLIMIT=MEMLIMIT, TIMELIMIT=TIMELIMIT)
-    print
+    print()
     
     domain_lines = get_lines('OUT', 'START_DOMAIN', 'END_DOMAIN')
     problem_lines = get_lines('OUT', 'START_PROBLEM', 'END_PROBLEM')
     
     # Convert the observation actions
-    print "Converting observations to non-deterministic actions..."
+    print("Converting observations to non-deterministic actions...")
     
     for i in range(len(domain_lines)):
         if '(:action sensor' in domain_lines[i]:
@@ -122,11 +122,11 @@ def convert_kreplanner(ind = 'domain-krep.pddl', inp = 'problem-krep.pddl', outd
                 assert False, "Error with observation action: %s" % domain_lines[i]
     
     # Write output and clean up
-    print "Writing new domain / problem and cleaning up..."
+    print("Writing new domain / problem and cleaning up...")
     write_file(outd, domain_lines)
     write_file(outp, problem_lines)
     os.system("rm OUT*")
-    print
+    print()
 
 
 def check_input(ind, inp):
@@ -135,19 +135,19 @@ def check_input(ind, inp):
     for line in lines:
         for word in bad_strings:
             if word in line.upper():
-                print
-                print "Warning: Input contains the forbidden word %s" % word
-                print line
-    print
+                print()
+                print("Warning: Input contains the forbidden word %s" % word)
+                print(line)
+    print()
                 
 
 if __name__ == '__main__':
     myargs, flags = get_opts()
     
-    print
+    print()
     
     if 2 != len(flags):
-        print USAGE_STRING
+        print(USAGE_STRING)
         os._exit(1)
     
     if 'cf2cs' == flags[1]:
@@ -155,14 +155,14 @@ if __name__ == '__main__':
     elif 'kreplanner' == flags[1]:
         convert = convert_kreplanner
     else:
-        print "Invalid converter: %s" % flags[0]
-        print USAGE_STRING
+        print("Invalid converter: %s" % flags[0])
+        print(USAGE_STRING)
         os._exit(1)
     
     if 0 == len(myargs):
         convert()
     elif set(['-ind', '-inp', '-outd', '-outp']) - set(myargs.keys()):
-        print USAGE_STRING
+        print(USAGE_STRING)
         os._exit(1)
     else:
         convert(myargs['-ind'], myargs['-inp'], myargs['-outd'], myargs['-outp'])

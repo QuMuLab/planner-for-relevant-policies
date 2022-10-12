@@ -1,10 +1,10 @@
 # my utility function
-from utils import get_contents
+from .utils import get_contents
 
 # related classes
-from predicate import Predicate
-from formula import *
-from action import Action
+from .predicate import Predicate
+from .formula import *
+from .action import Action
 
 # from stdlib
 import re
@@ -75,7 +75,7 @@ class PDDL_Tree (object):
     def print_tree (self, lvl=0):
         """Print the entire tree to the console."""
 
-        print PDDL_Tree.TAB * lvl + str(self.name)
+        print(PDDL_Tree.TAB * lvl + str(self.name))
         
         for child in self.children:
             child.print_tree(lvl + 1)

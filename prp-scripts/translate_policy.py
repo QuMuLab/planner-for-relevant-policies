@@ -92,9 +92,9 @@ policy_lines = read_file('policy.out')
 new_lines = []
 for line in policy_lines:
     if 'If' == line[:2]:
-        print "If holds: %s" % '/'.join([mapping[item] for item in line.split(' ')[2:]])
+        print("If holds: %s" % '/'.join([mapping[item] for item in line.split(' ')[2:]]))
     else:
-        print line
+        print(line)
 
 #print mapping
 

@@ -51,7 +51,7 @@ class ResultSet(object):
     def filter(self, func):
         toReturn = ResultSet()
         
-        newResults = filter(func, self.results.values())
+        newResults = list(filter(func, list(self.results.values())))
         for result in newResults:
             toReturn.add_result(result.id, result)
         
@@ -71,4 +71,4 @@ class ResultSet(object):
         return self.results[index]
     
     def get_ids(self):
-        return self.results.keys()
+        return list(self.results.keys())

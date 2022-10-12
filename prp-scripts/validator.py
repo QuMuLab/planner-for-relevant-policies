@@ -41,8 +41,8 @@ class State:
 class VALAction:
     def __init__(self, prec, effs, name, mapping):
         self.name = name
-        self.ppres = set(filter(lambda x: x > 0, prec))
-        self.npres = set([-1 * i for i in filter(lambda x: x < 0, prec)])
+        self.ppres = set([x for x in prec if x > 0])
+        self.npres = set([-1 * i for i in [x for x in prec if x < 0]])
         self.effs = effs
         self.mapping = mapping
 
@@ -55,7 +55,7 @@ class VALAction:
 
 def validate(dfile, pfile, sol, val):
 
-    print "\nParsing the problem..."
+    print("\nParsing the problem...")
 
     problem = grounder.GroundProblem(dfile, pfile)
 
@@ -97,7 +97,7 @@ def validate(dfile, pfile, sol, val):
 
     val.load(sol, fluents)
 
-    print "\nStarting the FOND simulation..."
+    print("\nStarting the FOND simulation...")
 
     unhandled = []
 
@@ -135,13 +135,13 @@ def validate(dfile, pfile, sol, val):
 
 
     # Analyze the final controller
-    print "\nSimulation finished!\n"
-    print "\n-{ Controller Statistics }-\n"
-    print "\t Nodes: %d" % G.number_of_nodes()
-    print "\t Edges: %d" % G.number_of_edges()
-    print "     Unhandled: %d" % len(unhandled)
-    print "\tStrong: %s" % str(0 == len(list(nx.simple_cycles(G))))
-    print " Strong Cyclic: %s" % str(G.number_of_nodes() == len(nx.single_source_shortest_path(G.reverse(), nodes[goal_state])))
+    print("\nSimulation finished!\n")
+    print("\n-{ Controller Statistics }-\n")
+    print("\t Nodes: %d" % G.number_of_nodes())
+    print("\t Edges: %d" % G.number_of_edges())
+    print("     Unhandled: %d" % len(unhandled))
+    print("\tStrong: %s" % str(0 == len(list(nx.simple_cycles(G)))))
+    print(" Strong Cyclic: %s" % str(G.number_of_nodes() == len(nx.single_source_shortest_path(G.reverse(), nodes[goal_state]))))
 
     nx.write_dot(G, 'graph.dot')
 
@@ -151,24 +151,24 @@ def validate(dfile, pfile, sol, val):
             i = 0
             for outcome in actions[a]:
                 i += 1
-                f.write("%d: %s\n" % (i, " / ".join(["%s -> %s" % (map(str, [unfluents[fl] for fl in c]), map(str, [unfluents[fl] for fl in e])) for (c,e) in outcome.effs])))
+                f.write("%d: %s\n" % (i, " / ".join(["%s -> %s" % (list(map(str, [unfluents[fl] for fl in c])), list(map(str, [unfluents[fl] for fl in e]))) for (c,e) in outcome.effs])))
 
     if len(unhandled) > 0:
         with open('unhandled.states', 'w') as f:
             for s in unhandled:
                 f.write("\n%s\n" % _state_string(unfluents, s))
 
-    print "\n     Plan output: graph.dot"
-    print "  Action mapping: action.map"
+    print("\n     Plan output: graph.dot")
+    print("  Action mapping: action.map")
     if len(unhandled) > 0:
-        print "Unhandled states: unhandled.states"
+        print("Unhandled states: unhandled.states")
 
-    print
+    print()
 
 
 def _convert_cond_effect(mapping, eff):
     if isinstance(eff, And):
-        return [_create_cond(mapping, f) for f in filter(lambda x: '=' not in str(x), eff.args)]
+        return [_create_cond(mapping, f) for f in [x for x in eff.args if '=' not in str(x)]]
     elif isinstance(eff, Primitive) or (isinstance(eff, Not) and isinstance(eff.args[0], Primitive)):
         return [_create_cond(mapping, eff)]
     elif isinstance(eff, When):
@@ -186,7 +186,7 @@ def _create_cond(mapping, eff):
 
 def _convert_conjunction(mapping, conj):
     if isinstance(conj, And):
-        return [mapping[str(f).lower()] for f in filter(lambda x: '=' not in str(x), conj.args)]
+        return [mapping[str(f).lower()] for f in [x for x in conj.args if '=' not in str(x)]]
     elif isinstance(conj, Primitive) or (isinstance(conj, Not) and isinstance(conj.args[0], Primitive)):
         return [mapping[str(conj).lower()]]
     elif None == conj:
@@ -208,9 +208,9 @@ def progress(s, o, m):
     adds = set()
     dels = set()
     for eff in o.effs:
-        negeff = set(filter(lambda x: x < 0, eff[0]))
+        negeff = set([x for x in eff[0] if x < 0])
         poseff = eff[0] - negeff
-        negeff = set(map(lambda x: x * -1, negeff))
+        negeff = set([x * -1 for x in negeff])
         if (poseff <= s.fluents) and 0 == len(negeff & s.fluents):
             for reff in eff[1]:
                 if reff < 0:
@@ -219,7 +219,7 @@ def progress(s, o, m):
                     adds.add(reff)
 
     if 0 != len(adds & dels):
-        print "Warning: Conflicting adds and deletes on action %s" % str(o)
+        print("Warning: Conflicting adds and deletes on action %s" % str(o))
 
     return State(((s.fluents - dels) | adds))
 
@@ -228,8 +228,8 @@ if __name__ == '__main__':
     try:
         (dom, prob, sol, interp) = os.sys.argv[1:]
     except:
-        print "\nError with input."
-        print USAGE_STRING
+        print("\nError with input.")
+        print(USAGE_STRING)
         os.sys.exit(1)
 
     validate(dom, prob, sol, importlib.import_module("validators.%s" % interp))
