@@ -47,6 +47,7 @@ WORKDIR /workspace/prp/
 COPY --from=builder /workspace/prp/src/prp .
 COPY --from=builder /workspace/prp/src/translate ./translate
 COPY --from=builder /workspace/prp/src/preprocess/preprocess ./preprocess/preprocess
+COPY --from=builder /workspace/prp/src/search/downward ./search/downward
 COPY --from=builder /workspace/prp/src/search/downward-release ./search/downward-release
 
 ENTRYPOINT ["/workspace/prp/prp"]
