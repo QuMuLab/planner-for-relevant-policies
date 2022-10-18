@@ -6,7 +6,11 @@
 ###############################################################################
 # A first image to build the planner
 ###############################################################################
-FROM ubuntu:18.04 AS builder
+FROM ubuntu:20.04 AS builder
+
+
+RUN apt-get update && apt-get -y install locales
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
     ca-certificates \
@@ -31,22 +35,64 @@ RUN strip --strip-all src/preprocess/preprocess
 RUN strip --strip-all src/search/downward-release
 
 
+# Grab the cpor pre-processor
+WORKDIR /workspace/cpor/
+RUN git clone https://github.com/shanigu/ContingentPlanning.git .
+RUN apt-get install --no-install-recommends -y mono-complete unzip
+RUN rm -rf /workspace/prp/prp-scripts
+RUN cd WriteKPlanner && unzip prp-scripts.zip
+RUN cp -rf WriteKPlanner/prp-scripts /workspace/prp/prp-scripts
+
+# 2to3 recursively
+RUN apt install --no-install-recommends -y 2to3
+RUN find /workspace/prp/prp-scripts -name "*.py" -exec 2to3 -w {} \;
+RUN chmod 777 /workspace/prp/prp-scripts/external/WriteKPlanner.exe
+
+
+# Replace "run_command(krep_string)" with "run_command('mono '+krep_string)" in compile-cocntingent.py
+RUN sed -i 's/run_command(krep_string)/run_command("mono "+krep_string)/g' /workspace/prp/prp-scripts/compile-contingent.py
+
+# Replace "../prp-scripts" with "prp-scripts" in compile-cocntingent.py
+RUN sed -i 's/..\/prp-scripts/\/workspace\/prp\/prp-scripts/g' /workspace/prp/prp-scripts/compile-contingent.py
+
+# Replace "Kd.pddl" with "/tmp/Kd.pddl" in compile-cocntingent.py
+RUN sed -i 's/Kd.pddl/\/tmp\/Kd.pddl/g' /workspace/prp/prp-scripts/compile-contingent.py
+# Same with "Kp.pddl"
+RUN sed -i 's/Kp.pddl/\/tmp\/Kp.pddl/g' /workspace/prp/prp-scripts/compile-contingent.py
+
+
+# Replace "python ../prp-scripts" with "python prp-scripts"
+RUN sed -i 's/python ..\/prp-scripts/python \/workspace\/prp\/prp-scripts/g' /workspace/prp/src/poprp
+
+# Replace "compiled-domain.pddl" with "/tmp/compiled-domain.pddl"
+RUN sed -i 's/compiled-domain.pddl/\/tmp\/compiled-domain.pddl/g' /workspace/prp/src/poprp
+# Same with "compiled-problem.pddl"
+RUN sed -i 's/compiled-problem.pddl/\/tmp\/compiled-problem.pddl/g' /workspace/prp/src/poprp
+
+# Replace "./prp" with "/workspace/prp/prp" in poprp
+RUN sed -i 's/\.\/prp/\/workspace\/prp\/prp/g' /workspace/prp/src/poprp
+
+
+
 ###############################################################################
 # The final image to run the planner
 ###############################################################################
 FROM ubuntu:20.04 AS runner
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    python3 time python-is-python3 \
+    python3 time python-is-python3 mono-runtime \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace/prp/
 
 # Copy the relevant files from the previous docker build into this build.
 COPY --from=builder /workspace/prp/src/prp .
+COPY --from=builder /workspace/prp/src/poprp .
 COPY --from=builder /workspace/prp/src/translate ./translate
+COPY --from=builder /workspace/prp/prp-scripts ./prp-scripts
 COPY --from=builder /workspace/prp/src/preprocess/preprocess ./preprocess/preprocess
 COPY --from=builder /workspace/prp/src/search/downward ./search/downward
 COPY --from=builder /workspace/prp/src/search/downward-release ./search/downward-release
 
-ENTRYPOINT ["/workspace/prp/prp"]
+
+ENTRYPOINT ["/workspace/prp/poprp"]
