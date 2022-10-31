@@ -271,13 +271,10 @@ def split_disjunctions(task):
     for proxy in tuple(all_conditions(task)):
         # Cannot use generator directly because we add/delete entries.
         if isinstance(proxy.condition, pddl.Disjunction):
-            i = 1
             for part in proxy.condition.parts:
                 new_proxy = proxy.clone_owner()
                 new_proxy.set(part)
                 new_proxy.register_owner(task)
-                new_proxy.owner.name += str(i)
-                i += 1
             proxy.delete_owner(task)
 
 # [4] Pull existential quantifiers out of conjunctions and group them.
