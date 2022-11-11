@@ -1,5 +1,5 @@
-from formula import Formula
-from predicate import Predicate
+from .formula import Formula
+from .predicate import Predicate
 
 class Action (object):
     """
@@ -124,11 +124,11 @@ class Action (object):
             lvl:    Tab level
         """
 
-        print "\t" * lvl + "Action %s" % self.name
-        print "\t" * (lvl + 1) + "Parameters: " + ", ".join([v_type + " " + v_name for v_name, v_type in self.parameters])
+        print(("\t" * lvl + "Action %s" % self.name))
+        print(("\t" * (lvl + 1) + "Parameters: " + ", ".join([v_type + " " + v_name for v_name, v_type in self.parameters])))
 
-        print (lvl + 1) * "\t" + "Precondition: " + str (self.precondition)
+        print(((lvl + 1) * "\t" + "Precondition: " + str (self.precondition)))
 
-        print (lvl + 1) * "\t" + "Effect: " + str (self.effect)
+        print(((lvl + 1) * "\t" + "Effect: " + str (self.effect)))
 
-        print (lvl + 1) * "\t" + "Observe: " + str(self.observe)
+        print(((lvl + 1) * "\t" + "Observe: " + str(self.observe)))

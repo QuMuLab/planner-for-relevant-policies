@@ -1,5 +1,5 @@
 
-from predicate import Predicate
+from .predicate import Predicate
 
 
 class Formula(object):
@@ -231,8 +231,8 @@ class And(Formula):
             Inputs:
                 args:    list of formula objects
         """
-        args = filter(lambda x: not isinstance(x, And), args) + \
-               [item for andarg in filter(lambda x: isinstance(x, And), args) for item in andarg.args]
+        args = [x for x in args if not isinstance(x, And)] + \
+               [item for andarg in [x for x in args if isinstance(x, And)] for item in andarg.args]
 
         super(And, self).__init__("and", args)
 
@@ -432,8 +432,8 @@ class Primitive(Formula):
         self.predicate.args = None
         if hash (self.predicate) not in fluent_dict:
             for p in sorted (fluent_dict.values()):
-                print p
-            print "Did not find %s" % str(self.predicate)
+                print(p)
+            print(("Did not find %s" % str(self.predicate)))
         self.predicate = fluent_dict[hash(self.predicate)]
 
     def __eq__ (self, f):
