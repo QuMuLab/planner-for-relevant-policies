@@ -179,7 +179,7 @@ def translate_strips_operator(operator, dictionary, ranges, mutex_dict,
     sas_operators = []
 
     if len(conditions) > 1:
-        suffixes = [("_v%d" % (i+1)) for i in range(len(conditions))]
+        suffixes = [("_ver%d" % (i+1)) for i in range(len(conditions))]
     else:
         suffixes = ['']
 

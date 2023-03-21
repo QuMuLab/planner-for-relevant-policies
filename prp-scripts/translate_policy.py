@@ -89,22 +89,28 @@ for i in range(num_vars):
         mapping["%s:%s" % (name, j)] = vals[j]
 
 print("Mapping:\n")
-print('\n'.join(["  %s\t<-> \t %s" % (k,mapping[k]) for k in sorted(mapping.keys())]))
+print( '\n'.join(["  %s\t<-> \t %s" % (k,mapping[k]) for k in sorted(mapping.keys())]))
 print()
 
 def translate_lines(lines):
     for line in lines:
         if 'If' == line[:2]:
-            print("If holds: %s" % '/'.join([mapping[item] for item in line.split(' ')[2:]]))
+            print ("If holds: %s" % '/'.join([mapping[item] for item in line.split(' ')[2:]]))
+        elif 'Execute' == line[:7]:
+            # We should peel off the suffix added by the FD translator for multiple action copies.
+            actname = line.split(' ')[1]
+            if len(actname.split('_ver')) > 1:
+                actname = actname.split('_ver')[0]
+            print ("Execute: %s %s" % (actname, ' '.join(line.split(' ')[2:])))
         else:
-            print(line)
+            print (line)
 
-print("Policy:")
+print ("Policy:")
 policy_lines = read_file('policy.out')
 translate_lines(policy_lines)
 print()
 
-print("FSAP:")
+print ("FSAP:")
 fsap_lines = read_file('policy.fsap')
 translate_lines(fsap_lines)
 print()
