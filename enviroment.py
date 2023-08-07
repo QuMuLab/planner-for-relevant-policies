@@ -20,7 +20,7 @@ def update_pddl_file(filename, task_dict):
     if "bagno" in task:
         lines[20] = f"{task_dict[task][0]}\n"  # Line 21
     else:
-        lines[20] = f" "  # Line 21
+        lines[20] = f" \n"  # Line 21
     
     if len(lines) > 22:
         lines[21] = f"{task_dict[task][0]}\n"  # Line 22
@@ -35,7 +35,7 @@ def update_pddl_file(filename, task_dict):
     if "bagno" in task:
         lines[30] = f"{task_dict[task][1]}\n"  # Line 31
     else:
-        lines[30] = f" "  # Line 31
+        lines[30] = f" \n"  # Line 31
         
     # Write lines back to file
     with open(filename, 'w') as file:
