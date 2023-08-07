@@ -23,8 +23,7 @@
     (is-task-p2_2 ?t)
     (is-task-p2_3 ?t)
     (is-task-p2_4 ?t)
-    (is-task-tour1 ?t)
-    (is-task-tour2 ?t)
+    
     
     
     (played_P1_1 ?v)
@@ -35,11 +34,6 @@
     (played_P2_2 ?v)
     (played_P2_3 ?v)
     (played_P2_4 ?v)
-    (played_tour1 ?v)
-    (played_tour2 ?v)
-    
-    
-    
     (played_museum_history ?v)
     
 )
@@ -71,9 +65,6 @@
         (at ?agent ?task)
     )
     :effect (oneof
-        
-        (when (is-task-tour1 ?task) (played_tour1 ?visitor))
-        (when (is-task-tour2 ?task) (played_tour2 ?visitor))
         (when (is-task-p1_1 ?task)  (played_P1_1 ?visitor))
         (when (is-task-p1_2 ?task) (played_P1_2 ?visitor))
         (when (is-task-p1_3 ?task) (played_P1_3 ?visitor))
