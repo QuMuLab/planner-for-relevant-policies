@@ -5,11 +5,15 @@ def update_pddl_file(filename, task_dict):
     for key in task_dict.keys():
         print(key)
     
-    task = input("Please enter the task (separate by comma): ") #task becomes a list of paintings. If more than one painting is required, separate by comma
+    task = input("Please enter the task: ")
+    bathroom_task = input("Do you need the bathroom? : ")
     
     # Check if task is in the dictionary
     if task not in task_dict:
         print(f"Unknown task '{task}'. Cannot proceed.")
+        return
+    if bathroom_task != "yes" and != "no":
+        print(f"Unknown task '{bathroom_task}'. Cannot proceed, insert yes or no. ")
         return
 
     # Open the file and read lines
@@ -17,25 +21,25 @@ def update_pddl_file(filename, task_dict):
         lines = file.readlines()
     
     # Update lines
-    if "bagno" in task:
-        lines[20] = f"{task_dict[task][0]}\n"  # Line 21
+    if "yes" in bathroom_task:
+        lines[50] = f"{task_dict[task][0]}\n"  # Line 51 (old Line 23)
     else:
-        lines[20] = f" \n"  # Line 21
+        lines[50] = f" (is-fine vis1)\n"  # Line 51 (old Line 23)
     
     if len(lines) > 22:
-        lines[21] = f"{task_dict[task][0]}\n"  # Line 22
+        lines[49] = f"{task_dict[task][0]}\n"  # Line 50 (old Line 22)
     else:
         print("Warning: file has less than 22 lines. Cannot replace line 22.")
     
     if len(lines) > 32:
-        lines[31] = f"{task_dict[task][1]}\n"  # Line 32
+        lines[59] = f"{task_dict[task][1]}\n"  # Line 60 (old Line 32)
     else:
         print("Warning: file has less than 32 lines. Cannot replace line 32.")
     
-    if "bagno" in task:
-        lines[30] = f"{task_dict[task][1]}\n"  # Line 31
+    if "yes" in bathroom_task:
+        lines[58] = f"{task_dict[task][1]}\n"  # Line 59 (old Line 31)
     else:
-        lines[30] = f" \n"  # Line 31
+        lines[58] = f" \n"  # Line 59 (old Line 31)
         
     # Write lines back to file
     with open(filename, 'w') as file:
