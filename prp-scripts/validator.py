@@ -199,7 +199,7 @@ def _state_string(mapping, state):
 def progress(s, o, m):
     assert o.ppres <= s.fluents and 0 == len(o.npres & s.fluents), \
         "Failed to progress %s:\nPrecondition: %s\nState:\n%s" % \
-        (o.name, str(o.pres), _state_string(m, s))
+        (o.name, str(o.ppres), _state_string(m, s))
 
     #print "\nProgressing the following operator:"
     #print (o)
