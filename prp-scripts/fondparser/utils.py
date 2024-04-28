@@ -1,7 +1,7 @@
 # helper classes
-from action import Action
-from predicate import Predicate
-from formula import *
+from .action import Action
+from .predicate import Predicate
+from .formula import *
 
 """
     General purpose utilities
